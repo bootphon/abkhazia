@@ -1,0 +1,63 @@
+^  __//consonants//__  ^^
+^GlobalPhone Mandarin^IPA^
+|  <nowiki>b </nowiki>  |  <nowiki>p </nowiki>  |
+|  <nowiki>c </nowiki>  |  <nowiki>tsʰ </nowiki>  |
+|  <nowiki>ch </nowiki>  |  <nowiki>tʂʰ </nowiki>  |
+|  <nowiki>d </nowiki>  |  <nowiki>t </nowiki>  |
+|  <nowiki>f </nowiki>  |  <nowiki>f </nowiki>  |
+|  <nowiki>g </nowiki>  |  <nowiki>k </nowiki>  |
+|  <nowiki>h </nowiki>  |  <nowiki>x </nowiki>  |
+|  <nowiki>j </nowiki>  |  <nowiki>tɕ </nowiki>  |
+|  <nowiki>k </nowiki>  |  <nowiki>kʰ </nowiki>  |
+|  <nowiki>l </nowiki>  |  <nowiki>l </nowiki>  |
+|  <nowiki>m </nowiki>  |  <nowiki>m </nowiki>  |
+|  <nowiki>n </nowiki>  |  <nowiki>n </nowiki>  |
+|  <nowiki>ng </nowiki>  |  <nowiki>ŋ </nowiki>  |
+|  <nowiki>p </nowiki>  |  <nowiki>pʰ </nowiki>  |
+|  <nowiki>q </nowiki>  |  <nowiki>tɕʰ </nowiki>  |
+|  <nowiki>r </nowiki>  |  <nowiki>ɻ </nowiki>  |
+|  <nowiki>s </nowiki>  |  <nowiki>s </nowiki>  |
+|  <nowiki>sh </nowiki>  |  <nowiki>ʂ </nowiki>  |
+|  <nowiki>t </nowiki>  |  <nowiki>tʰ </nowiki>  |
+|  <nowiki>x </nowiki>  |  <nowiki>ɕ </nowiki>  |
+|  <nowiki>z </nowiki>  |  <nowiki>ts </nowiki>  |
+|  <nowiki>zh </nowiki>  |  <nowiki>tʂ </nowiki>  |
+
+^  __//4 tones vowels//__  ^^
+^GlobalPhone Mandarin^IPA^
+|  <nowiki>iou </nowiki>  |  <nowiki>ioʊ </nowiki>  |
+|  <nowiki>va </nowiki>  |  <nowiki>yɛ </nowiki>  |
+|  <nowiki>ve </nowiki>  |  <nowiki>yœ </nowiki>  |
+
+^  __//5 tones vowels//__  ^^
+^GlobalPhone Mandarin^IPA^
+|  <nowiki>a </nowiki>  |  <nowiki>ä </nowiki>  |
+|  <nowiki>ai </nowiki>  |  <nowiki>aɪ </nowiki>  |
+|  <nowiki>ao </nowiki>  |  <nowiki>ɑʊ </nowiki>  |
+|  <nowiki>e </nowiki>  |  <nowiki>ə </nowiki>  |
+|  <nowiki>ei </nowiki>  |  <nowiki>eɪ </nowiki>  |
+|  <nowiki>i </nowiki>  |  <nowiki>i </nowiki>  |
+|  <nowiki>ia </nowiki>  |  <nowiki>iä </nowiki>  |
+|  <nowiki>iao </nowiki>  |  <nowiki>iɑʊ </nowiki>  |
+|  <nowiki>ie </nowiki>  |  <nowiki>iɛ </nowiki>  |
+|  <nowiki>ii </nowiki>  |  <nowiki>ɨ </nowiki>  |
+|  <nowiki>io </nowiki>  |  <nowiki>iʊ </nowiki>  |
+|  <nowiki>iu </nowiki>  |  <nowiki>iu </nowiki>  |
+|  <nowiki>o </nowiki>  |  <nowiki>ɤ </nowiki>  |
+|  <nowiki>ou </nowiki>  |  <nowiki>oʊ </nowiki>  |
+|  <nowiki>u </nowiki>  |  <nowiki>u </nowiki>  |
+|  <nowiki>ua </nowiki>  |  <nowiki>uä </nowiki>  |
+|  <nowiki>uai </nowiki>  |  <nowiki>uaɪ </nowiki>  |
+|  <nowiki>ue </nowiki>  |  <nowiki>uə </nowiki>  |
+|  <nowiki>uei </nowiki>  |  <nowiki>ueɪ </nowiki>  |
+|  <nowiki>uo </nowiki>  |  <nowiki>uɔ </nowiki>  |
+|  <nowiki>v </nowiki>  |  <nowiki>y </nowiki>  |
+
+^  __//tones//__  ^^
+^GlobalPhone Mandarin^IPA^
+|  <nowiki>1 </nowiki>  |  <nowiki>˥ </nowiki>  |
+|  <nowiki>2 </nowiki>  |  <nowiki>˧˥ </nowiki>  |
+|  <nowiki>3 </nowiki>  |  <nowiki>˨˩˦ </nowiki>  |
+|  <nowiki>4 </nowiki>  |  <nowiki>˥˩ </nowiki>  |
+|  <nowiki>5 </nowiki>  |  <nowiki>˧ </nowiki>  |
+
