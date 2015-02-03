@@ -26,12 +26,6 @@ def phoneset2txt(phoneset, filename):
 			f.write(string + u'\n')
 
 
-#TODO:
-# 	CSJ, NCHLT, Glissando Catalan and Spanish, Blue lips
-#	For CSJ at least need to do some ABX experiment to decide appropriate
-#	labeling scheme. 
-
-
 ## English ##
 # General American phonology according to wikipedia
 
@@ -145,13 +139,9 @@ AI_phones = [
 	('y', u'j'),
 	('h', u'h')
 ]
-AI_silences = ['sil'] # get rid of spn
-AI_optional_silence = ['sil']
 
 AI = {
-	'phones': AI_phones,
-	'silences': AI_silences,
-	'optional silence': AI_optional_silence
+	'phones': AI_phones
 }
 
 
@@ -315,13 +305,14 @@ TIMIT61_phones = [
 	# glottal stop, which may be an allophone of t, or may mark an initial 
      # vowel or a vowel-vowel boundary
 ]
-TIMIT61_silences = ['pau', 'epi', 'h#', 
+# there is actually a short-paused concept in TIMIT 'pau' that should be replaced
+# by our standard SIL in data preparation
+TIMIT61_silences = ['SIL', 'epi', 'h#', 
 				 'bcl', 'dcl', 'gcl', 'pcl', 'tcl', 'kcl']					
 # pause, epenthetic silence, begin/end marker, closures (i.e. silences)
 # optional silence: according to the kaldi recipe:
 # 	in TIMIT the silence appears also as a word in the dictionary and is scored
-# anyway the custom recipe should probably be used for this one rather than
-# a standard one ?
+
 TIMIT61 = {
 	'phones': TIMIT61_phones,
 	'silences': TIMIT61_silences
@@ -388,13 +379,7 @@ TIMIT39_specials =  [
 # 	http://en.wikipedia.org/wiki/Standard_Chinese_phonology#Palatal_series
 # GP includes the palatal series in its phoneset, but
 # the glide series is integrated into the vowels
-GP_Mandarin_4tones_vowels = [	
-	('va', u'yɛ'),
-	('ve', u'yœ'),
-	('iou', u'ioʊ') # here GP proposes iʊu 
-]
-
-GP_Mandarin_5tones_vowels = [
+GP_Mandarin_vowels = [
 	('a', u'ä'),
 	('e', u'ə'),
 	('i', u'i'),
@@ -415,7 +400,10 @@ GP_Mandarin_5tones_vowels = [
 	('uo', u'uɔ'), # discrepancy here too... (but not sure what GP proposition is due to font issues)
 	('iao', u'iɑʊ'),
 	('uai', u'uaɪ'),
-	('uei', u'ueɪ') # here too GP proposes 'uɛi' I think
+	('uei', u'ueɪ'), # here too GP proposes 'uɛi' I think
+	('va', u'yɛ'), # 4 tone vowel: never happens with tone 5
+	('ve', u'yœ'), # 4 tone vowel: never happens with tone 5
+	('iou', u'ioʊ') # here GP proposes iʊu; 4 tone vowel: never happens with tone 5 
 ]
 
 # no glides (j, w and ɥ) in the GP version (they are in the vowels)
@@ -460,17 +448,16 @@ GP_Mandarin_tones = [
 	('5', u'˧') # mid-level (neutral)
 ]
 
-GP_Mandarin_silences = ['+QK', '+hGH', 'sil']
-# speech fragments, noise, silece respectively
-GP_Mandarin_optional_silence = ['sil']
+# there is speech fragments symbol in GP_Mandarin '+QK' that should be replaced
+# by our standard SPN in data preparation
+GP_Mandarin_silences = ['SPN', '+hGH']
+# speech fragments, noise
 
 GP_Mandarin = {
 	'consonants': GP_Mandarin_consonants,
-	'4 tones vowels': GP_Mandarin_4tones_vowels,
-	'5 tones vowels': GP_Mandarin_5tones_vowels,
+	'vowels': GP_Mandarin_vowels,
 	'tones': GP_Mandarin_tones,
-	'silences': GP_Mandarin_silences,
-	'optional silence': GP_Mandarin_optional_silence
+	'silences': GP_Mandarin_silences
 }
 
 
@@ -572,9 +559,8 @@ GP_Vietnamese_tones = [
 	# u'˨\u0330˩\u0330ʔ' instead of u'˨ˀ˩ʔ' (using the creaky voice diacritic)
 ]
 
-GP_Vietnamese_silences = ['sil']
-# any other special phone ?
-GP_Vietnamese_optional_silence = ['sil']
+# any special phone ?
+
 ## Xitsonga ##
 # phoneset focused on phonemic rather than phonetic distinctions, according to 
 # the authors of the corpus
@@ -585,11 +571,7 @@ GP_Vietnamese = {
 	'consonants': GP_Vietnamese_consonants,
 	'vowels': GP_Vietnamese_vowels,
 	'tones': GP_Vietnamese_tones,
-	'silences': GP_Vietnamese_silences,
-	'optional silence': GP_Vietnamese_optional_silence
 }
-
-
 
 
 import os

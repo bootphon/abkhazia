@@ -1,6 +1,2 @@
-silences
-sil #
 phones
 i iː xi ɪ xe ɛ e eɪ xq æ a ɑː xw aʊ xy aɪ xa ʌ c ɔː xo ɔɪ o oʊ xu ʊ u uː xr ɝ xj ʤ xc ʧ b b d d g g p p t t k k s s xs ʃ z z xz ʒ f f xt θ v v xd ð m m n n xg ŋ l l r r w w y j h h
-optional silence
-sil #

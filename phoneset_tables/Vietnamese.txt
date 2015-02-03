@@ -1,73 +1,73 @@
 ^  __//consonants//__  ^^
 ^GlobalPhone Vietnamese^IPA^
-|  <nowiki>b </nowiki>  |  <nowiki>ɓ </nowiki>  |
-|  <nowiki>ch </nowiki>  |  <nowiki>tɕ </nowiki>  |
-|  <nowiki>d1 </nowiki>  |  <nowiki>ɟ </nowiki>  |
-|  <nowiki>d2 </nowiki>  |  <nowiki>ɗ </nowiki>  |
-|  <nowiki>g </nowiki>  |  <nowiki>ɣ </nowiki>  |
-|  <nowiki>h </nowiki>  |  <nowiki>h </nowiki>  |
-|  <nowiki>j </nowiki>  |  <nowiki>j </nowiki>  |
-|  <nowiki>k </nowiki>  |  <nowiki>k </nowiki>  |
-|  <nowiki>kh </nowiki>  |  <nowiki>x </nowiki>  |
-|  <nowiki>l </nowiki>  |  <nowiki>l </nowiki>  |
-|  <nowiki>m </nowiki>  |  <nowiki>m </nowiki>  |
-|  <nowiki>n </nowiki>  |  <nowiki>n </nowiki>  |
-|  <nowiki>ng </nowiki>  |  <nowiki>ŋ </nowiki>  |
-|  <nowiki>p </nowiki>  |  <nowiki>p </nowiki>  |
-|  <nowiki>ph </nowiki>  |  <nowiki>f </nowiki>  |
-|  <nowiki>r </nowiki>  |  <nowiki>ʐ </nowiki>  |
-|  <nowiki>s </nowiki>  |  <nowiki>ʂ </nowiki>  |
-|  <nowiki>t </nowiki>  |  <nowiki>t </nowiki>  |
-|  <nowiki>th </nowiki>  |  <nowiki>tʰ </nowiki>  |
-|  <nowiki>tr </nowiki>  |  <nowiki>ʈ </nowiki>  |
-|  <nowiki>v </nowiki>  |  <nowiki>v </nowiki>  |
-|  <nowiki>x </nowiki>  |  <nowiki>s </nowiki>  |
+|  <nowiki> b </nowiki>  |  <nowiki> ɓ </nowiki>  |
+|  <nowiki> ch </nowiki>  |  <nowiki> tɕ </nowiki>  |
+|  <nowiki> d1 </nowiki>  |  <nowiki> ɟ </nowiki>  |
+|  <nowiki> d2 </nowiki>  |  <nowiki> ɗ </nowiki>  |
+|  <nowiki> g </nowiki>  |  <nowiki> ɣ </nowiki>  |
+|  <nowiki> h </nowiki>  |  <nowiki> h </nowiki>  |
+|  <nowiki> j </nowiki>  |  <nowiki> j </nowiki>  |
+|  <nowiki> k </nowiki>  |  <nowiki> k </nowiki>  |
+|  <nowiki> kh </nowiki>  |  <nowiki> x </nowiki>  |
+|  <nowiki> l </nowiki>  |  <nowiki> l </nowiki>  |
+|  <nowiki> m </nowiki>  |  <nowiki> m </nowiki>  |
+|  <nowiki> n </nowiki>  |  <nowiki> n </nowiki>  |
+|  <nowiki> ng </nowiki>  |  <nowiki> ŋ </nowiki>  |
+|  <nowiki> p </nowiki>  |  <nowiki> p </nowiki>  |
+|  <nowiki> ph </nowiki>  |  <nowiki> f </nowiki>  |
+|  <nowiki> r </nowiki>  |  <nowiki> ʐ </nowiki>  |
+|  <nowiki> s </nowiki>  |  <nowiki> ʂ </nowiki>  |
+|  <nowiki> t </nowiki>  |  <nowiki> t </nowiki>  |
+|  <nowiki> th </nowiki>  |  <nowiki> tʰ </nowiki>  |
+|  <nowiki> tr </nowiki>  |  <nowiki> ʈ </nowiki>  |
+|  <nowiki> v </nowiki>  |  <nowiki> v </nowiki>  |
+|  <nowiki> x </nowiki>  |  <nowiki> s </nowiki>  |
 
 ^  __//vowels//__  ^^
 ^GlobalPhone Vietnamese^IPA^
-|  <nowiki>a1 </nowiki>  |  <nowiki>a </nowiki>  |
-|  <nowiki>a2 </nowiki>  |  <nowiki>ă </nowiki>  |
-|  <nowiki>a3 </nowiki>  |  <nowiki>ə̆ </nowiki>  |
-|  <nowiki>ai </nowiki>  |  <nowiki>ai </nowiki>  |
-|  <nowiki>ao </nowiki>  |  <nowiki>aʊ </nowiki>  |
-|  <nowiki>au </nowiki>  |  <nowiki>ăʊ </nowiki>  |
-|  <nowiki>au3 </nowiki>  |  <nowiki>ə̆ʊ </nowiki>  |
-|  <nowiki>ay </nowiki>  |  <nowiki>ăi </nowiki>  |
-|  <nowiki>ay3 </nowiki>  |  <nowiki>ə̆i </nowiki>  |
-|  <nowiki>e1 </nowiki>  |  <nowiki>ɛ </nowiki>  |
-|  <nowiki>e2 </nowiki>  |  <nowiki>e </nowiki>  |
-|  <nowiki>eo </nowiki>  |  <nowiki>ɛʊ </nowiki>  |
-|  <nowiki>eu </nowiki>  |  <nowiki>eʊ </nowiki>  |
-|  <nowiki>i </nowiki>  |  <nowiki>i </nowiki>  |
-|  <nowiki>ie2 </nowiki>  |  <nowiki>iə̆ </nowiki>  |
-|  <nowiki>ieu </nowiki>  |  <nowiki>iə̆ʊ </nowiki>  |
-|  <nowiki>iu </nowiki>  |  <nowiki>iʊ </nowiki>  |
-|  <nowiki>o1 </nowiki>  |  <nowiki>ɔ </nowiki>  |
-|  <nowiki>o2 </nowiki>  |  <nowiki>o </nowiki>  |
-|  <nowiki>o3 </nowiki>  |  <nowiki>ɤː </nowiki>  |
-|  <nowiki>oa </nowiki>  |  <nowiki>oa </nowiki>  |
-|  <nowiki>oe </nowiki>  |  <nowiki>ʊə </nowiki>  |
-|  <nowiki>oi </nowiki>  |  <nowiki>ɔi </nowiki>  |
-|  <nowiki>oi2 </nowiki>  |  <nowiki>oi </nowiki>  |
-|  <nowiki>oi3 </nowiki>  |  <nowiki>əi </nowiki>  |
-|  <nowiki>u1 </nowiki>  |  <nowiki>u </nowiki>  |
-|  <nowiki>u2 </nowiki>  |  <nowiki>ɨ </nowiki>  |
-|  <nowiki>ua </nowiki>  |  <nowiki>uə̆ </nowiki>  |
-|  <nowiki>ua2 </nowiki>  |  <nowiki>ɨə̆ </nowiki>  |
-|  <nowiki>ui </nowiki>  |  <nowiki>ui </nowiki>  |
-|  <nowiki>ui2 </nowiki>  |  <nowiki>ɨi </nowiki>  |
-|  <nowiki>uoi2 </nowiki>  |  <nowiki>uə̆i </nowiki>  |
-|  <nowiki>uoi3 </nowiki>  |  <nowiki>ɨə̆i </nowiki>  |
-|  <nowiki>uou </nowiki>  |  <nowiki>ɨə̆ʊ </nowiki>  |
-|  <nowiki>uu2 </nowiki>  |  <nowiki>ɨʊ </nowiki>  |
-|  <nowiki>uy </nowiki>  |  <nowiki>uːi </nowiki>  |
+|  <nowiki> a1 </nowiki>  |  <nowiki> a </nowiki>  |
+|  <nowiki> a2 </nowiki>  |  <nowiki> ă </nowiki>  |
+|  <nowiki> a3 </nowiki>  |  <nowiki> ə̆ </nowiki>  |
+|  <nowiki> ai </nowiki>  |  <nowiki> ai </nowiki>  |
+|  <nowiki> ao </nowiki>  |  <nowiki> aʊ </nowiki>  |
+|  <nowiki> au </nowiki>  |  <nowiki> ăʊ </nowiki>  |
+|  <nowiki> au3 </nowiki>  |  <nowiki> ə̆ʊ </nowiki>  |
+|  <nowiki> ay </nowiki>  |  <nowiki> ăi </nowiki>  |
+|  <nowiki> ay3 </nowiki>  |  <nowiki> ə̆i </nowiki>  |
+|  <nowiki> e1 </nowiki>  |  <nowiki> ɛ </nowiki>  |
+|  <nowiki> e2 </nowiki>  |  <nowiki> e </nowiki>  |
+|  <nowiki> eo </nowiki>  |  <nowiki> ɛʊ </nowiki>  |
+|  <nowiki> eu </nowiki>  |  <nowiki> eʊ </nowiki>  |
+|  <nowiki> i </nowiki>  |  <nowiki> i </nowiki>  |
+|  <nowiki> ie2 </nowiki>  |  <nowiki> iə̆ </nowiki>  |
+|  <nowiki> ieu </nowiki>  |  <nowiki> iə̆ʊ </nowiki>  |
+|  <nowiki> iu </nowiki>  |  <nowiki> iʊ </nowiki>  |
+|  <nowiki> o1 </nowiki>  |  <nowiki> ɔ </nowiki>  |
+|  <nowiki> o2 </nowiki>  |  <nowiki> o </nowiki>  |
+|  <nowiki> o3 </nowiki>  |  <nowiki> ɤː </nowiki>  |
+|  <nowiki> oa </nowiki>  |  <nowiki> oa </nowiki>  |
+|  <nowiki> oe </nowiki>  |  <nowiki> ʊə </nowiki>  |
+|  <nowiki> oi </nowiki>  |  <nowiki> ɔi </nowiki>  |
+|  <nowiki> oi2 </nowiki>  |  <nowiki> oi </nowiki>  |
+|  <nowiki> oi3 </nowiki>  |  <nowiki> əi </nowiki>  |
+|  <nowiki> u1 </nowiki>  |  <nowiki> u </nowiki>  |
+|  <nowiki> u2 </nowiki>  |  <nowiki> ɨ </nowiki>  |
+|  <nowiki> ua </nowiki>  |  <nowiki> uə̆ </nowiki>  |
+|  <nowiki> ua2 </nowiki>  |  <nowiki> ɨə̆ </nowiki>  |
+|  <nowiki> ui </nowiki>  |  <nowiki> ui </nowiki>  |
+|  <nowiki> ui2 </nowiki>  |  <nowiki> ɨi </nowiki>  |
+|  <nowiki> uoi2 </nowiki>  |  <nowiki> uə̆i </nowiki>  |
+|  <nowiki> uoi3 </nowiki>  |  <nowiki> ɨə̆i </nowiki>  |
+|  <nowiki> uou </nowiki>  |  <nowiki> ɨə̆ʊ </nowiki>  |
+|  <nowiki> uu2 </nowiki>  |  <nowiki> ɨʊ </nowiki>  |
+|  <nowiki> uy </nowiki>  |  <nowiki> uːi </nowiki>  |
 
 ^  __//tones//__  ^^
 ^GlobalPhone Vietnamese^IPA^
-|  <nowiki>1 </nowiki>  |  <nowiki>˧ </nowiki>  |
-|  <nowiki>2 </nowiki>  |  <nowiki>˨˩ </nowiki>  |
-|  <nowiki>3 </nowiki>  |  <nowiki>˧˥ </nowiki>  |
-|  <nowiki>4 </nowiki>  |  <nowiki>˧˩˧ </nowiki>  |
-|  <nowiki>5 </nowiki>  |  <nowiki>˧̰˥̰ </nowiki>  |
-|  <nowiki>6 </nowiki>  |  <nowiki>˨̰˩̰ʔ </nowiki>  |
+|  <nowiki> 1 </nowiki>  |  <nowiki> ˧ </nowiki>  |
+|  <nowiki> 2 </nowiki>  |  <nowiki> ˨˩ </nowiki>  |
+|  <nowiki> 3 </nowiki>  |  <nowiki> ˧˥ </nowiki>  |
+|  <nowiki> 4 </nowiki>  |  <nowiki> ˧˩˧ </nowiki>  |
+|  <nowiki> 5 </nowiki>  |  <nowiki> ˧̰˥̰ </nowiki>  |
+|  <nowiki> 6 </nowiki>  |  <nowiki> ˨̰˩̰ʔ </nowiki>  |
 

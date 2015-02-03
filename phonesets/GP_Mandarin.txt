@@ -1,12 +1,8 @@
 consonants
 b p c tsʰ ch tʂʰ d t f f g k h x j tɕ k kʰ l l m m n n ng ŋ p pʰ q tɕʰ r ɻ s s sh ʂ t tʰ x ɕ z ts zh tʂ
-5 tones vowels
-a ä e ə i i ii ɨ o ɤ u u v y ai aɪ ao ɑʊ ei eɪ ia iä ie iɛ io iʊ iu iu ou oʊ ua uä ue uə uo uɔ iao iɑʊ uai uaɪ uei ueɪ
-4 tones vowels
-va yɛ ve yœ iou ioʊ
 silences
-+QK # +hGH # sil #
+SPN # +hGH #
+vowels
+a ä e ə i i ii ɨ o ɤ u u v y ai aɪ ao ɑʊ ei eɪ ia iä ie iɛ io iʊ iu iu ou oʊ ua uä ue uə uo uɔ iao iɑʊ uai uaɪ uei ueɪ va yɛ ve yœ iou ioʊ
 tones
 1 ˥ 2 ˧˥ 3 ˨˩˦ 4 ˥˩ 5 ˧
-optional silence
-sil #
