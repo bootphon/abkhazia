@@ -177,6 +177,15 @@ raw_dict_path = "/Users/thomas/Documents/PhD/Recherche/Code/BuckeyeChallenge/GLO
 # path to a directory where the processed corpora is to be stored
 processed_path = "/Users/thomas/Documents/PhD/Recherche/databases/abkhazia/corpora"
 
+# folder set up
+for lang in languages:
+	log_dir = os.path.join(processed_path), 'GP_{0}/logs'.format(lang))
+	if not(os.isdir(log_dir):
+		os.mkdir(log_dir)
+	data_dir = os.path.join(processed_path, 'GP{0}/data'.format(lang))
+	if not(os.isdir(data_dir)):
+		os.mkdir(data_dir)
+
 # log files config
 loggers = {}
 for lang in languages:
@@ -188,6 +197,7 @@ for lang in languages:
 	log_handler.setFormatter(formatter)
 	log_handler.setLevel(logging.DEBUG)
 	loggers[lang].addHandler(log_handler)
+
 
 
 ##########################
