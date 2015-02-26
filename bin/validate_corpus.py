@@ -74,6 +74,7 @@ def validate(corpus_path):
 	"""
 	checking utterance list
 	"""
+	# start by calling a shared function for loading text from the abkhazia i/o module?
 	with codecs.open(os.path.join(data_dir, "text"), mode='r', encoding="UTF-8"):
 		
 	# unique utterance-ids
