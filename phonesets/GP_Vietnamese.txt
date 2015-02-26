@@ -1,6 +1,0 @@
-consonants
-b ɓ ch tɕ d1 ɟ d2 ɗ g ɣ h h j j k k kh x l l m m n n ng ŋ p p ph f r ʐ s ʂ t t th tʰ tr ʈ x s v v
-vowels
-a2 ă a1 a a3 ə̆ e1 ɛ e2 e i i o1 ɔ o2 o o3 ɤː u1 u u2 ɨ ai ai ao aʊ au ăʊ au3 ə̆ʊ ay ăi ay3 ə̆i eo ɛʊ eu eʊ ie2 iə̆ iu iʊ oa oa oe ʊə oi ɔi oi2 oi oi3 əi ua uə̆ ua2 ɨə̆ ui ui ui2 ɨi uu2 ɨʊ uy uːi ieu iə̆ʊ uoi2 uə̆i uoi3 ɨə̆i uou ɨə̆ʊ
-tones
-1 ˧ 2 ˨˩ 3 ˧˥ 4 ˧˩˧ 5 ˧̰˥̰ 6 ˨̰˩̰ʔ

@@ -1,9 +1,0 @@
-SIL
-bcl
-dcl
-epi
-gcl
-h#
-kcl
-pcl
-tcl
