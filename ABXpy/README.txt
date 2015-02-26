@@ -1,0 +1,1 @@
+This is where the results from ABX data analyses will go, you don't need to put anything in this folder yourself.
