@@ -5,11 +5,20 @@ Created on Wed Feb 25 22:33:43 2015
 @author: Thomas Schatz
 """
 
-import tempfile
-import codecs
-import os
-import re
-import logging
+"""
+Unresolved issues: 
+	clipping problems in certain wavefiles
+	starting from speaker 200 till last speaker 208 (supplementary speaker for phone variety?),
+		many double spacings... also same speakers have '_' linking some words for some reason... 
+		seem to not have been prepared like the rest of the transcriptions...
+		-> the '_' indicates compounds that actually are not really words but are useful for ASR.
+			These compounds are in the dictionary, however they are not in the transcription for the main set
+			of speakers... Could try to parse the transcription with the dictionary, but there might be some
+			ambiguities. The best would be to have the original from the authors 
+			-> get it
+			-> for now, we just get rid of both the dictionary entries and the transcription '_'?
+	resulting dictionary is considerably smaller than that from Mandarin for some reason.
+"""
 
 # in the Vietnamese dictionary alternative pronunciations are supplied 
 # for certain words, but they are not explicitly used in the text
@@ -30,6 +39,13 @@ import logging
 # here we make the assumption that the first pronunciation (without the (2) suffix)
 # is the more likely
 # we could check this assumption by comparing WERs with first or second variant or both
+
+import tempfile
+import codecs
+import os
+import re
+import logging
+
 
 logger = logging.getLogger('Vietnamese')
 
@@ -68,3 +84,13 @@ def correct_dictionary(dictionary_file):
 			out.write(line)
 	logger.info("Dictionary corrected")
 	return filename
+	
+
+def correct(raw_transcript_folder, raw_dictionary_file):
+	new_dictionary = correct_dictionary(raw_dictionary_file)
+	#FIXME generate correct transcripts
+	new_transcript_folder = raw_transcript_folder
+	return new_transcript_folder, new_dictionary
+
+
+	

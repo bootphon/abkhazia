@@ -102,7 +102,7 @@ for s, ipa in vowels:
 	for s_t, ipa_t in l_tones:
 		assert not(s+s_t in phones)
 		phones[s+s_t] = ipa+ipa_t
-	variants.append([ipa+ipa_t for _, ipa_t in l_tones])
+	variants.append([s+s_t for s_t, _ in l_tones])
 
 
 #TODO articulatory features, closest UPSID match and stats

@@ -115,7 +115,7 @@ for s, ipa in vowels:
 	for s_t, ipa_t in tones:
 		assert not(s+s_t in phones)
 		phones[s+s_t] = ipa+ipa_t
-	variants.append([ipa+ipa_t for _, ipa_t in tones])
+	variants.append([s+s_t for s_t, _ in tones])
 
 
 #TODO: check which vowels are observed with which tones?
