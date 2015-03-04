@@ -188,6 +188,7 @@ def extract_dictionary(dictionary_file, output_file, words_to_drop=None):
 		# parse word
 		word = strip_accolades(word)
 		assert not u"{" in word
+		assert not u"}" in word
 		# parse phonetic transcription
 		t = u" ".join(transcript)
 		t = strip_accolades(t)
@@ -205,6 +206,7 @@ def extract_dictionary(dictionary_file, output_file, words_to_drop=None):
 				p = phone
 				assert p != u"WB", t
 			assert not(u"{" in p), t
+			assert not(u"}" in p), t
 			if p != u"WB":
 				transcript.append(p)
 		transcript = u" ".join(transcript)
@@ -269,6 +271,8 @@ try:
 	##########################
 	## I. Speech recordings ##
 	##########################
+	# this step can take quite some time (many files to convert from spn to wav)
+	# but could easily be parallelized
 
 	for lang in languages:
 		loggers[lang].info("Copying wav files")
@@ -282,7 +286,7 @@ try:
 		extract_wav(i, o, exclude)
 		loggers[lang].info("Wav files copied")
 
-	
+
 	############################
 	## II. List of utterances ##
 	############################

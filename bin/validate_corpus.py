@@ -85,6 +85,8 @@ def read_text(filename):
 		assert(len(l) >= 2), "'utt2spk' should contain only lines with two or more columns"
 		utt_ids.append(l[0])
 		utt_words.append(l[1:])
+		if u"" in l[1:]:
+			print line
 	return utt_ids, utt_words
 
 
@@ -143,8 +145,12 @@ def get_duplicates(l):
 	counts = collections.Counter(l)
 	duplicates = [e for e in counts if counts[e] > 1]
 	return duplicates
-		
 
+	
+def strcounts2unicode(strcounts):
+	return u", ".join([u"'" + s + u"': " + unicode(c) for s, c in strcounts])
+		
+		
 def validate(corpus_path, verbose=False):
 
 	"""
@@ -543,20 +549,24 @@ def validate(corpus_path, verbose=False):
 				)
 		# Should we log a warning for all words containing silence phones?
 		# unused words
-		dict_words = set(dict_words)
+		dict_words_set = set(dict_words)
 		used_words = [word for words in utt_words for word in words]
 		used_word_types = set(used_words)
 		used_word_counts = collections.Counter(used_words)
-		used_dict_words = set.intersection(dict_words, used_word_types)
-		log.warning(u"{0} dictionary words used out of {1}".format(len(used_dict_words), len(dict_words)))
+		used_dict_words = set.intersection(dict_words_set, used_word_types)
+		log.warning(u"{0} dictionary words used out of {1}".format(len(used_dict_words), len(dict_words_set)))
 		# oov words
-		oov_word_types = set.difference(used_word_types, dict_words)
+		oov_word_types = set.difference(used_word_types, dict_words_set)
 		oov_word_counts = collections.Counter({oov : used_word_counts[oov] for oov in oov_word_types})
 		nb_oov_tokens = sum(oov_word_counts.values())
 		nb_oov_types = len(oov_word_types)
-		log.warning(u"{0} oov word occurences in transcriptions".format(nb_oov_tokens))
-		log.warning(u"{0} oov word types in transcriptions".format(nb_oov_types))
-		log.debug(u"List of oov word types with occurences counts: {0}".format(oov_word_counts))
+		log.warning(u"{0} OOV word types in transcriptions out of {1} types in total".format(nb_oov_types, len(used_word_types)))				
+		log.warning(u"{0} OOV word tokens in transcriptions out of {1} tokens in total".format(nb_oov_tokens, len(used_words)))
+		log.debug(
+			(
+			u"List of OOV word types with occurences counts: {0}"
+			).format(strcounts2unicode(oov_word_counts.most_common()))
+		)
 		# raise alarm if the proportion of oov words is too large
 		# either in terms of types or tokens
 		oov_proportion_types = nb_oov_types/float(len(used_word_types))
@@ -566,7 +576,61 @@ def validate(corpus_path, verbose=False):
 		if oov_proportion_types > 0.1:
 			log.info(u"More than 10 percent of word types used are Out-Of-Vocabulary items!")
 		if oov_proportion_tokens > 0.1:
-			log.info(u"More than 10 percent of word tokens used are Out-Of-Vocabulary items!")
+			log.info(u"More than 10 percent of word tokens used are Out-Of-Vocabulary items!")		
+		# homophones (issue warnings only)
+		str_transcripts = [u" ".join(phone_trans) for phone_trans in transcriptions]
+		counts = collections.Counter(str_transcripts)
+		duplicate_transcripts = collections.Counter({trans: counts[trans] for trans in counts if counts[trans] > 1})
+		if duplicate_transcripts:
+			log.info("There are homophones in the pronunciation dictionary")
+			log.warning(
+				(
+				u"There are {0} phone sequences that correspond to several words "
+				u"in the pronunciation dictionary"
+				).format(len(duplicate_transcripts))
+			)
+			log.warning(
+				(
+				u"There are {0} word types with homophones "
+				u"in the pronunciation dictionary"
+				).format(sum(duplicate_transcripts.values()))
+			)
+			s = strcounts2unicode(duplicate_transcripts.most_common())
+			log.warning(
+				(
+				u"List of homophonic phone sequences in 'lexicon.txt' "
+				u"with number of corresponding word types: {0}"
+				).format(s)
+			)
+			# get word types:
+			#	- found in transcriptions
+			#	- with at least one homophonic word type also found in transcriptions
+			homophonic_sequences = duplicate_transcripts.keys()
+			homophony_groups = {}
+			for homo_transcript in homophonic_sequences:
+				homo_group = [word for word, transcript in zip(dict_words, str_transcripts) \
+							if transcript == homo_transcript and word in used_word_types]
+				if len(homo_group) > 1:
+					homophony_groups[homo_transcript] = homo_group
+			nb_homo_types = sum([len(homo_group) for homo_group in homophony_groups.values()])
+			log.warning(
+				(
+				u"{0} word types found in transcriptions with "
+				u"at least one homophone also found in transcriptions "
+				u"out of {1} word types in total"
+				).format(nb_homo_types, len(used_word_types))
+			)
+			nb_homo_tokens = sum([sum([used_word_counts[word] for word in homo_group]) for homo_group in homophony_groups.values()])
+			log.warning((u"{0} corresponding word tokens out of {1} total").format(nb_homo_tokens, len(used_words)))
+			l = [", ".join([word + u": " + unicode(used_word_counts[word]) for word in group]) for group in homophony_groups.values()]
+			s = "\n".join(l)
+			log.warning(
+				(
+				u"List of groups of homophonic word types "
+				u"(including only types actually found in transcriptions) "
+				u"with number of occurences of each member of each group:\n{0}"
+				).format(s)
+			)
 		# ooi phones
 		used_phones = [phone for trans_phones in transcriptions for phone in trans_phones]
 		ooi_phones = [phone for phone in set(used_phones) if not(phone in inventory)]
