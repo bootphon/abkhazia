@@ -5,6 +5,10 @@ Created on Wed Feb  4 00:17:47 2015
 @author: Thomas Schatz
 """
 
+"""
+Which vowels are observed with which tones?
+-> the only unobserved combinations are: uou_5 and eu_1
+"""
 
 # Main source:
 #	GP documentation
@@ -77,6 +81,7 @@ consonants = [
 	('m', u'm'),
 	('n', u'n'),
 	('ng', u'ŋ'),
+	('nh', u'ɲ'),
 	('p', u'p'),
 	('ph', u'f'),
 	('r', u'ʐ'),
@@ -115,10 +120,7 @@ for s, ipa in vowels:
 	for s_t, ipa_t in tones:
 		assert not(s+s_t in phones)
 		phones[s+s_t] = ipa+ipa_t
-	variants.append([ipa+ipa_t for _, ipa_t in tones])
-
-
-#TODO: check which vowels are observed with which tones?
+	variants.append([s+s_t for s_t, _ in tones])
 
 #TODO articulatory features, closest UPSID match and stats
 
