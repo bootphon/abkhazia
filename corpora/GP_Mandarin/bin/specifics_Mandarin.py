@@ -68,6 +68,12 @@ Created on Wed Feb 25 22:33:43 2015
 			u'tong3yi1zhan4xian4ta1': 1} 
 				not the same problem (see above) but in the same sentence as another OOV
 		)
+	
+	Homophones:
+		All homophones seem similar to the following pair: xin1i2/xin1yi2
+		Not a lot of them in the dictionary and none actually occuring in the text
+		so we just ignore them for now
+		(see data_validation.py log for a detailed account)
 		
 	TODO:
 		Detect potential defective transcripts:
