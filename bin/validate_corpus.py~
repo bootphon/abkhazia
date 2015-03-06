@@ -602,7 +602,6 @@ def validate(corpus_path, verbose=False):
 				u"with number of corresponding word types: {0}"
 				).format(s)
 			)
-			"""
 			# get word types:
 			#	- found in transcriptions
 			#	- with at least one homophonic word type also found in transcriptions
@@ -632,7 +631,6 @@ def validate(corpus_path, verbose=False):
 				u"with number of occurences of each member of each group:\n{0}"
 				).format(s)
 			)
-			"""
 		# ooi phones
 		used_phones = [phone for trans_phones in transcriptions for phone in trans_phones]
 		ooi_phones = [phone for phone in set(used_phones) if not(phone in inventory)]
