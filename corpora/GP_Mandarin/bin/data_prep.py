@@ -159,7 +159,7 @@ def export_phones(phones, output_folder, silences=None, variants=None):
 			for sil in silences:
 				out.write(sil + u"\n")
 	if not(variants is None):
-		output_file = os.path.join(output_folder, 'extra_questions.txt')
+		output_file = os.path.join(output_folder, 'variants.txt')
 		with codecs.open(output_file, mode='w', encoding='UTF-8') as out:
 			for l in variants:
 				out.write(u" ".join(l) + u"\n")
@@ -294,7 +294,7 @@ try:
 	for lang in languages:
 		loggers[lang].info("Generating utterances list")
 		wav_dir = os.path.join(processed_path, "GP_{0}/data/wavs".format(lang))
-		utt_file = os.path.join(processed_path, "GP_{0}/data/segments".format(lang))
+		utt_file = os.path.join(processed_path, "GP_{0}/data/segments.txt".format(lang))
 		utt_list(wav_dir, utt_file)
 		loggers[lang].info("Utterances list generated")
 	
@@ -307,7 +307,7 @@ try:
 	for lang in languages:
 		loggers[lang].info("Generating speakers list")
 		wav_dir = os.path.join(processed_path, "GP_{0}/data/wavs".format(lang))
-		spk_file = os.path.join(processed_path, "GP_{0}/data/utt2spk".format(lang))
+		spk_file = os.path.join(processed_path, "GP_{0}/data/utt2spk.txt".format(lang))
 		spk_list(wav_dir, spk_file)
 		loggers[lang].info("Speaker list generated")
 	
@@ -318,7 +318,7 @@ try:
 	
 	for lang in languages:
 		loggers[lang].info("Generating utterances transcriptions")
-		text_file = os.path.join(processed_path, "GP_{0}/data/text".format(lang))
+		text_file = os.path.join(processed_path, "GP_{0}/data/text.txt".format(lang))
 		extract_transcript(transcript_dir[lang], text_file)
 		loggers[lang].info("Utterances transcription generated")
 		
