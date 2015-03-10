@@ -19,6 +19,7 @@ import re
 import importlib
 import logging
 import shutil
+import argparse
 
 
 
@@ -28,29 +29,34 @@ import shutil
 #######################################################################################
 #######################################################################################
 """
-Modify only this part to adapt the script to your setup (paths, language)
+Modify only this part to adapt the script to your setup (paths, languages)
+
+The parameters can also be specified directly through the the commandline
 
 For a new language xxx, you will need to write your own 
-'specifics_xxx.py' and 'phoneset_xxx.py' modules
+'specifics_xxx.py' and 'phoneset_xxx.py' modules and add the language
+to the 'supported_languages' list below
 """
+# list of supported languages with the name of the folder in the raw distribution 
+# containing the transcriptions to be used for each language
+supported_languages = {'Mandarin': 'rmn', 'Vietnamese': 'trl'}	
 
 # languages to be prepared
 languages = ['Mandarin', 'Vietnamese']
-# name of the folder in the raw distribution containing the transcriptions to be used
-transcript = {'Mandarin': 'rmn', 'Vietnamese': 'trl'}
 
 # path to a directory containing the raw ELRA distribution for the desired languages
-# it should contain folders named GlobalPhone-"name of language", for example
-# GlobalPhone-Mandarin or GlobalPhone-Vietnamese
+# it should contain folders named GlobalPhone-'name of language', for example:
+# GlobalPhone-Mandarin or GlobalPhone-Vietnamese		
 raw_path = "/Users/thomas/Documents/PhD/Recherche/Code/BuckeyeChallenge/GLOBALPHONE"
+
 # path to a directory containing the raw ELRA distribution for the phonetic dictionaries
 # for the desired languages
-# it should contain folders named GlobalPhoneDict-"name of language", for example
+# it should contain folders named GlobalPhoneDict-'name of language', for example
 # GlobalPhoneDict-Mandarin or GlobalPhoneDict-Vietnamese
 raw_dict_path = "/Users/thomas/Documents/PhD/Recherche/Code/BuckeyeChallenge/GLOBALPHONE"
+
 # path to a directory where the processed corpora is to be stored
 processed_path = "/Users/thomas/Documents/PhD/Recherche/other_gits/abkhazia/corpora"
-
 
 
 
@@ -225,135 +231,183 @@ def extract_dictionary(dictionary_file, output_file, words_to_drop=None):
 #######################################################################################
 #######################################################################################
 
+def data_prep(raw_path, raw_dict_path, processed_path, languages):
 
-# folder set up
-for lang in languages:
-	log_dir = os.path.join(processed_path, 'GP_{0}/logs'.format(lang))
-	if not(os.path.isdir(log_dir)):
-		os.mkdir(log_dir)
-	data_dir = os.path.join(processed_path, 'GP_{0}/data'.format(lang))
-	if not(os.path.isdir(data_dir)):
-		os.mkdir(data_dir)
-
-# log files config
-loggers = {}
-for lang in languages:
-	loggers[lang] = logging.getLogger(lang)
-	loggers[lang].setLevel(logging.DEBUG)
-	log_file = os.path.join(processed_path, "GP_{0}/logs/data_preparation.log".format(lang))
-	log_handler = logging.FileHandler(log_file, mode='w')
-	formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
-	log_handler.setFormatter(formatter)
-	log_handler.setLevel(logging.DEBUG)
-	loggers[lang].addHandler(log_handler)
-
-# doing language specifics correction to raw corpora
-specifics = {}
-raw_transcript_dir = {}
-raw_dictionary_file = {}
-transcript_dir = {}
-dictionary_file = {}
-temporary = {}
-for lang in languages:
-	raw_transcript_dir[lang] = os.path.join(raw_path, "GlobalPhone-{0}/{0}/{1}".format(lang, transcript[lang]))
-	raw_dictionary_file[lang] = os.path.join(raw_dict_path, "GlobalPhoneDict-{0}/{0}-GPDICT.txt".format(lang))
-	try:
-		specifics[lang] = importlib.import_module('specifics_{0}'.format(lang))
-		transcript_dir[lang], dictionary_file[lang] = specifics[lang].correct(raw_transcript_dir[lang], raw_dictionary_file[lang])
-		temporary[lang] = True
-	except ImportError:
-		loggers[lang].info("No specifics_{0} module found, raw corpus will be used as is")
-		transcript_dir[lang], dictionary_file[lang] = raw_transcript_dir[lang], raw_dictionary_file[lang]
-		temporary[lang] = False
-
-
-try:
-	##########################
-	## I. Speech recordings ##
-	##########################
-	# this step can take quite some time (many files to convert from spn to wav)
-	# but could easily be parallelized
-
+	# arguments checking
+	assert os.path.isdir(raw_path), "Raw corpus path is invalid"
+	assert os.path.isdir(raw_dict_path), "Raw dictionary path is invalid"
 	for lang in languages:
-		loggers[lang].info("Copying wav files")
-		i = os.path.join(raw_path, "GlobalPhone-{0}/{0}/adc".format(lang))
-		o = os.path.join(processed_path, "GP_{0}/data/wavs".format(lang))
-		# for some languages, there are corrupted wavefiles that we need to ignore
+		assert lang in supported_languages, "{0} is not currently supported".format(lang)
+
+	# folder set up
+	if not(os.path.isdir(processed_path)):
+		os.makedirs(processed_path)
+	for lang in languages:
+		log_dir = os.path.join(processed_path, 'GP_{0}/logs'.format(lang))
+		if not(os.path.isdir(log_dir)):
+			os.makedirs(log_dir)
+		data_dir = os.path.join(processed_path, 'GP_{0}/data'.format(lang))
+		if not(os.path.isdir(data_dir)):
+			os.makedirs(data_dir)
+
+	# log files config
+	loggers = {}
+	for lang in languages:
+		loggers[lang] = logging.getLogger(lang)
+		loggers[lang].setLevel(logging.DEBUG)
+		log_file = os.path.join(processed_path, "GP_{0}/logs/data_preparation.log".format(lang))
+		print("Log file for {0} in {1}".format(lang, log_file))
+		log_handler = logging.FileHandler(log_file, mode='w')
+		formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+		log_handler.setFormatter(formatter)
+		log_handler.setLevel(logging.DEBUG)
+		loggers[lang].addHandler(log_handler)
+
+	# doing language specifics correction to raw corpora
+	specifics = {}
+	raw_transcript_dir = {}
+	raw_dictionary_file = {}
+	transcript_dir = {}
+	dictionary_file = {}
+	temporary = {}
+	for lang in languages:
+		raw_transcript_dir[lang] = os.path.join(raw_path, "GlobalPhone-{0}/{0}/{1}".format(lang, supported_languages[lang]))
+		raw_dictionary_file[lang] = os.path.join(raw_dict_path, "GlobalPhoneDict-{0}/{0}-GPDICT.txt".format(lang))
 		try:
-			exclude = specifics[lang].exclude_wavs
-		except (KeyError, AttributeError):
-			exclude = []
-		extract_wav(i, o, exclude)
-		loggers[lang].info("Wav files copied")
+			specifics[lang] = importlib.import_module('specifics_{0}'.format(lang))
+			transcript_dir[lang], dictionary_file[lang] = specifics[lang].correct(raw_transcript_dir[lang], raw_dictionary_file[lang])
+			temporary[lang] = True
+		except ImportError:
+			loggers[lang].info("No specifics_{0} module found, raw corpus will be used as is")
+			transcript_dir[lang], dictionary_file[lang] = raw_transcript_dir[lang], raw_dictionary_file[lang]
+			temporary[lang] = False
 
 
-	############################
-	## II. List of utterances ##
-	############################
-	
-	for lang in languages:
-		loggers[lang].info("Generating utterances list")
-		wav_dir = os.path.join(processed_path, "GP_{0}/data/wavs".format(lang))
-		utt_file = os.path.join(processed_path, "GP_{0}/data/segments.txt".format(lang))
-		utt_list(wav_dir, utt_file)
-		loggers[lang].info("Utterances list generated")
-	
-	
-	###########################
-	## III. List of speakers ##
-	###########################
-	# Note: more info on speakers is available in spk folders of the raw distributions
-	
-	for lang in languages:
-		loggers[lang].info("Generating speakers list")
-		wav_dir = os.path.join(processed_path, "GP_{0}/data/wavs".format(lang))
-		spk_file = os.path.join(processed_path, "GP_{0}/data/utt2spk.txt".format(lang))
-		spk_list(wav_dir, spk_file)
-		loggers[lang].info("Speaker list generated")
-	
-	
-	#######################
-	## IV. Transcription ##
-	#######################	
-	
-	for lang in languages:
-		loggers[lang].info("Generating utterances transcriptions")
-		text_file = os.path.join(processed_path, "GP_{0}/data/text.txt".format(lang))
-		extract_transcript(transcript_dir[lang], text_file)
-		loggers[lang].info("Utterances transcription generated")
-		
-	
-	########################
-	## V. Phone inventory ##
-	########################
-	
-	for lang in languages:
-		loggers[lang].info("Creating phone inventory")
-		phoneset = importlib.import_module('phoneset_{0}'.format(lang))
-		output_folder = os.path.join(processed_path, "GP_{0}/data".format(lang))
-		export_phones(phoneset.phones, output_folder, phoneset.silences, phoneset.variants)
-		loggers[lang].info("Phone inventory created")
-	
-	#############################
-	## VI. Phonetic dictionary ##
-	#############################
-	
-	for lang in languages:
-		loggers[lang].info("Generating phonetic dictionary")
-		output_file = os.path.join(processed_path, "GP_{0}/data/lexicon.txt".format(lang))
-		extract_dictionary(dictionary_file[lang], output_file)
-		loggers[lang].info("Phonetic dictionary generated")
-	# Note: evaluate potential benefits of using the ignored secondary pronunciation in Vietnamese?
-
-
-finally:
-	# clean temporary files
-	for lang in languages:
-		if temporary[lang]:
+	try:
+		##########################
+		## I. Speech recordings ##
+		##########################
+		# this step can take quite some time (many files to convert from spn to wav)
+		# but could easily be parallelized
+		"""
+		for lang in languages:
+			loggers[lang].info("Copying wav files")
+			i = os.path.join(raw_path, "GlobalPhone-{0}/{0}/adc".format(lang))
+			o = os.path.join(processed_path, "GP_{0}/data/wavs".format(lang))
+			# for some languages, there are corrupted wavefiles that we need to ignore
 			try:
-				if os.path.realpath(transcript_dir[lang]) != os.path.realpath(raw_transcript_dir[lang]):
-					shutil.rmtree(transcript_dir[lang])
-				if os.path.realpath(dictionary_file[lang]) != os.path.realpath(raw_dictionary_file[lang]):
-					os.remove(dictionary_file[lang])
-			except Exception as e:
-				loggers[lang].info("Exception when removing temporary files: {0}".format(e))
+				exclude = specifics[lang].exclude_wavs
+			except (KeyError, AttributeError):
+				exclude = []
+			extract_wav(i, o, exclude)
+			loggers[lang].info("Wav files copied")
+		"""
+
+		############################
+		## II. List of utterances ##
+		############################
+		
+		for lang in languages:
+			loggers[lang].info("Generating utterances list")
+			wav_dir = os.path.join(processed_path, "GP_{0}/data/wavs".format(lang))
+			utt_file = os.path.join(processed_path, "GP_{0}/data/segments.txt".format(lang))
+			utt_list(wav_dir, utt_file)
+			loggers[lang].info("Utterances list generated")
+		
+		
+		###########################
+		## III. List of speakers ##
+		###########################
+		# Note: more info on speakers is available in spk folders of the raw distributions
+		
+		for lang in languages:
+			loggers[lang].info("Generating speakers list")
+			wav_dir = os.path.join(processed_path, "GP_{0}/data/wavs".format(lang))
+			spk_file = os.path.join(processed_path, "GP_{0}/data/utt2spk.txt".format(lang))
+			spk_list(wav_dir, spk_file)
+			loggers[lang].info("Speaker list generated")
+		
+		
+		#######################
+		## IV. Transcription ##
+		#######################	
+		
+		for lang in languages:
+			loggers[lang].info("Generating utterances transcriptions")
+			text_file = os.path.join(processed_path, "GP_{0}/data/text.txt".format(lang))
+			extract_transcript(transcript_dir[lang], text_file)
+			loggers[lang].info("Utterances transcription generated")
+			
+		
+		########################
+		## V. Phone inventory ##
+		########################
+		
+		for lang in languages:
+			loggers[lang].info("Creating phone inventory")
+			phoneset = importlib.import_module('phoneset_{0}'.format(lang))
+			output_folder = os.path.join(processed_path, "GP_{0}/data".format(lang))
+			export_phones(phoneset.phones, output_folder, phoneset.silences, phoneset.variants)
+			loggers[lang].info("Phone inventory created")
+		
+		#############################
+		## VI. Phonetic dictionary ##
+		#############################
+		
+		for lang in languages:
+			loggers[lang].info("Generating phonetic dictionary")
+			output_file = os.path.join(processed_path, "GP_{0}/data/lexicon.txt".format(lang))
+			extract_dictionary(dictionary_file[lang], output_file)
+			loggers[lang].info("Phonetic dictionary generated")
+			loggers[lang].info("Corpus successfully standardized!")
+
+
+	finally:
+		# clean temporary files
+		for lang in languages:
+			if temporary[lang]:
+				try:
+					if os.path.realpath(transcript_dir[lang]) != os.path.realpath(raw_transcript_dir[lang]):
+						shutil.rmtree(transcript_dir[lang])
+					if os.path.realpath(dictionary_file[lang]) != os.path.realpath(raw_dictionary_file[lang]):
+						os.remove(dictionary_file[lang])
+				except Exception as e:
+					loggers[lang].info("Exception when removing temporary files: {0}".format(e))
+
+
+
+#######################################################################################
+#######################################################################################
+############################    Command-line interface    #############################
+#######################################################################################
+#######################################################################################
+
+if __name__ == '__main__':
+	parser = argparse.ArgumentParser(description=\
+		(
+		"Put GlobalPhone corpora into "
+		"standard abkhazia format"
+		)
+	)
+	parser.add_argument('--raw_corpus', nargs='?', default=raw_path, help=\
+		(
+		"Path to a directory containing the raw ELRA distribution for the desired languages "
+		"it should contain folders named GlobalPhone-'name of language', for example: "
+		"GlobalPhone-Mandarin or GlobalPhone-Vietnamese"
+		)
+	)
+	parser.add_argument('--raw_dict', nargs='?', default=raw_dict_path, help=\
+		(
+		"Path to a directory containing the raw ELRA distribution for the phonetic dictionaries "
+		"for the desired languages "
+		"it should contain folders named GlobalPhoneDict-'name of language', for example: "
+		"GlobalPhoneDict-Mandarin or GlobalPhoneDict-Vietnamese"
+		)
+	)
+	parser.add_argument('--output_dir', nargs='?', default=processed_path, help=\
+		"Path to a directory where the processed corpora is to be stored")
+	parser.add_argument('-l', nargs="+", default=languages, help=\
+		"List of desired languages")
+	args = parser.parse_args()
+	data_prep(args.raw_corpus, args.raw_dict,
+		args.output_dir, args.l)

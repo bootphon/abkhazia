@@ -13,6 +13,7 @@ Beware that it automatically corrects some basics problems and thus it can
 modify the original files. For example it sorts the lines of some text files 
 and add default values to phone inventories when they are missing.
 """
+#TODO: optimize homophone processing for large dictionaries
 
 import contextlib
 import utilities.log2file
@@ -56,8 +57,8 @@ def read_segments(filename):
 		utt_ids.append(l[0])
 		wavs.append(l[1])
 		if len(l) == 4:
-			starts.append(float(l[3]))
-			stops.append(float(l[4]))
+			starts.append(float(l[2]))
+			stops.append(float(l[3]))
 		else:
 			starts.append(None)
 			stops.append(None)
