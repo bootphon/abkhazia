@@ -62,7 +62,7 @@ def convert(corpus_path, output_path, kaldi_root):
 	with codecs.open(p.join(out_main, 'segments'), mode='w', encoding='UTF-8') as out_s:
 		wavs = set()
 		for line in lines:
-			utt_id, wav_id, start, stop = line.split(u' ')
+			utt_id, wav_id, start, stop = line.strip().split(u' ')
 			record_id = p.splitext(wav_id)[0]
 			out_s.write(u"{0} {1} {2} {3}\n".format(utt_id, record_id, start, stop))
 			wavs.add(wav_id)
