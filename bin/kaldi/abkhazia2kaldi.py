@@ -137,6 +137,6 @@ def convert(corpus_path, output_path, kaldi_root):
 	shutil.copy(score_file, p.join(local_dir, 'score.sh'))
 
 
-root = '/Users/thomas/Documents/PhD/Recherche/other_gits/abkhazia'
-kaldi_root = '/Users/thomas/Documents/PhD/Recherche/kaldi/kaldi-trunk'
+root = '/fhgfs/bootphon/scratch/thomas/abkhazia'
+kaldi_root = '/fhgfs/bootphon/scratch/thomas/kaldi'
 convert(p.join(root, 'corpora', 'Buckeye'), p.join(root, 'kaldi', 'Buckeye'), kaldi_root)
