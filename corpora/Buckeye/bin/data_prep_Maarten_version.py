@@ -575,7 +575,6 @@ Many issues with raw files format, and many of them also with modified
 Also wavefile s1901b seem to have been cut short
 all utterances from Maarten for this file starting from 252 have to be thrown out
 
-
 Allophonic phones
 	Possible mapping:
 		el -> l
@@ -583,37 +582,6 @@ Allophonic phones
 		en -> n
 		eng -> ng
 		tq, dx, nx -> sil/pau or keep dx, nx as a flap? or nx->n?
-
-TONIGHT
-1 - Maarten + lexical -> abkhazia 
-2 - abkhazia -> kaldi
---- from here keep small dev set on mac and move to oberon
-3 - select kaldi parameters (LM (n in n-grams) + SI and SA * 2)
-using whole corpus excepted a small validation set
-4 - retrain on whole with those params
-5 - get forced alignment of Maarten's subset from this model
-6 - use this to recompile a different task file for the challenge and get MFCC
-baseline on it and compare with previous analyses to see if better stability
-with new alignments
-_____________________________
-TOMORROW
-7 - redo training and param selection on whole-(challenges sets) with a validation
-set for the params also outside challenge sets
-8 - use obtained model to get gaussian posteriors, weird posteriors
-and best translation for the challenge sets
-9 - get ABX scores on these various representations using various metrics
-on the original challenge, check stability etc. and this should give the final
-baselines for the Buckeye part of the challenge
-
-10 - Same thing on Xitsonga...
-
-
-get standard transcription from raw corpus, check for homophones and multiple different
-transcriptions
-
-compare with CMU? (maybe not if standard phoneset matches CMU?)
-
-Generate kaldi files based on Maarten
 """
 
 
