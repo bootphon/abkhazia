@@ -23,7 +23,8 @@ def cpp_sort(filename):
 	subprocess.call("export LC_ALL=C; sort {0} -o {1}".format(filename, filename), shell=True, env=os.environ)
 
 
-def convert(corpus_path, output_path):
+def convert(corpus_path, output_path, kaldi_root):
+	output_path = p.join(output_path, 's5')
 	corpus_path = p.join(corpus_path, 'data')
 	out_main = p.join(output_path, 'data', 'main')
 	out_dict = p.join(output_path, 'data', 'local', 'dict')
@@ -71,13 +72,71 @@ def convert(corpus_path, output_path):
 		for wav_id in wavs:
 			wav_full_path = p.join(p.abspath(output_path), 'wavs', wav_id)
 			out_w.write(u"{0} {1}\n".format(record_id, wav_full_path))
-	cpp_sort(p.join(output_path, 'wav.scp'))
+	cpp_sort(p.join(out_main, 'wav.scp'))
 	# wav folder
 	link_name =  p.join(output_path, 'wavs')
 	target = p.join(corpus_path, 'wavs')
 	if p.exists(link_name):
 		os.remove(link_name)
 	os.symlink(target, link_name)
+	# kaldi symlinks, directories and files
+	steps_dir = p.abspath(p.join(kaldi_root, 'egs', 'wsj', 's5', 'steps'))
+	steps_link = p.abspath(p.join(output_path, 'steps'))
+	if p.exists(steps_link):
+		os.remove(steps_link)
+	utils_dir = p.abspath(p.join(kaldi_root, 'egs', 'wsj', 's5', 'utils'))
+	utils_link = p.abspath(p.join(output_path, 'utils'))
+	if p.exists(utils_link):
+		os.remove(utils_link)
+	subprocess.call("ln -s {0} {1}".format(steps_dir, steps_link), shell=True)
+	subprocess.call("ln -s {0} {1}".format(utils_dir, utils_link), shell=True)
+	conf_dir = p.join(output_path, 'conf')	
+	if p.exists(conf_dir):
+		shutil.rmtree(conf_dir)
+	os.mkdir(conf_dir)
+	with open(p.join(conf_dir, 'mfcc.conf'), mode='w') as out:
+		pass
+	# cmd, path, score
+	kaldi_bin_dir = p.dirname(p.realpath(__file__))
+	kaldi_dir = p.join(kaldi_bin_dir, '..', '..', 'kaldi')
+	cmd_file = p.join(kaldi_dir, 'cmd.sh')
+	if not(p.exists(cmd_file)):
+		raise IOError(
+			(
+			"No cmd.sh in {0} "
+			"You need to create one adapted to "
+			"your machine. You can get inspiration "
+			"from {1}"
+			).format(kaldi_dir, p.join(kaldi_bin_dir, 'cmd_template.sh'))
+		)
+	shutil.copy(cmd_file, p.join(output_path, 'cmd.sh'))
+	path_file = p.join(kaldi_dir, 'path.sh')
+	if not(p.exists(path_file)):
+		raise IOError(
+			(
+			"No path.sh in {0} "
+			"You need to create one adapted to "
+			"your machine. You can get inspiration "
+			"from {1}"
+			).format(kaldi_dir, p.join(kaldi_bin_dir, 'path_template.sh'))
+		)
+	shutil.copy(path_file, p.join(output_path, 'path.sh'))
+	score_file = p.join(kaldi_dir, 'score.sh')
+	if not(p.exists(score_file)):
+		raise IOError(
+			(
+			"No score.sh in {0} "
+			"You need to create one adapted to "
+			"your machine. You can get inspiration "
+			"from {1}"
+			).format(kaldi_dir, p.join(kaldi_bin_dir, 'score_template.sh'))
+		)
+	local_dir = p.join(output_path, 'local')
+	if not(p.isdir(local_dir)):
+		os.mkdir(local_dir)
+	shutil.copy(score_file, p.join(local_dir, 'score.sh'))
+
 
 root = '/Users/thomas/Documents/PhD/Recherche/other_gits/abkhazia'
-convert(p.join(root, 'corpora', 'Buckeye'), p.join(root, 'kaldi', 'Buckeye'))
+kaldi_root = '/Users/thomas/Documents/PhD/Recherche/kaldi/kaldi-trunk'
+convert(p.join(root, 'corpora', 'Buckeye'), p.join(root, 'kaldi', 'Buckeye'), kaldi_root)
