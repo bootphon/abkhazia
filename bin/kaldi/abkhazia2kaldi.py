@@ -70,6 +70,7 @@ def convert(corpus_path, output_path, kaldi_root):
 	wav_scp = p.join(out_main, 'wav.scp')
 	with codecs.open(wav_scp, mode='w', encoding='UTF-8') as out_w:
 		for wav_id in wavs:
+			record_id = p.splitext(wav_id)[0]
 			wav_full_path = p.join(p.abspath(output_path), 'wavs', wav_id)
 			out_w.write(u"{0} {1}\n".format(record_id, wav_full_path))
 	cpp_sort(p.join(out_main, 'wav.scp'))
