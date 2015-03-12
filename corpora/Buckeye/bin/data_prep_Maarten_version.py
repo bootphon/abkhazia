@@ -391,8 +391,8 @@ prons['hoosier'] = 'hh uw z y er'
 # getting rid of ao, arbitrarily replaced by aa
 # maybe a phonologist should check that
 prons['alzheimers'] = 'aa l s ay m er z'
-prons['chorus'] = 'k aa r ah s'
-prons['sports'] = 's p aa r t s'
+prons['chorus'] = 'k aa r ah s' # Ewan says ow
+prons['sports'] = 's p aa r t s'  # Ewan says ow
 prons['almost'] = 'aa l m ow s t'
 # getting rid of em -> m
 prons['mhm'] = 'm hh m'
@@ -402,7 +402,6 @@ prons['hmm'] = 'hh m'
 # getting rid of dx -> t or d
 prons['introvertal'] = 'ih n t r ow v er t ah l'
 prons['disparity'] = 'd ih s p eh r ah t iy'
-prons['yadda'] = 'y aa d ah'
 prons['yadda'] = 'y aa d ah'
 prons['skateboarding'] = 's k ey t b ow r d ih ng'
 prons['shoulda'] = 'sh uh d ah'
