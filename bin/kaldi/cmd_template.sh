@@ -5,10 +5,10 @@
 # (make sure your --num-jobs options are no more than
 # the number of cpus on your machine.
 
-# At BUT use:
-export train_cmd="queue.pl -q gpu@puck*.cm.cluster"
-export decode_cmd="queue.pl -q gpu@puck*.cm.cluster"
-export highmem_cmd="queue.pl -q gpu@puck*.cm.cluster"
+# On Oberon use:
+export train_cmd="queue.pl -q all.q@puck*.cm.cluster"
+export decode_cmd="queue.pl -q all.q@puck*.cm.cluster"
+export highmem_cmd="queue.pl -q all.q@puck*.cm.cluster"
 
 # On Eddie use:
 # export train_cmd="queue.pl -P inf_hcrc_cstr_general"
