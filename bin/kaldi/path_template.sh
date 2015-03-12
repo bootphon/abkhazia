@@ -23,6 +23,7 @@ LMBIN=$LMBIN:$KALDI_ROOT/tools/srilm/bin/:$KALDI_ROOT/tools/sctk/bin/
 export kaldi_local=$PWD/local
 export kaldi_utils=$PWD/utils
 export kaldi_steps=$PWD/steps
+export IRSTLM=$KALDI_ROOT/tools/irstlm 	# for LM building
 SCRIPTS=$kaldi_local:$kaldi_utils:$kaldi_steps
 
 export PATH=$PATH:$KALDIBIN:$FSTBIN:$LMBIN:$SCRIPTS
