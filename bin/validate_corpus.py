@@ -635,6 +635,7 @@ def validate(corpus_path, verbose=False):
 			)
 			"""
 		# ooi phones
+
 		used_phones = [phone for trans_phones in transcriptions for phone in trans_phones]
 		ooi_phones = [phone for phone in set(used_phones) if not(phone in inventory)]
 		if ooi_phones:
@@ -656,7 +657,6 @@ def validate(corpus_path, verbose=False):
 	except (IOError, AssertionError) as e:
 		log.error(e)
 		raise e
-
 
 if __name__ == '__main__':
 	parser = argparse.ArgumentParser(description=\
