@@ -534,17 +534,17 @@ def validate(corpus_path, verbose=False):
 			u"in 'lexicon.txt': {0}"
 			).format(duplicates)
 		# OOV item
-		if not(u"<UNK>" in dict_words):
-			log.warning("No '<UNK>' word in lexicon, adding one")
+		if not(u"<unk>" in dict_words):
+			log.warning("No '<unk>' word in lexicon, adding one")
 			with codecs.open(dict_file, mode='a', encoding="UTF-8") as out:
-					out.write(u"<UNK> SPN\n")
-			dict_words.append(u"<UNK>")
+					out.write(u"<unk> SPN\n")
+			dict_words.append(u"<unk>")
 			transcriptions.append([u"SPN"])
 		else:
-			unk_transcript = transcriptions[dict_words.index(u"<UNK>")]
+			unk_transcript = transcriptions[dict_words.index(u"<unk>")]
 			assert unk_transcript == [u"SPN"], \
 				(
-				u"'<UNK>' word is reserved for mapping "
+				u"'<unk>' word is reserved for mapping "
 				u"OOV items and should always be transcribed "
 				u"as 'SPN' (vocal) noise'"
 				)

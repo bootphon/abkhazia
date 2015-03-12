@@ -25,6 +25,13 @@ import subprocess
 
 
 #TODO: share this with validate_corpus
+def remove_utt_ids(in_file, out_file):
+	with codecs.open(out_file, mode='w', encoding='UTF-8') as out:
+		for line in codecs.open(in_file, mode='r', encoding='UTF-8'):
+			l = u' '.join(line.strip().split(u' ')[1:]) + u'\n'
+			out.write(l)
+
+
 def cpp_sort(filename):
 	# there is redundancy here but I didn't check which export can be 
 	# safely removed, so better safe than sorry
@@ -101,6 +108,15 @@ def create_kaldi_recipe(corpus_path, output_path, kaldi_root,
 		files = ['text', 'utt2spk', 'segments', 'wav.scp']
 		for f in files:
 			cpp_sort(p.join(split_out, f))
+	# create transcripts without utt-ids for LM estimation
+	#FIXME make this coherent with kaldi recipe
+	#TODO make smaller function from this big file
+	lm_dir = p.join(output_path, 'data', 'local', 'lm')
+	for in_dir, out_file in zip(
+								[out_train, out_test], 
+								[p.join(lm_dir, 'train.txt'), p.join(lm_dir, 'test.txt')]
+							):
+		remove_utt_ids(p.join(in_dir, 'text'), out_file)
 	# wav folder (common to all splits)
 	link_name =  p.join(output_path, 'wavs')
 	target = p.join(corpus_path, 'wavs')
