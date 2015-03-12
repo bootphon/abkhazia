@@ -7,16 +7,17 @@ Created on Thu Mar  5 11:32:55 2015
 
 """
 This script takes a corpus in abkhazia format
-which has been splitted into a train and a test part
 and instantiates a kaldi recipe to train
 a standard speaker-adapted triphone HMM-GMM model
-on the train part and output various kind of decodings
-of the test part.
+on this corpus and output a forced alignment
+of it.
 
 This script does not make any parameter fitting,
 the user can provide his parameters, otherwise
 default values are used.
 """
+
+#TODO: this script is not ready as is and need correction and completion
 import shutil
 import os.path as p
 import os
@@ -32,31 +33,20 @@ def cpp_sort(filename):
 	subprocess.call("export LC_ALL=C; sort {0} -o {1}".format(filename, filename), shell=True, env=os.environ)
 
 
-def create_kaldi_recipe(corpus_path, output_path, kaldi_root,
-					recipe_name="train_and_decode",																			
-					train_name='train', test_name='test',
-					si_params=None, sa_params=None):
+def create_kaldi_recipe(corpus_path, output_path, kaldi_root, 
+					train_name='train', test_name='test'):
+	output_path = p.join(output_path, 's5')
 	corpus_path = p.join(corpus_path, 'data')
-	assert p.isdir(corpus_path), "Directory doesn't exist: {0}".format(corpus_path)
-	train_path = p.join(corpus_path, 'split', train_name) 
-	test_path = p.join(corpus_path, 'split', test_name)
-	assert p.isdir(train_path), "Split doesn't exist: {0}".format(train_path)
-	assert p.isdir(test_path), "Split doesn't exist: {0}".format(test_path)
-	output_path = p.join(output_path, recipe_name, 's5')
-	out_train = p.join(output_path, 'data', train_name)
-	out_test = p.join(output_path, 'data', test_name)
+	out_main = p.join(output_path, 'data', 'main')
 	out_dict = p.join(output_path, 'data', 'local', 'dict')
-	if p.isdir(output_path):
-		raise IOError("Directory already exists: {0}".format(output_path))
-	else:
+	assert p.isdir(corpus_path), 'No such directory {0}'.format(corpus_path)
+	if not(p.isdir(output_path)):
 		os.makedirs(output_path)
-	if not(p.isdir(out_train)):
-		os.makedirs(out_train)
-	if not(p.isdir(out_test)):
-		os.makedirs(out_test)
+	if not(p.isdir(out_main)):
+		os.makedirs(out_main)
 	if not(p.isdir(out_dict)):
 		os.makedirs(out_dict)
-	## DICT folder (common to all splits)
+	## DICT folder
 	# lexicon.txt
 	shutil.copy(p.join(corpus_path, 'lexicon.txt'), p.join(out_dict, 'lexicon.txt'))
 	# phones.txt
@@ -72,36 +62,30 @@ def create_kaldi_recipe(corpus_path, output_path, kaldi_root,
 		out.write(u'SIL\n')
 	# variants.txt
 	shutil.copy(p.join(corpus_path, 'variants.txt'), p.join(out_dict, 'extra_questions.txt'))
-	## Data folders (split specific)
-	for split_in, split_out in zip([train_path, test_path], [out_train, out_test]):
-		# text.txt
-		shutil.copy(p.join(split_in, 'text.txt'), p.join(split_out, 'text'))
-		# utt2spk.txt
-		shutil.copy(p.join(split_in, 'utt2spk.txt'), p.join(split_out, 'utt2spk'))
-		# segments
-		with codecs.open(p.join(split_in, 'segments.txt'), mode='r', encoding='UTF-8') as inp:
-			lines = inp.readlines()
-		with codecs.open(p.join(split_out, 'segments'), mode='w', encoding='UTF-8') as out:
-			wavs = set()
-			for line in lines:
-				utt_id, wav_id, start, stop = line.strip().split(u' ')
-				record_id = p.splitext(wav_id)[0]
-				out.write(u"{0} {1} {2} {3}\n".format(utt_id, record_id, start, stop))
-				wavs.add(wav_id)
-		## wav.scp
-		wav_scp = p.join(split_out, 'wav.scp')
-		with codecs.open(wav_scp, mode='w', encoding='UTF-8') as out_w:
-			for wav_id in wavs:
-				record_id = p.splitext(wav_id)[0]
-				wav_full_path = p.join(p.abspath(output_path), 'wavs', wav_id)
-				out_w.write(u"{0} {1}\n".format(record_id, wav_full_path))
-		# do some cpp_sorting just to be sure (for example if abkhazia corpus has
-		# been copied to a different machine after its creation, there might be 
-		# some machine-dependent differences in the required orders)
-		files = ['text', 'utt2spk', 'segments', 'wav.scp']
-		for f in files:
-			cpp_sort(p.join(split_out, f))
-	# wav folder (common to all splits)
+	## MAIN folder	
+	# text.txt
+	shutil.copy(p.join(corpus_path, 'text.txt'), p.join(out_main, 'text'))
+	# utt2spk.txt
+	shutil.copy(p.join(corpus_path, 'utt2spk.txt'), p.join(out_main, 'utt2spk'))
+	# segments
+	with codecs.open(p.join(corpus_path, 'segments.txt'), mode='r', encoding='UTF-8') as inp:
+		lines = inp.readlines()
+	with codecs.open(p.join(out_main, 'segments'), mode='w', encoding='UTF-8') as out_s:
+		wavs = set()
+		for line in lines:
+			utt_id, wav_id, start, stop = line.strip().split(u' ')
+			record_id = p.splitext(wav_id)[0]
+			out_s.write(u"{0} {1} {2} {3}\n".format(utt_id, record_id, start, stop))
+			wavs.add(wav_id)
+	# wav.scp
+	wav_scp = p.join(out_main, 'wav.scp')
+	with codecs.open(wav_scp, mode='w', encoding='UTF-8') as out_w:
+		for wav_id in wavs:
+			record_id = p.splitext(wav_id)[0]
+			wav_full_path = p.join(p.abspath(output_path), 'wavs', wav_id)
+			out_w.write(u"{0} {1}\n".format(record_id, wav_full_path))
+	cpp_sort(p.join(out_main, 'wav.scp'))
+	# wav folder
 	link_name =  p.join(output_path, 'wavs')
 	target = p.join(corpus_path, 'wavs')
 	if p.exists(link_name):
@@ -163,17 +147,8 @@ def create_kaldi_recipe(corpus_path, output_path, kaldi_root,
 	if not(p.isdir(local_dir)):
 		os.mkdir(local_dir)
 	shutil.copy(score_file, p.join(local_dir, 'score.sh'))
-	## last missing piece run.sh
-	#TODO
-	if si_params is None:
-		pass
-	if sa_params is None:
-		pass
-	
-#TODO: then need to run the recipe and parse the results to either .txt or .features format
 
-#root = '/Users/thomas/Documents/PhD/Recherche/other_gits/abkhazia'
-#kaldi_root = '/Users/thomas/Documents/PhD/Recherche/kaldi/kaldi-trunk'
+
 root = '/fhgfs/bootphon/scratch/thomas/abkhazia'
 kaldi_root = '/fhgfs/bootphon/scratch/thomas/kaldi'
-create_kaldi_recipe(p.join(root, 'corpora', 'Buckeye'), p.join(root, 'kaldi', 'Buckeye'), kaldi_root)
+convert(p.join(root, 'corpora', 'Buckeye'), p.join(root, 'kaldi', 'Buckeye'), kaldi_root)
