@@ -23,8 +23,9 @@ import os
 import codecs
 import subprocess
 
-
+#TODO make smaller functions from this big file
 #TODO: share this with validate_corpus
+
 def remove_utt_ids(in_file, out_file):
 	with codecs.open(out_file, mode='w', encoding='UTF-8') as out:
 		for line in codecs.open(in_file, mode='r', encoding='UTF-8'):
@@ -53,16 +54,14 @@ def create_kaldi_recipe(corpus_path, output_path, kaldi_root,
 	out_train = p.join(output_path, 'data', train_name)
 	out_test = p.join(output_path, 'data', test_name)
 	out_dict = p.join(output_path, 'data', 'local', 'dict')
+	out_lm = p.join(output_path, 'data', 'local', 'lm')
 	if p.isdir(output_path):
 		raise IOError("Directory already exists: {0}".format(output_path))
 	else:
 		os.makedirs(output_path)
-	if not(p.isdir(out_train)):
-		os.makedirs(out_train)
-	if not(p.isdir(out_test)):
-		os.makedirs(out_test)
-	if not(p.isdir(out_dict)):
-		os.makedirs(out_dict)
+	for f in [out_train, out_test, out_dict, out_lm]:
+		if not(p.isdir(f)):
+			os.makedirs(f)
 	## DICT folder (common to all splits)
 	# lexicon.txt
 	shutil.copy(p.join(corpus_path, 'lexicon.txt'), p.join(out_dict, 'lexicon.txt'))
@@ -110,12 +109,9 @@ def create_kaldi_recipe(corpus_path, output_path, kaldi_root,
 			cpp_sort(p.join(split_out, f))
 	# create transcripts without utt-ids for LM estimation
 	#FIXME make this coherent with kaldi recipe
-	#TODO make smaller function from this big file
-	lm_dir = p.join(output_path, 'data', 'local', 'lm')
-	for in_dir, out_file in zip(
-								[out_train, out_test], 
-								[p.join(lm_dir, 'train.txt'), p.join(lm_dir, 'test.txt')]
-							):
+	train_lm = p.join(out_lm, 'train_lm.txt')
+	test_lm =p.join(out_lm, 'test_lm.txt')
+	for in_dir, out_file in zip([out_train, out_test], [train_lm, test_lm]):
 		remove_utt_ids(p.join(in_dir, 'text'), out_file)
 	# wav folder (common to all splits)
 	link_name =  p.join(output_path, 'wavs')
