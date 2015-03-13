@@ -91,7 +91,7 @@ def create_kaldi_recipe(corpus_path, output_path, kaldi_root,
 			wavs = set()
 			for line in lines:
 				elements = line.strip().split(u" ")
-				utt_id, wav_id = elements[:2], start, stop
+				utt_id, wav_id = elements[:2]
 				record_id = p.splitext(wav_id)[0]
 				out.write(u" ".join([utt_id, record_id] + elements[2:]) + u"\n")
 				wavs.add(wav_id)
