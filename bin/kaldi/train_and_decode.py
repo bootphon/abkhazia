@@ -84,16 +84,24 @@ def create_kaldi_recipe(corpus_path, output_path, kaldi_root,
 		shutil.copy(p.join(split_in, 'text.txt'), p.join(split_out, 'text'))
 		# utt2spk.txt
 		shutil.copy(p.join(split_in, 'utt2spk.txt'), p.join(split_out, 'utt2spk'))
-		# segments
+		# segments (write only if starts and stops are specified)
+		#FIXME clean the following
 		with codecs.open(p.join(split_in, 'segments.txt'), mode='r', encoding='UTF-8') as inp:
 			lines = inp.readlines()
-		with codecs.open(p.join(split_out, 'segments'), mode='w', encoding='UTF-8') as out:
+		if len(lines[0].strip().split(u" ")) == 4:
+			with codecs.open(p.join(split_out, 'segments'), mode='w', encoding='UTF-8') as out:
+				wavs = set()
+				for line in lines:
+					elements = line.strip().split(u" ")
+					utt_id, wav_id = elements[:2]
+					record_id = p.splitext(wav_id)[0]
+					out.write(u" ".join([utt_id, record_id] + elements[2:]) + u"\n")
+					wavs.add(wav_id)
+		else:
 			wavs = set()
 			for line in lines:
 				elements = line.strip().split(u" ")
 				utt_id, wav_id = elements[:2]
-				record_id = p.splitext(wav_id)[0]
-				out.write(u" ".join([utt_id, record_id] + elements[2:]) + u"\n")
 				wavs.add(wav_id)
 		## wav.scp
 		wav_scp = p.join(split_out, 'wav.scp')
