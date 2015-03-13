@@ -5,6 +5,7 @@ Corrections:
 	lexicon.txt:
 		removed <UNK> SPN entry (but left <unk> SPN)
 		replaced [s] nse by <noise> NSN as this seems to correspond to noise
+		added words not found in the dictionary (they were forgotten from the dev set)
 	phones.txt:
 		removed nse nse 
 	silences.txt:
