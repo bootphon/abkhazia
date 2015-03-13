@@ -115,7 +115,9 @@ def create_kaldi_recipe(corpus_path, output_path, kaldi_root,
 		# some machine-dependent differences in the required orders)
 		files = ['text', 'utt2spk', 'segments', 'wav.scp']
 		for f in files:
-			cpp_sort(p.join(split_out, f))
+			full_p = p.join(split_out, f)
+			if p.exists(full_p):
+				cpp_sort(full_p)
 	# create transcripts without utt-ids for LM estimation
 	#FIXME make this coherent with kaldi recipe
 	train_lm = p.join(out_lm, 'train_lm.txt')
