@@ -90,9 +90,10 @@ def create_kaldi_recipe(corpus_path, output_path, kaldi_root,
 		with codecs.open(p.join(split_out, 'segments'), mode='w', encoding='UTF-8') as out:
 			wavs = set()
 			for line in lines:
-				utt_id, wav_id, start, stop = line.strip().split(u' ')
+				elements = line.strip().split(u" ")
+				utt_id, wav_id = elements[:2], start, stop
 				record_id = p.splitext(wav_id)[0]
-				out.write(u"{0} {1} {2} {3}\n".format(utt_id, record_id, start, stop))
+				out.write(u" ".join([utt_id, record_id] + elements[2:]) + u"\n")
 				wavs.add(wav_id)
 		## wav.scp
 		wav_scp = p.join(split_out, 'wav.scp')

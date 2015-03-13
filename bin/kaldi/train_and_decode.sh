@@ -48,8 +48,7 @@ utils/fix_data_dir.sh data/test
 # monophone model training
 mkdir -p exp/mono;
 steps/train_mono.sh --nj 8 --cmd "$train_cmd" \
-  data/train data/lang exp/mono >& exp/mono/train.log &
-wait;
+  data/train data/lang exp/mono > exp/mono/train.log
 
 # monophone model test (on both train and test sets to get an idea of overfitting magnitude)
 # done in parallel from next training steps
@@ -61,10 +60,10 @@ wait;
     utils/mkgraph.sh --mono data/lang_test exp/mono \
     $graph_dir
   # decode and compute WER on train set
-  steps/decode.sh --nj 8 --cmd "$decode_cmd" $graph_dir data/train \
+  steps/decode.sh --nj 16 --cmd "$decode_cmd" $graph_dir data/train \
     exp/mono/decode_train
   # decode and compute WER on test set
-  steps/decode.sh --nj 8 --cmd "$decode_cmd" $graph_dir data/test \
+  steps/decode.sh --nj 16 --cmd "$decode_cmd" $graph_dir data/test \
     exp/mono/decode_test
 )&
 
@@ -73,13 +72,12 @@ wait;
 mkdir -p exp/mono_ali
 steps/align_si.sh --nj 8 --cmd "$train_cmd" \
   data/train data/lang exp/mono exp/mono_ali \
-  >& exp/mono_ali/align.log 
+  > exp/mono_ali/align.log 
 # second: triphone model training
 mkdir -p exp/tri1
 steps/train_deltas.sh --cmd "$train_cmd" \
   $num_states_si $num_gauss_si data/train data/lang exp/mono_ali \
-  exp/tri1 >& exp/tri1/train.log
-wait;
+  exp/tri1 > exp/tri1/train.log
 
 
 # triphone model test (on both train and test sets to get an idea of overfitting magnitude)
@@ -91,10 +89,10 @@ wait;
   $highmem_cmd $graph_dir/mkgraph.log \
 	utils/mkgraph.sh data/lang_test exp/tri1 $graph_dir
   # decode and compute WER on train
-  steps/decode.sh --nj 8 --cmd "$decode_cmd" $graph_dir data/train \
+  steps/decode.sh --nj 16 --cmd "$decode_cmd" $graph_dir data/train \
 	exp/tri1/decode_train 
   # decode and compute WER on test
-  steps/decode.sh --nj 8 --cmd "$decode_cmd" $graph_dir data/test \
+  steps/decode.sh --nj 16 --cmd "$decode_cmd" $graph_dir data/test \
     exp/tri1/decode_test 
 )&
 
@@ -104,13 +102,12 @@ wait;
 mkdir -p exp/tri1_ali_fmllr
 steps/align_fmllr.sh --nj 8 --cmd "$train_cmd" \
   data/train data/lang exp/tri1 exp/tri1_ali_fmllr \
-  >& exp/tri1_ali_fmllr/align.log
+  > exp/tri1_ali_fmllr/align.log
 # speaker adaptive training
 mkdir -p exp/tri2a
 steps/train_sat.sh --cmd "$train_cmd" \
   $num_states_sa $num_gauss_sa data/train data/lang exp/tri1_ali_fmllr \
-  exp/tri2a >& exp/tri2a/train.log
-wait;
+  exp/tri2a > exp/tri2a/train.log
 
 
 # speaker adaptive triphone model test (on both train and test sets to get an idea of overfitting magnitude)
@@ -122,10 +119,10 @@ wait;
   $highmem_cmd $graph_dir/mkgraph.log \
 	utils/mkgraph.sh data/lang exp/tri2a $graph_dir
   # decode and compute WER on train
-  steps/decode_fmllr.sh --nj 2 --cmd "$decode_cmd" $graph_dir data/train \
+  steps/decode_fmllr.sh --nj 16 --cmd "$decode_cmd" $graph_dir data/train \
 	exp/tri2a/decode_train
   # decode and compute WER on test
-  steps/decode_fmllr.sh --nj 2 --cmd "$decode_cmd" $graph_dir data/test \
+  steps/decode_fmllr.sh --nj 16 --cmd "$decode_cmd" $graph_dir data/test \
     exp/tri2a/decode_test
 )&
 
