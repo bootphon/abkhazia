@@ -59,12 +59,12 @@ steps/train_mono.sh --nj 8 --cmd "$train_cmd" \
   $highmem_cmd $graph_dir/mkgraph.log \
     utils/mkgraph.sh --mono data/lang_test exp/mono \
     $graph_dir
-  # decode and compute WER on train set
-  steps/decode.sh --nj 16 --cmd "$decode_cmd" $graph_dir data/train \
-    exp/mono/decode_train
   # decode and compute WER on test set
-  steps/decode.sh --nj 16 --cmd "$decode_cmd" $graph_dir data/test \
+  steps/decode.sh --nj 8 --cmd "$decode_cmd" $graph_dir data/test \
     exp/mono/decode_test
+  # decode and compute WER on train set
+  steps/decode.sh --nj 8 --cmd "$decode_cmd" $graph_dir data/train \
+    exp/mono/decode_train
 )&
 
 # triphone model training 
@@ -88,12 +88,12 @@ steps/train_deltas.sh --cmd "$train_cmd" \
   mkdir -p $graph_dir
   $highmem_cmd $graph_dir/mkgraph.log \
 	utils/mkgraph.sh data/lang_test exp/tri1 $graph_dir
-  # decode and compute WER on train
-  steps/decode.sh --nj 16 --cmd "$decode_cmd" $graph_dir data/train \
-	exp/tri1/decode_train 
   # decode and compute WER on test
-  steps/decode.sh --nj 16 --cmd "$decode_cmd" $graph_dir data/test \
+  steps/decode.sh --nj 8 --cmd "$decode_cmd" $graph_dir data/test \
     exp/tri1/decode_test 
+  # decode and compute WER on train
+  steps/decode.sh --nj 8 --cmd "$decode_cmd" $graph_dir data/train \
+	exp/tri1/decode_train 
 )&
 
 
@@ -117,13 +117,45 @@ steps/train_sat.sh --cmd "$train_cmd" \
   graph_dir=exp/tri2a/graph
   mkdir -p $graph_dir
   $highmem_cmd $graph_dir/mkgraph.log \
-	utils/mkgraph.sh data/lang exp/tri2a $graph_dir
-  # decode and compute WER on train
-  steps/decode_fmllr.sh --nj 16 --cmd "$decode_cmd" $graph_dir data/train \
-	exp/tri2a/decode_train
+	utils/mkgraph.sh data/lang_test exp/tri2a $graph_dir
   # decode and compute WER on test
-  steps/decode_fmllr.sh --nj 16 --cmd "$decode_cmd" $graph_dir data/test \
+  steps/decode_fmllr.sh --nj 8 --cmd "$decode_cmd" $graph_dir data/test \
     exp/tri2a/decode_test
+  # decode and compute WER on train
+  steps/decode_fmllr.sh --nj 8 --cmd "$decode_cmd" $graph_dir data/train \
+	exp/tri2a/decode_train
 )&
+
+# exporting results
+mkdir -p export
+# "lattice" Viterbi posteriors
+lattice-to-post --acoustic-scale=0.1 "ark:gunzip -c exp/tri2a/decode_test/lat.*.gz|" ark,t:export/post.post
+post-to-phone-post exp/tri2a/final.mdl ark,t:export/post.post ark,t:export/phone_post.post
+## do we need to decode phone labels ?
+# 1-best phone transcription, frame-by-frame (10.ali: lm weight, arbitrary choice)
+ali-to-phones --per_frame=true exp/tri2a/final.mdl ark,t:exp/tri2a/decode_test/scoring/10.ali ark,t:export/best_transcript.tra
+#utils/int2sym.pl -f 2- data/lang/phones.txt export/best_transcript.tra > export/best_transcript.txt
+
+
+# Root of recipes:
+#   - /fhgfs/bootphon/scratch/thomas/abkhazia/kaldi/Buckeye/train_and_decode/s5
+#   - /fhgfs/bootphon/scratch/thomas/abkhazia/kaldi/NCHLT_Tsonga/train_and_decode/s5
+
+#Posteriors: in export/phone_post.post
+# posterior file format:
+#   utt_id [frame_1] [frame_2] ... [frame_n]
+# avec format pour frame_i:
+#   phone_id_1 posterior_proba_1 phone_id_2 posterior_proba_2 ... phone_id_k posterior_proba_k
+# note that not all phone_id are in each frame, those that aren't are supposed to be with
+# posterior proba of 0.
+# The correspondence between phones and phone-ids is given by the file:
+#   data/lang/phones.txt
+# note that it includes word-position variants of phones, I think it would be better
+# to fold the variants of each phone together (just sum the corresponding posterior probas)
+# before doing distance computations in ABX or STD.
+
+#Phone transcription: in export/best_transcript.tra
+# File format as for forced alignment, the correspondence between phones and phone-ids is given by the file:
+# is also  data/lang/phones.txt
 
 
