@@ -25,7 +25,7 @@ import sys
 # paths - needs to change paths and versions of Librispeech
 # create 'data' directory if doesn't exist
 raw_path = "/fhgfs/bootphon/data/raw_data/LibriSpeech/"
-dict_path = "/fhgfs/bootphon/data/raw_data/cmu_combined/"
+dict_path = "/fhgfs/bootphon/data/raw_data/CMU_dict/"
 derived_path = "/fhgfs/bootphon/data/derived_data/LibriSpeech_abkhazia/data/"
 github_path = "/fhgfs/bootphon/scratch/xcao/github_abkhazia/abkhazia/corpora/LibriSpeech_train-clean-100/data/"
 
@@ -138,6 +138,8 @@ def text(trs, wav):
 	outfile = open(output_file_text, "w")
 	outfile2 = open(output_corrupted_wavs, "w")
 	input_dir = os.path.join(derived_path, trs)
+	if not os.path.isdir(input_dir):
+		os.makedirs(input_dir)
 	input_dir_wav = os.path.join(derived_path, wav)
 	files = os.listdir(input_dir)
 	wav_list = os.listdir(input_dir_wav)
