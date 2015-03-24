@@ -104,6 +104,7 @@ def convert_speaker_ID_wav(i):
 
 #STEP 6
 #link wav folder in the data kaldi directory
+#Need to change path in shell script
 def link_wavs():
 	subprocess.call("./link_wavs.sh", shell=True)
 	print ('finished linking wavs directory and creating logs directory')
@@ -253,10 +254,10 @@ def copy_phones():
 #convert_flac()
 #copy_trs ('train-clean-360','trs_train-clean-360')
 #convert_speaker_ID_wav ('wav_train-clean-360')
-#link_wavs()
+link_wavs()
 #segments_speakers('wav_train-clean-360')
-text('trs_train-clean-360', 'wav_train-clean-360')
-lexicon('trs_train-clean-360')
+#text('trs_train-clean-360', 'wav_train-clean-360')
+#lexicon('trs_train-clean-360')
 #copy_phones()
 	
 
