@@ -192,7 +192,7 @@ def create_kaldi_recipe(corpus_path, output_path, kaldi_root,
 		pass
 	if sa_params is None:
 		pass
-	
+
 #TODO: then need to run the recipe and parse the results to either .txt or .features format
 
 #root = '/Users/thomas/Documents/PhD/Recherche/other_gits/abkhazia'
@@ -200,4 +200,4 @@ def create_kaldi_recipe(corpus_path, output_path, kaldi_root,
 root = '/fhgfs/bootphon/scratch/thomas/abkhazia'
 kaldi_root = '/fhgfs/bootphon/scratch/thomas/kaldi'
 #create_kaldi_recipe(p.join(root, 'corpora', 'Buckeye'), p.join(root, 'kaldi', 'Buckeye'), kaldi_root)
-create_kaldi_recipe(p.join(root, 'corpora', 'NCHLT_Tsonga'), p.join(root, 'kaldi', 'NCHLT_Tsonga'), kaldi_root)
+#create_kaldi_recipe(p.join(root, 'corpora', 'NCHLT_Tsonga'), p.join(root, 'kaldi', 'NCHLT_Tsonga'), kaldi_root)

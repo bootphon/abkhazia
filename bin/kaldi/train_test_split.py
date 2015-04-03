@@ -224,7 +224,7 @@ train_test_split(corpus_path, train_speakers=train_speakers, split_speakers=Fals
 """
 
 # test on NCHLT_Tsonga for challenge
-
+"""
 corpus_path = '/fhgfs/bootphon/scratch/thomas/abkhazia/corpora/NCHLT_Tsonga'
 all_speakers = [
 			u'149f', u'021m', u'084m', u'131f',
@@ -289,3 +289,6 @@ test_speakers = [
 			]
 train_speakers = list(set.difference(set(all_speakers), set(test_speakers)))
 train_test_split(corpus_path, train_speakers=train_speakers, split_speakers=False)
+"""
+
+
