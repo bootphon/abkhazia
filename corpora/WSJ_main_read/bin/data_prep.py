@@ -136,6 +136,7 @@ def link_wavs():
 #Create speakers file: <utterance-id> <speaker-id>
 #Argument is name of wav directory
 def segments_text_speakers():
+    utt_list = []
     output_file_segment = open(os.path.join(abkhazia_path_data, 'segments.txt'), 'w')
     output_file_speaker = open(os.path.join(abkhazia_path_data, 'utt2spk.txt'), 'w')
     output_file_text = open(os.path.join(abkhazia_path_data, 'text.txt'), 'w')
@@ -147,6 +148,8 @@ def segments_text_speakers():
     #get basename from file to get utt_ID
     for filename in files:
         utt_ID = os.path.splitext(filename)[0]
+        #create a list with all utt_ID
+        utt_list.append(utt_ID)
         #write segments file
         output_file_segment.write(utt_ID + ' ' + filename + '\n')
         #extract the first 3 characters from filename to get speaker_ID
@@ -164,64 +167,68 @@ def segments_text_speakers():
             if m_line:
                 utt = m_line.group(1)
                 ID = m_line.group(2)
-                words = utt.split()
-                output_file_temp.write(ID + ' ')
-                for w in words:
-                    w = w.upper() # Upcase everything to match the CMU dictionary
-                    w = w.replace("\\", "") #Remove backslashes.  We don't need the quoting
-                    w = w.replace("%PERCENT", "PERCENT") # Normalization for Nov'93 test transcripts.
-                    w = w.replace(".POINT", "POINT") # Normalization for Nov'93 test transcripts.
-                    match1 = re.match("\[<(.*)\]", w)
-                    #| \[(.*)\>\] | \[(.*)\/\] | \[\/(.*)/]"),
-                    # E.g. [<door_slam], this means a door slammed in the preceding word. Delete
-                    # E.g. [door_slam>], this means a door slammed in the next word.  Delete.
-                    # E.g. [phone_ring/], which indicates the start of this phenomenon.
-                    # E.g. [/phone_ring], which indicates the end of this phenomenon.
-                    if match1:
-                        #print ("match 1")
-                        continue                # we won't print this word.
-                    elif((w == "~")|(w == ".")):
-                        continue
-                    # "~" This is used to indicate truncation of an utterance.  Not a word.
-                    # "." is used to indicate a pause.  Silence is optional anyway so not much point including this in the transcript.
-                    else:
-                        match2 = re.match("\[(.*)\>\]", w)
-                        if match2:
+                #ID doesn't match from list of files, skip (this is to deal with utterances that have only noise)
+                if ID not in utt_list:
+                    print(ID)
+                    continue
+                else:
+                    words = utt.split()
+                    output_file_temp.write(ID + ' ')
+                    for w in words:
+                        w = w.upper() # Upcase everything to match the CMU dictionary
+                        w = w.replace("\\", "") #Remove backslashes.  We don't need the quoting
+                        w = w.replace("%PERCENT", "PERCENT") # Normalization for Nov'93 test transcripts.
+                        w = w.replace(".POINT", "POINT") # Normalization for Nov'93 test transcripts.
+                        match1 = re.match("\[<(.*)\]", w)
+                        #| \[(.*)\>\] | \[(.*)\/\] | \[\/(.*)/]"),
+                        # E.g. [<door_slam], this means a door slammed in the preceding word. Delete
+                        # E.g. [door_slam>], this means a door slammed in the next word.  Delete.
+                        # E.g. [phone_ring/], which indicates the start of this phenomenon.
+                        # E.g. [/phone_ring], which indicates the end of this phenomenon.
+                        if match1:
+                            #print ("match 1")
+                            continue                # we won't print this word.
+                        elif((w == "~")|(w == ".")):
                             continue
+                        # "~" This is used to indicate truncation of an utterance.  Not a word.
+                        # "." is used to indicate a pause.  Silence is optional anyway so not much point including this in the transcript.
                         else:
-                            match3 = re.match ("\[(.*)/\]", w)
-                            if match3:
+                            match2 = re.match("\[(.*)\>\]", w)
+                            if match2:
                                 continue
                             else:
-                                match4 = re.match ("\[\/(.*)\]", w)
-                                if match4:
+                                match3 = re.match ("\[(.*)/\]", w)
+                                if match3:
                                     continue
                                 else:
-                                    n_match = re.match("\[(.*)\]", w) # Other noises, e.g. [loud_breath].:
-                                    if n_match:
-                                        noise = n_match.group(1)
-                                        n = noise.replace(noise, '<NOISE>') 
-                                        output_file_temp.write(n + ' ')
+                                    match4 = re.match ("\[\/(.*)\]", w)
+                                    if match4:
+                                        continue
                                     else:
-                                        bracket_match = re.match("\<(.*)\>", w)  # e.g. replace <and> with and.  (the <> means verbal deletion of a word).. but it's pronounced.
-                                        if bracket_match:
-                                            no_bracket = bracket_match.group(1)
-                                            output_file_temp.write(no_bracket + ' ')
+                                        n_match = re.match("\[(.*)\]", w) # Other noises, e.g. [loud_breath].:
+                                        if n_match:
+                                            noise = n_match.group(1)
+                                            n = noise.replace(noise, '<NOISE>') 
+                                            output_file_temp.write(n + ' ')
                                         else:
-                                            dash_match = re.match("--DASH", w)
-                                            if dash_match:
-                                                w = w.replace("--DASH", "-DASH")
-                                                output_file_temp.write(w + ' ') # This is a common issue; the CMU dictionary has it as -DASH.
+                                            bracket_match = re.match("\<(.*)\>", w)  # e.g. replace <and> with and.  (the <> means verbal deletion of a word).. but it's pronounced.
+                                            if bracket_match:
+                                                no_bracket = bracket_match.group(1)
+                                                output_file_temp.write(no_bracket + ' ')
                                             else:
-                                                output_file_temp.write(w + ' ')
-                output_file_temp.write('\n')
-            else:
-                print("no match for " + ID + "\n")
+                                                dash_match = re.match("--DASH", w)
+                                                if dash_match:
+                                                    w = w.replace("--DASH", "-DASH")
+                                                    output_file_temp.write(w + ' ') # This is a common issue; the CMU dictionary has it as -DASH.
+                                                else:
+                                                    output_file_temp.write(w + ' ')
+                    output_file_temp.write('\n')
     output_file_temp.close()
     infile2 = open(os.path.join(abkhazia_path, 'logs/temp.txt'), 'r')
     for line in infile2:
         line = line.rstrip()
         output_file_text.write(line + '\n')
+    print ('finished creating text files')
     infile2.close()
     os.remove(os.path.join(abkhazia_path, 'logs/temp.txt'))
         
@@ -271,11 +278,11 @@ def lexicon():
 
 
 #Running the different steps
-copy_wv1_trs ('wv1', 'trs')
-convert_wv1()
-link_wavs()
+#copy_wv1_trs ('wv1', 'trs')
+#convert_wv1()
+#link_wavs()
 segments_text_speakers()
-lexicon()
+#lexicon()
 
 	
 
