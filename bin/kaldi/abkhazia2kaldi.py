@@ -189,7 +189,7 @@ def setup_machine_specific_scripts(recipe_path):
 	copy_template(path_file, path_template, recipe_path)
 
 
-def setup_main_scripts(recipe_path):
+def setup_main_scripts(recipe_path, run_script):
 	kaldi_bin_dir = p.dirname(p.realpath(__file__))
 	# score.sh
 	score_file = p.join(kaldi_bin_dir, 'kaldi_templates', 'standard_score.sh')
@@ -198,5 +198,5 @@ def setup_main_scripts(recipe_path):
 		os.mkdir(local_dir)
 	shutil.copy(score_file, p.join(local_dir, 'score.sh'))
 	# run.sh
-	run_file = p.join(kaldi_bin_dir, 'kaldi_templates', 'train_and_decode.sh')
+	run_file = p.join(kaldi_bin_dir, 'kaldi_templates', run_script)
 	shutil.copy(run_file, p.join(recipe_path, 'run.sh'))

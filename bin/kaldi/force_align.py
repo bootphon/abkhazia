@@ -80,5 +80,4 @@ def create_kaldi_recipe(corpus_path, output_path, kaldi_root,
 	a2k.setup_wav_folder(corpus_path, recipe_path)  # wav folder
 	a2k.setup_kaldi_folders(kaldi_root, recipe_path)  # misc. kaldi symlinks, directories and files 
 	a2k.setup_machine_specific_scripts(recipe_path)  # path.sh, cmd.sh
-	a2k.setup_main_scripts(recipe_path)  # score.sh, run.sh
-
+	a2k.setup_main_scripts(recipe_path, 'force_align.sh')  # score.sh, run.sh

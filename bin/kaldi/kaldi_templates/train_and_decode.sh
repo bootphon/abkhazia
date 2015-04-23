@@ -102,8 +102,8 @@ fi
 )&
 
 # Triphone model training 
-# first: forced alignment of train set with monophone model
 if [ "$skip_training" = false ] ; then
+  # first: forced alignment of train set with monophone model
   mkdir -p exp/mono_ali
   steps/align_si.sh --nj 8 --cmd "$train_cmd" \
     data/train data/lang exp/mono exp/mono_ali \
