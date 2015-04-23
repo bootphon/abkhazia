@@ -49,7 +49,7 @@ def validate(corpus_path, verbose=False):
 		raise IOError("Corpus folder {0} should contain a 'data' subfolder".format(corpus_path))
 	log_dir = os.path.join(corpus_path, 'logs')
 	if not(os.path.isdir(log_dir)):
-		raise IOError("Corpus folder {0} should contain a 'logs' subfolder".format(corpus_path))	
+            os.mkdir(os.path.join(corpus_path, "logs"))	
 	
 	# log file config
 	log_file = os.path.join(log_dir, "data_validation.log".format(corpus_path))
