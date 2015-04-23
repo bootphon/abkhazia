@@ -135,8 +135,8 @@ fi
   fi
 )&
 
+# Speaker adaptive triphone model training
 if [ "$skip_training" = false ] ; then
-  # Speaker adaptive triphone model training
   # forced alignment with fmllr based on speaker independent triphone model
   mkdir -p exp/tri1_ali_fmllr
   steps/align_fmllr.sh --nj 8 --cmd "$train_cmd" \
@@ -199,5 +199,4 @@ ali-to-phones --per_frame=true exp/tri2a/final.mdl ark,t:exp/tri2a/decode_test/s
 # Phone transcription: in export/best_transcript.tra
 # File format as for forced alignment, the correspondence between phones and phone-ids is given by the file:
 # is also  data/lang/phones.txt
-
 

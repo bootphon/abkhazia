@@ -21,7 +21,7 @@ other kaldi recipe.
 
 import os.path as p
 import os
-import abkhazia.utilities.io as io
+import abkhazia.utilities.basic_io as io
 import abkhazia.kaldi.abkhazia2kaldi as a2k 
 
 # Main function of this module: 'create_kaldi_recipe'

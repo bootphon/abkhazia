@@ -28,12 +28,9 @@ recipe.
 """
 
 
-import shutil
 import os.path as p
 import os
-import codecs
-import subprocess
-import abkhazia.utilities.io as io
+import abkhazia.utilities.basic_io as io
 import abkhazia.kaldi.abkhazia2kaldi as a2k 
 
 # Main function of this module: 'create_kaldi_recipe'
@@ -46,7 +43,7 @@ import abkhazia.kaldi.abkhazia2kaldi as a2k
 def create_kaldi_recipe(corpus_path, output_path, kaldi_root,
 					recipe_name="train_and_decode",																			
 					train_name='train', test_name='test',
-					prune_lexicon):
+					prune_lexicon=False):
 	"""
 	Function to instantiate a ready-to-use kaldi recipe from a speech
 	corpora in abkhazia format

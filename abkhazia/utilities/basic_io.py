@@ -13,6 +13,7 @@ import os
 import subprocess
 import codecs
 import wave
+import contextlib
 import numpy as np
 
 
@@ -129,13 +130,13 @@ def read_dictionary(filename):
 
 def get_utt_durations(wav_dir, seg_file):
 	# get wavefiles durations
-	wavefiles = [e for e in os.listdir(wav_dir) if e != .DS_store]
+	wavefiles = [e for e in os.listdir(wav_dir) if e != '.DS_store']
 	wav_durations = {}
 	for f in wavefiles:
 		filepath = os.path.join(wav_dir, f)
 		with contextlib.closing(wave.open(filepath,'r')) as fh:
-			_, _, rate[f], nframes[f], _, _ = fh.getparams()
-	    	wav_durations[f] = nframes[f]/float(rate[f])
+			_, _, rate, nframes, _, _ = fh.getparams()
+	    	wav_durations[f] = nframes/float(rate)
 	# get utterance durations
 	utt_ids, wavs, starts, stops = read_segments(seg_file)
 	utt_durations = {}

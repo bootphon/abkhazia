@@ -5,6 +5,13 @@ Created on Thu Mar  5 11:32:55 2015
 @author: Thomas Schatz
 """
 
+import shutil
+import subprocess
+import codecs
+import os.path as p
+import os
+import abkhazia.utilities.basic_io as io
+
 
 def get_dict_path(recipe_path):
 	dict_path = p.join(recipe_path, 'data', 'local', 'dict')
@@ -91,7 +98,7 @@ def setup_utt2spk(corpus_path, recipe_path, in_split=None, out_split=None, desir
 							  	  desired_utts)
 
 
-def	setup_segments(corpus_path, recipe_path, in_split=None, out_split=None, desired_utts=None):	
+def setup_segments(corpus_path, recipe_path, in_split=None, out_split=None, desired_utts=None):	
 	i_path, o_path = get_data_path(corpus_path, recipe_path, in_split, out_split)
 	with codecs.open(p.join(i_path, 'segments.txt'),
 					 mode='r', encoding='UTF-8') as inp:
@@ -100,12 +107,12 @@ def	setup_segments(corpus_path, recipe_path, in_split=None, out_split=None, desi
 	if len(lines[0].strip().split(u" ")) == 4:
 		if not(desired_utts is None):
 			# select utterances that are long enough (>= 15 ms)
-			lines = io.match_utt_ids(lines, desired_utts)
+			lines = io.match_on_first_col(lines, desired_utts)
 		with codecs.open(p.join(o_path, 'segments'),
 						 mode='w', encoding='UTF-8') as out:
 			for line in lines:
 				elements = line.strip().split(u" ")
-				utt_id = elements[0]
+				utt_id, wav_id = elements[:2]
 				record_id = p.splitext(wav_id)[0]
 				out.write(u" ".join([utt_id, record_id] + elements[2:]) + u"\n")
 
@@ -118,7 +125,7 @@ def setup_wav(corpus_path, recipe_path, in_split=None, out_split=None, desired_u
 		lines = inp.readlines()
 	if not(desired_utts is None):
 		# select utterances that are long enough (>= 15 ms)
-		lines = io.match_utt_ids(lines, desired_utts) 
+		lines = io.match_on_first_col(lines, desired_utts) 
 	wavs = set()
 	for line in lines:
 		elements = line.strip().split(u" ")
@@ -144,7 +151,7 @@ def setup_wav_folder(corpus_path, recipe_path):
 	os.symlink(target, link_name)
 
 
-def setup_kaldi_folder(kaldi_root, recipe_path):
+def setup_kaldi_folders(kaldi_root, recipe_path):
 	steps_dir = p.abspath(p.join(kaldi_root, 'egs', 'wsj', 's5', 'steps'))
 	steps_link = p.abspath(p.join(recipe_path, 'steps'))
 	if p.exists(steps_link):

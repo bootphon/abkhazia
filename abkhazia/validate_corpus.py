@@ -61,7 +61,7 @@ def validate(corpus_path, verbose=False):
 		"""
 		log.debug("Checking 'wavs' folder")
 		wav_dir = os.path.join(data_dir, 'wavs')
-		wavefiles = [e for e in os.listdir(wav_dir) if e != .DS_store]
+		wavefiles = [e for e in os.listdir(wav_dir) if e != '.DS_store']
 		durations = {}
 		wrong_extensions = [f for f in wavefiles if f[-4:] != ".wav"]
 		if wrong_extensions:
