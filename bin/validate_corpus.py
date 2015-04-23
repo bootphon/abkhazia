@@ -16,126 +16,13 @@ and add default values to phone inventories when they are missing.
 #TODO: optimize homophone processing for large dictionaries
 
 import contextlib
-import utilities.log2file
+import abkhazia.utilities.log2file as log2file
+import abkhazia.utilities.basic_io as io
 import os
 import wave
 import codecs
-import subprocess
 import collections
 import argparse
-
-
-def cpp_sort(filename):
-	# there is redundancy here but I didn't check which export can be 
-	# safely removed, so better safe than sorry
-	os.environ["LC_ALL"] = "C"
-	subprocess.call("export LC_ALL=C; sort {0} -o {1}".format(filename, filename), shell=True, env=os.environ)
-
-
-#TODO: share these functions between modules
-
-def basic_parse(line, filename):
-	# check line break
-	assert not('\r' in line), "'{0}' contains non Unix-style linebreaks".format(filename)
-	# check spacing
-	assert not('  ' in line), "'{0}' contains lines with two consecutive spaces".format(filename)
-	# remove line break
-	line = line[:-1]
-	# parse line
-	l = line.split(" ")
-	return l
-
-
-def read_segments(filename):
-	utt_ids, wavs, starts, stops = [], [], [], []
-	with codecs.open(filename, mode='r', encoding="UTF-8") as inp:
-		lines = inp.readlines()
-	for line in lines:
-		l = basic_parse(line, filename)
-		assert(len(l) == 2 or len(l) == 4), \
-			"'segments.txt' should contain only lines with two or four columns"
-		utt_ids.append(l[0])
-		wavs.append(l[1])
-		if len(l) == 4:
-			starts.append(float(l[2]))
-			stops.append(float(l[3]))
-		else:
-			starts.append(None)
-			stops.append(None)
-	return utt_ids, wavs, starts, stops
-
-
-def read_utt2spk(filename):
-	utt_ids, speakers = [], []
-	with codecs.open(filename, mode='r', encoding="UTF-8") as inp:
-		lines = inp.readlines()
-	for line in lines:
-		l = basic_parse(line, filename)
-		assert(len(l) == 2), "'utt2spk.txt' should contain only lines with two columns"
-		utt_ids.append(l[0])
-		speakers.append(l[1])
-	return utt_ids, speakers
-
-
-def read_text(filename):
-	utt_ids, utt_words = [], []
-	with codecs.open(filename, mode='r', encoding="UTF-8") as inp:
-		lines = inp.readlines()
-	for line in lines:
-		l = basic_parse(line, filename)
-		assert(len(l) >= 2), "'text.txt' should contain only lines with two or more columns"
-		utt_ids.append(l[0])
-		utt_words.append(l[1:])
-		if u"" in l[1:]:
-			print line
-	return utt_ids, utt_words
-
-
-def	read_phones(filename):
-	phones, ipas = [], []
-	with codecs.open(filename, mode='r', encoding="UTF-8") as inp:
-		lines = inp.readlines()
-	for line in lines:
-		l = basic_parse(line, filename)
-		assert(len(l) == 2), "'phones.txt' should contain only lines with two columns"
-		phones.append(l[0])
-		ipas.append(l[1])
-	return phones, ipas
-
-
-def	read_silences(filename):
-	silences = []
-	with codecs.open(filename, mode='r', encoding="UTF-8") as inp:
-		lines = inp.readlines()
-	for line in lines:
-		l = basic_parse(line, filename)
-		assert(len(l) == 1), "'silences.txt' should contain only lines with one column"
-		silences.append(l[0])
-	return silences
-
-
-def read_variants(filename):
-	variants = []
-	with codecs.open(filename, mode='r', encoding="UTF-8") as inp:
-		lines = inp.readlines()
-	for line in lines:
-		l = basic_parse(line, filename)
-		assert(len(l) >= 2), \
-			"'variants.txt' should contain only lines with two or more columns"
-		variants.append(l)
-	return variants
-
-
-def read_dictionary(filename):
-	dict_words, transcriptions = [], []
-	with codecs.open(filename, mode='r', encoding="UTF-8") as inp:
-		lines = inp.readlines()
-	for line in lines:
-		l = basic_parse(line, filename)
-		assert(len(l) >= 2), "'lexicon.txt' should contain only lines with two or more columns"
-		dict_words.append(l[0])
-		transcriptions.append(l[1:])
-	return dict_words, transcriptions
 
 
 def with_default(value, default):
@@ -166,7 +53,7 @@ def validate(corpus_path, verbose=False):
 	
 	# log file config
 	log_file = os.path.join(log_dir, "data_validation.log".format(corpus_path))
-	log = utilities.log2file.get_log(log_file, verbose)
+	log = log2file.get_log(log_file, verbose)
 
 	try:
 		"""
@@ -174,7 +61,7 @@ def validate(corpus_path, verbose=False):
 		"""
 		log.debug("Checking 'wavs' folder")
 		wav_dir = os.path.join(data_dir, 'wavs')
-		wavefiles = os.listdir(wav_dir)
+		wavefiles = [e for e in os.listdir(wav_dir) if e != .DS_store]
 		durations = {}
 		wrong_extensions = [f for f in wavefiles if f[-4:] != ".wav"]
 		if wrong_extensions:
@@ -233,8 +120,8 @@ def validate(corpus_path, verbose=False):
 		log.debug("Checking 'segments.txt' file")
 		log.debug("C++ sort file")
 		seg_file = os.path.join(data_dir, "segments.txt")
-		cpp_sort(seg_file)  # C++ sort file for convenience
-		utt_ids, wavs, starts, stops = read_segments(seg_file)
+		io.cpp_sort(seg_file)  # C++ sort file for convenience
+		utt_ids, wavs, starts, stops = io.read_segments(seg_file)
 		# unique utterance-ids
 		duplicates = get_duplicates(utt_ids)
 		if duplicates:
@@ -257,8 +144,8 @@ def validate(corpus_path, verbose=False):
 		and all([e is None for e in starts]) \
 		and all([e is None for e in stops]):
 			# simple case, with one utterance per file and no explicit timestamps provided
-			# nothing else needs to be checked
-			pass
+			# just get list of files that are very short (less than 15ms)
+			short_wavs = [utt_id for utt_id, wav in zip(utt_ids, wavs) if durations[wav] < .015]
 		else:
 			# more complicated case
 			# find all utterances (plus timestamps) associated to each wavefile
@@ -269,6 +156,7 @@ def validate(corpus_path, verbose=False):
 			next_display_prop = 0.1
 			log.debug("Checked timestamps consistency for 0% of wavefiles")
 			warning = False
+			short_wavs = []
 			for i, wav in enumerate(wavefiles):
 				duration = durations[wav]
 				utts = [(utt, with_default(sta, 0), with_default(sto, duration)) for utt, w, sta, sto in zip(utt_ids, wavs, starts, stops) if w == wav]
@@ -279,7 +167,9 @@ def validate(corpus_path, verbose=False):
 					assert 0 <= start <= duration, \
 						"Start time for utterance {0} is not compatible with file duration".format(utt_id)
 					assert 0 <= stop <= duration, \
-						"Stop time for utterance {0} is not compatible with file duration".format(utt_id)	
+						"Stop time for utterance {0} is not compatible with file duration".format(utt_id)
+					if stop-start < .015:
+						short_wavs.append(utt_id)
 				# then check if there is overlap in time between the different utterances
 				# and if there is, issue a warning (not an error)
 				# 1. check that no two utterances start or finish at the same time
@@ -342,7 +232,13 @@ def validate(corpus_path, verbose=False):
 					"see details in log file {0}"
 					).format(log_file)
 				)
-		
+		if short_wavs:
+			log.warning(
+				(
+				"The following utterances are less than 15ms long and "
+				"won't be used in kaldi recipes: {0}"
+				).format(short_wavs)
+			)
 		log.debug("'segments.txt' file is OK")
 
 		
@@ -352,8 +248,8 @@ def validate(corpus_path, verbose=False):
 		log.debug("Checking 'speakers' file")
 		log.debug("C++ sort file")
 		spk_file = os.path.join(data_dir, "utt2spk.txt")
-		cpp_sort(spk_file)  # C++ sort file for convenience
-		utt_ids_spk, speakers = read_utt2spk(spk_file)
+		io.cpp_sort(spk_file)  # C++ sort file for convenience
+		utt_ids_spk, speakers = io.read_utt2spk(spk_file)
 		# same utterance-ids in segments.txt and utt2spk.txt
 		if not(utt_ids_spk == utt_ids):
 			duplicates = get_duplicates(utt_ids_spk)
@@ -392,8 +288,8 @@ def validate(corpus_path, verbose=False):
 		log.debug("Checking 'text.txt' file")
 		log.debug("C++ sort file")
 		txt_file = os.path.join(data_dir, "text.txt")
-		cpp_sort(txt_file)  # C++ sort file for convenience
-		utt_ids_txt, utt_words = read_text(txt_file)
+		io.cpp_sort(txt_file)  # C++ sort file for convenience
+		utt_ids_txt, utt_words = io.read_text(txt_file)
 		# we will check that the words are mostly in the lexicon later
 		# same utterance-ids in segments.txt and text.txt
 		if not(utt_ids_txt == utt_ids):
@@ -434,7 +330,7 @@ def validate(corpus_path, verbose=False):
 		#TODO: check xsampa compatibility and/or compatibility with articulatory features databases of IPA
 		# or just basic IPA correctness
 		phon_file = os.path.join(data_dir, "phones.txt")
-		phones, ipas = read_phones(phon_file)
+		phones, ipas = io.read_phones(phon_file)
 		assert not(u"SIL" in phones), \
 			(
 			u"'SIL' symbol is reserved for indicating "
@@ -468,7 +364,7 @@ def validate(corpus_path, verbose=False):
 				out.write(u"SPN\n")
 			sils = [u"SIL", u"SPN"]
 		else:
-			sils = read_silences(sil_file)
+			sils = io.read_silences(sil_file)
 			duplicates = get_duplicates(sils)
 			assert not(duplicates), \
 				(
@@ -499,7 +395,7 @@ def validate(corpus_path, verbose=False):
 				pass
 			variants = []
 		else:	
-			variants = read_variants(var_file)
+			variants = io.read_variants(var_file)
 			all_symbols = [symbol for group in variants for symbol in group]
 			unknown_symbols = [symbol for symbol in all_symbols if not(symbol in phones) and not(symbol in sils)]
 			assert not(unknown_symbols), \
@@ -524,7 +420,7 @@ def validate(corpus_path, verbose=False):
 		"""
 		log.debug("Checking 'lexicon.txt' file")
 		dict_file = os.path.join(data_dir, "lexicon.txt")
-		dict_words, transcriptions = read_dictionary(dict_file)
+		dict_words, transcriptions = io.read_dictionary(dict_file)
 		# unique word entries (alternative pronunciations are not currently supported)
 		duplicates = get_duplicates(dict_words)
 		assert not(duplicates), \

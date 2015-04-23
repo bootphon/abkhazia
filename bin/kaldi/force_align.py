@@ -9,146 +9,76 @@ Created on Thu Mar  5 11:32:55 2015
 This script takes a corpus in abkhazia format
 and instantiates a kaldi recipe to train
 a standard speaker-adapted triphone HMM-GMM model
-on this corpus and output a forced alignment
-of it.
+on the whole corpus and generate a forced alignment.
 
-This script does not make any parameter fitting,
-the user can provide his parameters, otherwise
-default values are used.
+See the recipe template in kaldi_templates/force_align.sh.
+See in particular the arguments that can be passed to the
+recipe and their default values.
+
+Once the recipe is instantiated, it can be ran like any
+other kaldi recipe.
 """
 
-#TODO: this script is not ready as is and need correction and completion
-import shutil
 import os.path as p
 import os
-import codecs
-import subprocess
+import abkhazia.utilities.io as io
+import abkhazia.kaldi.abkhazia2kaldi as a2k 
+
+# Main function of this module: 'create_kaldi_recipe'
+# TODO: 
+#	- document the input and output of create_kaldi_recipe
+#	- document the input and output of the created recipe and how to run it
+#	- write a command-line interface to create_kaldi_recipe
 
 
-#TODO: share this with validate_corpus
-def cpp_sort(filename):
-	# there is redundancy here but I didn't check which export can be 
-	# safely removed, so better safe than sorry
-	os.environ["LC_ALL"] = "C"
-	subprocess.call("export LC_ALL=C; sort {0} -o {1}".format(filename, filename), shell=True, env=os.environ)
+def create_kaldi_recipe(corpus_path, output_path, kaldi_root,
+					recipe_name="force_align"):
+	"""
+	Function to instantiate a ready-to-use kaldi recipe from a speech
+	corpora in abkhazia format
 
+	Parameters:
+		corpus_path: string
+		output_path: string
+		kaldi_root: string
+		recipe_name: string (default: 'force_align')
+	"""
+	# Checking paths
+	assert p.isdir(corpus_path), "Directory doesn't exist: {0}".format(corpus_path)
+	recipe_path = p.join(output_path, recipe_name, 's5')
+	if p.isdir(recipe_path):
+		raise IOError("Directory already exists: {0}".format(recipe_path))
+	else:
+		os.makedirs(recipe_path)
+	# DICT folder
+	a2k.setup_lexicon(corpus_path, recipe_path)  # lexicon.txt
+	a2k.setup_phones(corpus_path, recipe_path)  # nonsilence_phones.txt
+	a2k.setup_silences(corpus_path, recipe_path)  # silence_phones.txt, optional_silence.txt
+	a2k.setup_variants(corpus_path, recipe_path)  # extra_questions.txt
+	# DATA folders
+	# find utterances that are too short for kaldi (less than 15ms)
+	# (they result in empty feature files that trigger kaldi warnings)
+	# in order to filter them out of the text, utt2spk, segments and wav.scp files
+	wav_dir = os.path.join(corpus_path, 'data', 'wavs')
+	seg_file = os.path.join(corpus_path, 'data', 'segments.txt')
+	utt_durations = io.get_utt_durations(wav_dir, seg_file)
+	desired_utts = [utt for utt in utt_durations if utt_durations[utt] >= .015]
+	# setup data files
+	a2k.setup_text(corpus_path, recipe_path, desired_utts=desired_utts)  # text
+	a2k.setup_utt2spk(corpus_path, recipe_path, desired_utts=desired_utts)  # utt2spk
+	a2k.setup_segments(corpus_path, recipe_path, desired_utts=desired_utts)  # segments
+	a2k.setup_wav(corpus_path, recipe_path, desired_utts=desired_utts)  # wav.scp
+	# do some cpp_sorting just to be sure (for example if the abkhazia corpus has
+	# been copied to a different machine after its creation, there might be 
+	# some machine-dependent differences in the required orders)
+	files = ['text', 'utt2spk', 'segments', 'wav.scp']
+	for f in files:
+		path = p.join(recipe_path, 'data', 'main', f)
+		if p.exists(path):
+			io.cpp_sort(path)
+	# Other files and folders (common to all splits)
+	a2k.setup_wav_folder(corpus_path, recipe_path)  # wav folder
+	a2k.setup_kaldi_folders(kaldi_root, recipe_path)  # misc. kaldi symlinks, directories and files 
+	a2k.setup_machine_specific_scripts(recipe_path)  # path.sh, cmd.sh
+	a2k.setup_main_scripts(recipe_path)  # score.sh, run.sh
 
-def create_kaldi_recipe(corpus_path, output_path, kaldi_root, 
-					train_name='train', test_name='test'):
-	output_path = p.join(output_path, 's5')
-	corpus_path = p.join(corpus_path, 'data')
-	out_main = p.join(output_path, 'data', 'main')
-	out_dict = p.join(output_path, 'data', 'local', 'dict')
-	assert p.isdir(corpus_path), 'No such directory {0}'.format(corpus_path)
-	if not(p.isdir(output_path)):
-		os.makedirs(output_path)
-	if not(p.isdir(out_main)):
-		os.makedirs(out_main)
-	if not(p.isdir(out_dict)):
-		os.makedirs(out_dict)
-	## DICT folder
-	# lexicon.txt
-	shutil.copy(p.join(corpus_path, 'lexicon.txt'), p.join(out_dict, 'lexicon.txt'))
-	# phones.txt
-	with codecs.open(p.join(corpus_path, 'phones.txt'), mode='r', encoding='UTF-8') as inp:
-		lines = inp.readlines()
-	with codecs.open(p.join(out_dict, 'nonsilence_phones.txt'), mode='w', encoding='UTF-8') as out:
-		for line in lines:
-			symbol = line.split(u' ')[0]
-			out.write(u"{0}\n".format(symbol))
-	# silences.txt
-	shutil.copy(p.join(corpus_path, 'silences.txt'), p.join(out_dict, 'silence_phones.txt'))	
-	with codecs.open(p.join(out_dict, 'optional_silence.txt'), mode='w', encoding='UTF-8') as out:
-		out.write(u'SIL\n')
-	# variants.txt
-	shutil.copy(p.join(corpus_path, 'variants.txt'), p.join(out_dict, 'extra_questions.txt'))
-	## MAIN folder	
-	# text.txt
-	shutil.copy(p.join(corpus_path, 'text.txt'), p.join(out_main, 'text'))
-	# utt2spk.txt
-	shutil.copy(p.join(corpus_path, 'utt2spk.txt'), p.join(out_main, 'utt2spk'))
-	# segments
-	with codecs.open(p.join(corpus_path, 'segments.txt'), mode='r', encoding='UTF-8') as inp:
-		lines = inp.readlines()
-	with codecs.open(p.join(out_main, 'segments'), mode='w', encoding='UTF-8') as out_s:
-		wavs = set()
-		for line in lines:
-			utt_id, wav_id, start, stop = line.strip().split(u' ')
-			record_id = p.splitext(wav_id)[0]
-			out_s.write(u"{0} {1} {2} {3}\n".format(utt_id, record_id, start, stop))
-			wavs.add(wav_id)
-	# wav.scp
-	wav_scp = p.join(out_main, 'wav.scp')
-	with codecs.open(wav_scp, mode='w', encoding='UTF-8') as out_w:
-		for wav_id in wavs:
-			record_id = p.splitext(wav_id)[0]
-			wav_full_path = p.join(p.abspath(output_path), 'wavs', wav_id)
-			out_w.write(u"{0} {1}\n".format(record_id, wav_full_path))
-	cpp_sort(p.join(out_main, 'wav.scp'))
-	# wav folder
-	link_name =  p.join(output_path, 'wavs')
-	target = p.join(corpus_path, 'wavs')
-	if p.exists(link_name):
-		os.remove(link_name)
-	os.symlink(target, link_name)
-	# kaldi symlinks, directories and files
-	steps_dir = p.abspath(p.join(kaldi_root, 'egs', 'wsj', 's5', 'steps'))
-	steps_link = p.abspath(p.join(output_path, 'steps'))
-	if p.exists(steps_link):
-		os.remove(steps_link)
-	utils_dir = p.abspath(p.join(kaldi_root, 'egs', 'wsj', 's5', 'utils'))
-	utils_link = p.abspath(p.join(output_path, 'utils'))
-	if p.exists(utils_link):
-		os.remove(utils_link)
-	subprocess.call("ln -s {0} {1}".format(steps_dir, steps_link), shell=True)
-	subprocess.call("ln -s {0} {1}".format(utils_dir, utils_link), shell=True)
-	conf_dir = p.join(output_path, 'conf')	
-	if p.exists(conf_dir):
-		shutil.rmtree(conf_dir)
-	os.mkdir(conf_dir)
-	with open(p.join(conf_dir, 'mfcc.conf'), mode='w') as out:
-		pass
-	# cmd, path, score
-	kaldi_bin_dir = p.dirname(p.realpath(__file__))
-	kaldi_dir = p.join(kaldi_bin_dir, '..', '..', 'kaldi')
-	cmd_file = p.join(kaldi_dir, 'cmd.sh')
-	if not(p.exists(cmd_file)):
-		raise IOError(
-			(
-			"No cmd.sh in {0} "
-			"You need to create one adapted to "
-			"your machine. You can get inspiration "
-			"from {1}"
-			).format(kaldi_dir, p.join(kaldi_bin_dir, 'cmd_template.sh'))
-		)
-	shutil.copy(cmd_file, p.join(output_path, 'cmd.sh'))
-	path_file = p.join(kaldi_dir, 'path.sh')
-	if not(p.exists(path_file)):
-		raise IOError(
-			(
-			"No path.sh in {0} "
-			"You need to create one adapted to "
-			"your machine. You can get inspiration "
-			"from {1}"
-			).format(kaldi_dir, p.join(kaldi_bin_dir, 'path_template.sh'))
-		)
-	shutil.copy(path_file, p.join(output_path, 'path.sh'))
-	score_file = p.join(kaldi_dir, 'score.sh')
-	if not(p.exists(score_file)):
-		raise IOError(
-			(
-			"No score.sh in {0} "
-			"You need to create one adapted to "
-			"your machine. You can get inspiration "
-			"from {1}"
-			).format(kaldi_dir, p.join(kaldi_bin_dir, 'score_template.sh'))
-		)
-	local_dir = p.join(output_path, 'local')
-	if not(p.isdir(local_dir)):
-		os.mkdir(local_dir)
-	shutil.copy(score_file, p.join(local_dir, 'score.sh'))
-
-
-root = '/fhgfs/bootphon/scratch/thomas/abkhazia'
-kaldi_root = '/fhgfs/bootphon/scratch/thomas/kaldi'
-convert(p.join(root, 'corpora', 'Buckeye'), p.join(root, 'kaldi', 'Buckeye'), kaldi_root)

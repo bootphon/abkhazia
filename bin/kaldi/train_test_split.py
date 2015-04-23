@@ -1,52 +1,15 @@
+# -*- coding: utf-8 -*-
+"""
+Created on Thu Mar  5 11:32:55 2015
 
-import codecs
+@author: Thomas Schatz
+"""
+
 import os.path as p
 import random
-import subprocess
 import os
 import shutil
-import numpy as np
-
-
-#TODO share this with validate_corpus.py
-def basic_parse(line, filename):
-	# check line break
-	assert not('\r' in line), "'{0}' contains non Unix-style linebreaks".format(filename)
-	# check spacing
-	assert not('  ' in line), "'{0}' contains lines with two consecutive spaces".format(filename)
-	# remove line break
-	line = line[:-1]
-	# parse line
-	l = line.split(" ")
-	return l
-
-
-def cpp_sort(filename):
-	# there is redundancy here but I didn't check which export can be 
-	# safely removed, so better safe than sorry
-	os.environ["LC_ALL"] = "C"
-	subprocess.call("export LC_ALL=C; sort {0} -o {1}".format(filename, filename), shell=True, env=os.environ)
-
-
-def read_utt2spk(filename):
-	utt_ids, speakers = [], []
-	with codecs.open(filename, mode='r', encoding="UTF-8") as inp:
-		lines = inp.readlines()
-	for line in lines:
-		l = basic_parse(line, filename)
-		assert(len(l) == 2), "'utt2spk.txt' should contain only lines with two columns"
-		utt_ids.append(l[0])
-		speakers.append(l[1])
-	return utt_ids, speakers
-
-
-def copy_match(file_in, file_out, get_matches):
-	with codecs.open(file_in, mode='r', encoding='UTF-8') as inp:
-		lines = inp.readlines()
-	lines = get_matches(lines)
-	with codecs.open(file_out, mode='w', encoding='UTF-8') as out:
-		for line in lines:
-			out.write(line)
+import abkhazia.utilities.io as io
 
 
 def train_test_split(corpus_path, split_speakers=False,
@@ -112,7 +75,7 @@ def train_test_split(corpus_path, split_speakers=False,
 		pr = True
 		train_proportion = .5
 	""" read input """
-	utt_ids, utt_speakers = read_utt2spk(p.join(corpus_path, 'data', 'utt2spk.txt'))
+	utt_ids, utt_speakers = io.read_utt2spk(p.join(corpus_path, 'data', 'utt2spk.txt'))
 	utts = zip(utt_ids, utt_speakers)
 	nb_utts = len(utt_ids)
 	speakers =	set(utt_speakers)
@@ -172,21 +135,12 @@ def train_test_split(corpus_path, split_speakers=False,
 	files= ['utt2spk.txt', 'text.txt', 'segments.txt']
 	try:
 		# select relevant parts of utt2spk.txt, text.txt and segments.txt
-		def match_utt_ids(lines, desired_utt_ids):
-			utt_ids = [line.strip().split(u" ")[0] for line in lines]
-			# need numpy here to get something fast easily
-			# could also have something faster with pandas
-			# see http://stackoverflow.com/questions/15939748/check-if-each-element-in-a-numpy-array-is-in-another-array
-			indices = np.where(np.in1d(np.array(utt_ids), np.array(desired_utt_ids)))[0]
-			lines = list(np.array(lines)[indices])		
-			return lines
-		match_train = lambda lines: match_utt_ids(lines, train_utt_ids)
-		match_test = lambda lines: match_utt_ids(lines, test_utt_ids)
 		for f in files:
-			copy_match(p.join(data_dir, f), p.join(train_dir, f), match_train)
-			copy_match(p.join(data_dir, f), p.join(test_dir, f), match_test)
-			cpp_sort(p.join(train_dir, f))
-			cpp_sort(p.join(test_dir, f))
+            train_out, test_out = p.join(train_dir, f), p.join(test_dir, f)
+			io.copy_first_col_matches(p.join(data_dir, f), train_out, train_utt_ids)
+			io.copy_first_col_matches(p.join(data_dir, f), test_out, test_utt_ids)
+			io.cpp_sort(train_out)
+			io.cpp_sort(test_out)
 	except:
 		try:
 			shutil.rmtree(train_dir)			
