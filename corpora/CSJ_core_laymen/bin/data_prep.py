@@ -53,7 +53,7 @@ def parse_CSJ_core_xml(xml_file):
 	if len(speaker) == 3:
 		speaker = "0" + speaker
 	else:
-		assert len(speaker) == 4, speaker
+		assert len(speaker) == 4, talk_id
 	gender = 'M' if talk.attrib["SpeakerSex"] == u"男" else 'F'  # using kanji for 'male'
 	spk_id = gender + speaker
 
