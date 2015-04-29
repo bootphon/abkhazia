@@ -85,9 +85,12 @@ def parse_CSJ_core_xml(xml_file):
 			if phonemes:
 				words.append(Word(phonemes, phonemes[0].start, phonemes[-1].end))
 			else:
-				moras = [mora.attrib["MoraEntity"] for mora in suw.iter("Mora")]
+				try:
+					moras = [mora.attrib["MoraEntity"] for mora in suw.iter("Mora")]
+					print(moras)
+				except:
+					pass
 				print(utt_id)
-				print(moras)
 				#FIXME understand this 
 				#assert u"φ" in moras, utt_id
 		utts[utt_id] = Utt(words, utt_start, utt_stop, channel)
