@@ -33,6 +33,8 @@ For 8 files: bad portions ???
 - some empty sentences because they contain NonLinguisticSound instead of SUW balise, treat these differently ?
 - isolated H sentences ?? maybe because some long vowel are spread across two SUW for some reason ?
 need to listen to it. If it is the case, in preprocessing regroup these SUW.
+
+TODO remove redundancy from utt_ids (spk_id present twice ...)
 """
 
 Phone = namedtuple('Phone', 'id type start end')
@@ -380,13 +382,18 @@ vowels = [
 	('u:', u'ɯ:')
 ]
 
+# geminates: look at the effectives
 consonants = [
 	('F', u'ɸ'),  # not sure about this one
+	('F:', u'ɸ:'),  # not sure about this one
 	('N', u'ɴ'),
 	('Q', u'ʔ'),
 	('b', u'b'),
+	('b:', u'b:'),  # is this really a geminate (with a voiced stop ?)
 	('d', u'd'),
+	('d:', u'd:'),  # is this really a geminate (with a voiced stop ?)
 	('g', u'g'),
+	('g:', u'g:'),  # is this really a geminate (with a voiced stop ?)
 	('h', u'h'),
 	('k', u'k'),
 	('k:', u'k:'),
@@ -396,6 +403,7 @@ consonants = [
 	('p:', u'p:'),
 	('r', u'r'),
 	('s', u's'),
+	('s:', u's:'),
 	('sy', u'ɕ'),
 	('sy:', u'ɕ:'),
 	('t', u't'),
@@ -404,6 +412,7 @@ consonants = [
 	('y', u'j'),
 	('z', u'z'),
 	('zy', u'ʑ')  # very commonly an affricate...
+	('zy:', u'ʑ:')
 ]
 
 phones = {}
