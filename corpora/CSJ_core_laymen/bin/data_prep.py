@@ -48,7 +48,12 @@ def parse_CSJ_core_xml(xml_file):
 	tree = ET.ElementTree(file=xml_file)
 	talk = tree.getroot()
 	talk_id = talk.attrib["TalkID"]	
-	speaker = talk.attrib["SpeakerID"]   
+	speaker = talk.attrib["SpeakerID"]
+	# make sure all speaker-ids have same length
+	if len(speaker) == 3:
+		speaker = "0" + speaker
+	else:
+		assert len(speaker) == 4, speaker
 	gender = 'M' if talk.attrib["SpeakerSex"] == u"男" else 'F'  # using kanji for 'male'
 	spk_id = gender + speaker
 
