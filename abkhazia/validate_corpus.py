@@ -275,7 +275,11 @@ def validate(corpus_path, verbose=False):
 				)		
 		# speaker ids must have a fixed length
 		l = len(speakers[0])
-		assert all([len(s) == l for s in speakers]), "All speaker-ids must have the same length"
+		if not(all([len(s) == l for s in speakers])):
+			spk_len = collections.Counter([len(s) for s in speakers])
+			log.error("Speaker-ids length observed in utt2spk.txt with associated frequencies: {0}".format(spk_len))
+			raise IOError("All speaker-ids must have the same length. See log for more details.")
+
 		# each speaker id must be prefix of corresponding utterance-id
 		for utt, spk in zip(utt_ids, speakers):
 			assert utt[:l] == spk, "All utterance-ids must be prefixed by the corresponding speaker-id"
