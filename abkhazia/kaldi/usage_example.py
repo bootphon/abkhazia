@@ -12,6 +12,7 @@ import abkhazia.kaldi.train_test_split as split
 import abkhazia.kaldi.force_align as force_align
 import abkhazia.kaldi.train_and_decode as decode
 import os.path as p
+import subprocess
 
 root = '/Users/thomas/Documents/PhD/Recherche/other_gits/abkhazia'
 kaldi_root = '/Users/thomas/Documents/PhD/Recherche/kaldi/kaldi-trunk'
@@ -21,12 +22,12 @@ kaldi_root = '/Users/thomas/Documents/PhD/Recherche/kaldi/kaldi-trunk'
 corpora = ['GP_Mandarin', 'GP_Vietnamese']
 prune_lexicons = [False, True]
 for corpus, prune_lexicon in zip(corpora, prune_lexicons):
-	## Forced alignments
+	## Instantiate forced alignment recipe
 	force_align.create_kaldi_recipe(p.join(root, 'corpora', corpus),
 									p.join(root, 'kaldi', corpus),
 									kaldi_root)
 
-	## Posterior decoding
+	## Instantiate posterior decoding recipe
 	# cutting corpus in half and using different speakers for train and test sets
 	split.train_test_split(p.join(root, 'corpora', corpus), train_proportion=.5, split_speakers=False)
 
@@ -34,7 +35,19 @@ for corpus, prune_lexicon in zip(corpora, prune_lexicons):
 							   p.join(root, 'kaldi', corpus),
 							   kaldi_root, 
 							   prune_lexicon=prune_lexicon)
+          
+      ## Estimate LM for posterior decoding recipe from some text ??? 
+      # or use LM in arpa-MIT format
+      # or what?
+      
+      ## Run the recipes
+      # how to set the parameters here easily?
+      # subprocess.call(cd recipe_path; ./run.sh)
 
+      ## Check and process the results
+      
+      # add an alignments folder to data
+      # add a features folder to data ??? (probably somewhere else?) 
 
 """
 # test on Buckeye for challenge

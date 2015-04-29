@@ -26,8 +26,11 @@ def setup_lexicon(corpus_path, recipe_path, prune_lexicon=False, train_name=None
 		# get words appearing in train part
 		train_text = p.join(corpus_path, 'data', 'split', train_name, 'text.txt')
 		_, utt_words = io.read_text(train_text)
-		allowed_words = list(set([word for utt in utt_words for word in utt]))
+		allowed_words = set([word for utt in utt_words for word in utt])
+		# add special OOV word <unk>
+		allowed_words.add(u'<unk>')
 		# remove other words from the lexicon
+		allowed_words = list(allowed_words)
 		io.copy_first_col_matches(p.join(corpus_path, 'data', 'lexicon.txt'),
 								  p.join(dict_path, 'lexicon.txt'),
 								  allowed_words)
@@ -169,6 +172,9 @@ def setup_kaldi_folders(kaldi_root, recipe_path):
 	# create mfcc.conf file (following what seems to be commonly used in other kaldi recipes)
 	with open(p.join(conf_dir, 'mfcc.conf'), mode='w') as out:
 		out.write("--use-energy=false   # only non-default option.\n")
+	# create empty pitch.conf file (required when using mfcc + pitch features)
+	with open(p.join(conf_dir, 'pitch.conf'), mode='w') as out:
+		pass
 
 
 def copy_template(filename, template, recipe_path):

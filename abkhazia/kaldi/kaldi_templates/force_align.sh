@@ -37,7 +37,6 @@ num_states_sa=2500
 num_gauss_sa=15000
 
 
-
 ###### Recipe ######
 
 [ -f cmd.sh ] && source ./cmd.sh \
@@ -108,7 +107,7 @@ steps/train_sat.sh --cmd "$train_cmd" \
 mkdir -p exp/tri2a_ali_fmllr
 steps/align_fmllr.sh --nj 1 --cmd "$train_cmd" \
   data/main data/lang exp/tri2a exp/tri2a_ali_fmllr \
-  >& exp/tri2a_ali_fmllr/align.
+  >& exp/tri2a_ali_fmllr/align.log
 
 ##### Exporting results #####
 mkdir -p export
