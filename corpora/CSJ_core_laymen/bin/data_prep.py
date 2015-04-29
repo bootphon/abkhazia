@@ -81,7 +81,10 @@ def parse_CSJ_core_xml(xml_file):
 					id = phone.attrib["PhoneEntity"]
 					phn_class = phone.attrib["PhoneClass"]
 					phones.append(Phone(id, phn_class, start, stop))
-				phonemes.append(Phoneme(phoneme_id, phones, phones[0].start, phones[-1].end))
+				if phones:
+					phonemes.append(Phoneme(phoneme_id, phones, phones[0].start, phones[-1].end))
+				else:
+					print(utt_id)
 			if phonemes:
 				words.append(Word(phonemes, phonemes[0].start, phonemes[-1].end))
 			else:
@@ -274,8 +277,14 @@ Export to abkhazia format
 #TODO get this path relative to the script
 output_folder = "/fhgfs/bootphon/scratch/thomas/abkhazia/corpora/CSJ_core_laymen/data/"
 data_files = os.listdir("/fhgfs/bootphon/data/raw_data/CSJ/XML")
-# select laymen talks only + remove extension
-data_files = [f.replace('.xml', '') for f in data_files if f[0] == 'S']
+# select laymen talks only + remove extension + only from CORE part of the corpus
+script_dir = os.path.dirname(os.path.realpath(__file__))
+core_files = os.path.join(script_dir, 'CSJ_core.txt')
+with open(core_files, 'r') as fh:
+	core_files = [l[:-1] for l in fh.readlines()] # remove new lines
+data_files = [f.replace('.xml', '') for f in data_files if f[0] == 'S' and f in core_files]
+print(len(data_files))
+
 xml_dir = "/fhgfs/bootphon/data/raw_data/CSJ/XML"
 wav_dir = "/fhgfs/bootphon/data/raw_data/CSJ/Waveforms"
 
