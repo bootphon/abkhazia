@@ -258,10 +258,22 @@ def reencode(phonemes, encoding=None):
 """
 Export to abkhazia format
 """
-output_folder = "/Users/thomas/Documents/PhD/Recherche/other_gits/abkhazia/corpora/CSJ_core_laymen/data/"
-data_files = ["S07M0833"]
-xml_dir = "/Users/thomas/Documents/PhD/Recherche/databases/CSJ"
-wav_dir = "/Users/thomas/Documents/PhD/Recherche/databases/CSJ"
+
+
+#output_folder = "/Users/thomas/Documents/PhD/Recherche/other_gits/abkhazia/corpora/CSJ_core_laymen/data/"
+#data_files = ["S07M0833"]
+#xml_dir = "/Users/thomas/Documents/PhD/Recherche/databases/CSJ"
+#wav_dir = "/Users/thomas/Documents/PhD/Recherche/databases/CSJ"
+
+
+#TODO get this path relative to the script
+output_folder = "/fhgfs/bootphon/scratch/thomas/abkhazia/corpora/CSJ_core_laymen/data/"
+data_files = os.listdir("/fhgfs/bootphon/data/raw_data/CSJ/XML")
+# select laymen talks only + remove extension
+data_files = [f.replace('.xml', '') for f in data_files if f[0] == 'S']
+xml_dir = "/fhgfs/bootphon/data/raw_data/CSJ/XML"
+wav_dir = "/fhgfs/bootphon/data/raw_data/CSJ/Waveforms"
+
 
 # gather label data
 all_utts = {}
