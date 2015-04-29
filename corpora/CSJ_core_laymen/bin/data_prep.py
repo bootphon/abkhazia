@@ -49,7 +49,7 @@ def parse_CSJ_core_xml(xml_file):
 	talk = tree.getroot()
 	talk_id = talk.attrib["TalkID"]	
 	speaker = talk.attrib["SpeakerID"]   
-	gender = 'M' if talk.attrib["SpeakerSex"] == "男" else 'F'  # using kanji for 'male'
+	gender = 'M' if talk.attrib["SpeakerSex"] == u"男" else 'F'  # using kanji for 'male'
 	spk_id = gender + speaker
 
 	if talk_id[0] == "D":
@@ -86,7 +86,7 @@ def parse_CSJ_core_xml(xml_file):
 				words.append(Word(phonemes, phonemes[0].start, phonemes[-1].end))
 			else:
 				moras = [mora.attrib["MoraEntity"] for mora in suw.iter("Mora")]
-				assert "φ" in moras, utt_id
+				assert u"φ" in moras, utt_id
 				print(utt_id)
 		utts[utt_id] = Utt(words, utt_start, utt_stop, channel)
 	return utts
