@@ -50,8 +50,8 @@ def parse_CSJ_core_xml(xml_file):
 	talk_id = talk.attrib["TalkID"]	
 	speaker = talk.attrib["SpeakerID"]
 	# make sure all speaker-ids have same length
-	if len(speaker) == 3:
-		speaker = "0" + speaker
+	if len(speaker) < 4:
+		speaker = "0"*(4-len(speaker)) + speaker
 	else:
 		assert len(speaker) == 4, talk_id
 	gender = 'M' if talk.attrib["SpeakerSex"] == u"男" else 'F'  # using kanji for 'male'
