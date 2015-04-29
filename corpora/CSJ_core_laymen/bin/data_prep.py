@@ -282,6 +282,7 @@ script_dir = os.path.dirname(os.path.realpath(__file__))
 core_files = os.path.join(script_dir, 'CSJ_core.txt')
 with open(core_files, 'r') as fh:
 	core_files = [l[:-1] for l in fh.readlines()] # remove new lines
+print(core_files)
 data_files = [f.replace('.xml', '') for f in data_files if f[0] == 'S' and f in core_files]
 print(len(data_files))
 
