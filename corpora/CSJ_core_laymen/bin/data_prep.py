@@ -386,7 +386,7 @@ vowels = [
 consonants = [
 	('F', u'ɸ'),  # not sure about this one
 	('F:', u'ɸ:'),  # not sure about this one
-	('N', u'ɴ'),
+	('N', u'ɴ'),	# maybe we should transcribe the N like the Q based on following consonant?
 	('Q', u'ʔ'),
 	('b', u'b'),
 	('b:', u'b:'),  # is this really a geminate (with a voiced stop ?)
@@ -394,6 +394,10 @@ consonants = [
 	('d:', u'd:'),  # is this really a geminate (with a voiced stop ?)
 	('g', u'g'),
 	('g:', u'g:'),  # is this really a geminate (with a voiced stop ?)
+	# look at difference between aspiration and gemination, gemination 
+	# is supposed to affect the duration of closure and aspiration the 
+	# VOT. This explains that gemination cannot occur at the beginning
+	# of an utterance (no way to determine the duration of closure)
 	('h', u'h'),
 	('k', u'k'),
 	('k:', u'k:'),

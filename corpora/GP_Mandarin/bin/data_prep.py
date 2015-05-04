@@ -115,6 +115,8 @@ def utt_list(wav_dir, output_file):
 	files = list_dir(wav_dir)	
 	with codecs.open(output_file, mode='w', encoding='UTF-8') as out:
 		for f in files:
+			assert '.wav' in f, \
+				"file {0} in directory {1} is not a wavefile".format(f, wav_dir)
 			utt_id = f.replace('.wav', '')
 			out.write(u"{0} {1}\n".format(utt_id, f))
 
@@ -123,6 +125,8 @@ def spk_list(wav_dir, output_file):
 	files = list_dir(wav_dir)	
 	with codecs.open(output_file, mode='w', encoding='UTF-8') as out:
 		for f in files:
+			assert '.wav' in f, \
+				"file {0} in directory {1} is not a wavefile".format(f, wav_dir)
 			utt_id = f.replace('.wav', '')
 			spk_id = f[:5]
 			out.write(u"{0} {1}\n".format(utt_id, spk_id))
@@ -230,6 +234,7 @@ def extract_dictionary(dictionary_file, output_file, words_to_drop=None):
 ############################### Main part of the script ###############################
 #######################################################################################
 #######################################################################################
+
 
 def data_prep(raw_path, raw_dict_path, processed_path, languages):
 
