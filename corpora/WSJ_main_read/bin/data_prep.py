@@ -2,7 +2,7 @@
 """
 Created on Wed Feb  4 00:17:47 2015
 
-@author: Thomas Schatz
+@author: Xuan-Nga Cao, Thomas Schatz
 """
 
 """
@@ -275,7 +275,7 @@ raw_cmu_path = "/fhgfs/bootphon/data/raw_data/CMU_dict/cmudict.0.7a"
 sph2pipe = "/cm/shared/apps/kaldi/tools/sph2pipe_v2.5/sph2pipe"
 #sph2pipe = "/Users/thomas/Documents/PhD/Recherche/kaldi/kaldi-trunk/tools/sph2pipe_v2.5/sph2pipe"
 # Path to a directory where the processed corpora is to be stored
-output_dir = "/fhgfs/bootphon/scratch/thomas/abkahzia/corpora/WSJ_main_read"
+output_dir = "/fhgfs/bootphon/scratch/thomas/abkhazia/corpora/WSJ_main_read"
 #output_dir = "/Users/thomas/Documents/PhD/Recherche/other_gits/abkhazia/corpora/WSJ_main_read"
 
 #######################################################################################
