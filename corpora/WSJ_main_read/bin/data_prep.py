@@ -317,7 +317,7 @@ print("Found corrupted utterances")
 STEP 2 - Setting up wav folder
 This step can take a lot of time (~70 000 files to convert)
 """
-#wv1_2_wav(main_read_wv1, wav_dir, sph2pipe, exclude=bad_utts)
+wv1_2_wav(main_read_wv1, wav_dir, sph2pipe, exclude=bad_utts)
 print("Copied wavefiles")
 
 """
@@ -393,12 +393,12 @@ for phone, ipa in CMU_phones:
     phones[phone] = ipa
 silences = [u"NSN"]  # SPN and SIL will be added automatically
 variants = []  # could use lexical stress variants...
-#make_phones(phones, data_dir, silences, variants)
+make_phones(phones, data_dir, silences, variants)
 print("Created phones.txt, silences.txt, variants.txt")
 
 """
 STEP 7 - lexicon.txt
 """
 output_file = os.path.join(data_dir, "lexicon.txt")
-#make_lexicon(raw_cmu_path, output_file)
+make_lexicon(raw_cmu_path, output_file)
 print("Created lexicon.txt")
