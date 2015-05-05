@@ -262,21 +262,21 @@ def make_lexicon(raw_cmu_path, output_file):
 
 # path to raw LDC distribution of WSJ as available from https://catalog.ldc.upenn.edu/LDC93S6A 
 # and https://catalog.ldc.upenn.edu/LDC94S13A (not free)
-#raw_wsj_path = "/fhgfs/bootphon/data/raw_data/WSJ_LDC/"
-raw_wsj_path = "/Users/thomas/Documents/PhD/Recherche/databases/WSJ_LDC/"
+raw_wsj_path = "/fhgfs/bootphon/data/raw_data/WSJ_LDC/"
+#raw_wsj_path = "/Users/thomas/Documents/PhD/Recherche/databases/WSJ_LDC/"
 # path to CMU dictionary as available from http://www.speech.cs.cmu.edu/cgi-bin/cmudict (free)
 # the recipe was designed using version 0.7a of the dictionary, but other recent versions
 # could probably be used without changing anything 
-#raw_cmu_path = "/fhgfs/bootphon/data/raw_data/CMU_dict/cmudict.0.7a"
-raw_cmu_path = "/Users/thomas/Documents/PhD/Recherche/databases/CMU_dict/cmudict.0.7a"
+raw_cmu_path = "/fhgfs/bootphon/data/raw_data/CMU_dict/cmudict.0.7a"
+#raw_cmu_path = "/Users/thomas/Documents/PhD/Recherche/databases/CMU_dict/cmudict.0.7a"
 # sph2pipe is required for converting .wv1 to .wav.
 # One way to get it is to install kaldi, then sph2pipe can be found in:
 #   /path/to/kaldi/tools/sph2pipe_v2.5/sph2pipe
-#sph2pipe = "/cm/shared/apps/kaldi/tools/sph2pipe_v2.5/sph2pipe"
-sph2pipe = "/Users/thomas/Documents/PhD/Recherche/kaldi/kaldi-trunk/tools/sph2pipe_v2.5/sph2pipe"
+sph2pipe = "/cm/shared/apps/kaldi/tools/sph2pipe_v2.5/sph2pipe"
+#sph2pipe = "/Users/thomas/Documents/PhD/Recherche/kaldi/kaldi-trunk/tools/sph2pipe_v2.5/sph2pipe"
 # Path to a directory where the processed corpora is to be stored
-#output_dir = "fhgfs/bootphon/scratch/thomas/abkahzia/corpora/WSJ_main_read"
-output_dir = "/Users/thomas/Documents/PhD/Recherche/other_gits/abkhazia/corpora/WSJ_main_read"
+output_dir = "/fhgfs/bootphon/scratch/thomas/abkahzia/corpora/WSJ_main_read"
+#output_dir = "/Users/thomas/Documents/PhD/Recherche/other_gits/abkhazia/corpora/WSJ_main_read"
 
 #######################################################################################
 #######################################################################################
