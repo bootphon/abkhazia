@@ -2,29 +2,20 @@
 """
 Created on Wed Feb  4 00:17:47 2015
 
-@author: Thomas Schatz
+@author: Xuan-Nga Cao, Thomas Schatz
 """
 
 """
 Data preparation WSJ for main corpus (excluding journalists) read speech
 """
 
+#TODO besides, paths, needs to change regex to extract the correct files for appropriate corpus
+
+
 import os
 import subprocess
 import re
-import shutil
-
-
-
-# paths - needs to change paths and versions of WSJ
-# create 'data' directory if doesn't exist
-# phones.txt should be distributed?
-raw_path = "/fhgfs/bootphon/data/raw_data/WSJ_LDC/"
-derived_path = "/fhgfs/bootphon/data/derived_data/new_WSJ_abkhazia/WSJ_main_read/"
-dict_path = "/fhgfs/bootphon/data/raw_data/CMU_dict/"
-abkhazia_path_data = "/fhgfs/bootphon/scratch/xcao/github_abkhazia/abkhazia/corpora/WSJ_main_read/data/"
-abkhazia_path = "/fhgfs/bootphon/scratch/xcao/github_abkhazia/abkhazia/corpora/WSJ_main_read/"
-
+import codecs
 
 #######################################################################################
 #######################################################################################
@@ -32,260 +23,382 @@ abkhazia_path = "/fhgfs/bootphon/scratch/xcao/github_abkhazia/abkhazia/corpora/W
 #######################################################################################
 #######################################################################################
 
-#If generating the data for the first time, run all steps
-#Otherwise, start from step 4 to just link the wavs rep. (wavs already available in /fhgfs/bootphon/data/derived_data/new_WSJ_abkhazia/WSJ_main_read/)
-#besides, paths, needs to change regex to extract the correct files for appropriate corpus
 
-#STEP 1
-# filter out .DS_Store files from MacOS if any
 def list_dir(d):
+    # filter out .DS_Store files from MacOS if any
 	return [e for e in os.listdir(d) if e != '.DS_Store']
 
 
-#STEP 2
-#copy all wv1 files into one wv1 directory in "derived data"
-#copy all transcription files to "derived data"
-#Arguments are wv1 (o) and trs (o2) folders
-def copy_wv1_trs(o, o2):
-    array_good_dir =[]
-    #create wirs dir
-    output_dir = os.path.join(derived_path, o)
-    if not os.path.isdir(output_dir):
-        os.makedirs(output_dir)
-    #create trs dir
-    output_dir2 = os.path.join(derived_path, o2)
-    if not os.path.isdir(output_dir2):
-        os.makedirs(output_dir2)
-    #walk recursively and find the directories for main_read: si_tr_s and 'c'; sd_tr_s and 'c'; sd_tr_l and 'c' (in WSJ0); si_tr_s and 'c'; si_tr_l and 'c' (in WSJ1)
-    #needs to change regex to find the correct files
-    for dirpath, dirs, files in os.walk(raw_path):
+def list_wsj_files(raw_wsj_path, dir_filter, file_filter):
+    """
+    Return list of fullpaths to relevant WSJ files
+    relevant being defined by dir_filter and file_filter. 
+    See examples of usage below.
+    """
+    file_list = []
+    for dirs_path, dirs, _ in os.walk(raw_wsj_path):
         for d in dirs:
-            d_match = re.match("si_tr_s", d)
-            if d_match:
-                good_dir = os.path.join(dirpath,d)
-                array_good_dir.append(good_dir)
-            else:
-                m2 = re.match("sd_tr_s", d)
-                if m2:
-                    good_dir = os.path.join(dirpath,d)
-                    array_good_dir.append(good_dir)
-                else:
-                    m3 = re.match("sd_tr_l", d)
-                    if m3:
-                        good_dir = os.path.join(dirpath,d)
-                        array_good_dir.append(good_dir)
-                    else:
-                        m4 = re.match("si_tr_l", d)
-                        if m4:
-                            good_dir = os.path.join(dirpath,d)
-                            array_good_dir.append(good_dir)
-    #Only walk through j_read directories and copy all "c" wv1 files (XXXc...) to temp wv1 folder
-    for d in array_good_dir:
-        for dirpath2, dirs2, files2 in os.walk(d):
-            for f in files2:
-                m_file = re.match("^([0-9a-z][0-9a-z][0-9a-z])c(.*)\.wv1", f)
-                if m_file:
-                    filename = os.path.join(dirpath2,f)
-                    dest_filename = os.path.join(output_dir,f)
-                    shutil.copy2(filename, dest_filename)
-                    print ('finished copying wv1' + filename)
-                m_trs = re.match("^([0-9a-z][0-9a-z][0-9a-z])c(.*)\.dot", f)
-                if m_trs:
-                    filename = os.path.join(dirpath2,f)
-                    dest_filename = os.path.join(output_dir2,f)
-                    shutil.copy2(filename, dest_filename)
-                    print ('finished copying trs' + filename)
-                    
-
-#STEP 3
-#call shell script to convert all flac files to wav files
-def convert_wv1():
-    #needs to change path in convert_wv1_wav.sh - may also need to change rights for the shell script in order to execute it
-    subprocess.call("./convert_wv1_wav.sh", shell=True)
-    wv1_dir = os.path.join(derived_path, "wv1")
-    #remove wv1 folder
-    shutil.rmtree(wv1_dir)
-    print ('finished converting wv1 files to wav files and moving them to wavs directory')
+            if dir_filter(d):
+                for d_path, _, files in os.walk(os.path.join(dirs_path, d)):
+                    for f in files:
+                        if file_filter(f):
+                            file_list.append(os.path.join(d_path, f))
+    return file_list
 
 
-#STEP 4
-#link speech folder to the data kaldi directory
-def link_wavs():
-    wavs_path = os.path.join(abkhazia_path_data, "wavs")
-    wavs_path_src = os.path.join(derived_path, 'wavs')
-    logs_path = os.path.join(abkhazia_path, "logs")
-    #if wavs folder doesn't exist, create symbolic link to speech data
-    if not os.path.isdir(wavs_path):
-        os.symlink(wavs_path_src, wavs_path)
-    #if already exists, remove folder and all files and re-create symbolic link to speech data
-    else:
-        #unlink folder
-        os.unlink(wavs_path)
-        #remove folder
-        shutil.rmtree(wavs_path, ignore_errors=True)
-        #create symlink
-        os.symlink(wavs_path_src, wavs_path)
-    #if logs folder doesn't exist, create folder
-    if not os.path.isdir(logs_path):
-        os.makedirs(logs_path)
-    print ('finished linking wavs directory and creating logs directory')
+def find_corrupted_utts(dot_files):
+    bad_utts = []
+    for f in dot_files:
+        with codecs.open(f, mode='r', encoding='UTF-8') as inp:
+            lines = inp.readlines()
+        for line in lines:
+            if "[bad_recording]" in line:
+                # this tag in the transcript
+                # indicates there is a problem
+                # with the associated recording
+                # (if it even exists)
+                # so exclude it
+                matches = re.match("(.*) \((.*)\)", line)
+                utt_id = matches.group(2)
+                bad_utts.append(utt_id)
+    # could log the result...
+    return bad_utts
+    
+
+def wv1_2_wav(wv1_files, wav_dir, sph2pipe, exclude=None):
+    """
+    convert .wv1 (flac) files to .wav files
+    
+    wv1_files is the list of full paths to the wv1 files
+    to be converted to wavs
+
+    wav_dir is the directory where the created wavs are put
+
+    sph2pipe is the path to the sph2pipe executable
+
+    exclude is a list of utt_id that shouldn't be used
+    """
+    if exclude is None:
+        exclude = []
+    if not(os.path.isdir(wav_dir)):
+        os.mkdir(wav_dir)
+    for inp in wv1_files:
+        bname = os.path.basename(inp)
+        utt_id = bname.replace('.wv1', '')
+        if not(utt_id in exclude):  # exclude some utterances
+            out = os.path.join(wav_dir, bname.replace('.wv1', '.wav'))
+            subprocess.call(sph2pipe + " -f wav {0} >> {1}".format(inp, out), shell=True)
 
 
-#STEP 5
-#Create segments file: <utterance-id> <wav-filename>
-#Create speakers file: <utterance-id> <speaker-id>
-#Argument is name of wav directory
-def segments_text_speakers():
-    utt_list = []
-    output_file_segment = open(os.path.join(abkhazia_path_data, 'segments.txt'), 'w')
-    output_file_speaker = open(os.path.join(abkhazia_path_data, 'utt2spk.txt'), 'w')
-    output_file_text = open(os.path.join(abkhazia_path_data, 'text.txt'), 'w')
-    output_file_temp = open(os.path.join(abkhazia_path, 'logs/temp.txt'), 'w')
-    input_dir_wav = os.path.join(derived_path, "wavs")
-    input_dir_trs = os.path.join(derived_path, "trs")
-    #list all files in wav folder
-    files = os.listdir(input_dir_wav)
-    #get basename from file to get utt_ID
-    for filename in files:
-        utt_ID = os.path.splitext(filename)[0]
-        #create a list with all utt_ID
-        utt_list.append(utt_ID)
-        #write segments file
-        output_file_segment.write(utt_ID + ' ' + filename + '\n')
-        #extract the first 3 characters from filename to get speaker_ID
-        m_speaker = re.match("^([0-9a-z][0-9a-z][0-9a-z])c(.*)\.wav", filename)
-        if m_speaker:
-            speaker_ID = m_speaker.group(1)
-            #write utt2spk file
-            output_file_speaker.write(utt_ID + ' ' + speaker_ID + '\n')
-    print ('finished creating segments and speakers files')
-    files_trs = os.listdir(input_dir_trs)
-    for filename2 in files_trs:
-        infile = open(os.path.join(input_dir_trs, filename2), 'r')
-        for line in infile:
-            m_line = re.match("(.*) \((.*)\)", line)
-            if m_line:
-                utt = m_line.group(1)
-                ID = m_line.group(2)
-                #ID doesn't match from list of files, skip (this is to deal with utterances that have only noise)
-                if ID not in utt_list:
-                    print(ID)
-                    continue
-                else:
-                    words = utt.split()
-                    output_file_temp.write(ID + ' ')
-                    for w in words:
-                        w = w.upper() # Upcase everything to match the CMU dictionary
-                        w = w.replace("\\", "") #Remove backslashes.  We don't need the quoting
-                        w = w.replace("%PERCENT", "PERCENT") # Normalization for Nov'93 test transcripts.
-                        w = w.replace(".POINT", "POINT") # Normalization for Nov'93 test transcripts.
-                        match1 = re.match("\[<(.*)\]", w)
-                        #| \[(.*)\>\] | \[(.*)\/\] | \[\/(.*)/]"),
-                        # E.g. [<door_slam], this means a door slammed in the preceding word. Delete
-                        # E.g. [door_slam>], this means a door slammed in the next word.  Delete.
-                        # E.g. [phone_ring/], which indicates the start of this phenomenon.
-                        # E.g. [/phone_ring], which indicates the end of this phenomenon.
-                        if match1:
-                            #print ("match 1")
-                            continue                # we won't print this word.
-                        elif((w == "~")|(w == ".")):
-                            continue
-                        # "~" This is used to indicate truncation of an utterance.  Not a word.
-                        # "." is used to indicate a pause.  Silence is optional anyway so not much point including this in the transcript.
-                        else:
-                            match2 = re.match("\[(.*)\>\]", w)
-                            if match2:
-                                continue
-                            else:
-                                match3 = re.match ("\[(.*)/\]", w)
-                                if match3:
-                                    continue
-                                else:
-                                    match4 = re.match ("\[\/(.*)\]", w)
-                                    if match4:
-                                        continue
-                                    else:
-                                        n_match = re.match("\[(.*)\]", w) # Other noises, e.g. [loud_breath].:
-                                        if n_match:
-                                            noise = n_match.group(1)
-                                            n = noise.replace(noise, '<NOISE>') 
-                                            output_file_temp.write(n + ' ')
-                                        else:
-                                            bracket_match = re.match("\<(.*)\>", w)  # e.g. replace <and> with and.  (the <> means verbal deletion of a word).. but it's pronounced.
-                                            if bracket_match:
-                                                no_bracket = bracket_match.group(1)
-                                                output_file_temp.write(no_bracket + ' ')
-                                            else:
-                                                dash_match = re.match("--DASH", w)
-                                                if dash_match:
-                                                    w = w.replace("--DASH", "-DASH")
-                                                    output_file_temp.write(w + ' ') # This is a common issue; the CMU dictionary has it as -DASH.
-                                                else:
-                                                    output_file_temp.write(w + ' ')
-                    output_file_temp.write('\n')
-    output_file_temp.close()
-    infile2 = open(os.path.join(abkhazia_path, 'logs/temp.txt'), 'r')
-    for line in infile2:
-        line = line.rstrip()
-        output_file_text.write(line + '\n')
-    print ('finished creating text files')
-    infile2.close()
-    os.remove(os.path.join(abkhazia_path, 'logs/temp.txt'))
-        
+def make_utt_list(wav_dir, output_file):
+    """
+    create segments.txt 
+    """
+    files = list_dir(wav_dir)
+    with codecs.open(output_file, mode='w', encoding='UTF-8') as out:
+        for f in files:
+            assert '.wav' in f, \
+                "file {0} in directory {1} is not a wavefile".format(f, wav_dir)
+            utt_id = f.replace('.wav', '')
+            out.write(u"{0} {1}\n".format(utt_id, f))
+
+
+def make_spk_list(wav_dir, output_file):
+    """
+    create utt2spk.txt 
+    """
+    files = list_dir(wav_dir)   
+    with codecs.open(output_file, mode='w', encoding='UTF-8') as out:
+        for f in files:
+            assert '.wav' in f, \
+                "file {0} in directory {1} is not a wavefile".format(f, wav_dir)
+            utt_id = f.replace('.wav', '')
+            # extract the first 3 characters from filename to get speaker_ID
+            spk_id = f[:3]
+            out.write(u"{0} {1}\n".format(utt_id, spk_id))
+
+
+def rewrite_wsj_word(w):
+    """
+    return empty string to indicate that the word should be ignored
+    """
+    assert not w == "", "Empty word"
+    w = w.upper()  # Upcase everything to match the CMU dictionary
+    w = w.replace("\\", "")  # Remove backslashes.  We don't need the quoting
+    w = w.replace("%PERCENT", "PERCENT")  # Normalization for Nov'93 test transcripts.
+    w = w.replace(".POINT", "POINT")  # Normalization for Nov'93 test transcripts.
+    if w[0] == "<" and w[-1] == ">": 
+        # the <> means verbal deletion of a word.. but it's pronounced. (???)
+        # we just remove the brackets
+        w = w[1:-1]
+    if w == "~":
+        # "~" used to indicate truncation of an utterance. Not a word.
+        return ""
+    if w == ".":
+        # "." used to indicate a pause, not included in the transcript for now. 
+        # (could use a special SIL word in the dictionary for this)
+        return ""
+    if w[:1] == "[<" and w[-1] == "]":
+        # E.g. [<door_slam], this means a door slammed in the preceding word.
+        # we remove it from the transcript and keep the preceding word.
+        # (could replace the preceding word by <NOISE>)
+        return ""
+    if w[0] == "[" and w[-2:] == ">]":
+        # E.g. [door_slam>], this means a door slammed in the next word.
+        # we remove it from the transcript and keep the next word.
+        # (could replace the next word by <NOISE>)
+        return ""
+    if w[0] == "[" and w[-2:] == "/]":
+        # E.g. [phone_ring/], which indicates the start of this phenomenon.
+        # we remove it from the transcript and keep the part where the phone rings.
+        # (could replace the whole part where the phone rings by <NOISE>)
+        return ""
+    if w[:1] == "[/" and w[-1] == "]":
+        # E.g. [/phone_ring], which indicates the end of this phenomenon.
+        # we remove it from the transcript and keep the part where the phone rings.
+        # (could replace the whole part where the phone rings by <NOISE>)
+        return ""
+    if w[0] == "[" and w[-1] == "]":
+        # Other noise indications, e.g. [loud_breath].
+        # We replace them by the generic <NOISE> marker
+        return "<noise>"
+    if w == "--DASH":
+        # This is a common issue; the CMU dictionary has it as -DASH.
+        return "-DASH"
+    # if we reached this point without returning, return w as is
+    return w
+
+
+def make_transcript(dot_files, output_file, exclude=None):
+    """
+    create text.txt from relevant WSJ dot_files
+    """
+    if exclude is None:
+        exclude = []
+    # read and concatenate content of all dot files
+    lines = []
+    for f in dot_files:
+        with codecs.open(f, mode='r', encoding='UTF-8') as inp:
+            lines = lines + inp.readlines()
+    # parse each line and write it to output file in abkhazia format
+    with codecs.open(output_file, mode='w', encoding='UTF-8') as out:
+        for line in lines:
+            line = line.strip() # remove trailing spaces and newline characters
+            # parse utt_id and text
+            matches = re.match("(.*) \((.*)\)", line)
+            text = matches.group(1)
+            utt_id = matches.group(2)
+            if utt_id in bad_utts:  # skip bad utterances                
+                continue
+            # correct some defect in original corpus (ad hoc)
+            if utt_id == "400c0i2j":
+                text = text.replace("  ", " ")
+            # re-format text
+            words = text.split(" ")
+            words = [rewrite_wsj_word(w) for w in words]
+            words = [w for w in words if w != ""]  # remove empty words
+            text = " ".join(words)
+            # output to file
+            out.write(u"{0} {1}\n".format(utt_id, text))
+   
+
+def make_phones(phones, output_folder, silences=None, variants=None):
+    """
+    create phones.txt, variants.txt, silences.txt
+    """
+    # code taken from GP_Mandarin... could share it ?
+    output_file = os.path.join(output_folder, 'phones.txt') 
+    with codecs.open(output_file, mode='w', encoding='UTF-8') as out:
+        for phone in phones:
+            out.write(u"{0} {1}\n".format(phone, phones[phone]))
+    if not(silences is None):
+        output_file = os.path.join(output_folder, 'silences.txt')
+        with codecs.open(output_file, mode='w', encoding='UTF-8') as out:
+            for sil in silences:
+                out.write(sil + u"\n")
+    if not(variants is None):
+        output_file = os.path.join(output_folder, 'variants.txt')
+        with codecs.open(output_file, mode='w', encoding='UTF-8') as out:
+            for l in variants:
+                out.write(u" ".join(l) + u"\n")     
                 
-def lexicon():
-    dict_word = {}
-    outfile_lexicon = open(os.path.join(abkhazia_path_data, 'lexicon.txt'), 'w')
-    outfile_OOV = open (os.path.join(abkhazia_path, 'logs/OOV.txt'), 'w')
-    infile = open(os.path.join(abkhazia_path_data, 'text.txt'), 'r')
-    #for each line of transcription, store the words in a dictionary and increase frequency
-    for line in infile:
-        m = re.match("([0-9a-z][0-9a-z][0-9a-z][0-9a-z][0-9a-z][0-9a-z][0-9a-z][0-9a-z])\s(.*)", line)
-        if m:
-            utt = m.group(2)
-            #print(utt)
-            words = utt.split()
-            for word in words:
-                if word not in dict_word:
-                    dict_word[word] = 1
-                else:
-                    dict_word[word] += 1
-    infile.close()
-    #To generate the lexicon, we will use the cmu dict)
-    infile2 = open(os.path.join(dict_path, 'cmudict.0.7a'), 'r')
-    cmu_dict = {}
-    outfile_lexicon.write('<NOISE> NSN' + '\n')
-    for line in infile2:
-        dictionary = re.match("(.*)\s\s(.*)", line)
-        if dictionary:
-            entry = dictionary.group(1)
-            phn = dictionary.group(2)
-            #remove pronunciation variants
-            phn = phn.replace("0", "")
-            phn = phn.replace("1", "")
-            phn = phn.replace("2", "")
-            #create the cmu dict with entry and phonetic transcription
-            cmu_dict[entry] = phn;
-    #Loop through the words in transcripts by descending frequency and create the lexicon by looking up in the combined dictionary
-    #if still OOV, output to OOV.txt
-    for w, f in sorted(dict_word.items(), key=lambda kv: kv[1], reverse=True):
-        if w in cmu_dict.viewkeys():
-            outfile_lexicon.write (w + ' ' + cmu_dict[w] + '\n')
-        else:
-            outfile_OOV.write(w + '\t' + str(f) + '\n')
-    print ('finished creating lexicon file')
-         
+
+def make_lexicon(raw_cmu_path, output_file):
+    """
+    create lexicon.txt from CMU dictionary
+    """
+    with codecs.open(raw_cmu_path, mode='r', encoding='UTF-8') as inp:
+        lines = inp.readlines()
+    with codecs.open(output_file, mode='w', encoding='UTF-8') as out:
+        for line in lines:
+            # remove newline and trailing spaces
+            line = line.strip()
+            # skip comments
+            if len(line) >= 3 and line[:3] == u";;;":
+                continue
+            # parse line
+            word, phones = line.split(u"  ")
+            # skip alternative pronunciations,
+            # the first one (with no parenthesized number at the end)
+            # is supposed to be the most common and is retained
+            if re.match(u"(.*)\([0-9]+\)$", word):
+                continue
+            # ignore stress variants of phones
+            phones = re.sub(u"[0-9]+", u"", phones)
+            # write to output file
+            out.write(u"{0} {1}\n".format(word, phones))
+        # add special word: <noise> NSN
+        # special word <unk> SPN will be added automatically by validate_corpus
+        # but it would make sense if to add it here if we used it for some
+        # particular kind of noise, but this is not the case at present
+        out.write(u"<noise> NSN\n")
+     
+
+#######################################################################################
+#######################################################################################
+##################################### Parameters ######################################
+#######################################################################################
+#######################################################################################
+
+# path to raw LDC distribution of WSJ as available from https://catalog.ldc.upenn.edu/LDC93S6A 
+# and https://catalog.ldc.upenn.edu/LDC94S13A (not free)
+raw_wsj_path = "/fhgfs/bootphon/data/raw_data/WSJ_LDC/"
+#raw_wsj_path = "/Users/thomas/Documents/PhD/Recherche/databases/WSJ_LDC/"
+# path to CMU dictionary as available from http://www.speech.cs.cmu.edu/cgi-bin/cmudict (free)
+# the recipe was designed using version 0.7a of the dictionary, but other recent versions
+# could probably be used without changing anything 
+raw_cmu_path = "/fhgfs/bootphon/data/raw_data/CMU_dict/cmudict.0.7a"
+#raw_cmu_path = "/Users/thomas/Documents/PhD/Recherche/databases/CMU_dict/cmudict.0.7a"
+# sph2pipe is required for converting .wv1 to .wav.
+# One way to get it is to install kaldi, then sph2pipe can be found in:
+#   /path/to/kaldi/tools/sph2pipe_v2.5/sph2pipe
+sph2pipe = "/cm/shared/apps/kaldi/tools/sph2pipe_v2.5/sph2pipe"
+#sph2pipe = "/Users/thomas/Documents/PhD/Recherche/kaldi/kaldi-trunk/tools/sph2pipe_v2.5/sph2pipe"
+# Path to a directory where the processed corpora is to be stored
+output_dir = "/fhgfs/bootphon/scratch/thomas/abkhazia/corpora/WSJ_main_read"
+#output_dir = "/Users/thomas/Documents/PhD/Recherche/other_gits/abkhazia/corpora/WSJ_main_read"
+
+#######################################################################################
+#######################################################################################
+###################################### Main part ######################################
+#######################################################################################
+#######################################################################################
 
 
-#Running the different steps
-#copy_wv1_trs ('wv1', 'trs')
-#convert_wv1()
-#link_wavs()
-segments_text_speakers()
-#lexicon()
-
-	
+# setting up some paths and directories
+data_dir = os.path.join(output_dir, 'data')
+if not os.path.isdir(data_dir):
+    os.makedirs(data_dir)
+wav_dir = os.path.join(data_dir, 'wavs')
 
 
+"""
+STEP 0 - Listing relevant files for main_read part using the following 3 criterions:
+    - these files are nested within one of the following directories: 
+        si_tr_s, sd_tr_s, sd_tr_l (in WSJ0) and si_tr_s, si_tr_l (in WSJ1)
+    - the 4 letter in the file name is 'c'
+    - their extension is either .dot or .wv1 (transcriptions and recordings respectively)
+"""
+#TODO check if that's correct (in particular no sd_tr_s or l in WSJ1 and no si_tr_l in WSJ0 ??)
+dir_filter = lambda d: d in ['si_tr_s', 'si_tr_l', 'sd_tr_s', 'sd_tr_l']
+file_filter_dot = lambda f: f[3] == 'c' and f[-4:] == '.dot'
+file_filter_wv1 = lambda f: f[3] == 'c' and f[-4:] == '.wv1'
+main_read_wv1 = list_wsj_files(raw_wsj_path, dir_filter, file_filter_wv1)
+main_read_dot = list_wsj_files(raw_wsj_path, dir_filter, file_filter_dot)
 
 
+"""
+STEP 1 - find corrupted utterances
+"""
+bad_utts = find_corrupted_utts(main_read_dot)
+print("Found corrupted utterances")
+
+"""
+STEP 2 - Setting up wav folder
+This step can take a lot of time (~70 000 files to convert)
+"""
+wv1_2_wav(main_read_wv1, wav_dir, sph2pipe, exclude=bad_utts)
+print("Copied wavefiles")
+
+"""
+STEP 3 - segments.txt
+"""
+output_file = os.path.join(data_dir, "segments.txt")
+make_utt_list(wav_dir, output_file)
+print("Created segments.txt")
+
+"""
+STEP 4 - utt2spk.txt
+"""
+output_file = os.path.join(data_dir, "utt2spk.txt")
+make_spk_list(wav_dir, output_file)
+print("Created utt2spk.txt")
+
+"""
+STEP 5 - text.txt
+"""
+output_file = os.path.join(data_dir, "text.txt")
+make_transcript(main_read_dot, output_file, exclude=bad_utts)
+print("Created text.txt")
+
+"""
+STEP 6 - phones.txt, silences.txt, variants.txt
+    using the CMU phoneset without lexical stress
+    variants and with a special NSN phone for
+    various kind of noises
+"""
+CMU_phones = [
+    ('IY', u'iː'),
+    ('IH', u'ɪ'),
+    ('EH', u'ɛ'),
+    ('EY', u'eɪ'),
+    ('AE', u'æ'),
+    ('AA', u'ɑː'),
+    ('AW', u'aʊ'),
+    ('AY', u'aɪ'),
+    ('AH', u'ʌ'),
+    ('AO', u'ɔː'),
+    ('OY', u'ɔɪ'),
+    ('OW', u'oʊ'),
+    ('UH', u'ʊ'),
+    ('UW', u'uː'),
+    ('ER', u'ɝ'),
+    ('JH', u'ʤ'),
+    ('CH', u'ʧ'),
+    ('B', u'b'),
+    ('D', u'd'),
+    ('G', u'g'),
+    ('P', u'p'),
+    ('T', u't'),
+    ('K', u'k'),
+    ('S', u's'),
+    ('SH', u'ʃ'),
+    ('Z', u'z'),
+    ('ZH', u'ʒ'),
+    ('F', u'f'),
+    ('TH', u'θ'),
+    ('V', u'v'),
+    ('DH', u'ð'),
+    ('M', u'm'),
+    ('N', u'n'),
+    ('NG', u'ŋ'),
+    ('L', u'l'),
+    ('R', u'r'),
+    ('W', u'w'),
+    ('Y', u'j'),
+    ('HH', u'h')
+]
+phones = {}
+for phone, ipa in CMU_phones:
+    phones[phone] = ipa
+silences = [u"NSN"]  # SPN and SIL will be added automatically
+variants = []  # could use lexical stress variants...
+make_phones(phones, data_dir, silences, variants)
+print("Created phones.txt, silences.txt, variants.txt")
+
+"""
+STEP 7 - lexicon.txt
+"""
+output_file = os.path.join(data_dir, "lexicon.txt")
+make_lexicon(raw_cmu_path, output_file)
+print("Created lexicon.txt")
