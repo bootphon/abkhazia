@@ -303,7 +303,7 @@ STEP 0 - Listing relevant files for main_read part using the following 3 criteri
 dir_filter = lambda d: d in ['si_tr_s', 'si_tr_l', 'sd_tr_s', 'sd_tr_l']
 file_filter_dot = lambda f: f[3] == 'c' and f[-4:] == '.dot'
 file_filter_wv1 = lambda f: f[3] == 'c' and f[-4:] == '.wv1'
-#main_read_wv1 = list_wsj_files(raw_wsj_path, dir_filter, file_filter_wv1)
+main_read_wv1 = list_wsj_files(raw_wsj_path, dir_filter, file_filter_wv1)
 main_read_dot = list_wsj_files(raw_wsj_path, dir_filter, file_filter_dot)
 
 
