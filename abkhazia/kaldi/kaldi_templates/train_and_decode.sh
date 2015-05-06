@@ -39,8 +39,8 @@ num_gauss_si=15000
 num_states_sa=2500
 num_gauss_sa=15000
 # location of the language model to be used:
-lm=data/lang_test
-lm_name=lm
+lm=data/phone_loop
+lm_name=phone_loop
 
 
 ###### Recipe ######
@@ -83,21 +83,24 @@ fi
 # Monophone model test 
 # done in parallel from next training steps
 (
+  exp_dir=exp/mono
   # first instantiate full decoding graph (HCLG)
-  decode_dir=exp/mono/$lm_name
-  mkdir -p $decode_dir
-  graph_dir=$decode_dir/graph
+  graph_dir="$exp_dir"/graph_"$lm_name"
   mkdir -p $graph_dir
   $highmem_cmd $graph_dir/mkgraph.log \
-    utils/mkgraph.sh --mono $lm exp/mono \
+    utils/mkgraph.sh --mono $lm "$exp_dir" \
     $graph_dir
   # decode and compute WER on test set
+  decode_dir_test="$exp_dir"/decode_test_"$lm_name"
+  mkdir -p $decode_dir
   steps/decode.sh --nj 8 --cmd "$decode_cmd" $graph_dir data/test \
-    $decode_dir/decode_test
+    $decode_dir_test
   # if full computations: decode and compute WER on train set too
   if [ "$decode_train" = true ] ; then
+    decode_dir_train="$exp_dir"/decode_train_"$lm_name"
+    mkdir -p $decode_dir_train
     steps/decode.sh --nj 8 --cmd "$decode_cmd" $graph_dir data/train \
-      $decode_dir/decode_train
+      $decode_dir_train
   fi
 )&
 
@@ -118,20 +121,21 @@ fi
 # Triphone model test
 # done in parallel from next training steps
 (
+  exp_dir=exp/tri1
   # instantiate full decoding graph (HCLG)
-  decode_dir=exp/tri1/$lm_name
-  mkdir -p $decode_dir
-  graph_dir=$decode_dir/graph
+  graph_dir="$exp_dir"/graph_"$lm_name"
   mkdir -p $graph_dir
   $highmem_cmd $graph_dir/mkgraph.log \
-	utils/mkgraph.sh $lm exp/tri1 $graph_dir
+	utils/mkgraph.sh $lm "$exp_dir" $graph_dir
   # decode and compute WER on test
   steps/decode.sh --nj 8 --cmd "$decode_cmd" $graph_dir data/test \
-    $decode_dir/decode_test 
+    $decode_dir_test 
   # if full computations: decode and compute WER on train set too
   if [ "$decode_train" = true ] ; then
+    decode_dir_train="$exp_dir"/decode_train_"$lm_name"
+    mkdir -p $decode_dir_train
     steps/decode.sh --nj 8 --cmd "$decode_cmd" $graph_dir data/train \
-	    $decode_dir/decode_train
+	    $decode_dir_train
   fi
 )&
 
@@ -153,19 +157,21 @@ fi
 # instantiate full decoding graph (HCLG)
 # done in parallel from next training steps
 (
-  decode_dir=exp/tri2a/$lm_name
-  mkdir -p $decode_dir
-  graph_dir=$decode_dir/graph
+  exp_dir=exp/tri2a
+  # instantiate full decoding graph (HCLG)
+  graph_dir="$exp_dir"/graph_"$lm_name"
   mkdir -p $graph_dir
   $highmem_cmd $graph_dir/mkgraph.log \
-	utils/mkgraph.sh $lm exp/tri2a $graph_dir
+	utils/mkgraph.sh $lm "$exp_dir" $graph_dir
   # decode and compute WER on test
   steps/decode_fmllr.sh --nj 8 --cmd "$decode_cmd" $graph_dir data/test \
-    $decode_dir/decode_test
+    $decode_dir_test
   # if full computations: decode and compute WER on train set too
   if [ "$decode_train" = true ] ; then
+    decode_dir_train="$exp_dir"/decode_train_"$lm_name"
+    mkdir -p $decode_dir_train
     steps/decode_fmllr.sh --nj 8 --cmd "$decode_cmd" $graph_dir data/train \
-	    $decode_dir/decode_train
+	    $decode_dir_train
   fi
 )&
 
