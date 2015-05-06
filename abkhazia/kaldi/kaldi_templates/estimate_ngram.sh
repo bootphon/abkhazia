@@ -31,7 +31,9 @@ remove_first_col=true
 train_file=$1
 # folder in which to put the resulting FST
 out_dir=$2
-# text file on which to test the language model to estimate its perplexity (optional)
+# text file on which to test the language model to estimate its perplexity
+# if you don't have one, just pass the training file again, but be aware
+# that the perplexity will be systematically underestimated in this case
 test_file=$3
 # n in n-gram
 model_order=2
@@ -46,12 +48,13 @@ model_order=2
 
 # train (use IRSTLM)
 if [ $remove_first_col = true ]; then
-  set -eu # stop on error
+  set -eu  # stop on error
   cut -d' ' -f2- < $train_file > "$out_dir"/train
 else
   mv $train_file "$out_dir"/train
 fi
 add-start-end.sh < "$out_dir"/train > "$out_dir"/train_se
+# k option is number of split, useful for huge text files
 build-lm.sh -i "$out_dir"/train_se -n $model_order -o "$out_dir"/train.ilm.gz -k 1 -s kneser-ney
 compile-lm train.ilm.gz --text=yes /dev/stdout | gzip -c > "$out_dir"/train.arpa.gz
 

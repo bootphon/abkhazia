@@ -130,7 +130,7 @@ def read_dictionary(filename):
 
 def get_utt_durations(wav_dir, seg_file):
 	# get wavefiles durations
-	wavefiles = [e for e in os.listdir(wav_dir) if e != '.DS_store']
+	wavefiles = [e for e in os.listdir(wav_dir) if e != '.DS_Store']
 	wav_durations = {}
 	for f in wavefiles:
 		filepath = os.path.join(wav_dir, f)
