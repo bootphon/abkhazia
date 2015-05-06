@@ -17,6 +17,9 @@
 
 # Estimates a simple N-gram language model
 
+# example usage with standard train_and_decode recipe
+#local/estimate_ngrams.sh data/train/text data/lang data/test/text
+
 # Doesn't do anything specific to avoid overfitting
 # if this become a problem, could use pruning:
 #   prune-lm --threshold=1e-7 "$out_dir"/train.lm.gz "$out_dir"/train.plm
@@ -69,6 +72,10 @@ add-start-end.sh < "$out_dir"/test > "$out_dir"/test_se
 compile-lm "$out_dir"/train.arpa.gz --eval="$out_dir"/test_se
 
 # generate FST (use SRILM)
+# includes adapting the vocabulary to lexicon in data/lang
+# might want to make data/lang a parameter if we want to be able to use this to estimate
+# n-grams for models using a different lexicon, like phone loops (unless we change the training
+# instead ?)
 utils/format_lm_sri.sh data/lang "$out_dir"/train.arpa.gz data/local/dict/lexicon.txt $out_dir
 
 # clean
