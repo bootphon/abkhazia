@@ -35,19 +35,19 @@ def setup_phone_loop(corpus_path, recipe_path, name="phone_loop"):
 	a2k.setup_silences(corpus_path, recipe_path, name)  # silence_phones.txt, optional_silence.txt
 	a2k.setup_variants(corpus_path, recipe_path, name)  # extra_questions.txt
 	# get list of phones
-	with codecs.open(p.join(recipe_path, 'data', 'local', 'name', 'phones.txt'),\
+	with codecs.open(p.join(recipe_path, 'data', 'local', name, 'nonsilence_phones.txt'),\
 					 mode='r', encoding="UTF-8") as inp:
 		lines = inp.readlines()
 	phones = [line.strip().split(u" ")[0] for line in lines]
 	# add 'phone' lexicon
-	with codecs.open(p.join(recipe_path, 'data', 'local', 'name', 'lexicon.txt'),\
+	with codecs.open(p.join(recipe_path, 'data', 'local', name, 'lexicon.txt'),\
 					 mode='w', encoding="UTF-8") as out:
 		for word in phones:
 			out.write(u'{0} {1}\n'.format(word, word))
 		out.write(u"<unk> SPN\n")  # is this right ?
 		# should we add <noise> NSN, etc ??? depends on corpus though...
 	# describe FST corresponding to desired language model in a text file
-	with codecs.open(p.join(recipe_path, 'data', 'local', 'name', 'G.txt'),\
+	with codecs.open(p.join(recipe_path, 'data', 'local', name, 'G.txt'),\
 					 mode='w', encoding="UTF-8") as out:
 		for word in phones:
 			out.write(u'0 1 {0} {1}\n'.format(word, word))
