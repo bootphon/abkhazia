@@ -50,7 +50,7 @@ model_order=2
 
 . path.sh || { echo "Cannot source path.sh"; exit 1; }
 
-mkdir -p out_dir
+mkdir -p $out_dir
 
 # train (use IRSTLM)
 if [ $remove_first_col = true ]; then
@@ -83,7 +83,7 @@ compile-lm "$out_dir"/train.arpa.gz --eval="$out_dir"/test_se
 # srilm_opts: do not use -tolower by default, since we do not make assumption that lexicon
 # has no meaningful lowercase/uppercase distinctions (and it can be in unicode, in which
 # case I have no idea what lowercasing would produce)
-utils/format_lm_sri.sh 	--srilm_opts="-subset -prune-lowprobs -unk" \
+utils/format_lm_sri.sh 	--srilm_opts "-subset -prune-lowprobs -unk" \
 	data/lang "$out_dir"/train.arpa.gz \
 	data/local/dict/lexicon.txt $out_dir \
 
