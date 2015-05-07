@@ -16,6 +16,10 @@
 # limitations under the License.
 
 # Estimates a simple N-gram language model
+# This uses utils/format_lm_sri.sh from kaldi which might be limited to 3-grams models?
+
+# example usage with standard train_and_decode recipe
+#local/estimate_ngram.sh data/train/text data/lang_test data/test/text
 
 # Doesn't do anything specific to avoid overfitting
 # if this become a problem, could use pruning:
@@ -31,7 +35,9 @@ remove_first_col=true
 train_file=$1
 # folder in which to put the resulting FST
 out_dir=$2
-# text file on which to test the language model to estimate its perplexity (optional)
+# text file on which to test the language model to estimate its perplexity
+# if you don't have one, just pass the training file again, but be aware
+# that the perplexity will be systematically underestimated in this case
 test_file=$3
 # n in n-gram
 model_order=2
@@ -44,16 +50,19 @@ model_order=2
 
 . path.sh || { echo "Cannot source path.sh"; exit 1; }
 
+mkdir -p $out_dir
+
 # train (use IRSTLM)
 if [ $remove_first_col = true ]; then
-  set -eu # stop on error
+  set -eu  # stop on error
   cut -d' ' -f2- < $train_file > "$out_dir"/train
 else
   mv $train_file "$out_dir"/train
 fi
 add-start-end.sh < "$out_dir"/train > "$out_dir"/train_se
+# k option is number of split, useful for huge text files
 build-lm.sh -i "$out_dir"/train_se -n $model_order -o "$out_dir"/train.ilm.gz -k 1 -s kneser-ney
-compile-lm train.ilm.gz --text=yes /dev/stdout | gzip -c > "$out_dir"/train.arpa.gz
+compile-lm "$out_dir"/train.ilm.gz --text=yes /dev/stdout | gzip -c > "$out_dir"/train.arpa.gz
 
 # test (use IRSTLM)
 if [ $remove_first_col = true ]; then
@@ -66,7 +75,18 @@ add-start-end.sh < "$out_dir"/test > "$out_dir"/test_se
 compile-lm "$out_dir"/train.arpa.gz --eval="$out_dir"/test_se
 
 # generate FST (use SRILM)
-utils/format_lm_sri.sh data/lang "$out_dir"/train.arpa.gz data/local/dict/lexicon.txt $out_dir
+# includes adapting the vocabulary to lexicon in data/lang
+# might want to make data/lang a parameter if we want to be able to use this to estimate
+# n-grams for models using a different lexicon, like phone loops (unless we change the training
+# instead ?)
+
+# srilm_opts: do not use -tolower by default, since we do not make assumption that lexicon
+# has no meaningful lowercase/uppercase distinctions (and it can be in unicode, in which
+# case I have no idea what lowercasing would produce)
+utils/format_lm_sri.sh 	--srilm_opts "-subset -prune-lowprobs -unk" \
+	data/lang "$out_dir"/train.arpa.gz \
+	data/local/dict/lexicon.txt $out_dir \
+
 
 # clean
 rm "$out_dir"/train

@@ -13,15 +13,15 @@ import os
 import abkhazia.utilities.basic_io as io
 
 
-def get_dict_path(recipe_path):
-	dict_path = p.join(recipe_path, 'data', 'local', 'dict')
+def get_dict_path(recipe_path, name='dict'):
+	dict_path = p.join(recipe_path, 'data', 'local', name)
 	if not(p.isdir(dict_path)):
 			os.makedirs(dict_path)
 	return dict_path
 
 
-def setup_lexicon(corpus_path, recipe_path, prune_lexicon=False, train_name=None):
-	dict_path = get_dict_path(recipe_path)
+def setup_lexicon(corpus_path, recipe_path, name='dict', prune_lexicon=False, train_name=None):
+	dict_path = get_dict_path(recipe_path, name)
 	if prune_lexicon:
 		# get words appearing in train part
 		train_text = p.join(corpus_path, 'data', 'split', train_name, 'text.txt')
@@ -39,8 +39,8 @@ def setup_lexicon(corpus_path, recipe_path, prune_lexicon=False, train_name=None
 					p.join(dict_path, 'lexicon.txt'))
 		
 
-def setup_phones(corpus_path, recipe_path):
-	dict_path = get_dict_path(recipe_path)
+def setup_phones(corpus_path, recipe_path, name):
+	dict_path = get_dict_path(recipe_path, name)
 	with codecs.open(p.join(corpus_path, 'data', 'phones.txt'),
 					 mode='r', encoding='UTF-8') as inp:
 		lines = inp.readlines()
@@ -51,8 +51,8 @@ def setup_phones(corpus_path, recipe_path):
 			out.write(u"{0}\n".format(symbol))
 
 
-def setup_silences(corpus_path, recipe_path):
-	dict_path = get_dict_path(recipe_path)
+def setup_silences(corpus_path, recipe_path, name):
+	dict_path = get_dict_path(recipe_path, name)
 	shutil.copy(p.join(corpus_path, 'data', 'silences.txt'),
 				p.join(dict_path, 'silence_phones.txt'))	
 	with codecs.open(p.join(dict_path, 'optional_silence.txt'),
@@ -60,8 +60,8 @@ def setup_silences(corpus_path, recipe_path):
 		out.write(u'SIL\n')
 
 
-def setup_variants(corpus_path, recipe_path):
-	dict_path = get_dict_path(recipe_path)
+def setup_variants(corpus_path, recipe_path, name):
+	dict_path = get_dict_path(recipe_path, name)
 	shutil.copy(p.join(corpus_path, 'data', 'variants.txt'),
 				p.join(dict_path, 'extra_questions.txt'))
 
