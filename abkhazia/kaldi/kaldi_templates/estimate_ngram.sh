@@ -18,15 +18,14 @@
 # Estimates a simple N-gram language model
 # This uses utils/format_lm_sri.sh from kaldi which might be limited to 3-grams models?
 
-# example usage with standard train_and_decode recipe
-#local/estimate_ngram.sh data/train/text data/lang_test data/test/text
-
 # Doesn't do anything specific to avoid overfitting
 # if this become a problem, could use pruning:
 #   prune-lm --threshold=1e-7 "$out_dir"/train.lm.gz "$out_dir"/train.plm
 #   compile-lm "$out_dir"/train.plm --eval="$out_dir"/test_se
 # (it's possible to specify different thresholds for the different n-gram levels)
 
+# Example usage with standard train_and_decode recipe
+# 	local/estimate_ngram.sh data/train/text data/word_bigram data/test/text
 
 ###### Parameters ######
 # for standard kaldi text files where format of each line: utt-id word1 word2 ...
