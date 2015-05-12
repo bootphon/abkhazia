@@ -29,7 +29,7 @@
 
 # do all computation or focus on main ones
 decode_train=false
-skip_training=false
+skip_training=true
 # feature parameters
 use_pitch=true
 # speaker-independent triphone models parameters:
@@ -39,8 +39,8 @@ num_gauss_si=15000
 num_states_sa=2500
 num_gauss_sa=15000
 # location of the language model to be used:
-lm=data/phone_loop
-lm_name=phone_loop
+lm=data/lang_test
+lm_name=word_bigram
 
 
 ###### Recipe ######
@@ -92,7 +92,7 @@ fi
     $graph_dir
   # decode and compute WER on test set
   decode_dir_test="$exp_dir"/decode_test_"$lm_name"
-  mkdir -p $decode_dir
+  mkdir -p $decode_dir_test
   steps/decode.sh --nj 8 --cmd "$decode_cmd" $graph_dir data/test \
     $decode_dir_test
   # if full computations: decode and compute WER on train set too
@@ -128,6 +128,8 @@ fi
   $highmem_cmd $graph_dir/mkgraph.log \
 	utils/mkgraph.sh $lm "$exp_dir" $graph_dir
   # decode and compute WER on test
+  decode_dir_test="$exp_dir"/decode_test_"$lm_name"
+  mkdir -p $decode_dir_test
   steps/decode.sh --nj 8 --cmd "$decode_cmd" $graph_dir data/test \
     $decode_dir_test 
   # if full computations: decode and compute WER on train set too
@@ -164,6 +166,8 @@ fi
   $highmem_cmd $graph_dir/mkgraph.log \
 	utils/mkgraph.sh $lm "$exp_dir" $graph_dir
   # decode and compute WER on test
+  decode_dir_test="$exp_dir"/decode_test_"$lm_name"
+  mkdir -p $decode_dir_test
   steps/decode_fmllr.sh --nj 8 --cmd "$decode_cmd" $graph_dir data/test \
     $decode_dir_test
   # if full computations: decode and compute WER on train set too
