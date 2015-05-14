@@ -50,6 +50,12 @@ prepare_lang.sh in all cases, only lexiconp.original poses problem.
 
 #TODOs
 
+# Ideally I should generate the lexicon.txt without the word position suffixes
+# and reenable the data validation step in prepare_lang_wpdpl.sh and after that
+# step, have prepare_lang_wpdpl.sh replace lexicon.txt by the version with the suffixes
+
+# Also phone_loop_lm.sh should not be able to fail silently.
+
 # For now each phone has equal probability (no phonotactics), make this more flexible
 # and allow estimating phonotactics from training text or providing it directly from
 # an external source. Note that Phonotactics can take the word-position variants into
@@ -107,6 +113,7 @@ def setup_phone_loop(corpus_path, recipe_path, name="phone_loop", word_position_
 					 mode='w', encoding="UTF-8") as out:
 		for word in phones:
 			out.write(u'{0} {1}\n'.format(word, word))
+		out.write(u'<unk> SPN\n')  # this seems necessary, altough I'm not sure why
 	# describe FST corresponding to desired language model in a text file
 	with codecs.open(p.join(recipe_path, 'data', 'local', name, 'G.txt'),\
 					 mode='w', encoding="UTF-8") as out:
