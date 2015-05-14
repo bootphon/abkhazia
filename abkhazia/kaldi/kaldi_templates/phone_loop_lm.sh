@@ -25,7 +25,11 @@ out_dir=data/phone_loop
 tmp_dir=data/local/phone_loop_tmp
 # log file
 log=data/prepare_phone_loop.log
-
+# should be set appropriately depending on whether the
+# language model produced is destined to be used with an
+# acoustic model trained with or without word position
+# dependent variants of the phones
+word_position_dependent=true
 
 ###### Recipe ######
 [ -f cmd.sh ] && source ./cmd.sh \
@@ -33,9 +37,19 @@ log=data/prepare_phone_loop.log
 
 . path.sh || { echo "Cannot source path.sh"; exit 1; }
 
-# first need to do a prepare_lang in the desired folder to get to use the "phone" lexicon
-# irrespective of what was used as a lexicon in training:
-utils/prepare_lang.sh --position-dependent-phones true \
+# First need to do a prepare_lang in the desired folder to get to use the "phone" lexicon
+# irrespective of what was used as a lexicon in training.
+# If there is a prepare_lang.sh in the local folder we use it otherwise we fall back
+# to the original utils/prepare_lang.sh (some slight customizations of the script are
+# sometimes necessary, for example to decode with a phone loop language model when word
+# position dependent phone variants have been trained).
+if [ -f local/prepare_lang.sh ]; then
+  prepare_lang_exe=local/prepare_lang.sh
+else
+  prepare_lang_exe=utils/prepare_lang.sh
+fi
+
+$prepare_lang_exe --position-dependent-phones $word_position_dependent \
   $in_dir "<unk>" $tmp_dir $out_dir \
   >& $log
 # here we could use a different silence_prob 
