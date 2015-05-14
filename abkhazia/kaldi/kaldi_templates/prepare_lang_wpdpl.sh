@@ -127,11 +127,11 @@ if $position_dependent_phones; then
   #       for($n=1;$n<@A-1;$n++) { print "$A[$n]_I "; } print "$A[$n]_E\n"; } ' \
   #         < $srcdir/lexiconp.txt > $tmpdir/lexiconp.original || exit 1;
   perl -ane '@A=split(" ",$_); $w = shift @A; $p = shift @A; @A>0||die;
-         if($w!="<unk>") { print "${w}_S $p $A[0]_S\n";
-                              print "${w}_I $p $A[0]_I\n";
-                              print "${w}_E $p $A[0]_E\n";
-                              print "${w}_B $p $A[0]_B\n"; }
-         else { print "$w $p $A[0]_S"; }' \
+         if($w eq "<unk>") { print "$w $p $A[0]_S\n"; }
+         else { print "${w}_S $p $A[0]_S\n";
+                print "${w}_I $p $A[0]_I\n";
+                print "${w}_E $p $A[0]_E\n";
+                print "${w}_B $p $A[0]_B\n"; }' \
            < $srcdir/lexiconp.txt > $tmpdir/lexiconp.original || exit 1;
 
   # create $tmpdir/phone_map.txt
