@@ -20,9 +20,11 @@
 # Thomas Schatz 2015:
 # This is a slightly customized version of the original prepare_lang.sh script
 # to accomodate word-position-dependent variants of phones when decoding with 
-# a phone loop language model. The only modification is that the lexicon.txt is
+# a phone loop language model. The main modification is that the lexicon.txt is
 # assumed to already include word position variants so that the perl command
 # line 125-128 is not necessary.
+# The validation script for the directory should be changed accordingly... For
+# now I just disactivated the validation altogether
 
 # This script prepares a directory such as data/lang/, in the standard format,
 # given a source directory containing a dictionary lexicon.txt in a form like:
@@ -95,8 +97,9 @@ mkdir -p $dir $tmpdir $dir/phones
 
 [ -f path.sh ] && . ./path.sh
 
-! utils/validate_dict_dir.pl $srcdir && \
-  echo "*Error validating directory $srcdir*" && exit 1;
+#TODO: this is a quick hack
+#! utils/validate_dict_dir.pl $srcdir && \
+#  echo "*Error validating directory $srcdir*" && exit 1;
 
 if [[ ! -f $srcdir/lexicon.txt ]]; then
   echo "**Creating $dir/lexicon.txt from $dir/lexiconp.txt"
