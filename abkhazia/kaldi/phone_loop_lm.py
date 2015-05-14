@@ -106,18 +106,18 @@ def setup_phone_loop(corpus_path, recipe_path, name="phone_loop", word_position_
 	# create explicit word position variants if word_position_dependent
 	# Begin, End, Internal and Singleton
 	if word_position_dependent:
-		phones = [[phone+u"_B", phone+u"_E", phone+u"_I", phone+u"_S"] for phone in phones]
-		phones = [phone for phone_variants in phones for phone in phone_variants]
+		phones_wpd = [[phone+u"_B", phone+u"_E", phone+u"_I", phone+u"_S"] for phone in phones]
+		phones_wpd = [phone for phone_variants in phones_wpd for phone in phone_variants]
 	# add 'phone' lexicon
 	with codecs.open(p.join(recipe_path, 'data', 'local', name, 'lexicon.txt'),\
 					 mode='w', encoding="UTF-8") as out:
 		for word in phones:
 			out.write(u'{0} {1}\n'.format(word, word))
-		out.write(u'<unk> SPN\n')  # this seems necessary, altough I'm not sure why
+	#	out.write(u'<unk> SPN\n')  # this seems necessary, altough I'm not sure why
 	# describe FST corresponding to desired language model in a text file
 	with codecs.open(p.join(recipe_path, 'data', 'local', name, 'G.txt'),\
 					 mode='w', encoding="UTF-8") as out:
-		for word in phones:
+		for word in phones_wpd:
 			out.write(u'0 1 {0} {1}\n'.format(word, word))
 		out.write(u'1 0.0')  # final node
 	# note that optional silences are added when composing G with L (lexicon) 

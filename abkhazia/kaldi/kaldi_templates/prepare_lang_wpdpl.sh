@@ -20,11 +20,8 @@
 # Thomas Schatz 2015:
 # This is a slightly customized version of the original prepare_lang.sh script
 # to accomodate word-position-dependent variants of phones when decoding with 
-# a phone loop language model. The main modification is that the lexicon.txt is
-# assumed to already include word position variants so that the perl command
-# line 125-128 is not necessary.
-# The validation script for the directory should be changed accordingly... For
-# now I just disactivated the validation altogether
+# a phone loop language model. The main modification is that the perl command
+# line 125-128 creates word position variants for 'phone' words.
 
 # This script prepares a directory such as data/lang/, in the standard format,
 # given a source directory containing a dictionary lexicon.txt in a form like:
@@ -97,9 +94,8 @@ mkdir -p $dir $tmpdir $dir/phones
 
 [ -f path.sh ] && . ./path.sh
 
-#TODO: this is a quick hack
-#! utils/validate_dict_dir.pl $srcdir && \
-#  echo "*Error validating directory $srcdir*" && exit 1;
+! utils/validate_dict_dir.pl $srcdir && \
+  echo "*Error validating directory $srcdir*" && exit 1;
 
 if [[ ! -f $srcdir/lexicon.txt ]]; then
   echo "**Creating $dir/lexicon.txt from $dir/lexiconp.txt"
@@ -110,12 +106,11 @@ if [[ ! -f $srcdir/lexiconp.txt ]]; then
   perl -ape 's/(\S+\s+)(.+)/${1}1.0\t$2/;' < $srcdir/lexicon.txt > $srcdir/lexiconp.txt || exit 1;
 fi
 
-#TODO: this is a quick hack
-#if ! utils/validate_dict_dir.pl $srcdir >&/dev/null; then
-#  utils/validate_dict_dir.pl $srcdir  # show the output.
-#  echo "Validation failed (second time)"
-#  exit 1;
-#fi
+if ! utils/validate_dict_dir.pl $srcdir >&/dev/null; then
+  utils/validate_dict_dir.pl $srcdir  # show the output.
+  echo "Validation failed (second time)"
+  exit 1;
+fi
 
 
 if $position_dependent_phones; then
@@ -124,13 +119,17 @@ if $position_dependent_phones; then
   # In this recipe, these markers apply to silence also.
   # Do this starting from lexiconp.txt only.
   
-  # Thomas Schatz 2015: replacing the perl command by a simple copy for
-  # phone loop decoding
+  # Thomas Schatz 2015: changing the perl command to create all word position
+  # dependent version of each 'phone' word (pretty ad hoc)
   #perl -ane '@A=split(" ",$_); $w = shift @A; $p = shift @A; @A>0||die;
   #       if(@A==1) { print "$w $p $A[0]_S\n"; } else { print "$w $p $A[0]_B ";
   #       for($n=1;$n<@A-1;$n++) { print "$A[$n]_I "; } print "$A[$n]_E\n"; } ' \
   #         < $srcdir/lexiconp.txt > $tmpdir/lexiconp.original || exit 1;
-  cp $srcdir/lexiconp.txt $tmpdir/lexiconp.original
+  perl -ane '@A=split(" ",$_); $w = shift @A; $p = shift @A; @A>0||die;
+         if(@A==1) { print "$w_S $p $A[0]_S\n"; print "$w_I $p $A[0]_I\n"; print "$w_E $p $A[0]_E\n"; print "$w_B $p $A[0]_B\n";} 
+         else { print "$w $p $A[0]_B ";
+         for($n=1;$n<@A-1;$n++) { print "$A[$n]_I "; } print "$A[$n]_E\n"; } ' \
+           < $srcdir/lexiconp.txt > $tmpdir/lexiconp.original || exit 1;
 
 
   # create $tmpdir/phone_map.txt
