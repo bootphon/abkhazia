@@ -120,17 +120,19 @@ if $position_dependent_phones; then
   # Do this starting from lexiconp.txt only.
   
   # Thomas Schatz 2015: changing the perl command to create all word position
-  # dependent version of each 'phone' word (pretty ad hoc)
+  # dependent version of each 'phone' word (pretty ad hoc), it does not change <unk> word
+  # beyond adding _S to its transcription (also ad hoc).
   #perl -ane '@A=split(" ",$_); $w = shift @A; $p = shift @A; @A>0||die;
   #       if(@A==1) { print "$w $p $A[0]_S\n"; } else { print "$w $p $A[0]_B ";
   #       for($n=1;$n<@A-1;$n++) { print "$A[$n]_I "; } print "$A[$n]_E\n"; } ' \
   #         < $srcdir/lexiconp.txt > $tmpdir/lexiconp.original || exit 1;
   perl -ane '@A=split(" ",$_); $w = shift @A; $p = shift @A; @A>0||die;
-         if(@A==1) { print "$w_S $p $A[0]_S\n"; print "$w_I $p $A[0]_I\n"; print "$w_E $p $A[0]_E\n"; print "$w_B $p $A[0]_B\n";} 
-         else { print "$w $p $A[0]_B ";
-         for($n=1;$n<@A-1;$n++) { print "$A[$n]_I "; } print "$A[$n]_E\n"; } ' \
+         if($w!="<unk>") { print "${w}_S $p $A[0]_S\n";
+                              print "${w}_I $p $A[0]_I\n";
+                              print "${w}_E $p $A[0]_E\n";
+                              print "${w}_B $p $A[0]_B\n"; }
+         else { print "$w $p $A[0]_S"; }' \
            < $srcdir/lexiconp.txt > $tmpdir/lexiconp.original || exit 1;
-
 
   # create $tmpdir/phone_map.txt
   # this has the format (on each line)

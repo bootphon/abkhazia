@@ -98,26 +98,28 @@ def setup_phone_loop(corpus_path, recipe_path, name="phone_loop", word_position_
 	with codecs.open(p.join(recipe_path, 'data', 'local', name, 'nonsilence_phones.txt'),\
 					 mode='r', encoding="UTF-8") as inp:
 		lines = inp.readlines()
-	phones = [line.strip() for line in lines]
+	basephones = [line.strip() for line in lines]
 	with codecs.open(p.join(recipe_path, 'data', 'local', name, 'silence_phones.txt'),\
 					 mode='r', encoding="UTF-8") as inp:
 		lines = inp.readlines()
-	phones = phones + [line.strip() for line in lines]
-	# create explicit word position variants if word_position_dependent
-	# Begin, End, Internal and Singleton
+	basephones = basephones + [line.strip() for line in lines]
+	# create phone words lexicon
 	if word_position_dependent:
-		phones_wpd = [[phone+u"_B", phone+u"_E", phone+u"_I", phone+u"_S"] for phone in phones]
-		phones_wpd = [phone for phone_variants in phones_wpd for phone in phone_variants]
+		phones = [[phone+u"_B", phone+u"_E", phone+u"_I", phone+u"_S"] for phone in basephones]
+		phones = [phone for phone_variants in phones for phone in phone_variants]
+	else:
+		phones = basephones
 	# add 'phone' lexicon
 	with codecs.open(p.join(recipe_path, 'data', 'local', name, 'lexicon.txt'),\
 					 mode='w', encoding="UTF-8") as out:
-		for word in phones:
+		for word in basephones:
 			out.write(u'{0} {1}\n'.format(word, word))
-	#	out.write(u'<unk> SPN\n')  # this seems necessary, altough I'm not sure why
+		# add <unk> word, in case one wants to use the phone loop lexicon for training.
+		out.write(u'<unk> SPN\n')
 	# describe FST corresponding to desired language model in a text file
 	with codecs.open(p.join(recipe_path, 'data', 'local', name, 'G.txt'),\
 					 mode='w', encoding="UTF-8") as out:
-		for word in phones_wpd:
+		for word in phones:
 			out.write(u'0 1 {0} {1}\n'.format(word, word))
 		out.write(u'1 0.0')  # final node
 	# note that optional silences are added when composing G with L (lexicon) 
