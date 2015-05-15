@@ -35,9 +35,13 @@ decode_train=false
 fmllr_model=true
 
 graph_dir="exp/tri2a/graph_word_bigram"
+# graph_dir="exp/tri2a/graph_word_bigram"
 foreign_recipe="../../../CSJ_core_laymen/train_and_decode/s5"
+# foreign_recipe="../../../WSJ_main_read/train_and_decode/s5"
 output_test="exp/tri2a/decode_test_word_bigram_CSJ"
 output_train="exp/tri2a/decode_train_word_bigram_CSJ"
+# output_test="exp/tri2a/decode_test_word_bigram_WSJ"
+# output_train="exp/tri2a/decode_train_word_bigram_WSJ"
 
 ###### Recipe ######
 
@@ -53,34 +57,13 @@ else
 fi
 
 # decode test set
-$decode_exe --nj 8 --cmd "$decode_cmd" --skip_scoring \
+$decode_exe --nj 8 --cmd "$decode_cmd" --skip_scoring true \
   $graph_dir "$foreign_recipe"/data/test $output_test
 if [ "$decode_train" = true ] ; then
   # decode train set
-  $decode_exe --nj 8 --cmd "$decode_cmd" --skip_scoring \
+  $decode_exe --nj 8 --cmd "$decode_cmd" --skip_scoring true \
     $graph_dir "$foreign_recipe"/data/train $output_train
 fi
-
-
-  exp_dir=exp/tri2a
-  # instantiate full decoding graph (HCLG)
-  graph_dir="$exp_dir"/graph_"$lm_name"
-  mkdir -p $graph_dir
-  $highmem_cmd $graph_dir/mkgraph.log \
-	utils/mkgraph.sh $lm "$exp_dir" $graph_dir
-  # decode and compute WER on test
-  decode_dir_test="$exp_dir"/decode_test_"$lm_name"
-  mkdir -p $decode_dir_test
-  steps/decode_fmllr.sh --nj 8 --cmd "$decode_cmd" $graph_dir data/test \
-    $decode_dir_test
-  # if full computations: decode and compute WER on train set too
-  if [ "$decode_train" = true ] ; then
-    decode_dir_train="$exp_dir"/decode_train_"$lm_name"
-    mkdir -p $decode_dir_train
-    steps/decode_fmllr.sh --nj 8 --cmd "$decode_cmd" $graph_dir data/train \
-	    $decode_dir_train
-  fi
-
 
 
 ##### Exporting results #####
