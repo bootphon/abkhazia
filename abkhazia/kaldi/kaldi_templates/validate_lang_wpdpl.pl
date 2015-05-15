@@ -502,7 +502,7 @@ if (-s "$lang/phones/word_boundary.int") {
   }
 
   # commented out for phone loop LM with word position dependent variants
-  =pod
+=pod
   foreach $fst ("L.fst", "L_disambig.fst") {
     $wlen = int(rand(100)) + 1;
     print "--> generating a $wlen words sequence\n";
@@ -563,7 +563,7 @@ if (-s "$lang/phones/word_boundary.int") {
       }
     }
   }
-  =cut
+=cut
   print "\n";
 }
 
