@@ -40,11 +40,20 @@ github_path = "/fhgfs/bootphon/scratch/xcao/github_abkhazia/abkhazia/corpora/Lib
 #Otherwise, start from step 6 to just link the wavs rep. (wavs already available in /fhgfs/bootphon/data/derived_data/LibriSpeech_abkhazia/data/)
 
 
-#STEP 1
-# filter out .DS_Store files from MacOS if any
 def list_dir(d):
+    # filter out .DS_Store files from MacOS if any
 	return [e for e in os.listdir(d) if e != '.DS_Store']
+ 
 
+def list_Librispeech_files(raw_LibriSpeech_train-clean-100_path):
+    """
+    Return list of fullpaths to relevant LibriSpeech_train-clean-100 files
+    """
+    file_list = []
+    for dirpath, dirs, files in os.walk(raw_LibriSpeech_train-clean-100_path):
+        for filename in files:
+            file_list.append(os.path.join(dirpath, filename)
+    return file_list
 
 #STEP 2
 #copy all flac files into one flac directory to "derived data"
@@ -246,6 +255,41 @@ def lexicon(i):
 def copy_phones():
 	subprocess.call("./copy_phones.sh", shell=True)
 	print ('finished copying phones file')
+ 
+
+#######################################################################################
+#######################################################################################
+##################################### Parameters ######################################
+#######################################################################################
+#######################################################################################
+# path to distribution of Librispeech is available at http://www.openslr.org/12/ (free)
+#raw_LibriSpeech_train-clean-100_path = "/fhgfs/bootphon/data/raw_data/WSJ_LDC/"
+#raw_LibriSpeech_train-clean-100_path = "/Users/thomas/Documents/PhD/Recherche/databases/WSJ_LDC/"
+raw_LibriSpeech_train-clean-100_path = "/home/xcao/cao/corpus_US/WSJ_LDC/"
+# path to CMU dictionary as available from http://www.speech.cs.cmu.edu/cgi-bin/cmudict (free)
+# the recipe was designed using version 0.7a of the dictionary, but other recent versions
+# could probably be used without changing anything
+#raw_cmu_path = "/fhgfs/bootphon/data/raw_data/CMU_dict/cmudict.0.7a"
+#raw_cmu_path = "/Users/thomas/Documents/PhD/Recherche/databases/CMU_dict/cmudict.0.7a"
+raw_cmu_path = "/home/xcao/cao/corpus_US/CMU_dict/cmudict.0.7a"
+# path to the phonetic dictionary containing words not transcribed by the CMU dictionary is availalable at:
+# http://www.openslr.org/11/
+# Some of the pronunciations are G2P auto-generated
+# sph2pipe is required for converting .wv1 to .wav.
+# One way to get it is to install kaldi, then sph2pipe can be found in:
+#   /path/to/kaldi/tools/sph2pipe_v2.5/sph2pipe
+#sph2pipe = "/cm/shared/apps/kaldi/tools/sph2pipe_v2.5/sph2pipe"
+#sph2pipe = "/Users/thomas/Documents/PhD/Recherche/kaldi/kaldi-trunk/tools/sph2pipe_v2.5/sph2pipe"
+sph2pipe = "/home/xcao/kaldi-trunk/tools/sph2pipe_v2.5/sph2pipe"
+# Path to a directory where the processed corpora is to be stored
+#output_dir = "/fhgfs/bootphon/scratch/thomas/abkhazia/corpora/LibriSpeech_train-clean-100"
+#output_dir = "/Users/thomas/Documents/PhD/Recherche/other_gits/abkhazia/corpora/LibriSpeech_train-clean-100"
+output_dir = "/home/github_abkhazia/abkhazia/corpora/LibriSpeech_train-clean-100"
+#######################################################################################
+#######################################################################################
+###################################### Main part ######################################
+#######################################################################################
+#######################################################################################
 
 
 #Running the different steps

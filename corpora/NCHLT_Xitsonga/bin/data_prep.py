@@ -21,10 +21,14 @@ import shutil
 # in silences.txt: added NSN - can do that once have run validate_corpus.txt
 
 raw_path = "/fhgfs/bootphon/data/raw_data/NCHLT/nchlt_Xitsonga/"
-derived_path = "/fhgfs/bootphon/data/derived_data/NCHLT_abkhazia/Xitsonga/"
+#derived_path = "/fhgfs/bootphon/data/derived_data/NCHLT_abkhazia/Xitsonga/"
+derived_path = "/home/xcao/derived_data_oberon//NCHLT_abkhazia/Xitsonga/"
 dict_path = "/fhgfs/bootphon/data/raw_data/CMU_dict/"
-abkhazia_path_data = "/fhgfs/bootphon/scratch/xcao/github_abkhazia/abkhazia/corpora/NCHLT_Xitsonga/data/"
-abkhazia_path = "/fhgfs/bootphon/scratch/xcao/github_abkhazia/abkhazia/corpora/NCHLT_Xitsonga/"
+#abkhazia_path_data = "/fhgfs/bootphon/scratch/xcao/github_abkhazia/abkhazia/corpora/NCHLT_Xitsonga/data/"
+#abkhazia_path = "/fhgfs/bootphon/scratch/xcao/github_abkhazia/abkhazia/corpora/NCHLT_Xitsonga/"
+abkhazia_path_data = "/home/xcao/github_abkhazia/abkhazia/corpora/NCHLT_Xitsonga/data/"
+abkhazia_path = "/home/xcao/github_abkhazia/abkhazia/corpora/NCHLT_Xitsonga/"
+
 
 
 #######################################################################################
@@ -245,8 +249,8 @@ def copy_phones():
 
 #Running the different steps
 #copy_wav ('wavs')
-#link_wavs()
-segments_speakers()
+link_wavs()
+#segments_speakers()
 #text()
 #lexicon()
 #copy_phones()

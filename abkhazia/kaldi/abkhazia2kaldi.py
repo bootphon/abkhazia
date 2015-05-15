@@ -39,7 +39,7 @@ def setup_lexicon(corpus_path, recipe_path, name='dict', prune_lexicon=False, tr
 					p.join(dict_path, 'lexicon.txt'))
 		
 
-def setup_phones(corpus_path, recipe_path, name):
+def setup_phones(corpus_path, recipe_path, name='dict'):
 	dict_path = get_dict_path(recipe_path, name)
 	with codecs.open(p.join(corpus_path, 'data', 'phones.txt'),
 					 mode='r', encoding='UTF-8') as inp:
@@ -51,7 +51,7 @@ def setup_phones(corpus_path, recipe_path, name):
 			out.write(u"{0}\n".format(symbol))
 
 
-def setup_silences(corpus_path, recipe_path, name):
+def setup_silences(corpus_path, recipe_path, name='dict'):
 	dict_path = get_dict_path(recipe_path, name)
 	shutil.copy(p.join(corpus_path, 'data', 'silences.txt'),
 				p.join(dict_path, 'silence_phones.txt'))	
@@ -60,7 +60,7 @@ def setup_silences(corpus_path, recipe_path, name):
 		out.write(u'SIL\n')
 
 
-def setup_variants(corpus_path, recipe_path, name):
+def setup_variants(corpus_path, recipe_path, name='dict'):
 	dict_path = get_dict_path(recipe_path, name)
 	shutil.copy(p.join(corpus_path, 'data', 'variants.txt'),
 				p.join(dict_path, 'extra_questions.txt'))

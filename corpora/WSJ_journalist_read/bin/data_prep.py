@@ -6,7 +6,7 @@ Created on Wed Feb  4 00:17:47 2015
 """
 
 """
-Data preparation WSJ for journalist read
+Data preparation WSJ for journalist read speech
 """
 
 import os
@@ -15,10 +15,8 @@ import re
 import shutil
 
 
+#TODO besides, paths, needs to change regex to extract the correct files for appropriate corpus
 
-# paths - needs to change paths and versions of WSJ
-# create 'data' directory if doesn't exist
-# phones.txt should be distributed?
 raw_path = "/fhgfs/bootphon/data/raw_data/WSJ_LDC/"
 derived_path = "/fhgfs/bootphon/data/derived_data/new_WSJ_abkhazia/WSJ_journalist_read/"
 dict_path = "/fhgfs/bootphon/data/raw_data/CMU_dict/"
@@ -37,8 +35,9 @@ abkhazia_path = "/fhgfs/bootphon/scratch/xcao/github_abkhazia/abkhazia/corpora/W
 #besides, paths, needs to change regex to extract the correct files for appropriate corpus
 
 #STEP 1
-# filter out .DS_Store files from MacOS if any
+
 def list_dir(d):
+    # filter out .DS_Store files from MacOS if any
 	return [e for e in os.listdir(d) if e != '.DS_Store']
 
 

@@ -6,7 +6,7 @@ Created on Wed Feb  4 00:17:47 2015
 """
 
 """
-Data preparation WSJ for main corpus (excluding journalists) read speech
+Data preparation WSJ for journalist read speech
 """
 
 #TODO besides, paths, needs to change regex to extract the correct files for appropriate corpus
@@ -190,9 +190,11 @@ def make_transcript(dot_files, output_file, exclude=None):
             utt_id = matches.group(2)
             if utt_id in bad_utts:  # skip bad utterances                
                 continue
+            """
             # correct some defect in original corpus (ad hoc)
             if utt_id == "400c0i2j":
                 text = text.replace("  ", " ")
+            """
             # re-format text
             words = text.split(" ")
             words = [rewrite_wsj_word(w) for w in words]
@@ -262,21 +264,25 @@ def make_lexicon(raw_cmu_path, output_file):
 
 # path to raw LDC distribution of WSJ as available from https://catalog.ldc.upenn.edu/LDC93S6A 
 # and https://catalog.ldc.upenn.edu/LDC94S13A (not free)
-raw_wsj_path = "/fhgfs/bootphon/data/raw_data/WSJ_LDC/"
+#raw_wsj_path = "/fhgfs/bootphon/data/raw_data/WSJ_LDC/"
 #raw_wsj_path = "/Users/thomas/Documents/PhD/Recherche/databases/WSJ_LDC/"
+raw_wsj_path = "/home/xcao/cao/corpus_US/WSJ_LDC/"
 # path to CMU dictionary as available from http://www.speech.cs.cmu.edu/cgi-bin/cmudict (free)
 # the recipe was designed using version 0.7a of the dictionary, but other recent versions
 # could probably be used without changing anything 
-raw_cmu_path = "/fhgfs/bootphon/data/raw_data/CMU_dict/cmudict.0.7a"
+#raw_cmu_path = "/fhgfs/bootphon/data/raw_data/CMU_dict/cmudict.0.7a"
 #raw_cmu_path = "/Users/thomas/Documents/PhD/Recherche/databases/CMU_dict/cmudict.0.7a"
+raw_cmu_path = "/home/xcao/cao/corpus_US/CMU_dict/cmudict.0.7a"
 # sph2pipe is required for converting .wv1 to .wav.
 # One way to get it is to install kaldi, then sph2pipe can be found in:
 #   /path/to/kaldi/tools/sph2pipe_v2.5/sph2pipe
-sph2pipe = "/cm/shared/apps/kaldi/tools/sph2pipe_v2.5/sph2pipe"
+#sph2pipe = "/cm/shared/apps/kaldi/tools/sph2pipe_v2.5/sph2pipe"
 #sph2pipe = "/Users/thomas/Documents/PhD/Recherche/kaldi/kaldi-trunk/tools/sph2pipe_v2.5/sph2pipe"
+sph2pipe = "/home/xcao/kaldi-trunk/tools/sph2pipe_v2.5/sph2pipe"
 # Path to a directory where the processed corpora is to be stored
-output_dir = "/fhgfs/bootphon/scratch/thomas/abkhazia/corpora/WSJ_main_read"
-#output_dir = "/Users/thomas/Documents/PhD/Recherche/other_gits/abkhazia/corpora/WSJ_main_read"
+#output_dir = "/fhgfs/bootphon/scratch/thomas/abkhazia/corpora/WSJ_journalist_read"
+#output_dir = "/Users/thomas/Documents/PhD/Recherche/other_gits/abkhazia/corpora/WSJ_journalist_read"
+output_dir = "/home/xcao/github_abkhazia/abkhazia/corpora/WSJ_journalist_read"
 
 #######################################################################################
 #######################################################################################
@@ -293,36 +299,36 @@ wav_dir = os.path.join(data_dir, 'wavs')
 
 
 """
-STEP 0 - Listing relevant files for main_read part using the following 3 criterions:
+STEP 0 - Listing relevant files for journalist_read part using the following 3 criterions:
     - these files are nested within one of the following directories: 
-        si_tr_s, sd_tr_s, sd_tr_l (in WSJ0) and si_tr_s, si_tr_l (in WSJ1)
+        si_tr_j
     - the 4 letter in the file name is 'c'
     - their extension is either .dot or .wv1 (transcriptions and recordings respectively)
 """
 #TODO check if that's correct (in particular no sd_tr_s or l in WSJ1 and no si_tr_l in WSJ0 ??)
-#For WSJ_main_read, we selected the following types of files: 'si_tr_s', 'si_tr_l', 'sd_tr_s', 'sd_tr_l'
+#For WSJ_journalist_read, we selected the following types of files: 'si_tr_j'
 #si = Speaker-Independent vs sd = Speaker-Dependent
 #tr = Training data
-#s = standard subjects need to read approximately 260 sentences vs l: long sample - these subjects have more sentences: 1800
+#j = Journalist read
 #c = common read speech as opposed to Spontaneous, Adaptation read
-dir_filter = lambda d: d in ['si_tr_s', 'si_tr_l', 'sd_tr_s', 'sd_tr_l']
+dir_filter = lambda d: d in ['si_tr_j']
 file_filter_dot = lambda f: f[3] == 'c' and f[-4:] == '.dot'
 file_filter_wv1 = lambda f: f[3] == 'c' and f[-4:] == '.wv1'
-main_read_wv1 = list_wsj_files(raw_wsj_path, dir_filter, file_filter_wv1)
-main_read_dot = list_wsj_files(raw_wsj_path, dir_filter, file_filter_dot)
+journalist_read_wv1 = list_wsj_files(raw_wsj_path, dir_filter, file_filter_wv1)
+journalist_read_dot = list_wsj_files(raw_wsj_path, dir_filter, file_filter_dot)
 
 
 """
 STEP 1 - find corrupted utterances
 """
-bad_utts = find_corrupted_utts(main_read_dot)
+bad_utts = find_corrupted_utts(journalist_read_dot)
 print("Found corrupted utterances")
 
 """
 STEP 2 - Setting up wav folder
 This step can take a lot of time (~70 000 files to convert)
 """
-wv1_2_wav(main_read_wv1, wav_dir, sph2pipe, exclude=bad_utts)
+wv1_2_wav(journalist_read_wv1, wav_dir, sph2pipe, exclude=bad_utts)
 print("Copied wavefiles")
 
 """
@@ -343,7 +349,7 @@ print("Created utt2spk.txt")
 STEP 5 - text.txt
 """
 output_file = os.path.join(data_dir, "text.txt")
-make_transcript(main_read_dot, output_file, exclude=bad_utts)
+make_transcript(journalist_read_dot, output_file, exclude=bad_utts)
 print("Created text.txt")
 
 """
