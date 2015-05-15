@@ -22,6 +22,10 @@
 # to accomodate word-position-dependent variants of phones when decoding with 
 # a phone loop language model. The main modification is that the perl command
 # line 125-128 creates word position variants for 'phone' words.
+# A consequence is that a custom validate_lang.pl script has to be used where
+# the part checking that word sequences respect begin - internal - end / 
+# singleton transitions is disabled (since with a phone loop model, everything
+# is possible).
 
 # This script prepares a directory such as data/lang/, in the standard format,
 # given a source directory containing a dictionary lexicon.txt in a form like:
@@ -368,7 +372,7 @@ utils/make_lexicon_fst.pl --pron-probs $tmpdir/lexiconp_disambig.txt $sil_prob $
 
 
 echo "$(basename $0): validating output directory"
-! utils/validate_lang.pl $dir && echo "$(basename $0): error validating output" &&  exit 1;
+! local/validate_lang_wpdpl.pl $dir && echo "$(basename $0): error validating output" &&  exit 1;
 
 exit 0;
 

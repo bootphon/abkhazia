@@ -39,12 +39,12 @@ word_position_dependent=true
 
 # First need to do a prepare_lang in the desired folder to get to use the "phone" lexicon
 # irrespective of what was used as a lexicon in training.
-# If there is a prepare_lang.sh in the local folder we use it otherwise we fall back
+# If there is a prepare_lang_wpdpl.sh in the local folder we use it otherwise we fall back
 # to the original utils/prepare_lang.sh (some slight customizations of the script are
-# sometimes necessary, for example to decode with a phone loop language model when word
+# necessary to decode with a phone loop language model when word
 # position dependent phone variants have been trained).
-if [ -f local/prepare_lang.sh ]; then
-  prepare_lang_exe=local/prepare_lang.sh
+if [ -f local/prepare_lang_wpdpl.sh ]; then
+  prepare_lang_exe=local/prepare_lang_wpdpl.sh
 else
   prepare_lang_exe=utils/prepare_lang.sh
 fi

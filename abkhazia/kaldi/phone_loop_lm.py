@@ -23,13 +23,10 @@ and this is not done correctly by the standard prepare_lang.sh script from kaldi
 To fix this, if word_position_dependent is set to true in the script below, a customized
 version of prepare_lang.sh is copied in the 'local' folder of the recipe.
 The recipe phone_loop_lm.sh in kaldi_templates uses this prepare_lang.sh if it finds
-it in the 'local' folder otherwise the default one (in 'utils') is used. The only difference
-between the two prepare_lang.sh is that in the custom script on line 116-120 the 
-lexiconp.original is simply copied from lexiconp.txt in the source directory assuming
-that word position variants have already been included in it. Accordingly, the script below
-generates directly all word position variants in lexicon.txt when word_position_dependent is
-true (for example, an entry 'a a' is replaced by 'a_I a_I\n a_B a_B\n a_E a_E\n a_S a_S', etc.).
-The language model (G.txt) also uses explicitly the word position variants.
+it in the 'local' folder otherwise the default one (in 'utils') is used. As a result of
+this customization the script validate_lang.pl also needs to be slightly amended and
+a custom version is also copied in the local folder (it is called from the custom prepare_lang.sh)
+Also, the language model (G.txt) uses explicitly the word position variants.
 
 Notes on the structure of prepare_lang.sh in current kaldi version:
 	if position_dependent_phones:
@@ -49,10 +46,6 @@ prepare_lang.sh in all cases, only lexiconp.original poses problem.
 """
 
 #TODOs
-
-# Ideally I should generate the lexicon.txt without the word position suffixes
-# and reenable the data validation step in prepare_lang_wpdpl.sh and after that
-# step, have prepare_lang_wpdpl.sh replace lexicon.txt by the version with the suffixes
 
 # Also phone_loop_lm.sh should not be able to fail silently.
 
@@ -89,7 +82,9 @@ def setup_phone_loop(corpus_path, recipe_path, name="phone_loop", word_position_
 				p.join(recipe_path, 'local', 'phone_loop_lm.sh'))
 	# if word_position_dependent copy custom prepare_lang.sh script to 'local' folder
 	shutil.copy(p.join(kaldi_bin_dir, 'kaldi_templates', 'prepare_lang_wpdpl.sh'),\
-				p.join(recipe_path, 'local', 'prepare_lang.sh'))
+				p.join(recipe_path, 'local', 'prepare_lang_wpdpl.sh'))
+	shutil.copy(p.join(kaldi_bin_dir, 'kaldi_templates', 'validate_lang_wpdpl.pl'),\
+				p.join(recipe_path, 'local', 'validate_lang_wpdpl.pl'))
 	# setup lang folder for phone loop with phones 
 	a2k.setup_phones(corpus_path, recipe_path, name)  # nonsilence_phones.txt
 	a2k.setup_silences(corpus_path, recipe_path, name)  # silence_phones.txt, optional_silence.txt
