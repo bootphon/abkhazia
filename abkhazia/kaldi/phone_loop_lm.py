@@ -119,7 +119,7 @@ def setup_phone_loop(corpus_path, recipe_path, name="phone_loop", word_position_
 	# describe FST corresponding to desired language model in a text file
 	with codecs.open(p.join(recipe_path, 'data', 'local', name, 'G.txt'),\
 					 mode='w', encoding="UTF-8") as out:
-		for word in basephones:
+		for word in phones:
 			out.write(u'0 1 {0} {1}\n'.format(word, word))
 		out.write(u'1 0.0')  # final node
 	# note that optional silences are added when composing G with L (lexicon) 
