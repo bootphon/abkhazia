@@ -61,6 +61,6 @@ $prepare_lang_exe --position-dependent-phones $word_position_dependent \
 # then compile the text format FST to binary format used by kaldi in utils/mkgraph.sh
 fstcompile --isymbols=$out_dir/words.txt --osymbols=$out_dir/words.txt --keep_isymbols=false \
 --keep_osymbols=false $in_dir/G.txt > $out_dir/G.fst
-# sort G.fst for computational efficiency
+# sort G.fst for computational efficiency (I think)
 fstarcsort --sort_type=ilabel $out_dir/G.fst > $out_dir/G2.fst
 mv $out_dir/G2.fst $out_dir/G.fst

@@ -109,13 +109,14 @@ def setup_phone_loop(corpus_path, recipe_path, name="phone_loop", word_position_
 					 mode='w', encoding="UTF-8") as out:
 		for word in basephones:
 			out.write(u'{0} {1}\n'.format(word, word))
-		# add <unk> word, in case one wants to use the phone loop lexicon for training.
+		# add <unk> word, in case one wants to use the phone loop lexicon for training
+		# it also is necessary if one doesn't want to modify the validating scripts too much
 		out.write(u'<unk> SPN\n')
 	# describe FST corresponding to desired language model in a text file
 	with codecs.open(p.join(recipe_path, 'data', 'local', name, 'G.txt'),\
 					 mode='w', encoding="UTF-8") as out:
 		for word in phones:
-			out.write(u'0 1 {0} {1}\n'.format(word, word))
-		out.write(u'1 0.0')  # final node
+			out.write(u'0 0 {0} {1}\n'.format(word, word))
+		out.write(u'0 0.0')  # final node
 	# note that optional silences are added when composing G with L (lexicon) 
 	# when calling prepare_lang.sh, except if silence_prob is set to 0
