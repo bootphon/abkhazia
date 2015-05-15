@@ -111,7 +111,7 @@ steps/align_fmllr.sh --nj 1 --cmd "$train_cmd" \
 
 ##### Exporting results #####
 mkdir -p export
-ali-to-phones --per_frame=true exp/tri2a/final.mdl "ark,t:gunzip -c exp/tri2a_ali_fmllr/ali.1.gz" ark,t:export/forced_alignment.tra
+ali-to-phones --per_frame=true exp/tri2a/final.mdl "ark,t:gunzip -c exp/tri2a_ali_fmllr/ali.1.gz|" ark,t:export/forced_alignment.tra
 #utils/int2sym.pl -f 2- data/lang/phones.txt export/forced_alignment.tra > export/forced_alignment.txt
 
 
