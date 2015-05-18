@@ -13,128 +13,16 @@ Beware that it automatically corrects some basics problems and thus it can
 modify the original files. For example it sorts the lines of some text files 
 and add default values to phone inventories when they are missing.
 """
+#TODO: optimize homophone processing for large dictionaries
 
 import contextlib
-import utilities.log2file
+import abkhazia.utilities.log2file as log2file
+import abkhazia.utilities.basic_io as io
 import os
 import wave
 import codecs
-import subprocess
 import collections
 import argparse
-
-
-def cpp_sort(filename):
-	# there is redundancy here but I didn't check which export can be 
-	# safely removed, so better safe than sorry
-	os.environ["LC_ALL"] = "C"
-	subprocess.call("export LC_ALL=C; sort {0} -o {1}".format(filename, filename), shell=True, env=os.environ)
-
-
-#TODO: share these functions between modules
-
-def basic_parse(line, filename):
-	# check line break
-	assert not('\r' in line), "'{0}' contains non Unix-style linebreaks".format(filename)
-	# check spacing
-	assert not('  ' in line), "'{0}' contains lines with two consecutive spaces".format(filename)
-	# remove line break
-	line = line[:-1]
-	# parse line
-	l = line.split(" ")
-	return l
-
-
-def read_segments(filename):
-	utt_ids, wavs, starts, stops = [], [], [], []
-	with codecs.open(filename, mode='r', encoding="UTF-8") as inp:
-		lines = inp.readlines()
-	for line in lines:
-		l = basic_parse(line, filename)
-		assert(len(l) == 2 or len(l) == 4), \
-			"'segments' should contain only lines with two or four columns"
-		utt_ids.append(l[0])
-		wavs.append(l[1])
-		if len(l) == 4:
-			starts.append(float(l[3]))
-			stops.append(float(l[4]))
-		else:
-			starts.append(None)
-			stops.append(None)
-	return utt_ids, wavs, starts, stops
-
-
-def read_utt2spk(filename):
-	utt_ids, speakers = [], []
-	with codecs.open(filename, mode='r', encoding="UTF-8") as inp:
-		lines = inp.readlines()
-	for line in lines:
-		l = basic_parse(line, filename)
-		assert(len(l) == 2), "'utt2spk' should contain only lines with two columns"
-		utt_ids.append(l[0])
-		speakers.append(l[1])
-	return utt_ids, speakers
-
-
-def read_text(filename):
-	utt_ids, utt_words = [], []
-	with codecs.open(filename, mode='r', encoding="UTF-8") as inp:
-		lines = inp.readlines()
-	for line in lines:
-		l = basic_parse(line, filename)
-		assert(len(l) >= 2), "'utt2spk' should contain only lines with two or more columns"
-		utt_ids.append(l[0])
-		utt_words.append(l[1:])
-		if u"" in l[1:]:
-			print line
-	return utt_ids, utt_words
-
-
-def	read_phones(filename):
-	phones, ipas = [], []
-	with codecs.open(filename, mode='r', encoding="UTF-8") as inp:
-		lines = inp.readlines()
-	for line in lines:
-		l = basic_parse(line, filename)
-		assert(len(l) == 2), "'phones.txt' should contain only lines with two columns"
-		phones.append(l[0])
-		ipas.append(l[1])
-	return phones, ipas
-
-
-def	read_silences(filename):
-	silences = []
-	with codecs.open(filename, mode='r', encoding="UTF-8") as inp:
-		lines = inp.readlines()
-	for line in lines:
-		l = basic_parse(line, filename)
-		assert(len(l) == 1), "'silences.txt' should contain only lines with one column"
-		silences.append(l[0])
-	return silences
-
-
-def read_variants(filename):
-	variants = []
-	with codecs.open(filename, mode='r', encoding="UTF-8") as inp:
-		lines = inp.readlines()
-	for line in lines:
-		l = basic_parse(line, filename)
-		assert(len(l) >= 2), \
-			"'extra_questions.txt' should contain only lines with two or more columns"
-		variants.append(l)
-	return variants
-
-
-def read_dictionary(filename):
-	dict_words, transcriptions = [], []
-	with codecs.open(filename, mode='r', encoding="UTF-8") as inp:
-		lines = inp.readlines()
-	for line in lines:
-		l = basic_parse(line, filename)
-		assert(len(l) >= 2), "'lexicon.txt' should contain only lines with two or more columns"
-		dict_words.append(l[0])
-		transcriptions.append(l[1:])
-	return dict_words, transcriptions
 
 
 def with_default(value, default):
@@ -161,11 +49,11 @@ def validate(corpus_path, verbose=False):
 		raise IOError("Corpus folder {0} should contain a 'data' subfolder".format(corpus_path))
 	log_dir = os.path.join(corpus_path, 'logs')
 	if not(os.path.isdir(log_dir)):
-		raise IOError("Corpus folder {0} should contain a 'logs' subfolder".format(corpus_path))	
+            os.mkdir(os.path.join(corpus_path, "logs"))	
 	
 	# log file config
 	log_file = os.path.join(log_dir, "data_validation.log".format(corpus_path))
-	log = utilities.log2file.get_log(log_file, verbose)
+	log = log2file.get_log(log_file, verbose)
 
 	try:
 		"""
@@ -173,7 +61,7 @@ def validate(corpus_path, verbose=False):
 		"""
 		log.debug("Checking 'wavs' folder")
 		wav_dir = os.path.join(data_dir, 'wavs')
-		wavefiles = os.listdir(wav_dir)
+		wavefiles = [e for e in os.listdir(wav_dir) if e != '.DS_Store']
 		durations = {}
 		wrong_extensions = [f for f in wavefiles if f[-4:] != ".wav"]
 		if wrong_extensions:
@@ -229,18 +117,18 @@ def validate(corpus_path, verbose=False):
 		"""
 		checking utterances list
 		"""
-		log.debug("Checking 'segments' file")
+		log.debug("Checking 'segments.txt' file")
 		log.debug("C++ sort file")
-		seg_file = os.path.join(data_dir, "segments")
-		cpp_sort(seg_file)  # C++ sort file for convenience
-		utt_ids, wavs, starts, stops = read_segments(seg_file)
+		seg_file = os.path.join(data_dir, "segments.txt")
+		io.cpp_sort(seg_file)  # C++ sort file for convenience
+		utt_ids, wavs, starts, stops = io.read_segments(seg_file)
 		# unique utterance-ids
 		duplicates = get_duplicates(utt_ids)
 		if duplicates:
 			raise IOError(
 				(
 				"The following utterance-ids in "
-				"'segments' are used several times: {0}"
+				"'segments.txt' are used several times: {0}"
 				).format(duplicates)
 			)
 		# all referenced wavs are in wav folder
@@ -249,15 +137,15 @@ def validate(corpus_path, verbose=False):
 			raise IOError(
 				(
 				"The following wavefiles are referenced "
-				"in 'segments' but are not in wav folder: {0}"
+				"in 'segments.txt' but are not in wav folder: {0}"
 				).format(missing_wavefiles)
 			)
 		if len(set(wavs)) == len(wavs) \
 		and all([e is None for e in starts]) \
 		and all([e is None for e in stops]):
 			# simple case, with one utterance per file and no explicit timestamps provided
-			# nothing else needs to be checked
-			pass
+			# just get list of files that are very short (less than 15ms)
+			short_wavs = [utt_id for utt_id, wav in zip(utt_ids, wavs) if durations[wav] < .015]
 		else:
 			# more complicated case
 			# find all utterances (plus timestamps) associated to each wavefile
@@ -268,6 +156,7 @@ def validate(corpus_path, verbose=False):
 			next_display_prop = 0.1
 			log.debug("Checked timestamps consistency for 0% of wavefiles")
 			warning = False
+			short_wavs = []
 			for i, wav in enumerate(wavefiles):
 				duration = durations[wav]
 				utts = [(utt, with_default(sta, 0), with_default(sto, duration)) for utt, w, sta, sto in zip(utt_ids, wavs, starts, stops) if w == wav]
@@ -278,7 +167,9 @@ def validate(corpus_path, verbose=False):
 					assert 0 <= start <= duration, \
 						"Start time for utterance {0} is not compatible with file duration".format(utt_id)
 					assert 0 <= stop <= duration, \
-						"Stop time for utterance {0} is not compatible with file duration".format(utt_id)	
+						"Stop time for utterance {0} is not compatible with file duration".format(utt_id)
+					if stop-start < .015:
+						short_wavs.append(utt_id)
 				# then check if there is overlap in time between the different utterances
 				# and if there is, issue a warning (not an error)
 				# 1. check that no two utterances start or finish at the same time
@@ -341,8 +232,14 @@ def validate(corpus_path, verbose=False):
 					"see details in log file {0}"
 					).format(log_file)
 				)
-		
-		log.debug("'segments' file is OK")
+		if short_wavs:
+			log.warning(
+				(
+				"The following utterances are less than 15ms long and "
+				"won't be used in kaldi recipes: {0}"
+				).format(short_wavs)
+			)
+		log.debug("'segments.txt' file is OK")
 
 		
 		"""
@@ -350,35 +247,39 @@ def validate(corpus_path, verbose=False):
 		"""
 		log.debug("Checking 'speakers' file")
 		log.debug("C++ sort file")
-		spk_file = os.path.join(data_dir, "utt2spk")
-		cpp_sort(spk_file)  # C++ sort file for convenience
-		utt_ids_spk, speakers = read_utt2spk(spk_file)
-		# same utterance-ids in segments and utt2spk
+		spk_file = os.path.join(data_dir, "utt2spk.txt")
+		io.cpp_sort(spk_file)  # C++ sort file for convenience
+		utt_ids_spk, speakers = io.read_utt2spk(spk_file)
+		# same utterance-ids in segments.txt and utt2spk.txt
 		if not(utt_ids_spk == utt_ids):
 			duplicates = get_duplicates(utt_ids_spk)
 			if duplicates:
 				raise IOError(
 					(
 					"The following utterance-ids "
-					"are used several times in 'utt2spk': {0}"
+					"are used several times in 'utt2spk.txt': {0}"
 					).format(duplicates)
 				)
 			else:
 				e_spk = set(utt_ids_spk)
 				e_seg = set(utt_ids)
 				e = set.difference(e_spk, e_seg)
-				log.error("Utterances in utt2spk that are not in segments: {0}".format(e))
+				log.error("Utterances in utt2spk.txt that are not in segments.txt: {0}".format(e))
 				e = set.difference(e_seg, e_spk)
-				log.error("Utterances in segments that are not in utt2spk: {0}".format(e))			
+				log.error("Utterances in segments.txt that are not in utt2spk.txt: {0}".format(e))			
 				raise IOError(
 					(
-					"Utterance-ids in 'segments' and 'utt2spk' are not consistent, "
+					"Utterance-ids in 'segments.txt' and 'utt2spk.txt' are not consistent, "
 					"see details in log {0}"
 					).format(log_file)
 				)		
 		# speaker ids must have a fixed length
 		l = len(speakers[0])
-		assert all([len(s) == l for s in speakers]), "All speaker-ids must have the same length"
+		if not(all([len(s) == l for s in speakers])):
+			spk_len = collections.Counter([len(s) for s in speakers])
+			log.error("Speaker-ids length observed in utt2spk.txt with associated frequencies: {0}".format(spk_len))
+			raise IOError("All speaker-ids must have the same length. See log for more details.")
+
 		# each speaker id must be prefix of corresponding utterance-id
 		for utt, spk in zip(utt_ids, speakers):
 			assert utt[:l] == spk, "All utterance-ids must be prefixed by the corresponding speaker-id"
@@ -388,36 +289,36 @@ def validate(corpus_path, verbose=False):
 		"""
 		checking transcriptions
 		"""
-		log.debug("Checking 'text' file")
+		log.debug("Checking 'text.txt' file")
 		log.debug("C++ sort file")
-		txt_file = os.path.join(data_dir, "text")
-		cpp_sort(txt_file)  # C++ sort file for convenience
-		utt_ids_txt, utt_words = read_text(txt_file)
+		txt_file = os.path.join(data_dir, "text.txt")
+		io.cpp_sort(txt_file)  # C++ sort file for convenience
+		utt_ids_txt, utt_words = io.read_text(txt_file)
 		# we will check that the words are mostly in the lexicon later
-		# same utterance-ids in segments and text
+		# same utterance-ids in segments.txt and text.txt
 		if not(utt_ids_txt == utt_ids):
 			duplicates = get_duplicates(utt_ids_txt)
 			if duplicates:
 				raise IOError(
 					(
 					"The following utterance-ids "
-					"are used several times in 'text': {0}"
+					"are used several times in 'text.txt': {0}"
 					).format(duplicates)
 				)
 			else:
 				e_txt = set(utt_ids_txt)
 				e_seg = set(utt_ids)
 				e = set.difference(e_txt, e_seg)
-				log.error("Utterances in text that are not in segments: {0}".format(e))
+				log.error("Utterances in text.txt that are not in segments.txt: {0}".format(e))
 				e = set.difference(e_seg, e_txt)
-				log.error("Utterances in segments that are not in text: {0}".format(e))			
+				log.error("Utterances in segments.txt that are not in text.txt: {0}".format(e))			
 				raise IOError(
 					(
-					"Utterance-ids in 'segments' and 'text' are not consistent, "
+					"Utterance-ids in 'segments.txt' and 'text.txt' are not consistent, "
 					"see details in log {0}"
 					).format(log_file)
 				)		
-		log.debug("'text' file is OK, checking for OOV items later")
+		log.debug("'text.txt' file is OK, checking for OOV items later")
 
 
 		"""
@@ -426,14 +327,14 @@ def validate(corpus_path, verbose=False):
 		log.debug(
 			(
 			"Checking phone inventory files 'phones.txt', 'silences.txt' and "
-			"'extra_questions.txt'"
+			"'variants.txt'"
 			)
 		)
 		# phones
 		#TODO: check xsampa compatibility and/or compatibility with articulatory features databases of IPA
 		# or just basic IPA correctness
 		phon_file = os.path.join(data_dir, "phones.txt")
-		phones, ipas = read_phones(phon_file)
+		phones, ipas = io.read_phones(phon_file)
 		assert not(u"SIL" in phones), \
 			(
 			u"'SIL' symbol is reserved for indicating "
@@ -467,7 +368,7 @@ def validate(corpus_path, verbose=False):
 				out.write(u"SPN\n")
 			sils = [u"SIL", u"SPN"]
 		else:
-			sils = read_silences(sil_file)
+			sils = io.read_silences(sil_file)
 			duplicates = get_duplicates(sils)
 			assert not(duplicates), \
 				(
@@ -491,20 +392,20 @@ def validate(corpus_path, verbose=False):
 				u"and 'silences.txt': {0}"
 				).format(inter)
 		# variants
-		var_file = os.path.join(data_dir, "extra_questions.txt")
+		var_file = os.path.join(data_dir, "variants.txt")
 		if not(os.path.exists(var_file)):
-			log.warning(u"No extra_questions.txt file, creating empty one")
+			log.warning(u"No variants.txt file, creating empty one")
 			with codecs.open(var_file, mode='w', encoding="UTF-8") as out:
 				pass
 			variants = []
 		else:	
-			variants = read_variants(var_file)
+			variants = io.read_variants(var_file)
 			all_symbols = [symbol for group in variants for symbol in group]
 			unknown_symbols = [symbol for symbol in all_symbols if not(symbol in phones) and not(symbol in sils)]
 			assert not(unknown_symbols), \
 				(
 				u"The following symbols are present "
-				u"in 'extra_questions.txt', but are "
+				u"in 'variants.txt', but are "
 				u"neither in 'phones.txt' nor in "
 				u"'silences.txt': {0}"
 				).format(unknown_symbols)
@@ -512,7 +413,7 @@ def validate(corpus_path, verbose=False):
 			assert not(duplicates), \
 				(
 				u"The following symbols are used several times "
-				u"in 'extra_questions.txt': {0}"
+				u"in 'variants.txt': {0}"
 				).format(duplicates)
 		inventory = set.union(set(phones), set(sils))
 		log.debug("Phone inventory files are OK")
@@ -523,7 +424,7 @@ def validate(corpus_path, verbose=False):
 		"""
 		log.debug("Checking 'lexicon.txt' file")
 		dict_file = os.path.join(data_dir, "lexicon.txt")
-		dict_words, transcriptions = read_dictionary(dict_file)
+		dict_words, transcriptions = io.read_dictionary(dict_file)
 		# unique word entries (alternative pronunciations are not currently supported)
 		duplicates = get_duplicates(dict_words)
 		assert not(duplicates), \
@@ -533,17 +434,17 @@ def validate(corpus_path, verbose=False):
 			u"in 'lexicon.txt': {0}"
 			).format(duplicates)
 		# OOV item
-		if not(u"<UNK>" in dict_words):
-			log.warning("No '<UNK>' word in lexicon, adding one")
+		if not(u"<unk>" in dict_words):
+			log.warning("No '<unk>' word in lexicon, adding one")
 			with codecs.open(dict_file, mode='a', encoding="UTF-8") as out:
-					out.write(u"<UNK> SPN\n")
-			dict_words.append(u"<UNK>")
+					out.write(u"<unk> SPN\n")
+			dict_words.append(u"<unk>")
 			transcriptions.append([u"SPN"])
 		else:
-			unk_transcript = transcriptions[dict_words.index(u"<UNK>")]
+			unk_transcript = transcriptions[dict_words.index(u"<unk>")]
 			assert unk_transcript == [u"SPN"], \
 				(
-				u"'<UNK>' word is reserved for mapping "
+				u"'<unk>' word is reserved for mapping "
 				u"OOV items and should always be transcribed "
 				u"as 'SPN' (vocal) noise'"
 				)
@@ -602,6 +503,7 @@ def validate(corpus_path, verbose=False):
 				u"with number of corresponding word types: {0}"
 				).format(s)
 			)
+			"""
 			# get word types:
 			#	- found in transcriptions
 			#	- with at least one homophonic word type also found in transcriptions
@@ -631,7 +533,9 @@ def validate(corpus_path, verbose=False):
 				u"with number of occurences of each member of each group:\n{0}"
 				).format(s)
 			)
+			"""
 		# ooi phones
+
 		used_phones = [phone for trans_phones in transcriptions for phone in trans_phones]
 		ooi_phones = [phone for phone in set(used_phones) if not(phone in inventory)]
 		if ooi_phones:
@@ -653,7 +557,6 @@ def validate(corpus_path, verbose=False):
 	except (IOError, AssertionError) as e:
 		log.error(e)
 		raise e
-
 
 if __name__ == '__main__':
 	parser = argparse.ArgumentParser(description=\

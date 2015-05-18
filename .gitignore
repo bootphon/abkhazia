@@ -17,6 +17,8 @@
 
 # MacOS .DS_Store
 *.DS_Store
+# Some temporary files
+*~
 
 # Standard Python gitignore
 
