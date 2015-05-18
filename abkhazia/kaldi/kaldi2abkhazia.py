@@ -40,12 +40,7 @@ def export_phone_alignment(phones_file, tra_file, out_file, word_position_depend
 #TODO check alignment: which utt have been transcribed, have silence been inserted, otherwise
 # no difference? (maybe some did not reach final state), chronological order, grouping by utt_id etc.
 
-def alignment2features():
-	pass
 
-
-def lattice2features():
-	pass
 
 
 root = "/Users/Thomas/Documents/PhD/Recherche/test"

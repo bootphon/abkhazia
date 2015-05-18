@@ -51,21 +51,27 @@ prepare_lang.sh in all cases, only lexiconp.original poses problem.
 
 # For now each phone has equal probability (no phonotactics), make this more flexible
 # and allow estimating phonotactics from training text or providing it directly from
-# an external source. Note that Phonotactics can take the word-position variants into
-# account or not (in the latter case, probabilities are shared across variants).
+# an external source.
+
+# Not sure how to get a language models on triphones or word-position-dependent variants
+# or if it even makes sense. I think it can only be done easily within kaldi if triphones
+# or word-position-dependent variants are output labels (i.e. words), but for triphones this
+# would conflict with the C expansion step in HCLG and for word-position-dependent variants
+# this poses problem at the lattice stage, where lattices become big and word-position
+# variants are considered as different decodings which they shouldn't…
+# Probably the clean solution to specify a LM on allophonic variants would be to modify the 
+# C step (in HCLG) to allow an expansion weighted by a given LM. This means meddling inside
+# kaldi code, so we won't do for now.
 
 # Put this in a2k as setup_phone_loop ?
 
 # Control for risk of overwriting of lang and split in recipe/data ?
 
-# Check in validate_corpus that adding _I, _B, _E or _S suffixes to words resp.
-# phones does not create conflicts, otherwise issue a warning to say that phone-loops LM
-# won't work resp. word_position_dependent models won't be usable.
+# Check in validate_corpus that adding _I, _B, _E or _S suffixes to
+# phones does not create conflicts, otherwise issue a warning to say that 
+# word_position_dependent models won't be usable.
 
-# If word_position_dependent phones are used, need to make sure that the word position markers
-# are dropped before scoring for both phones and words.
-
-def setup_phone_loop(corpus_path, recipe_path, name="phone_loop", word_position_dependent=True):
+def setup_phone_loop(corpus_path, recipe_path, name="phone_loop"):
 	"""
 	recipe_path: e.g. "/Users/thomas/Documents/PhD/Recherche/other_gits/abkhazia/kaldi/GP_Mandarin/train_and_decode/s5"
 	lang_dir: e.g. "phone_loop"
@@ -80,7 +86,8 @@ def setup_phone_loop(corpus_path, recipe_path, name="phone_loop", word_position_
 	kaldi_bin_dir = p.dirname(p.realpath(__file__))
 	shutil.copy(p.join(kaldi_bin_dir, 'kaldi_templates', 'phone_loop_lm.sh'),\
 				p.join(recipe_path, 'local', 'phone_loop_lm.sh'))
-	# if word_position_dependent copy custom prepare_lang.sh script to 'local' folder
+	# copy custom prepare_lang.sh script to 'local' folder
+	# this script is used for models trained with word_position_dependent phone variants
 	shutil.copy(p.join(kaldi_bin_dir, 'kaldi_templates', 'prepare_lang_wpdpl.sh'),\
 				p.join(recipe_path, 'local', 'prepare_lang_wpdpl.sh'))
 	shutil.copy(p.join(kaldi_bin_dir, 'kaldi_templates', 'validate_lang_wpdpl.pl'),\
@@ -93,21 +100,15 @@ def setup_phone_loop(corpus_path, recipe_path, name="phone_loop", word_position_
 	with codecs.open(p.join(recipe_path, 'data', 'local', name, 'nonsilence_phones.txt'),\
 					 mode='r', encoding="UTF-8") as inp:
 		lines = inp.readlines()
-	basephones = [line.strip() for line in lines]
+	phones = [line.strip() for line in lines]
 	with codecs.open(p.join(recipe_path, 'data', 'local', name, 'silence_phones.txt'),\
 					 mode='r', encoding="UTF-8") as inp:
 		lines = inp.readlines()
-	basephones = basephones + [line.strip() for line in lines]
-	# create phone words lexicon
-	if word_position_dependent:
-		phones = [[phone+u"_B", phone+u"_E", phone+u"_I", phone+u"_S"] for phone in basephones]
-		phones = [phone for phone_variants in phones for phone in phone_variants]
-	else:
-		phones = basephones
-	# add 'phone' lexicon
+	phones = phones + [line.strip() for line in lines]
+	# create 'phone' lexicon
 	with codecs.open(p.join(recipe_path, 'data', 'local', name, 'lexicon.txt'),\
 					 mode='w', encoding="UTF-8") as out:
-		for word in basephones:
+		for word in phones:
 			out.write(u'{0} {1}\n'.format(word, word))
 		# add <unk> word, in case one wants to use the phone loop lexicon for training
 		# it also is necessary if one doesn't want to modify the validating scripts too much
@@ -116,7 +117,11 @@ def setup_phone_loop(corpus_path, recipe_path, name="phone_loop", word_position_
 	with codecs.open(p.join(recipe_path, 'data', 'local', name, 'G.txt'),\
 					 mode='w', encoding="UTF-8") as out:
 		for word in phones:
+			# should I, C++ sort the created files ?
 			out.write(u'0 0 {0} {1}\n'.format(word, word))
 		out.write(u'0 0.0')  # final node
 	# note that optional silences are added when composing G with L (lexicon) 
 	# when calling prepare_lang.sh, except if silence_prob is set to 0
+
+
+setup_phone_loop("", recipe_path, name="phone_loop", word_position_dependent=True)
