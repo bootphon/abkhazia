@@ -124,4 +124,4 @@ def setup_phone_loop(corpus_path, recipe_path, name="phone_loop"):
 	# when calling prepare_lang.sh, except if silence_prob is set to 0
 
 
-setup_phone_loop("", recipe_path, name="phone_loop", word_position_dependent=True)
+#setup_phone_loop("", recipe_path, name="phone_loop")

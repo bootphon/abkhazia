@@ -41,7 +41,9 @@ num_gauss_sa=15000
 # location of the language model to be used:
 lm=data/lang_test
 lm_name=word_bigram
-
+# acoustic scale for extracting posterior from the final lattice
+acoustic_scale=0.1
+#TODO nj as a parameter?
 
 ###### Recipe ######
 
@@ -179,13 +181,14 @@ fi
   fi
 )&
 
+wait;
 
 ##### Exporting results #####
 
 mkdir -p export
 # "lattice" Viterbi posteriors
-lattice-to-post --acoustic-scale=0.1 "ark:gunzip -c exp/tri2a/decode_test/lat.*.gz|" ark,t:export/post.post
-post-to-phone-post exp/tri2a/final.mdl ark,t:export/post.post ark,t:export/phone_post.post
+lattice-to-post --acoustic-scale=$acoustic_scale "ark:gunzip -c exp/tri2a/decode_test_"$lm_name"/lat.*.gz|" ark,t:export/raw_post_decode_test_"$lm_name".post
+post-to-phone-post exp/tri2a/final.mdl ark,t:export/raw_post_decode_test_"$lm_name".post ark,t:export/phone_post_decode_test_"$lm_name".post
 ## do we need to decode phone labels ?
 # 1-best phone transcription, frame-by-frame (10.ali: lm weight, arbitrary choice)
 ali-to-phones --per_frame=true exp/tri2a/final.mdl ark,t:exp/tri2a/decode_test/scoring/10.ali ark,t:export/best_transcript.tra

@@ -20,7 +20,7 @@ def get_dict_path(recipe_path, name='dict'):
 	return dict_path
 
 
-def setup_lexicon(corpus_path, recipe_path, name='dict', prune_lexicon=False, train_name=None):
+def setup_lexicon(corpus_path, recipe_path, prune_lexicon=False, train_name=None, name='dict'):
 	dict_path = get_dict_path(recipe_path, name)
 	if prune_lexicon:
 		# get words appearing in train part
