@@ -15,39 +15,31 @@ import abkhazia.kaldi.abkhazia2kaldi as a2k
 #########################################################
 
 """
+This script copies a phone_loop_lm.sh script in the local folder of the target recipe,
+whose execution will create a language model folder, that can be used within the recipe
+to combine any acoustic model with a phone-level language model for decoding. 
+
+Before running phone_loop_lm.sh, check that the options in the script correspond to your 
+setup and modify them as needed. For example, to use models with word_position_dependent
+phones (this is the default in kaldi) set the word_position_dependent option in phone_loop_lm.sh
+to true.
+
 Note on model trained with word_position_dependent phones (this is 
-the default in kaldi)
+the default in kaldi): 
 
-The phone-loop lexicon needs to include all position dependent phone variants,
-and this is not done correctly by the standard prepare_lang.sh script from kaldi.
-To fix this, if word_position_dependent is set to true in the script below, a customized
-version of prepare_lang.sh is copied in the 'local' folder of the recipe.
-The recipe phone_loop_lm.sh in kaldi_templates uses this prepare_lang.sh if it finds
-it in the 'local' folder otherwise the default one (in 'utils') is used. As a result of
-this customization the script validate_lang.pl also needs to be slightly amended and
-a custom version is also copied in the local folder (it is called from the custom prepare_lang.sh)
-Also, the language model (G.txt) uses explicitly the word position variants.
-
-Notes on the structure of prepare_lang.sh in current kaldi version:
-	if position_dependent_phones:
-		line 116—120: convert lexiconp.txt to lexiconp.original adding word-position markers to phone transcription
-		line 136—138: create phone_map.txt that contains all phones including word position variants
-
-		line 205–212: add extra-questions specific to word-position
-	
-		line 236—240: create word_boundary.txt describing with a word the word position of each phone, standard positions being: nonword, internal, singleton, begin and end.
-	else:
-		lexiconp.original is just a copy of lexiconp.txt and phone_map a kind of concatenation of silence and nonsilence phones, word_map can be provided externally in source directory (otherwise it is not created)
-
-	line 331—334: if word_boundary.txt exists a word_boundary.int is created
-
-word_boundary.txt, extra_questions.txt and phone_map.txt are generated correctly by the original
-prepare_lang.sh in all cases, only lexiconp.original poses problem.
+A customized version of prepare_lang.sh is copied in the 'local' folder of the recipe,
+by this script. This version creates appropriate word_position_dependent pronunciation
+variants for the 'phone' lexicon.
+The recipe phone_loop_lm.sh in kaldi_templates uses this prepare_lang.sh when its
+word_position_dependent option is set to true, otherwise the default prepare_lang.sh
+(in 'utils') is used. As a result of this customization the script validate_lang.pl also
+needs to be slightly amended and a custom version is also copied by in the 
+local folder and used by the custom prepare_lang.sh.
 """
 
 #TODOs
 
-# Also phone_loop_lm.sh should not be able to fail silently.
+# phone_loop_lm.sh should not be able to fail silently.
 
 # For now each phone has equal probability (no phonotactics), make this more flexible
 # and allow estimating phonotactics from training text or providing it directly from
@@ -58,10 +50,10 @@ prepare_lang.sh in all cases, only lexiconp.original poses problem.
 # or word-position-dependent variants are output labels (i.e. words), but for triphones this
 # would conflict with the C expansion step in HCLG and for word-position-dependent variants
 # this poses problem at the lattice stage, where lattices become big and word-position
-# variants are considered as different decodings which they shouldn't…
+# variants are considered as different decodings, which they shouldn't…
 # Probably the clean solution to specify a LM on allophonic variants would be to modify the 
 # C step (in HCLG) to allow an expansion weighted by a given LM. This means meddling inside
-# kaldi code, so we won't do for now.
+# kaldi code, so we won't do it unless we really really need it.
 
 # Put this in a2k as setup_phone_loop ?
 
