@@ -111,9 +111,9 @@ steps/align_fmllr.sh --nj 1 --cmd "$train_cmd" \
 
 ##### Exporting results #####
 mkdir -p export
-ali-to-phones --per_frame=true exp/tri2a/final.mdl "ark,t:gunzip -c exp/tri2a_ali_fmllr/ali.1.gz|" ark,t:export/forced_alignment.tra
-#utils/int2sym.pl -f 2- data/lang/phones.txt export/forced_alignment.tra > export/forced_alignment.txt
+ali-to-phones --write_lengths=true exp/tri2a/final.mdl "ark,t:gunzip -c exp/tri2a_ali_fmllr/ali.1.gz|" ark,t:export/forced_alignment.tra
 
-# if we want to use the tri2a results directly:
-#ali-to-phones --per_frame=true exp/tri2a/final.mdl "ark,t:gunzip -c exp/tri2a/ali.*.gz|" ark,t:export/forced_alignment.tra
+# if we want to use the tri2a results directly without the final forced alignment 
+# (is there any difference between the two beyond one being done using only one job?)
+# ali-to-phones --write_lengths=true exp/tri2a/final.mdl "ark,t:gunzip -c exp/tri2a/ali.*.gz|" ark,t:export/forced_alignment.tra
 
