@@ -31,7 +31,9 @@ def train(same_pair_file, output_path,
     Function to train an ABnet on a list of words
 
     It takes as input a list of pairs of same words. This file contains several lines in the format:
-    wav1 start1 stop1 wav2 start2 stop2 spk-id1 spk-id2
+    word_id wav1 start1 stop1 wav2 start2 stop2 spk-id1 spk-id2
+    - word_id is a word identifier used for sampling different words: 2 different words cannot
+    have the same id. If you do not have labels, you can use a counter.
     - wav1 and wav2 are wavefiles specified with their full path
     - start1, start2, stop1, stop2 are times in seconds
     - spk-id1 and spk-id2 are strings identifying uniquely the speakers
