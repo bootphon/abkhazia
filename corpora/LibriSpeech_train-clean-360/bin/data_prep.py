@@ -12,22 +12,12 @@ Creating data for "train-clean-360" corpus
 
 import os
 import subprocess
-import codecs
 import re
 import importlib
 import logging
-import shutil
-import argparse
 import sys
+import shutil
 
-
-
-# paths - needs to change paths and versions of Librispeech
-# create 'data' directory if doesn't exist
-raw_path = "/fhgfs/bootphon/data/raw_data/LibriSpeech/"
-dict_path = "/fhgfs/bootphon/data/raw_data/CMU_dict/"
-derived_path = "/fhgfs/bootphon/data/derived_data/LibriSpeech_abkhazia/data/"
-github_path = "/fhgfs/bootphon/scratch/xcao/github_abkhazia/abkhazia/corpora/LibriSpeech_train-clean-360/data/"
 
 
 #######################################################################################
@@ -40,38 +30,79 @@ github_path = "/fhgfs/bootphon/scratch/xcao/github_abkhazia/abkhazia/corpora/Lib
 #Otherwise, start from step 6 to just link the wavs rep. (wavs already available in /fhgfs/bootphon/data/derived_data/LibriSpeech_abkhazia/data/)
 
 
-#STEP 1
-# filter out .DS_Store files from MacOS if any
 def list_dir(d):
-	return [e for e in os.listdir(d) if e != '.DS_Store']
+    # filter out .DS_Store files from MacOS if any
+    return [e for e in os.listdir(d) if e != '.DS_Store']
 
 
-#STEP 2
-#copy all flac files into one flac directory to "derived data"
-#Arguments are name of original flac (i) and new flac (o) folders
-def copy_flac(i, o):
-	input_dir = os.path.join(raw_path, i)
-	output_dir = os.path.join(derived_path, o)
-	if not os.path.isdir(output_dir): 
-		os.makedirs(output_dir)
-	for dirpath, dirs, files in os.walk(input_dir):
-		for filename in files:
-			if filename.endswith('.flac'):
-				shutil.copy2(os.path.join(dirpath, filename), output_dir)
-	print ('finished moving all flac files to flac directory')
+def list_LibriSpeech_files(raw_librispeech_path):
+    """
+    Return list of fullpaths to LibriSpeech files
+    """
+    file_list = []
+    for dirpath, dirs, files in os.walk(raw_librispeech_path):
+        for f in files:
+              m_file = re.match("(.*)\.flac", f)
+              if m_file:
+                  file_list.append(os.path.join(dirpath, f))
+                  print (f)
+    return file_list
 
-#STEP 3
-#call shell script to convert all flac files to wav files
-def convert_flac():
-	#needs to change path in convert_flac_wav.sh
-	subprocess.call("./convert_flac_wav.sh", shell=True)
-	print ('finished converting flac files to wav files and moving them to wav directory')
+
+def flac_2_wav(flac_files, wav_dir, flac, exclude=None):
+    """
+    convert .flac (flac) files to .wav files
+    
+    flac_files is the list of full paths to the flac files
+    to be converted to wavs
+
+    wav_dir is the directory where the created wavs are put
+
+    flac is the path to the flac executable
+
+    exclude is a list of utt_id that shouldn't be used
+    """
+    if exclude is None:
+        exclude = []
+    if not(os.path.isdir(wav_dir)):
+        os.mkdir(wav_dir)
+    for inp in flac_files:
+        bname = os.path.basename(inp)
+        utt_id = bname.replace('.flac', '')
+        if not(utt_id in exclude):  # exclude some utterances
+            subprocess.call(flac + " -d -f {0}".format(inp), shell=True)
+            wav_file = inp.replace ('.flac', '.wav')
+            shutil.move(wav_file, wav_dir)
+
+
+#STEP 5
+def convert_speaker_ID_wav(i):
+    """
+    rename all wav_files to have "speaker_ID" of same length (add 0s at the beginning of speaker IDs)
+    Argument is name of wav folder
+    """
+    for filename in os.listdir(i):
+        filename_split = filename.split("-")
+        speaker_ID = filename_split[0]
+        old_file_path = os.path.join(i, filename)
+        #speaker_ID shoud be XXXX - add as many "0"s at the beginning as necessary to get the correct length
+        if (len(speaker_ID) == 2):
+            new_filename = "00" + filename
+            new_file_path = os.path.join(i, new_filename)
+            os.rename(old_file_path, new_file_path)
+        elif (len(speaker_ID) == 3):
+            new_filename = "0" + filename
+            new_file_path = os.path.join(i, new_filename)
+            os.rename(old_file_path, new_file_path)
+	print ('finished renaming wav files')
+ 
+ 
 
 #STEP 4
 #copy all transcription files to "derived data"
 #Arguments are name of original transcription (i) and new transcription (o) folders
 def copy_trs(i, o):
-	input_dir = os.path.join(raw_path, i)
+	input_dir = os.path.join(raw_librispeech_path, i)
 	output_dir = os.path.join(derived_path, o)
 	if not os.path.isdir(output_dir): 
 		os.makedirs(output_dir)
@@ -81,33 +112,7 @@ def copy_trs(i, o):
 				shutil.copy2(os.path.join(dirpath, filename), output_dir)
 	print ('finished moving all transcription files to transcription directory')
 
-#STEP 5
-#rename all wav_files to have "speaker_ID" of same length (add 0s at the beginning of speaker IDs)
-#Argument is name of wav folder
-def convert_speaker_ID_wav(i):
-	input_dir = os.path.join(derived_path, i)
-	for filename in os.listdir(input_dir):
-		filename_split = filename.split("-")
-		speaker_ID = filename_split[0]
-		old_file_path = os.path.join(input_dir, filename)
-		#speaker_ID shoud be XXXX - add as many "0"s at the beginning as necessary to get the correct length
-		if (len(speaker_ID) == 2):
-			new_filename = "00" + filename
-			new_file_path = os.path.join(input_dir, new_filename)
-			os.rename(old_file_path, new_file_path)
-		elif (len(speaker_ID) == 3):
-			new_filename = "0" + filename
-			new_file_path = os.path.join(input_dir, new_filename)
-			os.rename(old_file_path, new_file_path)
-	print ('finished renaming wav files')
 
-
-#STEP 6
-#link wav folder in the data kaldi directory
-#Need to change path in shell script
-def link_wavs():
-	subprocess.call("./link_wavs.sh", shell=True)
-	print ('finished linking wavs directory and creating logs directory')
 
 
 #STEP 7
@@ -115,8 +120,8 @@ def link_wavs():
 #Create speakers file: <utterance-id> <speaker-id>
 #Argument is name of wav directory
 def segments_speakers(i):
-	output_file_segment = os.path.join(github_path, 'segments.txt')
-	output_file_speaker = os.path.join(github_path, 'utt2spk.txt')
+	output_file_segment = os.path.join(output_dir, 'segments.txt')
+	output_file_speaker = os.path.join(output_dir, 'utt2spk.txt')
 	outfile1 = open(output_file_segment, "w")
 	outfile2 = open(output_file_speaker, "w")
 	input_dir = os.path.join(derived_path, i)
@@ -134,8 +139,8 @@ def segments_speakers(i):
 #Create text file: <utterance-id> <word1> <word2> ... <wordn>
 def text(trs, wav):
 	new_wav_list = []
-	output_file_text = os.path.join(github_path, 'text.txt')
-	output_corrupted_wavs = os.path.join(github_path, 'corrupted_wavs.txt')
+	output_file_text = os.path.join(output_dir, 'text.txt')
+	output_corrupted_wavs = os.path.join(output_dir, 'corrupted_wavs.txt')
 	outfile = open(output_file_text, "w")
 	outfile2 = open(output_corrupted_wavs, "w")
 	input_dir = os.path.join(derived_path, trs)
@@ -184,8 +189,8 @@ def text(trs, wav):
 #Create lexicon file: <word> <phone_1> <phone_2> ... <phone_n>
 def lexicon(i):
 	dict_word = {}
-	output_file_text = os.path.join(github_path, 'lexicon.txt')
-	output_file_text2 = os.path.join(github_path, 'OOV.txt')
+	output_file_text = os.path.join(output_dir, 'lexicon.txt')
+	output_file_text2 = os.path.join(output_dir, 'OOV.txt')
 	outfile = open(output_file_text, "w")
 	outfile2 = open(output_file_text2, "w")
 	input_dir = os.path.join(derived_path, i)
@@ -205,8 +210,8 @@ def lexicon(i):
 						dict_word[word] += 1
 		infile.close()
 	#To generate the lexicon, we will use the cmu dict and the dict of OOVs generated by LibriSpeech (available for download at http://www.openslr.org/11/)
-	infile2 = open(os.path.join(raw_path, 'librispeech-lexicon.txt'), 'r')
-	infile3 = open(os.path.join(dict_path, 'cmudict.0.7a'), 'r')
+	infile2 = open(os.path.join(raw_librispeech_path, 'librispeech-lexicon.txt'), 'r')
+	infile3 = open(os.path.join(raw_cmu_path, 'cmudict.0.7a'), 'r')
 	cmu_combined = {}
 	for line in infile2:
 		dictionary = re.match("(.*)\t(.*)", line)
@@ -247,18 +252,64 @@ def lexicon(i):
 def copy_phones():
 	subprocess.call("./copy_phones.sh", shell=True)
 	print ('finished copying phones file')
+ 
+ 
+#######################################################################################
+#######################################################################################
+##################################### Parameters ######################################
+#######################################################################################
+#######################################################################################
 
+# Raw distribution of LibriSpeech is available at: http://www.openslr.org/12/
+raw_librispeech_path = "/fhgfs/bootphon/data/raw_data/LibriSpeech/"
+
+# path to CMU dictionary as available from http://www.speech.cs.cmu.edu/cgi-bin/cmudict (free)
+# the recipe was designed using version 0.7a of the dictionary, but other recent versions
+# could probably be used without changing anything 
+raw_cmu_path = "/fhgfs/bootphon/data/raw_data/CMU_dict/"
+
+# flac is required for converting .flac to .wav.
+flac = "/usr/bin/flac"
+#sph2pipe = "/Users/thomas/Documents/PhD/Recherche/kaldi/kaldi-trunk/tools/sph2pipe_v2.5/sph2pipe"
+# Path to a directory where the processed corpora is to be stored
+
+output_dir = "/fhgfs/bootphon/scratch/xcao/github_abkhazia/abkhazia/corpora/LibriSpeech_train-clean-360/"
+#output_dir = "/Users/thomas/Documents/PhD/Recherche/other_gits/abkhazia/corpora/WSJ_main_read"
+
+#######################################################################################
+#######################################################################################
+###################################### Main part ######################################
+#######################################################################################
+#######################################################################################
+
+
+# setting up some paths and directories
+data_dir = os.path.join(output_dir, 'data')
+if not os.path.isdir(data_dir):
+    os.makedirs(data_dir)
+wav_dir = os.path.join(data_dir, 'wavs')
+
+LibriSpeech_flac = list_LibriSpeech_files(raw_librispeech_path)
+
+"""
+STEP 1 - copy all flac files into one flac directory to "derived data"
+"""
 
 #Running the different steps
 #copy_flac ('train-clean-360','flac_train-clean-360')
 #convert_flac()
 #copy_trs ('train-clean-360','trs_train-clean-360')
-#convert_speaker_ID_wav ('wav_train-clean-360')
-link_wavs()
+
+#link_wavs()
 #segments_speakers('wav_train-clean-360')
 #text('trs_train-clean-360', 'wav_train-clean-360')
 #lexicon('trs_train-clean-360')
 #copy_phones()
+
+#flac_files = list_LibriSpeech_files(raw_librispeech_path)
+#flac_2_wav(flac_files, wav_dir, flac, exclude=None)
+#convert_speaker_ID_wav (wav_dir)
+
 	
 
 
