@@ -26,7 +26,12 @@ def train(same_pair_file, output_path,
           train_ratio=0.7,
           features_type='fbanks',
           verbose=0,
-          nframes=7):
+          nframes=7,
+          layers_size=500,
+          dim_embedding=100,
+          max_epochs=500,
+          batch_size=100,
+          init_lr=0.01):
     """
     Function to train an ABnet on a list of words
 
@@ -44,6 +49,10 @@ def train(same_pair_file, output_path,
 	output_path: string
         n_layers: int
             number of hidden layers of the neural network
+        layers_size: int
+            number of units in the hidden layers
+        dim_embedding: int
+            dimension of the learnt embedding (output layer).
         same_word_ratio: float
             ratio "number of same word pairs" / "total number of pairs" for each training batch. Default to 0.5
         same_speaker_ratio: float
@@ -51,9 +60,20 @@ def train(same_pair_file, output_path,
         train_ratio: float
             proportion of the data used for training (the rest are used for validation, to avoid overfitting)
         feature_type: string
+            type of features to use.
+        nframes: int
+            number of frames to stack in the input.
+        max_epochs: int
+            maximum number of batch iterations
+        batch_size: int
+            number of pairs (of frames ?) per batch. Tune this to the memory of your gpu so that it is fully used
+        init_lr: float
+            initial learning rate
     """
     if same_speaker_ratio:
         raise NotImplementedError
+    assert features_type in ['fbanks'], 'feature type not supported'
+    
     with open(p.join(output_path, 'README.txt'), 'w') as fout:
         fout.write(README.format(
             features_type, nframes, n_layers,
@@ -68,11 +88,13 @@ def train(same_pair_file, output_path,
     dataset_path = pairs_file
     dataset_name = p.splitext(pairs_file)[0]
     run(dataset_path=dataset_path, dataset_name=dataset_name,
-        batch_size=100, nframes=nframes, features=features_type,
-        init_lr=0.01, max_epochs=500, 
+        batch_size=batch_size, nframes=nframes,
+        features=features_type,
+        init_lr=init_lr, max_epochs=max_epochs,
         network_type='AB', trainer_type='adadelta',
         layers_types=[SigmoidLayer] * (n_layers + 1),
-        layers_sizes=[500] * n_layers,
+        layers_sizes=[layers_size] * n_layers,
+        dim_embedding=dim_embedding,
         loss='cos_cos2',
         prefix_fname='',
         debug_print=verbose,
