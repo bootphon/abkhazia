@@ -35,14 +35,28 @@ def list_dir(d):
     return [e for e in os.listdir(d) if e != '.DS_Store']
 
 
-def list_LibriSpeech_files(raw_librispeech_path):
+def list_LibriSpeech_flac_files(raw_librispeech_path):
     """
-    Return list of fullpaths to LibriSpeech files
+    Return list of fullpaths of flac files in LibriSpeech 
     """
     file_list = []
     for dirpath, dirs, files in os.walk(raw_librispeech_path):
         for f in files:
               m_file = re.match("(.*)\.flac", f)
+              if m_file:
+                  file_list.append(os.path.join(dirpath, f))
+                  print (f)
+    return file_list
+
+  
+def list_LibriSpeech_trs_files(raw_librispeech_path):
+    """
+    Return list of fullpaths of trs files in LibriSpeech
+    """
+    file_list = []
+    for dirpath, dirs, files in os.walk(raw_librispeech_path):
+        for f in files:
+              m_file = re.match("(.*)\.txt", f)
               if m_file:
                   file_list.append(os.path.join(dirpath, f))
                   print (f)
@@ -95,7 +109,26 @@ def convert_speaker_ID_wav(i):
             new_file_path = os.path.join(i, new_filename)
             os.rename(old_file_path, new_file_path)
     print ('finished renaming wav files')
- 
+
+
+#STEP 7
+#Create segments file: <utterance-id> <wav-filename>
+#Create speakers file: <utterance-id> <speaker-id>
+#Argument is name of wav directory
+def segments_speakers(i, o_segments, o_speakers):
+    outfile1 = open(o_segments, "w")
+    outfile2 = open(o_speakers, "w")
+    files = os.listdir(i)
+    for filename in files:
+        filename_split = filename.split("-")
+        speaker_ID = filename_split[0]
+        utt_ID = os.path.splitext(filename)[0]
+        outfile1.write(utt_ID + ' ' + filename + '\n')
+        outfile2.write(utt_ID + ' ' + speaker_ID + '\n')
+    outfile1.close()
+    outfile2.close()
+    print ('finished creating segments and speakers files')
+
  
 
 #STEP 4
@@ -115,29 +148,11 @@ def copy_trs(i, o):
 
 
 
-#STEP 7
-#Create segments file: <utterance-id> <wav-filename>
-#Create speakers file: <utterance-id> <speaker-id>
-#Argument is name of wav directory
-def segments_speakers(i):
-	output_file_segment = os.path.join(output_dir, 'segments.txt')
-	output_file_speaker = os.path.join(output_dir, 'utt2spk.txt')
-	outfile1 = open(output_file_segment, "w")
-	outfile2 = open(output_file_speaker, "w")
-	input_dir = os.path.join(derived_path, i)
-	files = os.listdir(input_dir)
-	for filename in files:
-		filename_split = filename.split("-")
-		speaker_ID = filename_split[0]
-		utt_ID = os.path.splitext(filename)[0]
-		outfile1.write(utt_ID + ' ' + filename + '\n')
-		outfile2.write(utt_ID + ' ' + speaker_ID + '\n')
-	print ('finished creating segments and speakers files')
 
 
 #STEP 8
 #Create text file: <utterance-id> <word1> <word2> ... <wordn>
-def text(trs, wav):
+def text(i, trs, wav):
 	new_wav_list = []
 	output_file_text = os.path.join(output_dir, 'text.txt')
 	output_corrupted_wavs = os.path.join(output_dir, 'corrupted_wavs.txt')
@@ -146,9 +161,9 @@ def text(trs, wav):
 	input_dir = os.path.join(derived_path, trs)
 	if not os.path.isdir(input_dir): 
 		os.makedirs(input_dir)
-	input_dir_wav = os.path.join(derived_path, wav)
+	trs_
 	files = os.listdir(input_dir)
-	wav_list = os.listdir(input_dir_wav)
+	wav_list = os.listdir(i)
 	#getting list of converted wav files (some files may be corrupted and might have not been converted and therefore their transcriptions must be discarded)
 	for wav_file in wav_list:
 		filename_no_ext = os.path.splitext(wav_file)[0]
@@ -301,14 +316,20 @@ STEP 1 - copy all flac files into one flac directory to "derived data"
 #copy_trs ('train-clean-360','trs_train-clean-360')
 
 #link_wavs()
-#segments_speakers('wav_train-clean-360')
+
 #text('trs_train-clean-360', 'wav_train-clean-360')
 #lexicon('trs_train-clean-360')
 #copy_phones()
 
-#flac_files = list_LibriSpeech_files(raw_librispeech_path)
+#flac_files = list_LibriSpeech_flac_files(raw_librispeech_path)
 #flac_2_wav(flac_files, wav_dir, flac, exclude=None)
-convert_speaker_ID_wav (wav_dir)
+#convert_speaker_ID_wav (wav_dir)
+
+#output_file_segments = os.path.join(data_dir, "segments.txt")
+#output_file_speakers = os.path.join(data_dir, "utt2spk.txt")
+#segments_speakers(wav_dir, output_file_segments, output_file_speakers)
+
+#trs_files = list_LibriSpeech_trs_files(raw_librispeech_path)
 
 	
 
