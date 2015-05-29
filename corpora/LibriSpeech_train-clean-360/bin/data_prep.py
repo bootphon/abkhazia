@@ -309,7 +309,7 @@ STEP 2 - segments.txt and utt2spk.txt
 """
 #output_file_segments = os.path.join(data_dir, "segments.txt")
 #output_file_speakers = os.path.join(data_dir, "utt2spk.txt")
-#segments_speakers(wav_dir, output_file_segments, output_file_speakers)
+#make_segments_speakers(wav_dir, output_file_segments, output_file_speakers)
 #print("Created segments and utt2spk.txt")
 
 
