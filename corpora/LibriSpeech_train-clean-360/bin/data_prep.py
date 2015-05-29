@@ -94,7 +94,7 @@ def convert_speaker_ID_wav(i):
             new_filename = "0" + filename
             new_file_path = os.path.join(i, new_filename)
             os.rename(old_file_path, new_file_path)
-	print ('finished renaming wav files')
+    print ('finished renaming wav files')
  
  
 
@@ -273,7 +273,7 @@ flac = "/usr/bin/flac"
 #sph2pipe = "/Users/thomas/Documents/PhD/Recherche/kaldi/kaldi-trunk/tools/sph2pipe_v2.5/sph2pipe"
 # Path to a directory where the processed corpora is to be stored
 
-output_dir = "/fhgfs/bootphon/scratch/xcao/github_abkhazia/abkhazia/corpora/LibriSpeech_train-clean-360/"
+output_dir = "/fhgfs/bootphon/scratch/xcao/abkhazia/corpora/LibriSpeech_train-clean-360/"
 #output_dir = "/Users/thomas/Documents/PhD/Recherche/other_gits/abkhazia/corpora/WSJ_main_read"
 
 #######################################################################################
@@ -289,7 +289,7 @@ if not os.path.isdir(data_dir):
     os.makedirs(data_dir)
 wav_dir = os.path.join(data_dir, 'wavs')
 
-LibriSpeech_flac = list_LibriSpeech_files(raw_librispeech_path)
+#LibriSpeech_flac = list_LibriSpeech_files(raw_librispeech_path)
 
 """
 STEP 1 - copy all flac files into one flac directory to "derived data"
