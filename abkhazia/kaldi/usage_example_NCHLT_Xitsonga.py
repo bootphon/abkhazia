@@ -14,6 +14,7 @@ import abkhazia.kaldi.train_and_decode as decode
 import os.path as p
 import subprocess
 
+
 root = '/home/xcao/github_abkhazia/abkhazia'
 kaldi_root = '/home/xcao/kaldi-trunk'
 #root = '/Users/thomas/Documents/PhD/Recherche/other_gits/abkhazia'

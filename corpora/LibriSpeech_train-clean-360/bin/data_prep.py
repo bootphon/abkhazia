@@ -308,7 +308,7 @@ STEP 1 - copy all flac files into one flac directory to "derived data"
 
 #flac_files = list_LibriSpeech_files(raw_librispeech_path)
 #flac_2_wav(flac_files, wav_dir, flac, exclude=None)
-#convert_speaker_ID_wav (wav_dir)
+convert_speaker_ID_wav (wav_dir)
 
 	
 
