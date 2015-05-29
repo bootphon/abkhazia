@@ -13,9 +13,7 @@ Creating data for "train-clean-360" corpus
 import os
 import subprocess
 import re
-import importlib
-import logging
-import sys
+import codecs
 import shutil
 
 
@@ -35,28 +33,14 @@ def list_dir(d):
     return [e for e in os.listdir(d) if e != '.DS_Store']
 
 
+"""
+Return list of fullpaths for flac files in LibriSpeech 
+"""
 def list_LibriSpeech_flac_files(raw_librispeech_path):
-    """
-    Return list of fullpaths of flac files in LibriSpeech 
-    """
     file_list = []
     for dirpath, dirs, files in os.walk(raw_librispeech_path):
         for f in files:
               m_file = re.match("(.*)\.flac", f)
-              if m_file:
-                  file_list.append(os.path.join(dirpath, f))
-                  print (f)
-    return file_list
-
-  
-def list_LibriSpeech_trs_files(raw_librispeech_path):
-    """
-    Return list of fullpaths of trs files in LibriSpeech
-    """
-    file_list = []
-    for dirpath, dirs, files in os.walk(raw_librispeech_path):
-        for f in files:
-              m_file = re.match("(.*)\.txt", f)
               if m_file:
                   file_list.append(os.path.join(dirpath, f))
                   print (f)
@@ -74,7 +58,7 @@ def flac_2_wav(flac_files, wav_dir, flac, exclude=None):
 
     flac is the path to the flac executable
 
-    exclude is a list of utt_id that shouldn't be used
+    exclude is a list of utt_id that shouldn't be used if any
     """
     if exclude is None:
         exclude = []
@@ -89,12 +73,12 @@ def flac_2_wav(flac_files, wav_dir, flac, exclude=None):
             shutil.move(wav_file, wav_dir)
 
 
-#STEP 5
+
+"""
+rename all wav_files to have "speaker_ID" of same length (add 0s at the beginning of speaker IDs)
+Argument is name of wav folder
+"""
 def convert_speaker_ID_wav(i):
-    """
-    rename all wav_files to have "speaker_ID" of same length (add 0s at the beginning of speaker IDs)
-    Argument is name of wav folder
-    """
     for filename in os.listdir(i):
         filename_split = filename.split("-")
         speaker_ID = filename_split[0]
@@ -111,11 +95,13 @@ def convert_speaker_ID_wav(i):
     print ('finished renaming wav files')
 
 
-#STEP 7
-#Create segments file: <utterance-id> <wav-filename>
-#Create speakers file: <utterance-id> <speaker-id>
-#Argument is name of wav directory
-def segments_speakers(i, o_segments, o_speakers):
+
+"""
+Create segments file: <utterance-id> <wav-filename>
+Create speakers file: <utterance-id> <speaker-id>
+"""
+def make_segments_speakers(i, o_segments, o_speakers):
+    
     outfile1 = open(o_segments, "w")
     outfile2 = open(o_speakers, "w")
     files = os.listdir(i)
@@ -129,47 +115,37 @@ def segments_speakers(i, o_segments, o_speakers):
     outfile2.close()
     print ('finished creating segments and speakers files')
 
- 
 
-#STEP 4
-#copy all transcription files to "derived data"
-#Arguments are name of original transcription (i) and new transcription (o) folders
-def copy_trs(i, o):
-	input_dir = os.path.join(raw_librispeech_path, i)
-	output_dir = os.path.join(derived_path, o)
-	if not os.path.isdir(output_dir): 
-		os.makedirs(output_dir)
-	for dirpath, dirs, files in os.walk(input_dir):
-		for filename in files:
-			if filename.endswith('.txt'):
-				shutil.copy2(os.path.join(dirpath, filename), output_dir)
-	print ('finished moving all transcription files to transcription directory')
 
+"""
+Return list of fullpaths for trs files in LibriSpeech
+"""
+def list_LibriSpeech_trs_files(raw_librispeech_path):
+    file_list = []
+    for dirpath, dirs, files in os.walk(raw_librispeech_path):
+        for f in files:
+              m_file = re.match("(.*)\.txt", f)
+              if m_file:
+                  file_list.append(os.path.join(dirpath, f))
+                  print (f)
+    return file_list
 
 
 
-
-
-#STEP 8
-#Create text file: <utterance-id> <word1> <word2> ... <wordn>
-def text(i, trs, wav):
+"""
+Create text file: <utterance-id> <word1> <word2> ... <wordn>
+"""
+def make_transcript(i, o_text, o_corrupted, trs_files):
 	new_wav_list = []
-	output_file_text = os.path.join(output_dir, 'text.txt')
-	output_corrupted_wavs = os.path.join(output_dir, 'corrupted_wavs.txt')
-	outfile = open(output_file_text, "w")
-	outfile2 = open(output_corrupted_wavs, "w")
-	input_dir = os.path.join(derived_path, trs)
-	if not os.path.isdir(input_dir): 
-		os.makedirs(input_dir)
-	trs_
-	files = os.listdir(input_dir)
+	outfile = open(o_text, "w")
+	outfile2 = open(o_corrupted, "w")
 	wav_list = os.listdir(i)
 	#getting list of converted wav files (some files may be corrupted and might have not been converted and therefore their transcriptions must be discarded)
 	for wav_file in wav_list:
 		filename_no_ext = os.path.splitext(wav_file)[0]
 		new_wav_list.append(filename_no_ext)
-	for filename in files:
-		infile = open(os.path.join(input_dir, filename), 'r')
+	for filename in trs_files:
+		infile = open(filename, 'r')
 		#for each line of transcript, convert the utt_ID to normalize speaker_ID and check if wav file exists;
 		#if not, output corrputed files to corrupted_wavs.txt, else output text.txt
 		for line in infile:
@@ -200,18 +176,16 @@ def text(i, trs, wav):
 	print ('finished creating text file')
 
 
-#STEP 9
-#Create lexicon file: <word> <phone_1> <phone_2> ... <phone_n>
-def lexicon(i):
+
+"""
+Create lexicon file: <word> <phone_1> <phone_2> ... <phone_n>
+"""
+def make_lexicon(i_libri_lex, i_cmu, o_lex, o_OOV, trs_files):
 	dict_word = {}
-	output_file_text = os.path.join(output_dir, 'lexicon.txt')
-	output_file_text2 = os.path.join(output_dir, 'OOV.txt')
-	outfile = open(output_file_text, "w")
-	outfile2 = open(output_file_text2, "w")
-	input_dir = os.path.join(derived_path, i)
-	files = os.listdir(input_dir)
-	for filename in files:
-		infile = open(os.path.join(input_dir, filename), 'r')
+	outfile = open(o_lex, "w")
+	outfile2 = open(o_OOV, "w")
+	for filename in trs_files:
+		infile = open(filename, 'r')
 		#for each line of transcription, store the words in a dictionary and increase frequency
 		for line in infile:
 			m = re.match("([0-9\-]+)\s([A-Z].*)", line)
@@ -225,10 +199,10 @@ def lexicon(i):
 						dict_word[word] += 1
 		infile.close()
 	#To generate the lexicon, we will use the cmu dict and the dict of OOVs generated by LibriSpeech (available for download at http://www.openslr.org/11/)
-	infile2 = open(os.path.join(raw_librispeech_path, 'librispeech-lexicon.txt'), 'r')
-	infile3 = open(os.path.join(raw_cmu_path, 'cmudict.0.7a'), 'r')
+	infile = open(i_libri_lex, 'r')
+	infile2 = open(i_cmu, 'r')
 	cmu_combined = {}
-	for line in infile2:
+	for line in infile:
 		dictionary = re.match("(.*)\t(.*)", line)
 		if dictionary:
 			entry = dictionary.group(1)
@@ -239,7 +213,7 @@ def lexicon(i):
 			phn = phn.replace("2", "")
 			#create the combined dictionary
 			cmu_combined[entry] = phn;
-	for line in infile3:
+	for line in infile2:
 		dictionary = re.match("(.*)\s\s(.*)", line)
 		if dictionary:
 			entry = dictionary.group(1)
@@ -250,8 +224,8 @@ def lexicon(i):
 			phn = phn.replace("2", "")
 			#create the combined dictionary
 			cmu_combined[entry] = phn;
+	infile.close()
 	infile2.close()
-	infile3.close()
 	#Loop through the words in transcripts by descending frequency and create the lexicon by looking up in the combined dictionary
 	#if still OOV, output to OOV.txt
 	for w, f in sorted(dict_word.items(), key=lambda kv: kv[1], reverse=True):
@@ -260,15 +234,32 @@ def lexicon(i):
 		else:
 			outfile2.write(w + '\t' + str(f) + '\n')
 	print ('finished creating lexicon file')
+	outfile.close()
+	outfile2.close()
 
 
-#STEP 10
-#copy phones file to data directory (should be distributed in Librispeech corpus) - will avoid us to look up for the associated IPA transcriptions
-def copy_phones():
-	subprocess.call("./copy_phones.sh", shell=True)
-	print ('finished copying phones file')
- 
- 
+
+"""
+Create phones.txt, variants.txt, silences.txt
+"""
+def make_phones(phones, output_folder, silences=None, variants=None):
+    # code taken from GP_Mandarin... could share it ?
+    output_file = os.path.join(output_folder, 'phones.txt') 
+    with codecs.open(output_file, mode='w', encoding='UTF-8') as out:
+        for phone in phones:
+            out.write(u"{0} {1}\n".format(phone, phones[phone]))
+    if not(silences is None):
+        output_file = os.path.join(output_folder, 'silences.txt')
+        with codecs.open(output_file, mode='w', encoding='UTF-8') as out:
+            for sil in silences:
+                out.write(sil + u"\n")
+    if not(variants is None):
+        output_file = os.path.join(output_folder, 'variants.txt')
+        with codecs.open(output_file, mode='w', encoding='UTF-8') as out:
+            for l in variants:
+                out.write(u" ".join(l) + u"\n")
+                
+  
 #######################################################################################
 #######################################################################################
 ##################################### Parameters ######################################
@@ -285,11 +276,9 @@ raw_cmu_path = "/fhgfs/bootphon/data/raw_data/CMU_dict/"
 
 # flac is required for converting .flac to .wav.
 flac = "/usr/bin/flac"
-#sph2pipe = "/Users/thomas/Documents/PhD/Recherche/kaldi/kaldi-trunk/tools/sph2pipe_v2.5/sph2pipe"
-# Path to a directory where the processed corpora is to be stored
 
+# Path to a directory where the processed corpora is to be stored
 output_dir = "/fhgfs/bootphon/scratch/xcao/abkhazia/corpora/LibriSpeech_train-clean-360/"
-#output_dir = "/Users/thomas/Documents/PhD/Recherche/other_gits/abkhazia/corpora/WSJ_main_read"
 
 #######################################################################################
 #######################################################################################
@@ -304,35 +293,100 @@ if not os.path.isdir(data_dir):
     os.makedirs(data_dir)
 wav_dir = os.path.join(data_dir, 'wavs')
 
-#LibriSpeech_flac = list_LibriSpeech_files(raw_librispeech_path)
 
 """
-STEP 1 - copy all flac files into one flac directory to "derived data"
+STEP 1 - Setting up wav folder
+This step can take a lot of time
 """
-
-#Running the different steps
-#copy_flac ('train-clean-360','flac_train-clean-360')
-#convert_flac()
-#copy_trs ('train-clean-360','trs_train-clean-360')
-
-#link_wavs()
-
-#text('trs_train-clean-360', 'wav_train-clean-360')
-#lexicon('trs_train-clean-360')
-#copy_phones()
-
 #flac_files = list_LibriSpeech_flac_files(raw_librispeech_path)
 #flac_2_wav(flac_files, wav_dir, flac, exclude=None)
 #convert_speaker_ID_wav (wav_dir)
+#print("Converted wavefiles")
 
+
+"""
+STEP 2 - segments.txt and utt2spk.txt
+"""
 #output_file_segments = os.path.join(data_dir, "segments.txt")
 #output_file_speakers = os.path.join(data_dir, "utt2spk.txt")
 #segments_speakers(wav_dir, output_file_segments, output_file_speakers)
+#print("Created segments and utt2spk.txt")
 
+
+"""
+STEP 3 - text.txt
+"""
 #trs_files = list_LibriSpeech_trs_files(raw_librispeech_path)
+#output_file_text = os.path.join(data_dir, 'text.txt')
+#output_corrupted_wavs = os.path.join(data_dir, 'corrupted_wavs.txt')
+#make_transcript(wav_dir, output_file_text, output_corrupted_wavs, trs_files)
+#print("Created text.txt")
 
-	
+
+"""
+STEP 4 - lexicon.txt
+"""
+#trs_files = list_LibriSpeech_trs_files(raw_librispeech_path)
+#infile_libri_lex = os.path.join(raw_librispeech_path, 'librispeech-lexicon.txt')
+#infile_cmu = os.path.join(raw_cmu_path, 'cmudict.0.7a')
+#output_file_text = os.path.join(data_dir, 'lexicon.txt')
+#output_file_text2 = os.path.join(data_dir, 'OOV.txt')
+#make_lexicon(infile_libri_lex, infile_cmu, output_file_text, output_file_text2, trs_files)
+#print("Created lexicon.txt")
 
 
+"""
+STEP 5 - phones.txt, silences.txt, variants.txt
+    using the CMU phoneset without lexical stress
+    variants and with a special NSN phone for
+    various kind of noises
+"""
 
-
+CMU_phones = [
+    ('IY', u'iː'),
+    ('IH', u'ɪ'),
+    ('EH', u'ɛ'),
+    ('EY', u'eɪ'),
+    ('AE', u'æ'),
+    ('AA', u'ɑː'),
+    ('AW', u'aʊ'),
+    ('AY', u'aɪ'),
+    ('AH', u'ʌ'),
+    ('AO', u'ɔː'),
+    ('OY', u'ɔɪ'),
+    ('OW', u'oʊ'),
+    ('UH', u'ʊ'),
+    ('UW', u'uː'),
+    ('ER', u'ɝ'),
+    ('JH', u'ʤ'),
+    ('CH', u'ʧ'),
+    ('B', u'b'),
+    ('D', u'd'),
+    ('G', u'g'),
+    ('P', u'p'),
+    ('T', u't'),
+    ('K', u'k'),
+    ('S', u's'),
+    ('SH', u'ʃ'),
+    ('Z', u'z'),
+    ('ZH', u'ʒ'),
+    ('F', u'f'),
+    ('TH', u'θ'),
+    ('V', u'v'),
+    ('DH', u'ð'),
+    ('M', u'm'),
+    ('N', u'n'),
+    ('NG', u'ŋ'),
+    ('L', u'l'),
+    ('R', u'r'),
+    ('W', u'w'),
+    ('Y', u'j'),
+    ('HH', u'h')
+]
+phones = {}
+for phone, ipa in CMU_phones:
+    phones[phone] = ipa
+silences = [u"NSN"]  # SPN and SIL will be added automatically
+variants = []  # could use lexical stress variants...
+make_phones(phones, data_dir, silences, variants)
+print("Created phones.txt, silences.txt, variants.txt")
