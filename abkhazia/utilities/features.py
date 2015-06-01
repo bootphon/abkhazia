@@ -30,6 +30,7 @@ def segment_features(features_file, segments_file, out_file):
 			# load features for whole wavefile
 			wav_id = os.path.splitext(wavefile)[0]
 			times, features = h5features.read(features_file, from_internal_file=wav_id)
+			times, features = times[wav_id], features[wav_id]  # no need for dict here
 			utt_ids, utt_times, utt_features = [], [], []	
 			for utt_id, _, start, stop in utts:
 				# select features for appropriate segment
