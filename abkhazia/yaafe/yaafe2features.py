@@ -59,7 +59,7 @@ def yaafe2features(wavefiles, out_file):
 	h5features.write(out_file, 'features', wav_ids, times, features)
 
 
-def encode_corpus(corpus, split='test'):
+def encode_corpus(corpus, split=None):
 	"""
 	Generates yaafe features (in h5features format) for an abkhazia corpus
 	or a split of an abkhazia corpus. The features are ready for
@@ -82,8 +82,8 @@ def encode_corpus(corpus, split='test'):
 
 # test
 root = '/fhgfs/bootphon/scratch/thomas/abkhazia/corpora'
-corpus = p.join(root, 'WSJ_main_read')
-encode_corpus(corpus)
+corpus = p.join(root, 'CSJ_core_laymen')
+encode_corpus(corpus, split='test')
 
 
 """
