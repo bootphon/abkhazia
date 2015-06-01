@@ -5,7 +5,7 @@ Created on Mon Dec  1 15:05:38 2014
 @author: Thomas Schatz
 """
 
-import abkhazia.utilities.basic_io as basic_io
+import abkhazia.utilities.basic_io as io
 import h5features
 from itertools import groupby
 import os
