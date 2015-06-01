@@ -28,7 +28,7 @@ def segment_features(features_file, segments_file, out_file):
 		get_wav = lambda e: e[1]
 		for wavefile, utts in groupby(data, get_wav):
 			#TODO use a log instead of a print statement
-			print "Segmenting features for wavefile {0} by utterances".format(wavefile)
+			print "Segmenting features for wavefile {0} by utterance".format(wavefile)
 			# load features for whole wavefile
 			wav_id = os.path.splitext(wavefile)[0]
 			times, features = h5features.read(features_file, from_internal_file=wav_id)
