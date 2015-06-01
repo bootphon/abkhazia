@@ -36,6 +36,10 @@ def segment_features(features_file, segments_file, out_file):
 				# select features for appropriate segment
 				utt_ids.append(utt_id)
 				indices = np.where(np.logical_and(times >= start, times <= stop))[0]
+				if indices.size() == 0:
+					print start
+					print stop
+					print times
 				utt_times = times[indices] - start  # get times relative to beginning of utterance
 				utt_features.append(features[indices,:])
 			# write to out_file once for each wavefile
