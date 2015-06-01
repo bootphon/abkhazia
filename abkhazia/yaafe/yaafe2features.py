@@ -7,6 +7,9 @@ This module requires:
 	- numpy
 	- h5features (https://github.com/bootphon/h5features)
 	- yaafelib
+
+On Oberon, you can get yaafelib available in your python
+environment by executing 'module load yaafe' in the terminal.
 """
 
 
@@ -15,6 +18,7 @@ import yaafelib as ya
 import numpy as np
 import h5features
 import os.path as p
+import os
 import abkhazia.utilities.basic_io as io
 
 
@@ -61,7 +65,7 @@ def encode_corpus(corpus, split='test'):
 	_, wavefiles, _, _ = io.read_segments(segments_file)
 	wavefiles = [p.join(corpus, 'data', 'wavs', wavefile) for wavefile in set(wavefiles)]
 	features_dir = p.join(corpus, 'data', 'features')
-	if not(os.path.isdir(features_dir)):
+	if not(p.isdir(features_dir)):
 		os.mkdir(features_dir)
 	out_file = p.join(corpus, 'data', 'features', 'yaafe_MFCC.features')
 	yaafe2features(wavefiles, out_file)
