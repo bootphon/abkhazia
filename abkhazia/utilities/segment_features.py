@@ -21,7 +21,7 @@ def segment_features(features_file, segments_file, out_file):
 	utt_ids, wavefiles, starts, stops = io.read_segments(segments_file)
 	if all([e is None for e in starts]) and all([e is None for e in stops]):
 		#TODO use a log instead of a print statement
-		print "segment_features: segments already match wavefiles, nothing to segment..."
+		print "segment_features: segments already match wavefiles, doing nothing..."
 	else:
 		# Group utterances by wavefiles
 		data = zip(utt_ids, wavefiles, starts, stops)

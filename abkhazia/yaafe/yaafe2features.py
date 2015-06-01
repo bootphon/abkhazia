@@ -19,8 +19,9 @@ import numpy as np
 import h5features
 import os.path as p
 import os
+import shutil
 import abkhazia.utilities.basic_io as io
-
+import abkhazia.utilities.features as feat
 
 #TODO All features are loaded in memory simultaneously
 # which can take a lot of space for big corpora.
@@ -76,8 +77,20 @@ def encode_corpus(corpus, split=None):
 	wavefiles = [p.join(corpus, 'data', 'wavs', wavefile) for wavefile in set(wavefiles)]	
 	if not(p.isdir(features_dir)):
 		os.mkdir(features_dir)
+	# generate MFCC for whole wavefiles first
+	aux_file = p.join(features_dir, 'yaafe_MFCC_aux.features')
+	yaafe2features(wavefiles, aux_file)
+	# then (if necessary) segment features to utterance level
 	out_file = p.join(features_dir, 'yaafe_MFCC.features')
-	yaafe2features(wavefiles, out_file)
+	feat.segment_features(aux_file, segments_file, out_file)
+	# if the out_file was not created, it means wavefiles correspond
+	# to utterances; just copy the aux file in this case
+	if not(p.exists(out_file)):
+		shutil.copy(aux_file, out_file)
+	# delete auxiliary file
+	os.remove(aux_file)
+
+
 
 
 # test
