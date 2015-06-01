@@ -27,6 +27,8 @@ def segment_features(features_file, segments_file, out_file):
 		data = zip(utt_ids, wavefiles, starts, stops)
 		get_wav = lambda e: e[1]
 		for wavefile, utts in groupby(data, get_wav):
+			#TODO use a log instead of a print statement
+			print "Segmenting features for wavefile {0} by utterances".format(wavefile)
 			# load features for whole wavefile
 			wav_id = os.path.splitext(wavefile)[0]
 			times, features = h5features.read(features_file, from_internal_file=wav_id)
@@ -36,9 +38,6 @@ def segment_features(features_file, segments_file, out_file):
 				# select features for appropriate segment
 				utt_ids.append(utt_id)
 				indices = np.where(np.logical_and(times >= start, times <= stop))[0]
-				print start
-				print stop
-				print times
 				utt_times.append(times[indices] - start)  # get times relative to beginning of utterance
 				utt_features.append(features[indices,:])
 			# write to out_file once for each wavefile
