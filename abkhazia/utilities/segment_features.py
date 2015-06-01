@@ -8,6 +8,8 @@ Created on Mon Dec  1 15:05:38 2014
 import abkhazia.utilities.basic_io as basic_io
 import h5features
 from itertools import groupby
+import os
+import numpy as np
 
 
 def segment_features(features_file, segments_file, out_file):
@@ -18,25 +20,23 @@ def segment_features(features_file, segments_file, out_file):
 	"""
 	utt_ids, wavefiles, starts, stops = io.read_segments(segments_file)
 	if all([e is None for e in starts]) and all([e is None for e in stops]):
-		print "Segments already match wavefiles, nothing to segment..."
+		#TODO use a log instead of a print statement
+		print "segment_features: segments already match wavefiles, nothing to segment..."
 	else:
 		# Group utterances by wavefiles
 		data = zip(utt_ids, wavefiles, starts, stops)
 		get_wav = lambda e: e[1]
 		for wavefile, utts in groupby(data, get_wav):
 			# load features for whole wavefile
-			xxx = h5features.load()
+			wav_id = os.path.splitext(wavefile)[0]
+			times, features = h5features.read(features_file, from_internal_file=wav_id)
+			utt_ids, utt_times, utt_features = [], [], []	
 			for utt_id, _, start, stop in utts:
-				# select and output features for appropriate segment
-
-	# 2. for each wavefile load features then iterate on wavs select features
-	# based on times and write
-	for utt_id, wav, start, stop in :
-		# read in original features
-
-
-# segment_features(...)
-
-# need either buckeye trained or librispeech trained model for control
-# need to gather the whole matrix of ABX results + launch ABnet computations 
+				# select features for appropriate segment
+				utt_ids.append(utt_id)
+				indices = np.where(np.logical_and(times >= start, times <= stop))[0]
+				utt_times = times[indices] - start  # get times relative to beginning of utterance
+				utt_features.append(features[indices,:])
+			# write to out_file once for each wavefile
+			h5features.write(out_file, 'features', utt_ids, utt_times, utt_features)
 
