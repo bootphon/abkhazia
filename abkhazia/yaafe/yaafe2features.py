@@ -22,6 +22,10 @@ import os
 import abkhazia.utilities.basic_io as io
 
 
+#TODO All features are loaded in memory simultaneously
+# which can take a lot of space for big corpora.
+# This can easily be avoided by writing to the h5features
+# file batch by batch.
 def yaafe2features(wavefiles, out_file):
 	"""
 	Generate features with yaafe and put them in h5features format.
@@ -57,17 +61,22 @@ def yaafe2features(wavefiles, out_file):
 
 def encode_corpus(corpus, split='test'):
 	"""
-	Generates yaafe features (in h5features format) for the 'test' part of a
-	standard train/test split of an abkhazia corpus. The features are ready for
-	use in abkhazia's ABX tasks. 
+	Generates yaafe features (in h5features format) for an abkhazia corpus
+	or a split of an abkhazia corpus. The features are ready for
+	use with abkhazia's ABX tasks. 
 	"""
-	segments_file = p.join(corpus, 'data', 'split', split, 'segments.txt')
+	if split is None:
+		# encode the whole corpus
+		segments_file = p.join(corpus, 'data', 'segments.txt')
+		features_dir = p.join(corpus, 'data', 'features')
+	else:
+		segments_file = p.join(corpus, 'data', 'split', split, 'segments.txt')
+		features_dir = p.join(corpus, 'data', 'split', split, 'features')
 	_, wavefiles, _, _ = io.read_segments(segments_file)
-	wavefiles = [p.join(corpus, 'data', 'wavs', wavefile) for wavefile in set(wavefiles)]
-	features_dir = p.join(corpus, 'data', 'features')
+	wavefiles = [p.join(corpus, 'data', 'wavs', wavefile) for wavefile in set(wavefiles)]	
 	if not(p.isdir(features_dir)):
 		os.mkdir(features_dir)
-	out_file = p.join(corpus, 'data', 'features', 'yaafe_MFCC.features')
+	out_file = p.join(features_dir, 'yaafe_MFCC.features')
 	yaafe2features(wavefiles, out_file)
 
 
