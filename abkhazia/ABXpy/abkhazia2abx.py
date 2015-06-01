@@ -7,8 +7,10 @@ Created on Mon Dec  1 15:05:38 2014
 
 import codecs
 from itertools import groupby
+import abkhazia.utilities.basic_io as io
 
 
+#TODO: this is for 'phone' or 'triphone' tasks, what about tasks on whole words
 def alignment2item(alignment_file, item_file, spk_id_len, segment_extension='single_phone'):
 	"""
 	Creates an item file suitable for most standard ABX tasks on speech corpora.
@@ -34,13 +36,14 @@ def alignment2item(alignment_file, item_file, spk_id_len, segment_extension='sin
 	# open item_file and write to it
 	with codecs.open(item_file, mode='w', encoding='UTF-8') as out:
 		# write header
-		out.write('#file onset offset #phone prev_phone next_phone talker\n')
+		out.write('#file onset offset #phone prev-phone next-phone talker\n')
 		# gather and process each utterance independently
 		get_utt_id = lambda line: line.split()[0]
 		for utt_id, lines in groupby(all_lines, get_utt_id):  # group by utt_id
 			lines = list(lines)  # convert itertools object into list
 			speaker = utt_id[:spk_id_len]
 			# use the first phone only in 'single_phone' case
+			#FIXME what if the first phone is a SIL
 			if segment_extension == 'single_phone':
 				_, start, stop, phone = lines[0].split()
 				if len(lines) == 1:
@@ -63,6 +66,7 @@ def alignment2item(alignment_file, item_file, spk_id_len, segment_extension='sin
 				info = [utt_id, seg_start, seg_stop, phone, prev_phone, next_phone, speaker]
 				out.write(u" ".join(info) + u"\n")
 			# use the last line only in 'single_phone' case
+			#FIXME what if the last phone is a SIL
 			if segment_extension == 'single_phone':
 				if len(lines) > 1:  # do not process twice the same line as first and last line!
 					_, start, stop, phone = lines[-1].split()
@@ -70,10 +74,32 @@ def alignment2item(alignment_file, item_file, spk_id_len, segment_extension='sin
 					info = [utt_id, start, stop, phone, prev, 'SIL', speaker]
 					out.write(u" ".join(info) + u"\n")
 
-# test 
-alignment_file = '/Users/thomas/Documents/PhD/Recherche/test/forced_alignment.txt'
-item_file = '/Users/thomas/Documents/PhD/Recherche/test/WSJ.item'
-spk_id_len = 3
-alignment2item(alignment_file, item_file, spk_id_len, 'triphone')
-	
 
+# test
+import os.path as p
+
+#TODO: put filter_alignment with the functions used for exporting
+# results from kaldi to abkhazia ? Or rather as a generic abkahzia utility
+def filter_alignment(alignment_file, output_file, segment_file):
+	""" Keep alignment tokens if and only if there is an entry
+	for the corresponding utterance in the file provided """
+	utt_ids, _, _, _ = io.read_segments(segment_file)
+	io.copy_first_col_matches(alignment_file, output_file, utt_ids)
+
+
+def get_item_file(root, corpus, spk_id_len):
+	alignment = p.join(root, corpus + '_forced_alignment.txt')
+	test_utts = p.join(root, corpus + '_test_utts.txt')
+	test_alignment = p.join(root, corpus + '_test_forced_alignment.txt')
+	filter_alignment(alignment, test_alignment, test_utts)
+
+	item_file = p.join(root, corpus + '_phone.item')
+	alignment2item(test_alignment, item_file, spk_id_len, 'single_phone')
+
+
+root = '/Users/thomas/Documents/PhD/Recherche/test/'
+corpus = 'CSJ'
+spk_id_len = 5  # to do: get this from spk2utt and replace explicitly given
+				# segment file by path to an abkhazia split
+get_item_file(root, 'CSJ', 5)
+get_item_file(root, 'WSJ', 3)

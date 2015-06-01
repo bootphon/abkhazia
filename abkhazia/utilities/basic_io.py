@@ -148,6 +148,8 @@ def get_utt_durations(wav_dir, seg_file):
 
 
 def match_on_first_col(lines, desired_first_col):
+	""" desired_first_col is a list of possible values for the first column
+	of each line in lines """
 	first_col = [line.strip().split(u" ")[0] for line in lines]
 	# need numpy here to get something fast easily
 	# could also have something faster with pandas
