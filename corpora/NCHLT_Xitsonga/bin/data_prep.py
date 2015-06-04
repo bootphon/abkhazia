@@ -37,19 +37,32 @@ abkhazia_path = "/home/xcao/github_abkhazia/abkhazia/corpora/NCHLT_Xitsonga/"
 #######################################################################################
 #######################################################################################
 
-#If generating the data for the first time, run all steps
-#Otherwise, start from step 3 to just link the wavs rep. (wavs already available in /fhgfs/bootphon/data/derived_data/Xitsonga_abkhazia/NCHLT_abkhazia/Xitsonga/)
-
 #STEP 1
 # filter out .DS_Store files from MacOS if any
 def list_dir(d):
 	return [e for e in os.listdir(d) if e != '.DS_Store']
+ 
+"""
+Copy all wavs files into the "wavs" directory"
+
+"""
+def list_copy_rename_wav_files(audio_dir, o):
+    file_list = []
+    for dirpath, dirs, files in os.walk(audio_dir):
+        for f in files:
+              m_file = re.match("(.*)\.wav", f)
+              if m_file:
+                  file_list.append(os.path.join(dirpath, f))
+                  filename = os.path.join(dirpath,f)
+                  dest_filename = os.path.join(o,f)
+                  shutil.copy2(filename, dest_filename)
+                  #rename all wav files so that wav files start by speaker_ID
+                  os.rename(dest_filename, dest_filename.replace("nchlt_tso_", ""))
+                  print (f)
+    return file_list
 
 
-#STEP 2
-#copy all wavs files into one wavs directory in "derived data"
-#Arguments are name of destination folder ("wavs")
-def copy_wav(o):
+def copy_rename_wav(i,o):
     #create wirs dir
     output_dir = os.path.join(derived_path, o)
     if not os.path.isdir(output_dir):
@@ -249,8 +262,149 @@ def copy_phones():
 
 #Running the different steps
 #copy_wav ('wavs')
-link_wavs()
+#link_wavs()
 #segments_speakers()
 #text()
 #lexicon()
 #copy_phones()
+
+
+#######################################################################################
+#######################################################################################
+##################################### Parameters ######################################
+#######################################################################################
+#######################################################################################
+
+# Raw distribution of Xitsonga is available at http://rma.nwu.ac.za/index.php/resource-catalogue/nchlt-speech-corpus-ts.html (free)
+raw_Xitsonga_path = "/fhgfs/bootphon/data/raw_data/NCHLT/nchlt_Xitsonga/"
+
+# path to CMU dictionary as available from http://www.speech.cs.cmu.edu/cgi-bin/cmudict (free)
+# the recipe was designed using version 0.7a of the dictionary, but other recent versions
+# could probably be used without changing anything 
+raw_cmu_path = "/fhgfs/bootphon/data/raw_data/CMU_dict/cmudict.0.7a"
+#raw_cmu_path = "/Users/thomas/Documents/PhD/Recherche/databases/CMU_dict/cmudict.0.7a"
+# sph2pipe is required for converting .wv1 to .wav.
+# One way to get it is to install kaldi, then sph2pipe can be found in:
+#   /path/to/kaldi/tools/sph2pipe_v2.5/sph2pipe
+sph2pipe = "/cm/shared/apps/kaldi/tools/sph2pipe_v2.5/sph2pipe"
+#sph2pipe = "/Users/thomas/Documents/PhD/Recherche/kaldi/kaldi-trunk/tools/sph2pipe_v2.5/sph2pipe"
+# Path to a directory where the processed corpora is to be stored
+output_dir = "/fhgfs/bootphon/scratch/xcao/abkhazia/corpora/NCHLT_Xitsonga/"
+#######################################################################################
+#######################################################################################
+###################################### Main part ######################################
+#######################################################################################
+#######################################################################################
+
+
+# setting up some paths and directories
+audio_dir = os.path.join(raw_Xitsonga_path, 'audio')
+data_dir = os.path.join(output_dir, 'data')
+if not os.path.isdir(data_dir):
+    os.makedirs(data_dir)
+wav_dir = os.path.join(data_dir, 'wavs')
+
+
+"""
+STEP 0 - Listing relevant files for main_read part using the following 3 criterions:
+    - these files are nested within one of the following directories: 
+        si_tr_s, sd_tr_s, sd_tr_l (in WSJ0) and si_tr_s, si_tr_l (in WSJ1)
+    - the 4 letter in the file name is 'c'
+    - their extension is either .dot or .wv1 (transcriptions and recordings respectively)
+"""
+
+
+
+"""
+STEP 2 - Setting up wav folder
+This step can take a lot of time (~70 000 files to convert)
+"""
+wavs_files = list_copy_rename_wav_files (audio_dir, wav_dir)
+print("Copied wavefiles")
+
+"""
+STEP 3 - segments.txt
+"""
+
+
+#output_file = os.path.join(data_dir, "segments.txt")
+#make_utt_list(wav_dir, output_file)
+#print("Created segments.txt")
+
+"""
+STEP 4 - utt2spk.txt
+"""
+#output_file = os.path.join(data_dir, "utt2spk.txt")
+#make_spk_list(wav_dir, output_file)
+#print("Created utt2spk.txt")
+
+"""
+STEP 5 - text.txt
+"""
+#output_file = os.path.join(data_dir, "text.txt")
+#make_transcript(main_read_dot, output_file, exclude=bad_utts)
+#print("Created text.txt")
+
+"""
+STEP 6 - phones.txt, silences.txt, variants.txt
+    using the CMU phoneset without lexical stress
+    variants and with a special NSN phone for
+    various kind of noises
+"""
+"""
+CMU_phones = [
+    ('IY', u'iː'),
+    ('IH', u'ɪ'),
+    ('EH', u'ɛ'),
+    ('EY', u'eɪ'),
+    ('AE', u'æ'),
+    ('AA', u'ɑː'),
+    ('AW', u'aʊ'),
+    ('AY', u'aɪ'),
+    ('AH', u'ʌ'),
+    ('AO', u'ɔː'),
+    ('OY', u'ɔɪ'),
+    ('OW', u'oʊ'),
+    ('UH', u'ʊ'),
+    ('UW', u'uː'),
+    ('ER', u'ɝ'),
+    ('JH', u'ʤ'),
+    ('CH', u'ʧ'),
+    ('B', u'b'),
+    ('D', u'd'),
+    ('G', u'g'),
+    ('P', u'p'),
+    ('T', u't'),
+    ('K', u'k'),
+    ('S', u's'),
+    ('SH', u'ʃ'),
+    ('Z', u'z'),
+    ('ZH', u'ʒ'),
+    ('F', u'f'),
+    ('TH', u'θ'),
+    ('V', u'v'),
+    ('DH', u'ð'),
+    ('M', u'm'),
+    ('N', u'n'),
+    ('NG', u'ŋ'),
+    ('L', u'l'),
+    ('R', u'r'),
+    ('W', u'w'),
+    ('Y', u'j'),
+    ('HH', u'h')
+]
+phones = {}
+for phone, ipa in CMU_phones:
+    phones[phone] = ipa
+silences = [u"NSN"]  # SPN and SIL will be added automatically
+variants = []  # could use lexical stress variants...
+make_phones(phones, data_dir, silences, variants)
+print("Created phones.txt, silences.txt, variants.txt")
+"""
+
+"""
+STEP 7 - lexicon.txt
+"""
+#output_file = os.path.join(data_dir, "lexicon.txt")
+#make_lexicon(raw_cmu_path, output_file)
+#print("Created lexicon.txt")
