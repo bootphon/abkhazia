@@ -55,11 +55,9 @@ def export_phone_alignment(phones_file, tra_file, out_file, word_position_depend
 # no difference? (maybe some did not reach final state), chronological order, grouping by utt_id etc.
 
 
-
-
 #root = "/Users/Thomas/Documents/PhD/Recherche/test"
-#phones_file = os.path.join(root, 'phones.txt')
-#tra_file = os.path.join(root, 'forced_alignment.tra')
-#out_file = os.path.join(root, 'forced_alignment.txt')
+#phones_file = os.path.join(root, 'phones_WSJ.txt')
+#tra_file = os.path.join(root, 'WSJ_forced_alignment.tra')
+#out_file = os.path.join(root, 'WSJ_forced_alignment.txt')
 #export_phone_alignment(phones_file, tra_file, out_file)
 

@@ -111,7 +111,7 @@ def lattice2features(phones_file, post_file, out_file, word_position_dependent=T
 	utt_ids = []
 	times = []
 	for index, line in enumerate(lines):
-		print("Processing line {0} / {1}".format(index, len(lines)))
+		print("Processing line {0} / {1}".format(index+1, len(lines)))
 		tokens = line.strip().split(u" ")
 		utt_id, tokens = tokens[0], tokens[1:]
 		frames = []
@@ -142,8 +142,8 @@ def lattice2features(phones_file, post_file, out_file, word_position_dependent=T
 		# normalize posteriorgrams to correct for rounding or thresholding errors
 		# by rescaling globally
 		total_proba = np.sum(utt_features, axis=1)
-		if np.max(np.abs(total_proba-1)) >= 1e-6:  # ad hoc numerical tolerance...
-			raise IOError("In utterance {0}, frame {1}: posteriorgram does not sum to one".format(utt_id, f))
+		if np.max(np.abs(total_proba-1)) >= 1e-5:  # ad hoc numerical tolerance...
+			raise IOError("In utterance {0}, frame {1}: posteriorgram does not sum to one, difference is {2}: ".format(utt_id, f, np.max(np.abs(total_proba-1))))
 		utt_features = utt_features/np.tile(total_proba, (d, 1)).T
 		features.append(utt_features)
 		utt_ids.append(utt_id)
@@ -155,11 +155,11 @@ def lattice2features(phones_file, post_file, out_file, word_position_dependent=T
 # impact of acoustic_scale param ???
 
 root = "/Users/Thomas/Documents/PhD/Recherche/test"
-phones_file = os.path.join(root, 'phones_CSJ.txt')
-post_file = os.path.join(root, 'post.post')
-out_file = os.path.join(root, 'post.features')
-#lattice2features(phones_file, post_file, out_file)
+phones_file = os.path.join(root, 'phones_CSJ.txt')  # the phones used to train the model
+post_file = os.path.join(root, 'train_CSJ_test_WSJ.post')
+out_file = os.path.join(root, 'train_CSJ_test_WSJ_post.features')
+lattice2features(phones_file, post_file, out_file)
 
-out_file = os.path.join(root, 'trans.features')
-tra_file = os.path.join(root, 'forced_alignment.tra')
-transcription2features(phones_file, tra_file, out_file)
+#out_file = os.path.join(root, 'trans.features')
+#tra_file = os.path.join(root, 'forced_alignment.tra')
+#transcription2features(phones_file, tra_file, out_file)
