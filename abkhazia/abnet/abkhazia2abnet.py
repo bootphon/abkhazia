@@ -72,7 +72,7 @@ def train(same_pair_file, output_path,
     """
     if same_speaker_ratio:
         raise NotImplementedError
-    assert features in ['fbanks'], 'feature type not supported'
+    assert features_type in ['fbanks'], 'feature type not supported'
     
     with open(p.join(output_path, 'README.txt'), 'w') as fout:
         fout.write(README.format(
