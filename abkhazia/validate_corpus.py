@@ -155,7 +155,7 @@ def validate(corpus_path, verbose=False):
 			n = len(wavefiles)
 			next_display_prop = 0.1
 			log.debug("Checked timestamps consistency for 0% of wavefiles")
-			warning = False
+			warning = True
 			short_wavs = []
 			for i, wav in enumerate(wavefiles):
 				duration = durations[wav]

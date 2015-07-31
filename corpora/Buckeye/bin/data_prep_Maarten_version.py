@@ -14,7 +14,7 @@ Format of two things from Maarten + what Xuan-Nga put on Oberon
 from collections import namedtuple
 from collections import Counter
 import os
-import textgrid
+#import textgrid
 import fnmatch
 import logging
 import codecs
@@ -42,37 +42,17 @@ def list_dir(d):
 # there are 121, 122 labels in the second column of phone
 # and word files whose meaning I don't understand
 def read_raw_phn(fname):
-	bname = os.path.basename(fname)
-	phones = []
-	body = False  # flag used to ignore the file header
-	start = "0."
-	for line in open(fname):
-		if body:
-			try:
-				line = line.strip()
-				# some phones are marked with a * for some reason I don't
-				# know, we just ignore them
-				if not line:
-					print('RAW PHN: empty line!')
-				else:
-					if line[-1] == '*':
-						line = line.split(';')[0].strip()				
-					# second part of the following parse is just a blank space
-					# third part seems to be either 121 or 122 with
-					# meaning unknown
-					stop, _, _, phone = line.split(' ')
-					phones.append(SpeechChunk(bname, start, stop, phone))
-					start = stop
-			except ValueError:
-				print('RAW PHN: ' + line.strip())
-		else:
-			if line.strip() == '#':
-				body = True
-	return phones
+    bname = os.path.basename(fname)
+    phones = []
+    for line in open(fname):
+        on, off, transcript = line.strip().split('\t')
+        phones.append(SpeechChunk(bname, float(on), float(off), transcript))
+        return phones
 
 
 def read_raw_wrd(fname):
 	bname = os.path.basename(fname)
+	#print(fname)
 	words = []
 	standard_pronunciations = []
 	reported_pronunciations = []
@@ -80,7 +60,7 @@ def read_raw_wrd(fname):
 	start = "0."
 	for line in open(fname):
 		if body:
-			splitline = line.strip().split(' ')
+			splitline = line.strip().split('\t')
 			stop = splitline[0]
 			try:
 				wordchunk = ' '.join(splitline[2:])
@@ -108,10 +88,11 @@ def rglob(rootdir, pattern):
 
 
 def read_raw(buckeye_folder):
-	phones = [chunk for f in rglob(buckeye_folder, 's*.phones') for chunk in read_raw_phn(f)]
-	words = [(chunk, std_pron, rep_pron) for f in rglob(buckeye_folder, 's*.words') for chunk, std_pron, rep_pron in zip(*read_raw_wrd(f))]
-	wavs = [os.path.basename(f) for f in rglob(buckeye_folder, 's*.wav')]
-	return wavs, phones, words
+    phones = [chunk for f in rglob(buckeye_folder, 's*.phn') for chunk in read_raw_phn(f)]
+    words = [(chunk, std_pron, rep_pron) for f in rglob(buckeye_folder, 's*.wrd') for chunk, std_pron, rep_pron in zip(*read_raw_wrd(f))]
+    wavs = [os.path.basename(f) for f in rglob(buckeye_folder, 's*.wav')]
+    return wavs, phones, words
+    
 
 
 ########################################################
@@ -213,11 +194,12 @@ def read_maarten(maarten_path):
 ########################################################
 
 
-root = '/Users/thomas/Documents/PhD/Recherche/'
-raw_path = os.path.join(root, 'databases', 'BUCKEYE')
-lscp_path = os.path.join(root, 'Code', 'BuckeyeChallenge', 'buckeye', 'Buckeye')
-maarten_path = os.path.join(root, 'Code', 'BuckeyeChallenge', 'buckeye', 'buckeye_modified')
-output_path = os.path.join(root, 'other_gits', 'abkhazia', 'corpora', 'Buckeye')
+#root = '/Users/thomas/Documents/PhD/Recherche/'
+root = '/home/xcao/cao/corpus_US'
+raw_path = os.path.join(root, 'BUCKEYE', 'Buckeye_final_check')
+#lscp_path = os.path.join(root, 'Code', 'BuckeyeChallenge', 'buckeye', 'Buckeye')
+#maarten_path = os.path.join(root, 'Code', 'BuckeyeChallenge', 'buckeye', 'buckeye_modified')
+output_path = os.path.join('/home/xcao/github_abkhazia/abkhazia/corpora/Buckeye')
 
 # folder set up
 if not(os.path.isdir(output_path)):
@@ -242,15 +224,20 @@ log.addHandler(log_handler)
 
 
 # read the three versions of the corpus
+#print (raw_path)
 wavs_raw, phones_raw, words_raw = read_raw(raw_path)
-print('Starting lscp')
-wavs_mod, phones_mod, words_mod = read_lscp(lscp_path)
-print('Starting Maarten')
-phones_maa, words_maa = read_maarten(maarten_path)
+print(wavs_raw)
+print (phones_raw)
+print (words_raw)
+#print('Starting lscp')
+#wavs_mod, phones_mod, words_mod = read_lscp(lscp_path)
+#print('Starting Maarten')
+#phones_maa, words_maa = read_maarten(maarten_path)
 # get rid of file s0103a (which has many problems, that we are 
 # not planning to correct apparently)
 # also wavefile s1901b seem to have been cut short
 # all utterances from Maarten for this file starting from 252 have to be thrown out
+"""
 def accept(id):
 	wav, utt = id.split('_')
 	answer = wav != 's0103a'
@@ -259,7 +246,7 @@ def accept(id):
 
 phones_maa = [phone for phone in phones_maa if accept(phone.file)]
 words_maa = [word for word in words_maa if accept(word.file)]
-
+"""
 
 
 ############################
@@ -270,9 +257,9 @@ words_maa = [word for word in words_maa if accept(word.file)]
 # from the standard pronunciations available for the raw
 # and modified corpora
 
-lexicon_maa = Counter([e.transcript for e in words_maa])
+#lexicon_maa = Counter([e.transcript for e in words_maa])
 lexicon_raw = Counter([e.transcript for e, f, g in words_raw])
-lexicon_mod = Counter([e.transcript for e, f, g in words_mod])
+#lexicon_mod = Counter([e.transcript for e, f, g in words_mod])
 
 def get_standard_prons(words):
 	prons = {}	
@@ -284,7 +271,7 @@ def get_standard_prons(words):
 	return prons
 
 raw_prons = get_standard_prons(words_raw)
-mod_prons = get_standard_prons(words_mod)
+#mod_prons = get_standard_prons(words_mod)
 	
 # a few words have more than one pronunciation
 # in the raw or mod corpus
@@ -298,7 +285,7 @@ mod_prons = get_standard_prons(words_mod)
 # than the CMU (e.g. dx or em)
 raw_prons['o'] = set(['ow'])
 mod_prons['o'] = set(['ow'])
-raw_prons['research'] = set(['r iy s er ch'])	
+raw_prons['research'] = set(['r iy s er ch'])
 mod_prons['research'] = set(['r iy s er ch'])
 raw_prons['uh'] = set(['ah'])
 mod_prons['uh'] = set(['ah'])
@@ -550,6 +537,8 @@ extract_data(
 		os.path.join(data_dir, 'wavs')
 		)
 	
+"""
+"""
 """
 ISSUES
  
