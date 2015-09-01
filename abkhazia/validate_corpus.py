@@ -504,6 +504,8 @@ def validate(corpus_path, verbose=False):
 				).format(s)
 			)
 			"""
+			Commented because it takes a lot of times for certain corpora
+			Maybe put it as an option
 			# get word types:
 			#	- found in transcriptions
 			#	- with at least one homophonic word type also found in transcriptions

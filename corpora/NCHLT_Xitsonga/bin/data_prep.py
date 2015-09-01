@@ -44,6 +44,25 @@ def list_dir(d):
  
 """
 Copy all wavs files into the "wavs" directory"
+<<<<<<< HEAD
+=======
+
+"""
+def list_copy_rename_wav_files(audio_dir, o):
+    file_list = []
+    for dirpath, dirs, files in os.walk(audio_dir):
+        for f in files:
+              m_file = re.match("(.*)\.wav", f)
+              if m_file:
+                  file_list.append(os.path.join(dirpath, f))
+                  filename = os.path.join(dirpath,f)
+                  dest_filename = os.path.join(o,f)
+                  shutil.copy2(filename, dest_filename)
+                  #rename all wav files so that wav files start by speaker_ID
+                  os.rename(dest_filename, dest_filename.replace("nchlt_tso_", ""))
+                  print (f)
+    return file_list
+>>>>>>> a7a28e9060fdc58b06bc23ff8174f632eee044d7
 
 """
 def list_copy_rename_wav_files(audio_dir, o):
@@ -61,7 +80,10 @@ def list_copy_rename_wav_files(audio_dir, o):
                   print (f)
     return file_list
 
+<<<<<<< HEAD
 """
+=======
+>>>>>>> a7a28e9060fdc58b06bc23ff8174f632eee044d7
 def copy_rename_wav(i,o):
     #create wirs dir
     output_dir = os.path.join(derived_path, o)
@@ -290,7 +312,11 @@ raw_cmu_path = "/fhgfs/bootphon/data/raw_data/CMU_dict/cmudict.0.7a"
 sph2pipe = "/cm/shared/apps/kaldi/tools/sph2pipe_v2.5/sph2pipe"
 #sph2pipe = "/Users/thomas/Documents/PhD/Recherche/kaldi/kaldi-trunk/tools/sph2pipe_v2.5/sph2pipe"
 # Path to a directory where the processed corpora is to be stored
+<<<<<<< HEAD
 output_dir = "/fhgfs/bootphon/abkhazia/corpora/NCHLT_Xitsonga"
+=======
+output_dir = "/fhgfs/bootphon/scratch/xcao/abkhazia/corpora/NCHLT_Xitsonga/"
+>>>>>>> a7a28e9060fdc58b06bc23ff8174f632eee044d7
 #######################################################################################
 #######################################################################################
 ###################################### Main part ######################################
@@ -300,7 +326,10 @@ output_dir = "/fhgfs/bootphon/abkhazia/corpora/NCHLT_Xitsonga"
 
 # setting up some paths and directories
 audio_dir = os.path.join(raw_Xitsonga_path, 'audio')
+<<<<<<< HEAD
 
+=======
+>>>>>>> a7a28e9060fdc58b06bc23ff8174f632eee044d7
 data_dir = os.path.join(output_dir, 'data')
 if not os.path.isdir(data_dir):
     os.makedirs(data_dir)
