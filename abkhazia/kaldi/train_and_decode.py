@@ -139,3 +139,38 @@ For future reference: creating a phone-loop G.txt:
 	# note that optional silences are added when composing G with L (lexicon) 
 	# when calling prepare_lang.sh, except if silence_prob is set to 0
 """
+
+"""
+Note on phone-level language models for acoustic models trained with word_position_dependent
+phones (this is the default in kaldi): 
+
+A customized version of prepare_lang.sh is copied in the 'local' folder of the recipe,
+by this script. This version creates appropriate word_position_dependent pronunciation
+variants for the 'phone' lexicon.
+The recipe phone_loop_lm.sh in kaldi_templates uses this prepare_lang.sh when its
+word_position_dependent option is set to true, otherwise the default prepare_lang.sh
+(in 'utils') is used. As a result of this customization the script validate_lang.pl also
+needs to be slightly amended and a custom version is also copied by in the 
+local folder and used by the custom prepare_lang.sh.
+"""
+
+#TODOs
+
+# prepare_lm.sh should not be able to fail silently.
+
+# Not sure how to get a language models on triphones or word-position-dependent variants
+# or if it even makes sense. I think it can only be done easily within kaldi if triphones
+# or word-position-dependent variants are output labels (i.e. words), but for triphones this
+# would conflict with the C expansion step in HCLG and for word-position-dependent variants
+# this poses problem at the lattice stage, where lattices become big and word-position
+# variants are considered as different decodings, which they shouldn't…
+# Probably the clean solution to specify a LM on allophonic variants would be to modify the 
+# C step (in HCLG) to allow an expansion weighted by a given LM. This means meddling inside
+# kaldi code, so we won't do it unless we really really need it.
+
+# Control for risk of overwriting of lang and split in recipe/data ? (this folder contains both
+# the splits and the LMs)
+
+# Check in validate_corpus that adding _I, _B, _E or _S suffixes to
+# phones does not create conflicts, otherwise issue a warning to say that 
+# word_position_dependent models won't be usable.
