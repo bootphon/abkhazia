@@ -84,7 +84,7 @@ compile-lm "$out_dir"/train.arpa.gz --eval="$out_dir"/test_se
 # case I have no idea what lowercasing would produce)
 utils/format_lm_sri.sh 	--srilm_opts "-subset -prune-lowprobs -unk" \
 	data/lang "$out_dir"/train.arpa.gz \
-	data/local/dict/lexicon.txt $out_dir \
+	data/local/dict/lexicon.txt $out_dir
 
 
 # clean

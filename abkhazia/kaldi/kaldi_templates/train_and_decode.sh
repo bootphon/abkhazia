@@ -39,8 +39,9 @@ num_gauss_si=15000
 num_states_sa=2500
 num_gauss_sa=15000
 # location of the language model to be used:
-lm=data/lang_test
-lm_name=word_bigram
+lm_name=word_bigram  # phone_bigram
+lm=data/"$lm_name"
+
 # acoustic scale for extracting posterior from the final lattice
 acoustic_scale=0.1
 #TODO nj as a parameter?
@@ -81,6 +82,9 @@ if [ "$skip_training" = false ] ; then
   steps/train_mono.sh --nj 8 --cmd "$train_cmd" \
     data/train data/lang exp/mono > exp/mono/train.log
 fi
+
+# Training/setting up LM for test, should create G.fst in data/"$lm_name"
+local/prepare_lm.sh $lm_name
 
 # Monophone model test 
 # done in parallel from next training steps

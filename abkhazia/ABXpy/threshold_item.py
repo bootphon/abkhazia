@@ -38,11 +38,11 @@ def threshold_item(item_file, output_file, columns, lower_threshold=1, upper_thr
                     out.write(u" ".join([unicode(e) for e in df.iloc[i]]) + u"\n")
 
 
-root = '/Users/thomas/Documents/PhD/Recherche/test/'
-corpus = 'CSJ_phone'  # 'WSJ_phone'
+root = '/Users/thomas/Documents/PhD/Recherche/Code/ABXYvsABX/data/' #'/Users/thomas/Documents/PhD/Recherche/test/'
+corpus = 'WSJ_T_IY-AH_N'  # 'WSJ_phone'
 item_file = root + corpus + '.item'
-lower_threshold= 2
-upper_threshold = 3
+lower_threshold = 1
+upper_threshold = 200
 out_file = root + corpus + '_threshold_' + str(lower_threshold) + '_' + str(upper_threshold) + '.item'
-columns = ['phone', 'talker']  #['phone', 'prev-phone', 'next-phone', 'talker']                 
+columns = ['phone', 'prev-phone', 'next-phone', 'talker'] #['phone', 'talker']                
 threshold_item(item_file, out_file, columns, lower_threshold=lower_threshold, upper_threshold=upper_threshold)

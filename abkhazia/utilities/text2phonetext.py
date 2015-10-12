@@ -9,21 +9,19 @@ import abkhazia.utilities.basic_io as io
 import codecs
 import os.path as p
 
-def convert_text(lexicon, text, out_file):
+def convert_text(lexicon, text_file, out_file):
 	"""
 	Create 'phone' version of text file (transcription of text directly into phones, without
 	any word boundary marker). This is used to estimate phone-level n-gram language models
 	for use with kaldi recipes.
 	For OOVs: just drop the whole sentence for now.
 	"""
+	# set up dict
 	words, transcriptions = io.read_dictionary(lexicon)
 	dictionary = {}
 	for word, transcript in zip(words, transcriptions):
-		dictionary[word] = transcript 
-	word2phone(dictionary, text, out_file)
-
-
-def word2phone(dictionary, text_file, out_file):
+		dictionary[word] = transcript
+	# transcribe
 	utt_ids, utt_words = io.read_text(text_file)
 	with codecs.open(out_file, mode='w', encoding='UTF-8') as out:
 		for utt_id, utt in zip(utt_ids, utt_words):

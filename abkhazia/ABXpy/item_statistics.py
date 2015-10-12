@@ -11,7 +11,7 @@ Should probably be merged at least partially with corpus_statistics.py...
 
 #TODO need to finish adaptation of this file to abkhazia
 # this gives statistics about phones + talkers + phonetic context
-# does nothing at the word level and ignores word boundaries
+# does nothing at the word level
 
 import matplotlib
 import matplotlib.pyplot as plt

@@ -37,7 +37,28 @@ def setup_lexicon(corpus_path, recipe_path, prune_lexicon=False, train_name=None
 	else:
 		shutil.copy(p.join(corpus_path, 'data', 'lexicon.txt'),
 					p.join(dict_path, 'lexicon.txt'))
-		
+	
+
+def setup_phone_lexicon(corpus_path, recipe_path, name):
+	dict_path = get_dict_path(recipe_path, name)
+	# get list of phones (including silence and non-silence phones)
+	with codecs.open(p.join(dict_path, 'nonsilence_phones.txt'),\
+					 mode='r', encoding="UTF-8") as inp:
+		lines = inp.readlines()
+	phones = [line.strip() for line in lines]
+	with codecs.open(p.join(dict_path, 'silence_phones.txt'),\
+					 mode='r', encoding="UTF-8") as inp:
+		lines = inp.readlines()
+	phones = phones + [line.strip() for line in lines]
+	# create 'phone' lexicon
+	with codecs.open(p.join(dict_path, 'lexicon.txt'),\
+					 mode='w', encoding="UTF-8") as out:
+		for word in phones:
+			out.write(u'{0} {1}\n'.format(word, word))
+		# add <unk> word, in case one wants to use the phone loop lexicon for training
+		# it also is necessary if one doesn't want to modify the validating scripts too much
+		out.write(u'<unk> SPN\n')
+
 
 def setup_phones(corpus_path, recipe_path, name='dict'):
 	dict_path = get_dict_path(recipe_path, name)
@@ -82,6 +103,16 @@ def get_data_path(corpus_path, recipe_path, in_split=None, out_split=None):
 
 
 def setup_text(corpus_path, recipe_path, in_split=None, out_split=None, desired_utts=None):
+	i_path, o_path = get_data_path(corpus_path, recipe_path, in_split, out_split)
+	if desired_utts is None:
+		shutil.copy(p.join(i_path, 'text.txt'), p.join(o_path, 'text'))
+	else:
+		io.copy_first_col_matches(p.join(i_path, 'text.txt'),
+							  	  p.join(o_path, 'text'),
+							  	  desired_utts)
+
+
+def setup_phone_text(corpus_path, recipe_path, in_split=None, out_split=None, desired_utts=None):
 	i_path, o_path = get_data_path(corpus_path, recipe_path, in_split, out_split)
 	if desired_utts is None:
 		shutil.copy(p.join(i_path, 'text.txt'), p.join(o_path, 'text'))
@@ -213,3 +244,16 @@ def setup_main_scripts(recipe_path, run_script):
 	# run.sh
 	run_file = p.join(kaldi_bin_dir, 'kaldi_templates', run_script)
 	shutil.copy(run_file, p.join(recipe_path, 'run.sh'))
+
+
+def setup_lm_scripts(recipe_path):
+	# copy kaldi template'prepare_lm.sh' in 'recipe_path/local'
+	kaldi_bin_dir = p.dirname(p.realpath(__file__))
+	shutil.copy(p.join(kaldi_bin_dir, 'kaldi_templates', 'prepare_lm.sh'),\
+				p.join(recipe_path, 'local', 'prepare_lm.sh'))
+	# copy custom prepare_lang.sh and validate_lang.sh scripts to 'local' folder
+	# these scripts are used for models trained with word_position_dependent phone variants
+	shutil.copy(p.join(kaldi_bin_dir, 'kaldi_templates', 'prepare_lang_wpdpl.sh'),\
+				p.join(recipe_path, 'local', 'prepare_lang_wpdpl.sh'))
+	shutil.copy(p.join(kaldi_bin_dir, 'kaldi_templates', 'validate_lang_wpdpl.pl'),\
+				p.join(recipe_path, 'local', 'validate_lang_wpdpl.pl'))

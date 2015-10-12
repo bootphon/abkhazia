@@ -17,19 +17,14 @@ See the recipe template in kaldi_templates/train_and_decode.sh.
 See in particular the arguments that can be passed to the
 recipe and their default values.
 
-Note that the user has to externally provide a language
-model in FST format to be able to run the decoding part
-of the resulting recipe. This can be obtained, for example,
-using: ...
-
-Once the recipe is instantiated and a language model has
-been supplied, it can be ran like any other kaldi
+Once the recipe is instantiated it can be ran like any other kaldi
 recipe.
 """
 
 
 import os.path as p
 import os
+import shutil
 import abkhazia.utilities.basic_io as io
 import abkhazia.kaldi.abkhazia2kaldi as a2k 
 
@@ -100,9 +95,47 @@ def create_kaldi_recipe(corpus_path, output_path, kaldi_root,
 			path = p.join(recipe_path, 'data', out_split, f)
 			if p.exists(path):
 				io.cpp_sort(path)
+	# LM folders (common to all splits)
+	# for now just have word- and phone-level bigrams estimated from train split
+	# word-level bigram (at this point it could be n-gram actually)
+	a2k.setup_lexicon(corpus_path, recipe_path, prune_lexicon, train_name, name='word_bigram')  # lexicon.txt
+	a2k.setup_phones(corpus_path, recipe_path, name='word_bigram')  # nonsilence_phones.txt
+	a2k.setup_silences(corpus_path, recipe_path, name='word_bigram')  # silence_phones.txt, optional_silence.txt
+	a2k.setup_variants(corpus_path, recipe_path, name='word_bigram')  # extra_questions.txt
+	# copy train text to word_bigram for LM estimation
+	train_text = p.join(recipe_path, 'data', 'train', 'text')
+	out_dir = a2k.get_dict_path(recipe_path, name='word_bigram')
+	shutil.copy(train_text, p.join(out_dir, 'lm_text.txt'))
+	# phone-level bigram (at this point it could be n-gram actually)
+	a2k.setup_phones(corpus_path, recipe_path, name='phone_bigram')  # nonsilence_phones.txt
+	a2k.setup_silences(corpus_path, recipe_path, name='phone_bigram')  # silence_phones.txt, optional_silence.txt
+	a2k.setup_variants(corpus_path, recipe_path, name='phone_bigram')  # extra_questions.txt
+	a2k.setup_phone_lexicon(corpus_path, recipe_path, name='phone_bigram')  # lexicon.txt
+	# copy phone version of train text to phone_bigram for LM estimation
+	lexicon = p.join(corpus_path, 'data', 'lexicon.txt')
+	text = p.join(corpus_path, 'data', 'split', train_name, 'text.txt')
+	out_dir = a2k.get_dict_path(recipe_path, name='phone_bigram')
+	io.word2phone(lexicon, text, p.join(out_dir, 'lm_text.txt'))	
+	# create empty 'phone' file, just to indicate the LM is phone_level
+	with open(p.join(out_dir, 'phone'), 'w'):
+		pass
 	# Other files and folders (common to all splits)
 	a2k.setup_wav_folder(corpus_path, recipe_path)  # wav folder
 	a2k.setup_kaldi_folders(kaldi_root, recipe_path)  # misc. kaldi symlinks, directories and files 
 	a2k.setup_machine_specific_scripts(recipe_path)  # path.sh, cmd.sh
 	a2k.setup_main_scripts(recipe_path, 'train_and_decode.sh')  # score.sh, run.sh
+	a2k.setup_lm_scripts(recipe_path)
+	
 
+"""
+For future reference: creating a phone-loop G.txt:
+	# describe FST corresponding to desired language model in a text file
+	with codecs.open(p.join(recipe_path, 'data', 'local', name, 'G.txt'),\
+					 mode='w', encoding="UTF-8") as out:
+		for word in phones:
+			# should I, C++ sort the created files ?
+			out.write(u'0 0 {0} {1}\n'.format(word, word))
+		out.write(u'0 0.0')  # final node
+	# note that optional silences are added when composing G with L (lexicon) 
+	# when calling prepare_lang.sh, except if silence_prob is set to 0
+"""

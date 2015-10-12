@@ -175,3 +175,28 @@ def copy_match(file_in, file_out, get_matches):
 def copy_first_col_matches(file_in, file_out, desired_first_col):
 	get_matches = lambda lines: match_on_first_col(lines, desired_first_col)
 	copy_match(file_in, file_out, get_matches)
+
+
+def word2phone(lexicon, text_file, out_file):
+	"""
+	Create 'phone' version of text file (transcription of text directly into phones, without
+	any word boundary marker). This is used to estimate phone-level n-gram language models
+	for use with kaldi recipes.
+	For OOVs: just drop the whole sentence for now.
+	"""
+	# set up dict
+	words, transcriptions = read_dictionary(lexicon)
+	dictionary = {}
+	for word, transcript in zip(words, transcriptions):
+		dictionary[word] = transcript
+	# transcribe
+	utt_ids, utt_words = read_text(text_file)
+	with codecs.open(out_file, mode='w', encoding='UTF-8') as out:
+		for utt_id, utt in zip(utt_ids, utt_words):
+			try:
+				hierarchical_transcript = [dictionary[word] for word in utt]
+			except KeyError:
+				continue  # OOV: for now we just drop the sentence silently in this case (could add a warning)
+			flat_transcript = [e for l in hierarchical_transcript for e in l]
+			out.write(u" ".join([utt_id] + flat_transcript))
+			out.write(u"\n")
