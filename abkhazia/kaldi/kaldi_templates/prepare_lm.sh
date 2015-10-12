@@ -87,7 +87,7 @@ $prepare_lang_exe --position-dependent-phones $word_position_dependent \
 #  2 - A G.arpa.gz MIT/ARPA formatted n-gram is already provided in in_dir 
 #  3 - A text.txt file from which to estimate a n-gram is provided in in_dir
 
-if [ -f "$ind_dir"/G.txt ];
+if [ -f "$in_dir"/G.txt ];
 then
    	# 1 -
    	# compile the text format FST to binary format used by kaldi in utils/mkgraph.sh
@@ -97,7 +97,7 @@ then
 	fstarcsort --sort_type=ilabel $out_dir/G.fst > $out_dir/G2.fst
 	mv $out_dir/G2.fst $out_dir/G.fst
 else
-	if [ -f "$ind_dir"/G.arpa.gz ];
+	if [ -f "$in_dir"/G.arpa.gz ];
 	then
 		# 2 -
 		# generate FST (use SRILM)
