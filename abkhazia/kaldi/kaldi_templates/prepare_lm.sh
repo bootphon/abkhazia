@@ -105,9 +105,14 @@ else
 		# srilm_opts: do not use -tolower by default, since we do not make assumption that lexicon
 		# has no meaningful lowercase/uppercase distinctions (and it can be in unicode, in which
 		# case I have no idea what lowercasing would produce)
+		
+		# format_lm_sri.sh copies stuff so we need to instantiate another folder and then clean up
+		# (or we could do a custom format_lm_sri.sh with $1 and $4 == $1 and no cp)
+		tmp_out_dir="$out_dir"_tmp
 		utils/format_lm_sri.sh 	--srilm_opts "-subset -prune-lowprobs -unk" \
 			$out_dir "$in_dir"/G.arpa.gz \
-			"in_dir"/lexicon.txt $out_dir
+			"in_dir"/lexicon.txt $tmp_out_dir
+		mv $tmp_out_dir $out_dir  # erases the previous content that is redundant anyway
 	else
 		# 3 -
 		# generate ARPA/MIT n-gram with IRSTLM, then as in 2.
@@ -124,11 +129,10 @@ else
 		rm "$in_dir"/text_se.txt
 		rm "$in_dir"/text.ilm.gz
 		# As in 2., generate FST
+		tmp_out_dir="$out_dir"_tmp
 		utils/format_lm_sri.sh 	--srilm_opts "-subset -prune-lowprobs -unk" \
 			$out_dir "$in_dir"/G.arpa.gz \
-			"in_dir"/lexicon.txt "$out_dir"_2
-		# format_lm_sri.sh copies stuff so we need to instantiate another folder and then clean up
-		# (or we could do a custom format_lm_sri.sh with $1 and $4 == $1 and no cp)
-		mv "$out_dir"_2 "out_dir"  # erases the previous content that is redundant
+			"in_dir"/lexicon.txt $tmp_out_dir
+		mv $tmp_out_dir $out_dir  # erases the previous content that is redundant anyway
 	fi
 fi
