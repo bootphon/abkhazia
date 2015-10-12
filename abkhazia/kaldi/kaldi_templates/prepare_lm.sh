@@ -112,7 +112,8 @@ else
 		utils/format_lm_sri.sh 	--srilm_opts "-subset -prune-lowprobs -unk" \
 			$out_dir "$in_dir"/G.arpa.gz \
 			"in_dir"/lexicon.txt $tmp_out_dir
-		mv $tmp_out_dir $out_dir  # erases the previous content that is redundant anyway
+		rm -Rf $out_dir  # erases the previous content that is redundant anyway
+		mv $tmp_out_dir $out_dir
 	else
 		# 3 -
 		# generate ARPA/MIT n-gram with IRSTLM, then as in 2.
@@ -133,6 +134,7 @@ else
 		utils/format_lm_sri.sh 	--srilm_opts "-subset -prune-lowprobs -unk" \
 			$out_dir "$in_dir"/G.arpa.gz \
 			"in_dir"/lexicon.txt $tmp_out_dir
-		mv $tmp_out_dir $out_dir  # erases the previous content that is redundant anyway
+		rm -Rf $out_dir  # erases the previous content that is redundant anyway
+		mv $tmp_out_dir $out_dir
 	fi
 fi
