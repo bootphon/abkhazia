@@ -126,6 +126,9 @@ else
 		# As in 2., generate FST
 		utils/format_lm_sri.sh 	--srilm_opts "-subset -prune-lowprobs -unk" \
 			$out_dir "$in_dir"/G.arpa.gz \
-			"in_dir"/lexicon.txt $out_dir
+			"in_dir"/lexicon.txt "$out_dir"_2
+		# format_lm_sri.sh copies stuff so we need to instantiate another folder and then clean up
+		# (or we could do a custom format_lm_sri.sh with $1 and $4 == $1 and no cp)
+		mv "$out_dir"_2 "out_dir"  # erases the previous content that is redundant
 	fi
 fi
