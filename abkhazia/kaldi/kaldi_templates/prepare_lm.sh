@@ -112,13 +112,9 @@ else
 		# 3 -
 		# generate ARPA/MIT n-gram with IRSTLM, then as in 2.
 		# train (use IRSTLM)
-		# for word-level need to remove utt-id on first column of text file
-		if [ -f "in_dir"/phone ]; then
-			cp "$in_dir"/lm_text.txt "$in_dir"/text_ready.txt
-		else
-  			set -eu  # stop on error
-  			cut -d' ' -f2- < "$in_dir"/lm_text.txt > "$in_dir"/text_ready.txt
-		fi
+		# need to remove utt-id on first column of text file
+  		set -eu  # stop on error
+  		cut -d' ' -f2- < "$in_dir"/lm_text.txt > "$in_dir"/text_ready.txt
 		add-start-end.sh < "$in_dir"/text_ready.txt > "$in_dir"/text_se.txt
 		# k option is number of split, useful for huge text files
 		build-lm.sh -i "$in_dir"/text_se.txt -n $model_order -o "$in_dir"/text.ilm.gz -k 1 -s kneser-ney
