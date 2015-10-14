@@ -33,16 +33,16 @@ def threshold_item(item_file, output_file, columns, lower_threshold=1, upper_thr
             if len(df) >= lower_threshold:
                 df = df.reindex(np.random.permutation(df.index))  # shuffle dataframe
                 m = min(upper_threshold, len(df))
-                df = df.iloc[:m]            
+                df = df.iloc[:m]
                 for i in range(m):
                     out.write(u" ".join([unicode(e) for e in df.iloc[i]]) + u"\n")
 
 
-root = '/Users/thomas/Documents/PhD/Recherche/Code/ABXYvsABX/data/' #'/Users/thomas/Documents/PhD/Recherche/test/'
-corpus = 'WSJ_T_IY-AH_N'  # 'WSJ_phone'
+root = '/Users/thomas/Documents/PhD/Recherche/test/'  #'/Users/thomas/Documents/PhD/Recherche/Code/ABXYvsABX/data/'
+corpus = 'WSJ_phone' #'WSJ_T_IY-AH_N'  # 'WSJ_phone'
 item_file = root + corpus + '.item'
 lower_threshold = 1
-upper_threshold = 200
+upper_threshold = 5
 out_file = root + corpus + '_threshold_' + str(lower_threshold) + '_' + str(upper_threshold) + '.item'
 columns = ['phone', 'prev-phone', 'next-phone', 'talker'] #['phone', 'talker']                
 threshold_item(item_file, out_file, columns, lower_threshold=lower_threshold, upper_threshold=upper_threshold)

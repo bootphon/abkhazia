@@ -8,6 +8,7 @@ Created on Mon Dec  1 15:05:38 2014
 import codecs
 from itertools import groupby
 import abkhazia.utilities.basic_io as io
+import os.path as p
 
 
 #TODO: this is for 'phone' or 'triphone' tasks, what about tasks on whole words
@@ -75,9 +76,6 @@ def alignment2item(alignment_file, item_file, spk_id_len, segment_extension='sin
 					out.write(u" ".join(info) + u"\n")
 
 
-# test
-import os.path as p
-
 #TODO: put filter_alignment with the functions used for exporting
 # results from kaldi to abkhazia ? Or rather as a generic abkahzia utility
 def filter_alignment(alignment_file, output_file, segment_file):
@@ -87,7 +85,55 @@ def filter_alignment(alignment_file, output_file, segment_file):
 	io.copy_first_col_matches(alignment_file, output_file, utt_ids)
 
 
-def get_item_file(root, corpus, spk_id_len):
+def add_segment_info(segment_info_file, item_file_in, item_file_out):
+	""" 
+	Add columns indicating C/V/special and tone where applicable 
+	"""
+	with codecs.open(segment_info_file, mode='r', encoding='UTF-8') as inp:
+		lines = inp.readlines()
+	symbols, kinds, tones = zip(*[line.strip().split() for line in lines])
+	kinds = {symbol : kind for symbol, kind in zip(symbols, kinds)}
+	tones = {symbol : tone for symbol, tone in zip(symbols, tones)}
+	with codecs.open(item_file_in, mode='r', encoding='UTF-8') as inp:
+		lines = inp.readlines()
+	new_lines = [lines[0][:-1] + u' phone-class tone\n']
+	specials = set()
+	for line in lines[1:]:
+		phone = line.strip().split()[3]
+		kind = kinds[phone]
+		tone = tones[phone]
+		# keep only line with C or V segments (not SIL etc.)
+		if not(kind in ['C', 'V']):
+			specials.add(phone)
+		else:
+			new_lines.append(line[:-1] + u' ' + kind + u' ' +  tone + u'\n')
+	with codecs.open(item_file_out, mode='w', encoding='UTF-8') as out:
+		for line in new_lines:
+			out.write(line)
+	print("Removed entries with following central phones: {0}".format(specials))
+
+
+def remove_bad_phones(bad_phones, item_file_in, item_file_out):
+	""" 
+	Remove occurences of the specified phones (as main phone or in context)
+	"""
+	with codecs.open(item_file_in, mode='r', encoding='UTF-8') as inp:
+		lines = inp.readlines()
+	new_lines = [lines[0]]
+	n_removed = 0
+	for line in lines[1:]:
+		phone, prev_phone, next_phone = line.strip().split()[3:6]
+		if phone in bad_phones or prev_phone in bad_phones or next_phone in bad_phones:
+			n_removed = n_removed+1
+			continue
+		new_lines.append(line)
+	with codecs.open(item_file_out, mode='w', encoding='UTF-8') as out:
+		for line in new_lines:
+			out.write(line)
+	print("Removed {0} lines".format(n_removed))
+
+
+def get_item_file(root, corpus, spk_id_len, segment_info_file=None, bad_phones=None):
 	alignment = p.join(root, corpus + '_forced_alignment.txt')
 	test_utts = p.join(root, corpus + '_test_utts.txt')
 	test_alignment = p.join(root, corpus + '_test_forced_alignment.txt')
@@ -95,11 +141,18 @@ def get_item_file(root, corpus, spk_id_len):
 
 	item_file = p.join(root, corpus + '_phone.item')
 	alignment2item(test_alignment, item_file, spk_id_len, 'single_phone')
+	if not(bad_phones is None):
+		remove_bad_phones(bad_phones, item_file, item_file)
+	if not(segment_info_file is None):
+		add_segment_info(segment_info_file, item_file, item_file)
 
 
 root = '/Users/thomas/Documents/PhD/Recherche/test/'
-corpus = 'CSJ'
-spk_id_len = 5  # to do: get this from spk2utt and replace explicitly given
+corpus = 'WSJ'
+spk_id_len = 3  # to do: get this from spk2utt and replace explicitly given
 				# segment file by path to an abkhazia split
-get_item_file(root, 'CSJ', 5)
-get_item_file(root, 'WSJ', 3)
+get_item_file(root, corpus, spk_id_len, p.join(root, 'segment_info_' + corpus + '.txt'))
+#get_item_file(root, corpus, spk_id_len, p.join(root, 'segment_info_' + corpus + '.txt'),
+#	['zy:', 'F:', 'd:', 'g:', 's:'])
+#get_item_file(root, 'CSJ', 5)
+#get_item_file(root, 'WSJ', 3)

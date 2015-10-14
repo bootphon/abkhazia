@@ -14,6 +14,7 @@ import codecs
 import os
 import re
 import abkhazia.kaldi.kaldi2abkhazia as k2a
+import os.path as p
 
 
 def get_phone_order(phonemap):
@@ -154,12 +155,48 @@ def lattice2features(phones_file, post_file, out_file, word_position_dependent=T
 
 # impact of acoustic_scale param ???
 
-root = "/Users/Thomas/Documents/PhD/Recherche/test"
-phones_file = os.path.join(root, 'phones_CSJ.txt')  # the phones used to train the model
-post_file = os.path.join(root, 'train_CSJ_test_WSJ.post')
-out_file = os.path.join(root, 'train_CSJ_test_WSJ_post.features')
-lattice2features(phones_file, post_file, out_file)
+#root = "/Users/Thomas/Documents/PhD/Recherche/test"
+#phones_file = os.path.join(root, 'phones_CSJ.txt')  # the phones used to train the model
+#post_file = os.path.join(root, 'train_CSJ_test_WSJ.post')
+#out_file = os.path.join(root, 'train_CSJ_test_WSJ_post.features')
+#lattice2features(phones_file, post_file, out_file)
 
+root = "/fhgfs/bootphon/scratch/thomas/abkhazia/kaldi"
+abx_root = "/fhgfs/bootphon/scratch/thomas/abkhazia/ABXpy"
+
+
+corpus = "WSJ_main_read"
+recipe_dir = p.join(root, corpus, "train_and_decode", "s5")
+phones_file = p.join(root, corpus, "data", "phone_bigram", "phones.txt")
+# Eng on WSJ
+post_file = p.join(recipe_dir, "export", "phone_bigram_phone_post.post")
+out_file = p.join(abx_root, 'Eng_on_WSJ_phone_bigram_post.features')
+lattice2features(phones_file, post_file, out_file)
+"""
+# Eng on CSJ
+post_file = p.join(recipe_dir, "export", "phone_bigram_phone_post_CSJ.post")
+out_file = p.join(abx_root, 'Eng_on_CSJ_phone_bigram_post.features')
+lattice2features(phones_file, post_file, out_file)
+"""
+
+"""
+corpus = "CSJ_core_laymen"
+recipe_dir = p.join(root, corpus, "train_and_decode", "s5")
+phones_file = p.join(root, corpus, "data", "phone_bigram", "phones.txt")
+# Eng on WSJ
+post_file = p.join(recipe_dir, "export", "phone_bigram_phone_post_WSJ.post")
+out_file = p.join(abx_root, 'Jap_on_WSJ_phone_bigram_post.features')
+lattice2features(phones_file, post_file, out_file)
+"""
+"""
+corpus = "Buckeye"
+recipe_dir = p.join(root, corpus, "train_and_decode", "s5")
+phones_file = p.join(root, corpus, "data", "phone_bigram", "phones.txt")
+# Eng on WSJ
+post_file = p.join(recipe_dir, "export", "phone_bigram_phone_post_WSJ.post")
+out_file = p.join(abx_root, 'BuckeyeEng_on_WSJ_phone_bigram_post.features')
+lattice2features(phones_file, post_file, out_file)
+"""
 #out_file = os.path.join(root, 'trans.features')
 #tra_file = os.path.join(root, 'forced_alignment.tra')
 #transcription2features(phones_file, tra_file, out_file)

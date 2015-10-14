@@ -77,12 +77,28 @@ def plot_statistics(item_file, stat_file):
         
         """ contexts representation """
         nb_possible_context = len(phones)*len(phones)
-        nb_context_found = len(set(db['prev-phone', 'next-phone']))
+        nb_context_found = len(set(zip(db['prev-phone'], db['next-phone'])))
         print('global_context_proportion %f' % (nb_context_found/np.float(nb_possible_context)))
         #TODO plot this in a text file or in the pdf using smthg like
         # http://stackoverflow.com/questions/4018860/text-box-with-line-wrapping-in-matplotlib
         
-        
+
+        def context_coverage(db, min_tresholds, other_bys):
+            nb_contexts = [[] for t in min_thresholds]
+            for g, df in db.groupby(other_bys):
+                gg = df.groupby(other_bys + ['prev-phone', 'next-phone'])
+                contexts = [[] for t in min_thresholds]
+                for context, df2 in gg:
+                    for i, threshold in enumerate(min_thresholds):
+                        if len(df2) >= threshold:
+                            contexts[i].append(context)
+                for i in range(len(min_thresholds)):
+                    nb_contexts[i].append(len(set(contexts[i])))
+            for i in range(len(min_thresholds)):               
+                nb_contexts[i] = np.array(nb_contexts[i])
+            return nb_contexts
+
+        """
         def context_coverage(db, min_tresholds, g1, g2=[]):
             nb_contexts = [[] for t in min_thresholds]
             for g, df in db.groupby(g1):
@@ -99,7 +115,7 @@ def plot_statistics(item_file, stat_file):
             for i in range(len(min_thresholds)):               
                 nb_contexts[i] = np.array(nb_contexts[i])
             return nb_contexts
-            
+        """
         nb_contexts_by_phone_talker = context_coverage(db, min_thresholds, ['talker', 'phone'])
         #for i in range(len(min_thresholds)):
         #    nb_contexts_by_phone_talker[i] = nb_contexts_by_phone_talker[i]/np.float(nb_context_found)
@@ -109,7 +125,7 @@ def plot_statistics(item_file, stat_file):
         plt.xlabel('Min threshold')
         pp.savefig()
         
-        nb_contexts_by_phone = context_coverage(db, min_thresholds, 'phone', ['talker'])
+        nb_contexts_by_phone = context_coverage(db, min_thresholds, ['phone'])  #, ['talker'])
         #for i in range(len(min_thresholds)):
         #    nb_contexts_by_phone[i] = nb_contexts_by_phone[i]/np.float(nb_context_found)
         plt.figure()
@@ -136,7 +152,7 @@ def plot_statistics(item_file, stat_file):
             plt.title(phone)
         """    
             
-        nb_contexts_by_talker = context_coverage(db, min_thresholds, 'talker', ['phone'])
+        nb_contexts_by_talker = context_coverage(db, min_thresholds, ['talker'])  #, ['phone'])
         #for i in range(len(min_thresholds)):
         #    nb_contexts_by_talker[i] = nb_contexts_by_talker[i]/np.float(nb_context_found)
         plt.figure()
@@ -152,6 +168,6 @@ def plot_statistics(item_file, stat_file):
 
 
 root = '/Users/thomas/Documents/PhD/Recherche/test/'
-item_file = root + 'CSJ_threshold_10.item'
-stat_file = root + 'CSJ_threshold_10.pdf'
+item_file = root + 'CSJ_phone.item'
+stat_file = root + 'CSJ_phone.pdf'
 plot_statistics(item_file, stat_file)
