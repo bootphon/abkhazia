@@ -167,7 +167,7 @@ abx_root = "/fhgfs/bootphon/scratch/thomas/abkhazia/ABXpy"
 
 corpus = "WSJ_main_read"
 recipe_dir = p.join(root, corpus, "train_and_decode", "s5")
-phones_file = p.join(root, corpus, "data", "phone_bigram", "phones.txt")
+phones_file = p.join(recipe_dir, "data", "phone_bigram", "phones.txt")
 # Eng on WSJ
 post_file = p.join(recipe_dir, "export", "phone_bigram_phone_post.post")
 out_file = p.join(abx_root, 'Eng_on_WSJ_phone_bigram_post.features')
@@ -182,7 +182,7 @@ lattice2features(phones_file, post_file, out_file)
 """
 corpus = "CSJ_core_laymen"
 recipe_dir = p.join(root, corpus, "train_and_decode", "s5")
-phones_file = p.join(root, corpus, "data", "phone_bigram", "phones.txt")
+phones_file = p.join(recipe_dir, "data", "phone_bigram", "phones.txt")
 # Eng on WSJ
 post_file = p.join(recipe_dir, "export", "phone_bigram_phone_post_WSJ.post")
 out_file = p.join(abx_root, 'Jap_on_WSJ_phone_bigram_post.features')
@@ -191,7 +191,7 @@ lattice2features(phones_file, post_file, out_file)
 """
 corpus = "Buckeye"
 recipe_dir = p.join(root, corpus, "train_and_decode", "s5")
-phones_file = p.join(root, corpus, "data", "phone_bigram", "phones.txt")
+phones_file = p.join(recipe_dir, "data", "phone_bigram", "phones.txt")
 # Eng on WSJ
 post_file = p.join(recipe_dir, "export", "phone_bigram_phone_post_WSJ.post")
 out_file = p.join(abx_root, 'BuckeyeEng_on_WSJ_phone_bigram_post.features')
