@@ -9,6 +9,7 @@ import codecs
 from itertools import groupby
 import abkhazia.utilities.basic_io as io
 import os.path as p
+import random
 
 
 #TODO: this is for 'phone' or 'triphone' tasks, what about tasks on whole words
@@ -91,22 +92,24 @@ def add_segment_info(segment_info_file, item_file_in, item_file_out):
 	"""
 	with codecs.open(segment_info_file, mode='r', encoding='UTF-8') as inp:
 		lines = inp.readlines()
-	symbols, kinds, tones = zip(*[line.strip().split() for line in lines])
+	symbols, kinds, tones, segments = zip(*[line.strip().split() for line in lines])
 	kinds = {symbol : kind for symbol, kind in zip(symbols, kinds)}
 	tones = {symbol : tone for symbol, tone in zip(symbols, tones)}
+	segments = {symbol : segment for symbol, segment in zip(symbols, segments)}
 	with codecs.open(item_file_in, mode='r', encoding='UTF-8') as inp:
 		lines = inp.readlines()
-	new_lines = [lines[0][:-1] + u' phone-class tone\n']
+	new_lines = [lines[0][:-1] + u' phone-class tone segment\n']
 	specials = set()
 	for line in lines[1:]:
 		phone = line.strip().split()[3]
 		kind = kinds[phone]
 		tone = tones[phone]
+		segment = segments[phone]
 		# keep only line with C or V segments (not SIL etc.)
 		if not(kind in ['C', 'V']):
 			specials.add(phone)
 		else:
-			new_lines.append(line[:-1] + u' ' + kind + u' ' +  tone + u'\n')
+			new_lines.append(line[:-1] + u' ' + kind + u' ' +  tone + u' ' + segment + u'\n')
 	with codecs.open(item_file_out, mode='w', encoding='UTF-8') as out:
 		for line in new_lines:
 			out.write(line)
@@ -133,6 +136,36 @@ def remove_bad_phones(bad_phones, item_file_in, item_file_out):
 	print("Removed {0} lines".format(n_removed))
 
 
+def get_talkers(item_file):
+	with codecs.open(item_file, mode='r', encoding='UTF-8') as inp:
+		lines = inp.readlines()
+	talkers = set()
+	for line in lines[1:]:
+		talkers.add(line.strip().split()[6])
+	return talkers
+
+
+def filter_talkers(item_file, kept_talkers, out_file):
+	with codecs.open(item_file, mode='r', encoding='UTF-8') as inp:
+		lines = inp.readlines()
+	new_lines = lines[:1]
+	for line in lines[1:]:
+		talker = line.strip().split()[6]
+		if talker in kept_talkers:
+			new_lines.append(line)
+	with codecs.open(out_file, mode='w', encoding='UTF-8') as out:
+		for line in new_lines:
+			out.write(line)
+
+
+def sample_talkers(item_file, nb_talkers, out_file):
+	talkers = get_talkers(item_file)
+	talkers = list(talkers)
+	random.shuffle(talkers)
+	talkers = talkers[:nb_talkers]
+	filter_talkers(item_file, talkers, out_file)
+
+
 def get_item_file(root, corpus, spk_id_len, segment_info_file=None, bad_phones=None):
 	alignment = p.join(root, corpus + '_forced_alignment.txt')
 	test_utts = p.join(root, corpus + '_test_utts.txt')
@@ -147,11 +180,17 @@ def get_item_file(root, corpus, spk_id_len, segment_info_file=None, bad_phones=N
 		add_segment_info(segment_info_file, item_file, item_file)
 
 
+root='/Users/thomas/Documents/PhD/Recherche/test/'
+item_file = p.join(root, 'WSJ_phone_threshold_1_5.item')
+sample_talkers(item_file, 5, p.join(root, 'WSJ_phone_threshold_1_5-small.item'))
+
+"""
 root = '/Users/thomas/Documents/PhD/Recherche/test/'
-corpus = 'WSJ'
-spk_id_len = 3  # to do: get this from spk2utt and replace explicitly given
+corpus = 'GPM'
+spk_id_len = 5  # to do: get this from spk2utt and replace explicitly given
 				# segment file by path to an abkhazia split
 get_item_file(root, corpus, spk_id_len, p.join(root, 'segment_info_' + corpus + '.txt'))
+"""
 #get_item_file(root, corpus, spk_id_len, p.join(root, 'segment_info_' + corpus + '.txt'),
 #	['zy:', 'F:', 'd:', 'g:', 's:'])
 #get_item_file(root, 'CSJ', 5)

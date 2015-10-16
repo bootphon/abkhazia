@@ -26,13 +26,20 @@ matplotlib.rcParams['text.latex.preamble'] = ['\\usepackage{tipa}']
 
 from matplotlib.backends.backend_pdf import PdfPages
 
-def plot_statistics(item_file, stat_file):
+
+def plot_statistics(item_file, stat_file, tonal=False):
     try:
         pp = PdfPages(stat_file)
 
         min_thresholds = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
         db, _ = database.load(item_file)
         
+        # ad hoc fix, for latex compatibility
+        s1 = set(db['phone'])
+        db['phone'] = [phone.replace("_", "-") for phone in db['phone']]
+        s2 = set(db['phone'])
+        assert len(s1) == len(s2), "Latex compatibility mixup!"
+
         """ tokens by type """
         distrib = np.array([len(df) for g, df in db.groupby(['phone', 'talker', 'prev-phone', 'next-phone'])])
         plt.figure()
@@ -82,7 +89,7 @@ def plot_statistics(item_file, stat_file):
         #TODO plot this in a text file or in the pdf using smthg like
         # http://stackoverflow.com/questions/4018860/text-box-with-line-wrapping-in-matplotlib
         
-
+        """
         def context_coverage(db, min_tresholds, other_bys):
             nb_contexts = [[] for t in min_thresholds]
             for g, df in db.groupby(other_bys):
@@ -97,6 +104,27 @@ def plot_statistics(item_file, stat_file):
             for i in range(len(min_thresholds)):               
                 nb_contexts[i] = np.array(nb_contexts[i])
             return nb_contexts
+        """
+
+        def nb_x_per_y(db, min_tresholds, x, y, remaining=[]):
+            # remaining should correspond to columns used to threshold
+            # that are neither in x nor in y
+            nb = [[] for t in min_thresholds]
+            for _, dfy in db.groupby(y):
+                nx = np.zeros(shape=(len(min_thresholds),), dtype=np.int)
+                for _, dfx in dfy.groupby(x):
+                    if remaining:
+                        l = [len(dfr) for _, dfr in dfx.groupby(remaining)]
+                        p = [int(any(l >= threshold)) for threshold in min_thresholds]
+                    else:
+                        p = [int(len(dfx) >= threshold) for threshold in min_thresholds]
+                    print(p)
+                    nx = nx + p
+                for i in range(len(min_thresholds)):
+                    nb[i].append(nx[i])
+            for i in range(len(min_thresholds)):               
+                nb[i] = np.array(nb[i])
+            return nb
 
         """
         def context_coverage(db, min_tresholds, g1, g2=[]):
@@ -116,50 +144,51 @@ def plot_statistics(item_file, stat_file):
                 nb_contexts[i] = np.array(nb_contexts[i])
             return nb_contexts
         """
-        nb_contexts_by_phone_talker = context_coverage(db, min_thresholds, ['talker', 'phone'])
-        #for i in range(len(min_thresholds)):
-        #    nb_contexts_by_phone_talker[i] = nb_contexts_by_phone_talker[i]/np.float(nb_context_found)
-        plt.figure()
-        plt.boxplot(nb_contexts_by_phone_talker, labels=min_thresholds)
-        plt.title('Contexts found for each (speaker, phone) among the 2209 possible contexts')
-        plt.xlabel('Min threshold')
-        pp.savefig()
-        
-        nb_contexts_by_phone = context_coverage(db, min_thresholds, ['phone'])  #, ['talker'])
-        #for i in range(len(min_thresholds)):
-        #    nb_contexts_by_phone[i] = nb_contexts_by_phone[i]/np.float(nb_context_found)
-        plt.figure()
-        plt.boxplot(nb_contexts_by_phone, labels=min_thresholds)
-        plt.title('Contexts found for each phone among the 2209 possible contexts')
-        plt.xlabel('Min threshold')
-        pp.savefig()
-        #TODO number of speakers for each phone as a function of threshold
-        """
-        n_talker_by_phone = {}
-        for g, df in db.groupby('phone'):
-            n_talker = [0 for i in range(len(min_thresholds))]
-            for gg, df2 in df.groupby('talker'):
-                lengths = [len(df3) for ggg, df3 in df2.groupby('context')]
-                for i, threshold in enumerate(min_thresholds):
-                    if any(lengths >= threshold):
-                        n_talker[i] = n_talker[i]+1
-            n_talker_by_phone[g] = n_talker
-        for phone in n_talker_by_phone:
+
+        def plot_x_per_y(title, db, min_thresholds, x, y, remaining=[]):
+            data = nb_x_per_y(db, min_thresholds, x, y, remaining)
             plt.figure()
-            plt.plot(min_thresholds, n_talker_by_phone[phone], '.-')
+            plt.boxplot(data, labels=min_thresholds)
+            plt.title(title)
             plt.xlabel('Min threshold')
-            plt.ylabel('Number of talker with phone %s' % phone)
-            plt.title(phone)
-        """    
-            
-        nb_contexts_by_talker = context_coverage(db, min_thresholds, ['talker'])  #, ['phone'])
-        #for i in range(len(min_thresholds)):
-        #    nb_contexts_by_talker[i] = nb_contexts_by_talker[i]/np.float(nb_context_found)
-        plt.figure()
-        plt.boxplot(nb_contexts_by_talker, labels=min_thresholds)
-        plt.title('Contexts found for each speaker among the 2209 possible contexts')
-        plt.xlabel('Min threshold')
-        pp.savefig()
+            pp.savefig()
+        
+        plot_x_per_y('Contexts found for each (speaker, phone) among the {0} possible contexts'.format(nb_possible_context),
+                    db, min_thresholds, 
+                    ['prev-phone', 'next-phone'], ['talker', 'phone'])
+                    
+        plot_x_per_y('Contexts found for each phone among the {0} possible contexts'.format(nb_possible_context),
+                    db, min_thresholds, 
+                    ['prev-phone', 'next-phone'], ['phone'], ['talker'])
+                    
+        plot_x_per_y('Contexts found for each speaker among the {0} possible contexts'.format(nb_possible_context),
+                    db, min_thresholds, 
+                    ['prev-phone', 'next-phone'], ['talker'], ['phone'])
+        
+        plot_x_per_y('Speakers found for each phone',
+                    db, min_thresholds, 
+                    ['talker'], ['phone'], ['prev-phone', 'next-phone'])
+        
+        plot_x_per_y('Speakers found for each phone + context',
+                    db, min_thresholds, 
+                    ['talker'], ['phone', 'prev-phone', 'next-phone'])
+        
+        if tonal:
+            plot_x_per_y('Tones found for each segment + context',
+                    db, min_thresholds, 
+                    ['tone'], ['segment', 'prev-phone', 'next-phone'], ['talker'])
+
+            plot_x_per_y('Tones found for each segment + context + speaker',
+                    db, min_thresholds, 
+                    ['tone'], ['segment', 'prev-phone', 'next-phone', 'talker'])
+
+            plot_x_per_y('Segments found for each tone + context',
+                    db, min_thresholds, 
+                    ['segment'], ['tone', 'prev-phone', 'next-phone'], ['talker'])
+
+            plot_x_per_y('Segments found for each tone + context + speaker',
+                    db, min_thresholds, 
+                    ['segment'], ['tone', 'prev-phone', 'next-phone', 'talker'])
         
         """ TODO duration of sound/number of phone tokens by speaker, by phone or both """
 
@@ -168,6 +197,11 @@ def plot_statistics(item_file, stat_file):
 
 
 root = '/Users/thomas/Documents/PhD/Recherche/test/'
-item_file = root + 'CSJ_phone.item'
-stat_file = root + 'CSJ_phone.pdf'
-plot_statistics(item_file, stat_file)
+"""
+item_file = root + 'GPM_phone.item'
+stat_file = root + 'GPM_phone.pdf'
+plot_statistics(item_file, stat_file, tonal=True)
+"""
+item_file = root + 'WSJ_phone.item'
+stat_file = root + 'WSJ_phone.pdf'
+plot_statistics(item_file, stat_file, tonal=False)

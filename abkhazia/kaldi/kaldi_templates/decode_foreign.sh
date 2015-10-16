@@ -34,14 +34,18 @@ decode_train=false
 # steps/decode.sh or steps/decode_fmllr.sh for decoding
 fmllr_model=true
 
-graph_dir="exp/tri2a/graph_word_bigram"
-# graph_dir="exp/tri2a/graph_word_bigram"
-foreign_recipe="../../../CSJ_core_laymen/train_and_decode/s5"
-# foreign_recipe="../../../WSJ_main_read/train_and_decode/s5"
-output_test="exp/tri2a/decode_test_word_bigram_CSJ"
-output_train="exp/tri2a/decode_train_word_bigram_CSJ"
-# output_test="exp/tri2a/decode_test_word_bigram_WSJ"
-# output_train="exp/tri2a/decode_train_word_bigram_WSJ"
+graph_dir="exp/tri2a/graph_phone_bigram"
+# graph_dir="exp/tri2a/graph_phone_loop"
+#foreign_recipe="../../../GP_Vietnamese/train_and_decode/s5"
+# foreign_recipe="../../../CSJ_core_laymen/train_and_decode/s5"
+foreign_recipe="../../../GP_Mandarin/train_and_decode/s5"
+#output_test="exp/tri2a/decode_test_phone_bigram_GPV"
+#output_train="exp/tri2a/decode_train_phone_bigram_GPV"
+output_test="exp/tri2a/decode_test_phone_bigram_GPM"
+output_train="exp/tri2a/decode_train_phone_bigram_GPM"
+# output_test="exp/tri2a/decode_test_phone_loop_WSJ"
+# output_train="exp/tri2a/decode_train_phone_loop_WSJ"
+
 
 ###### Recipe ######
 
@@ -57,8 +61,10 @@ else
 fi
 
 # decode test set
-$decode_exe --nj 8 --cmd "$decode_cmd" --skip_scoring true \
+(
+  $decode_exe --nj 8 --cmd "$decode_cmd" --skip_scoring true \
   $graph_dir "$foreign_recipe"/data/test $output_test
+)&
 if [ "$decode_train" = true ] ; then
   # decode train set
   $decode_exe --nj 8 --cmd "$decode_cmd" --skip_scoring true \

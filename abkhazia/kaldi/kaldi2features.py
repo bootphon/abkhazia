@@ -153,6 +153,45 @@ def lattice2features(phones_file, post_file, out_file, word_position_dependent=T
 	h5features.write(out_file, 'features', utt_ids, times, features)
 
 
+def features2features(in_file, out_file):
+	"""
+	kaldi input features (mfcc, etc.) to h5features
+	this loads everything into memory, but it would be easy to write
+	an incremental version if this poses a problem
+	Input features must be in a single archive text format, that can be
+	obtained using the 'copy-feats' kaldi utility
+	"""
+	# below is basically a parser for kaldi vector format for each line
+	# parse input text file
+	with codecs.open(in_file, mode='r', encoding='UTF-8') as inp:
+		lines = inp.readlines()  # xreadlines supposed to be more efficient for large files?
+	outside_utt = True
+	features = []
+	utt_ids = []
+	times = []
+	for index, line in enumerate(lines):
+		print("Processing line {0} / {1}".format(index+1, len(lines)))
+		tokens = line.strip().split(u" ")
+		if outside_utt:
+			assert len(tokens) == 3 and tokens[1] == u"" and tokens[2] == u"["
+			utt_id = tokens[0]
+			outside_utt = False
+			frames = []
+		else:
+			if tokens[-1] == u"]":
+				# end of utterance
+				outside_utt = True
+				tokens = tokens[:-1]
+			frames.append(np.array(tokens, dtype=np.float))
+			if outside_utt:
+				# end of utterance, continued
+				features.append(np.row_stack(frames))
+				# as in kaldi2abkhazia, this is ad hoc and has not been checked formally
+				times.append(0.0125 + 0.01*np.arange(len(frames)))
+				utt_ids.append(utt_id)
+	h5features.write(out_file, 'features', utt_ids, times, features)
+
+
 # impact of acoustic_scale param ???
 
 #root = "/Users/Thomas/Documents/PhD/Recherche/test"
@@ -161,9 +200,19 @@ def lattice2features(phones_file, post_file, out_file, word_position_dependent=T
 #out_file = os.path.join(root, 'train_CSJ_test_WSJ_post.features')
 #lattice2features(phones_file, post_file, out_file)
 
+# ad hoc command line 
+if __name__ == '__main__':
+    import argparse
+    parser = argparse.ArgumentParser()
+    parser.add_argument('phones_file')
+    parser.add_argument('post_file')
+    parser.add_argument('out_file')
+    args = parser.parse_args()
+    lattice2features(args.phones_file, args.post_file, args.out_file)
+
+"""
 root = "/fhgfs/bootphon/scratch/thomas/abkhazia/kaldi"
 abx_root = "/fhgfs/bootphon/scratch/thomas/abkhazia/ABXpy"
-
 
 corpus = "WSJ_main_read"
 recipe_dir = p.join(root, corpus, "train_and_decode", "s5")
@@ -172,6 +221,7 @@ phones_file = p.join(recipe_dir, "data", "phone_bigram", "phones.txt")
 post_file = p.join(recipe_dir, "export", "phone_bigram_phone_post.post")
 out_file = p.join(abx_root, 'Eng_on_WSJ_phone_bigram_post.features')
 lattice2features(phones_file, post_file, out_file)
+"""
 """
 # Eng on CSJ
 post_file = p.join(recipe_dir, "export", "phone_bigram_phone_post_CSJ.post")
