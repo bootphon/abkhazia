@@ -169,7 +169,7 @@ def features2features(in_file, out_file):
 	times = []
 	with codecs.open(in_file, mode='r', encoding='UTF-8') as inp:
 		for index, line in enumerate(inp):
-			print("Processing line {0} / {1}".format(index+1, len(lines)))
+			print("Processing line {0}".format(index+1))  # / {1}".format(index+1, len(lines)))
 			tokens = line.strip().split(u" ")
 			if outside_utt:
 				assert len(tokens) == 3 and tokens[1] == u"" and tokens[2] == u"["
