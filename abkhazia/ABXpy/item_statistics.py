@@ -114,11 +114,10 @@ def plot_statistics(item_file, stat_file, tonal=False):
                 nx = np.zeros(shape=(len(min_thresholds),), dtype=np.int)
                 for _, dfx in dfy.groupby(x):
                     if remaining:
-                        l = [len(dfr) for _, dfr in dfx.groupby(remaining)]
+                        l = np.array([len(dfr) for _, dfr in dfx.groupby(remaining)])
                         p = [int(any(l >= threshold)) for threshold in min_thresholds]
                     else:
                         p = [int(len(dfx) >= threshold) for threshold in min_thresholds]
-                    print(p)
                     nx = nx + p
                 for i in range(len(min_thresholds)):
                     nb[i].append(nx[i])
@@ -197,11 +196,13 @@ def plot_statistics(item_file, stat_file, tonal=False):
 
 
 root = '/Users/thomas/Documents/PhD/Recherche/test/'
-"""
-item_file = root + 'GPM_phone.item'
-stat_file = root + 'GPM_phone.pdf'
+
+item_file = root + 'GPV_phone.item'
+stat_file = root + 'GPV_phone.pdf'
 plot_statistics(item_file, stat_file, tonal=True)
+
 """
 item_file = root + 'WSJ_phone.item'
 stat_file = root + 'WSJ_phone.pdf'
 plot_statistics(item_file, stat_file, tonal=False)
+"""

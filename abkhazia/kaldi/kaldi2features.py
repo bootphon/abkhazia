@@ -163,32 +163,31 @@ def features2features(in_file, out_file):
 	"""
 	# below is basically a parser for kaldi vector format for each line
 	# parse input text file
-	with codecs.open(in_file, mode='r', encoding='UTF-8') as inp:
-		lines = inp.readlines()  # xreadlines supposed to be more efficient for large files?
 	outside_utt = True
 	features = []
 	utt_ids = []
 	times = []
-	for index, line in enumerate(lines):
-		print("Processing line {0} / {1}".format(index+1, len(lines)))
-		tokens = line.strip().split(u" ")
-		if outside_utt:
-			assert len(tokens) == 3 and tokens[1] == u"" and tokens[2] == u"["
-			utt_id = tokens[0]
-			outside_utt = False
-			frames = []
-		else:
-			if tokens[-1] == u"]":
-				# end of utterance
-				outside_utt = True
-				tokens = tokens[:-1]
-			frames.append(np.array(tokens, dtype=np.float))
+	with codecs.open(in_file, mode='r', encoding='UTF-8') as inp:
+		for index, line in enumerate(inp):
+			print("Processing line {0} / {1}".format(index+1, len(lines)))
+			tokens = line.strip().split(u" ")
 			if outside_utt:
-				# end of utterance, continued
-				features.append(np.row_stack(frames))
-				# as in kaldi2abkhazia, this is ad hoc and has not been checked formally
-				times.append(0.0125 + 0.01*np.arange(len(frames)))
-				utt_ids.append(utt_id)
+				assert len(tokens) == 3 and tokens[1] == u"" and tokens[2] == u"["
+				utt_id = tokens[0]
+				outside_utt = False
+				frames = []
+			else:
+				if tokens[-1] == u"]":
+					# end of utterance
+					outside_utt = True
+					tokens = tokens[:-1]
+				frames.append(np.array(tokens, dtype=np.float))
+				if outside_utt:
+					# end of utterance, continued
+					features.append(np.row_stack(frames))
+					# as in kaldi2abkhazia, this is ad hoc and has not been checked formally
+					times.append(0.0125 + 0.01*np.arange(len(frames)))
+					utt_ids.append(utt_id)
 	h5features.write(out_file, 'features', utt_ids, times, features)
 
 
@@ -200,7 +199,7 @@ def features2features(in_file, out_file):
 #out_file = os.path.join(root, 'train_CSJ_test_WSJ_post.features')
 #lattice2features(phones_file, post_file, out_file)
 
-# ad hoc command line 
+# ad hoc command line
 if __name__ == '__main__':
     import argparse
     parser = argparse.ArgumentParser()
@@ -209,6 +208,13 @@ if __name__ == '__main__':
     parser.add_argument('out_file')
     args = parser.parse_args()
     lattice2features(args.phones_file, args.post_file, args.out_file)
+
+"""
+root = "/Users/thomas/Documents/PhD/Recherche/test/"
+in_file = p.join(root, 'feat_GPM.ark')
+out_file = p.join(root, 'feat_GPM.features')
+features2features(in_file, out_file)
+"""
 
 """
 root = "/fhgfs/bootphon/scratch/thomas/abkhazia/kaldi"
