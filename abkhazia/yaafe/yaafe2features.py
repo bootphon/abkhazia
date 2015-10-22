@@ -111,7 +111,20 @@ def encode_corpus(corpus, split=None, feature_type='MFCC'):
 # root = '/Users/thomas/Documents/PhD/Recherche/other_gits/abkhazia/corpora'  
 root = '/fhgfs/bootphon/scratch/thomas/abkhazia/corpora'
 corpus = p.join(root, 'Buckeye')
+#encode_corpus(corpus, split='test', feature_type='CMSP13')
+encode_corpus(corpus, split='train', feature_type='CMSP13')
+corpus = p.join(root, 'WSJ_main_read')
 encode_corpus(corpus, split='test', feature_type='CMSP13')
+encode_corpus(corpus, split='train', feature_type='CMSP13')
+corpus = p.join(root, 'CSJ_core_laymen')
+encode_corpus(corpus, split='test', feature_type='CMSP13')
+encode_corpus(corpus, split='train', feature_type='CMSP13')
+corpus = p.join(root, 'GP_Mandarin')
+encode_corpus(corpus, split='test', feature_type='CMSP13')
+encode_corpus(corpus, split='train', feature_type='CMSP13')
+corpus = p.join(root, 'GP_Vietnamese')
+encode_corpus(corpus, split='test', feature_type='CMSP13')
+encode_corpus(corpus, split='train', feature_type='CMSP13')
 
 
 """
