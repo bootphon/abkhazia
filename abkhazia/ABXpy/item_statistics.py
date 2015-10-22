@@ -197,9 +197,9 @@ def plot_statistics(item_file, stat_file, tonal=False):
 
 root = '/Users/thomas/Documents/PhD/Recherche/test/'
 
-item_file = root + 'GPV_phone.item'
-stat_file = root + 'GPV_phone.pdf'
-plot_statistics(item_file, stat_file, tonal=True)
+item_file = root + 'BUC_phone.item'
+stat_file = root + 'BUC_phone.pdf'
+plot_statistics(item_file, stat_file, tonal=False)
 
 """
 item_file = root + 'WSJ_phone.item'

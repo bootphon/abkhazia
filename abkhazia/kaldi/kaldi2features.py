@@ -199,6 +199,7 @@ def features2features(in_file, out_file):
 #out_file = os.path.join(root, 'train_CSJ_test_WSJ_post.features')
 #lattice2features(phones_file, post_file, out_file)
 
+
 # ad hoc command line
 if __name__ == '__main__':
     import argparse
@@ -211,8 +212,8 @@ if __name__ == '__main__':
 
 """
 root = "/Users/thomas/Documents/PhD/Recherche/test/"
-in_file = p.join(root, 'feat_GPM.ark')
-out_file = p.join(root, 'feat_GPM.features')
+in_file = p.join(root, 'feat_GPV.ark')
+out_file = p.join(root, 'feat_GPV.features')
 features2features(in_file, out_file)
 """
 

@@ -27,7 +27,7 @@ import abkhazia.utilities.features as feat
 # which can take a lot of space for big corpora.
 # This can easily be avoided by writing to the h5features
 # file batch by batch.
-def yaafe2features(wavefiles, out_file):
+def yaafe2features(wavefiles, out_file, feature_type='MFCC'):
 	"""
 	Generate features with yaafe and put them in h5features format.
 
@@ -36,12 +36,21 @@ def yaafe2features(wavefiles, out_file):
 	according to an abkhazia segments.txt 
 	(abkhazia/utilities/segment_features.py can be used for this)
 
-	For now only option is MFCC features
+	Supported feature types:
+		- 'MFCC' (default)
+		- 'CMSP13' (cubic-root-compressed 13-frequency-channels Mel spectrogram)
 	"""
-	fp = ya.FeaturePlan(sample_rate=16000)
-	fp.addFeature('mfcc: MFCC blockSize=400 stepSize=160')  # 0.025s + 0.01s
-	df = fp.getDataFlow()
+	assert feature_type in ['MFCC', 'CMSP13'], \
+		'Unsupported feature_type {0}'.format(feature_type)
 
+	fp = ya.FeaturePlan(sample_rate=16000)
+	if feature_type == 'MFCC':
+		feat_name = 'mfcc'
+		fp.addFeature('{0}: MFCC blockSize=400 stepSize=160'.format(feat_name))  # 0.025s + 0.01s
+	elif feature_type == 'CMSP13':
+		feat_name = 'melsp'
+		fp.addFeature('{0}: MelSpectrum MelNbFilters=13 blockSize=400 stepSize=160'.format(feat_name))  # 0.025s + 0.01s
+	df = fp.getDataFlow()
 	engine = ya.Engine()
 	engine.load(df)
 
@@ -52,19 +61,26 @@ def yaafe2features(wavefiles, out_file):
 		wav_ids.append(p.splitext(p.basename(wavefile))[0])
 		afp = ya.AudioFileProcessor()
 		afp.processFile(engine, wavefile)
-		mfcc = engine.readAllOutputs()['mfcc']
-		nframes = mfcc.shape[0]
+		feat = engine.readAllOutputs()[feat_name]
+		if feature_type == 'CMSP13':
+			# need to add compression by hand
+			feat = np.power(feat, 1/3.)
+		nframes = feat.shape[0]
 		# times according to: http://yaafe.sourceforge.net/features.html?highlight=mfcc#yaafefeatures.Frames
 		times.append(0.01*np.arange(nframes))  # 0.01 here is ad hoc and dependent on 160 above
-		features.append(mfcc)
+		features.append(feat)
 	h5features.write(out_file, 'features', wav_ids, times, features)
 
 
-def encode_corpus(corpus, split=None):
+def encode_corpus(corpus, split=None, feature_type='MFCC'):
 	"""
 	Generates yaafe features (in h5features format) for an abkhazia corpus
 	or a split of an abkhazia corpus. The features are ready for
-	use with abkhazia's ABX tasks. 
+	use with abkhazia's ABX tasks.
+
+	Supported feature types:
+		- 'MFCC' (default)
+		- 'CMSP13' (cubic-root-compressed 13-frequency-channels Mel spectrogram)
 	"""
 	if split is None:
 		# encode the whole corpus
@@ -77,11 +93,11 @@ def encode_corpus(corpus, split=None):
 	wavefiles = [p.join(corpus, 'data', 'wavs', wavefile) for wavefile in set(wavefiles)]	
 	if not(p.isdir(features_dir)):
 		os.mkdir(features_dir)
-	# generate MFCC for whole wavefiles first
-	aux_file = p.join(features_dir, 'yaafe_MFCC_aux.features')
-	yaafe2features(wavefiles, aux_file)
+	# generate features for whole wavefiles first
+	aux_file = p.join(features_dir, 'yaafe_{0}_aux.features'.format(feature_type))
+	yaafe2features(wavefiles, aux_file, feature_type)
 	# then (if necessary) segment features to utterance level
-	out_file = p.join(features_dir, 'yaafe_MFCC.features')
+	out_file = p.join(features_dir, 'yaafe_{0}.features'.format(feature_type))
 	feat.segment_features(aux_file, segments_file, out_file)
 	# if the out_file was not created, it means wavefiles correspond
 	# to utterances; just copy the aux file in this case
@@ -91,12 +107,11 @@ def encode_corpus(corpus, split=None):
 	os.remove(aux_file)
 
 
-
-
 # test
+# root = '/Users/thomas/Documents/PhD/Recherche/other_gits/abkhazia/corpora'  
 root = '/fhgfs/bootphon/scratch/thomas/abkhazia/corpora'
-corpus = p.join(root, 'CSJ_core_laymen')
-encode_corpus(corpus, split='test')
+corpus = p.join(root, 'Buckeye')
+encode_corpus(corpus, split='test', feature_type='CMSP13')
 
 
 """
@@ -153,5 +168,5 @@ had to use github version (which did not work on Snow Leopard)
 		export YAAFE_PATH=$INSTALL_DIR/lib/python2.7/site-packages
 		export DYLD_LIBRARY_PATH=$DYLD_LIBRARY_PATH:$INSTALL_DIR/lib
 		export PYTHONPATH=$PYTHONPATH:$INSTALL_DIR/lib/python2.7/site-packages
-		(with spyder, needs to be done before launching spyder)
+(with spyder, needs to be done before launching spyder)
 """

@@ -56,8 +56,8 @@ def export_phone_alignment(phones_file, tra_file, out_file, word_position_depend
 #FIXME: do a proper command line, because this file is imported as a module to other files
 """
 root = "/Users/Thomas/Documents/PhD/Recherche/test"
-phones_file = os.path.join(root, 'phones_GPV.txt')
-tra_file = os.path.join(root, 'GPV_forced_alignment.tra')
-out_file = os.path.join(root, 'GPV_forced_alignment.txt')
+phones_file = os.path.join(root, 'phones_BUC.txt')
+tra_file = os.path.join(root, 'BUC_forced_alignment.tra')
+out_file = os.path.join(root, 'BUC_forced_alignment.txt')
 export_phone_alignment(phones_file, tra_file, out_file)
 """

@@ -39,7 +39,7 @@ def threshold_item(item_file, output_file, columns, lower_threshold=1, upper_thr
 
 
 root = '/Users/thomas/Documents/PhD/Recherche/test/'  #'/Users/thomas/Documents/PhD/Recherche/Code/ABXYvsABX/data/'
-corpus = 'GPV_phone' #'WSJ_T_IY-AH_N'  # 'WSJ_phone'
+corpus = 'BUC_phone' #'WSJ_T_IY-AH_N'  # 'WSJ_phone'
 item_file = root + corpus + '.item'
 lower_threshold = 1
 upper_threshold = 5

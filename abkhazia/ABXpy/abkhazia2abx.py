@@ -179,18 +179,18 @@ def get_item_file(root, corpus, spk_id_len, segment_info_file=None, bad_phones=N
 	if not(segment_info_file is None):
 		add_segment_info(segment_info_file, item_file, item_file)
 
-
+"""
 root='/Users/thomas/Documents/PhD/Recherche/test/'
 item_file = p.join(root, 'WSJ_phone_threshold_1_5.item')
 sample_talkers(item_file, 5, p.join(root, 'WSJ_phone_threshold_1_5-small.item'))
-
 """
+
 root = '/Users/thomas/Documents/PhD/Recherche/test/'
-corpus = 'GPM'
-spk_id_len = 5  # to do: get this from spk2utt and replace explicitly given
+corpus = 'BUC'
+spk_id_len = 3  # to do: get this from spk2utt and replace explicitly given
 				# segment file by path to an abkhazia split
 get_item_file(root, corpus, spk_id_len, p.join(root, 'segment_info_' + corpus + '.txt'))
-"""
+
 #get_item_file(root, corpus, spk_id_len, p.join(root, 'segment_info_' + corpus + '.txt'),
 #	['zy:', 'F:', 'd:', 'g:', 's:'])
 #get_item_file(root, 'CSJ', 5)
