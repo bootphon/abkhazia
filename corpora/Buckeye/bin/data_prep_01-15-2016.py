@@ -14,7 +14,9 @@ import re
 import codecs
 import shutil
 
-
+"""
+Change paths of your data in the "Parameters" section
+"""
 
 #######################################################################################
 #######################################################################################
@@ -244,12 +246,12 @@ def make_lexicon(wrd_dir, output_file):
     for w, f in sorted(dict_word.items(), key=lambda kv: kv[1], reverse=True):
         outfile.write (w + ' ' + f + '\n')
     print ('finished creating lexicon file')
-    
+  
+  
 """
 STEP 7
 The phone inventory contains a list of each symbol used in the pronunciation dictionary
 Create phone list file, "phones.txt": <phone-symbol> <ipa-symbol>
-
 """
 def make_phones(phones, data_dir, silences=None, variants=None):
     # code taken from GP_Mandarin... could share it ?
@@ -283,18 +285,20 @@ raw_buckeye_path = "/home/xcao/cao/corpus_US/BUCKEYE/BUCKEYE_revised_original_fo
 # Path to a directory where the processed corpora is to be stored
 output_dir = "/home/xcao/github_abkhazia/abkhazia/corpora/Buckeye/"
 
-# setting up some paths and directories
-data_dir = os.path.join(output_dir, 'data')
-if not os.path.isdir(data_dir):
-    os.makedirs(data_dir)
-wav_dir = os.path.join(data_dir, 'wavs')
-log_dir = os.path.join(output_dir, 'logs')
+
 
 #######################################################################################
 #######################################################################################
 ###################################### Main part ######################################
 #######################################################################################
 #######################################################################################
+
+# setting up some paths and directories
+data_dir = os.path.join(output_dir, 'data')
+if not os.path.isdir(data_dir):
+    os.makedirs(data_dir)
+wav_dir = os.path.join(data_dir, 'wavs')
+log_dir = os.path.join(output_dir, 'logs')
 
 """
 STEP 2
@@ -314,6 +318,7 @@ output_file = os.path.join(data_dir, 'segments.txt')
 utt_dir = os.path.join(raw_buckeye_path, 'txt')
 wrd_dir = os.path.join(raw_buckeye_path, 'words_foldings')
 make_segment(utt_dir, wrd_dir, output_file)
+
 
 """
 STEP 4
