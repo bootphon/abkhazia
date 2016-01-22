@@ -219,6 +219,7 @@ def make_lexicon(outfile_lexicon, outfile_temp, mlf_dir):
     #add these 2 entries in the dict
     out_lex.write ('<noise> NSN\n')
     out_lex.write ('<unk> SPN\n')
+    out_lex.write ('<NOISE> NSN\n')
     for line in in_temp:
         line = line.strip()
         m_file = re.match("(.*)\t(.*)", line)
@@ -299,8 +300,8 @@ if not os.path.isdir(log_dir):
 STEP 2
 Link speech folder to the data kaldi directory
 """
-#wav_path_src = os.path.join(raw_Xitsonga_path, 'audio')
-#link_wavs(wav_path_src, wav_dir, log_dir)
+wav_path_src = os.path.join(raw_Xitsonga_path, 'audio')
+link_wavs(wav_path_src, wav_dir, log_dir)
 
 
 """
@@ -309,9 +310,9 @@ Create utterance files. It contains the list of all utterances with the name of 
 and if there is more than one utterance per file, the start and end of the utterance in that wavefile expressed in seconds.
 "segments.txt": <utterance-id> <wav-filename> <segment-begin> <segment-end>
 """
-#output_file = os.path.join(data_dir, 'segments.txt')
-#wav_dir = os.path.join(data_dir, 'wavs')
-#make_segment(wav_dir, output_file)
+output_file = os.path.join(data_dir, 'segments.txt')
+wav_dir = os.path.join(data_dir, 'wavs')
+make_segment(wav_dir, output_file)
 
 
 """
@@ -319,9 +320,9 @@ STEP 4
 Create speaker file. It contains the list of all utterances with a unique identifier for the associated speaker.
 "utt2spk.txt": <utterance-id> <speaker-id>
 """
-#output_file = os.path.join(data_dir, 'utt2spk.txt')
-#wav_dir = os.path.join(data_dir, 'wavs')
-#make_speaker(wav_dir, output_file)
+output_file = os.path.join(data_dir, 'utt2spk.txt')
+wav_dir = os.path.join(data_dir, 'wavs')
+make_speaker(wav_dir, output_file)
 
 
 
@@ -330,10 +331,10 @@ STEP 5
 Create transcription file. It constains the transcription in word units for each utterance
 "text.txt": <utterance-id> <word1> <word2> ... <wordn>
 """
-#segment_file = os.path.join(data_dir, 'segments.txt')
-#trs_dir = os.path.join(raw_Xitsonga_path, 'transcriptions')
-#output_file = os.path.join(data_dir, 'text.txt')
-#make_transcription(segment_file, trs_dir, output_file)
+segment_file = os.path.join(data_dir, 'segments.txt')
+trs_dir = os.path.join(raw_Xitsonga_path, 'transcriptions')
+output_file = os.path.join(data_dir, 'text.txt')
+make_transcription(segment_file, trs_dir, output_file)
 
 
 """
@@ -341,10 +342,10 @@ STEP 6
 The phonetic dictionary contains a list of words with their phonetic transcription
 Create phonetic dictionary file, "lexicon.txt": <word> <phone_1> <phone_2> ... <phone_n>
 """
-#outfile_lexicon = os.path.join(data_dir, 'lexicon.txt')
-#outfile_temp = os.path.join(log_dir, 'temp.txt')
-#mlf_dir = os.path.join(raw_Xitsonga_path, 'mlfs_tso')
-#make_lexicon(outfile_lexicon, outfile_temp, mlf_dir)
+outfile_lexicon = os.path.join(data_dir, 'lexicon.txt')
+outfile_temp = os.path.join(log_dir, 'temp.txt')
+mlf_dir = os.path.join(raw_Xitsonga_path, 'mlfs_tso')
+make_lexicon(outfile_lexicon, outfile_temp, mlf_dir)
 
 
 """
@@ -413,7 +414,7 @@ Xitsonga_phones = [
 phones = {}
 for phone, ipa in Xitsonga_phones:
     phones[phone] = ipa
-silences = []  # SPN and SIL will be added automatically
+silences = [u"NSN"]  # SPN and SIL will be added automatically
 variants = []  # could use lexical stress variants...
 make_phones(phones, data_dir, silences, variants)
 print("Created phones.txt, silences.txt, variants.txt")
