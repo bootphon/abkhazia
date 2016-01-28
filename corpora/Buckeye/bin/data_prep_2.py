@@ -6,14 +6,9 @@ Copyright (C) 2015, 2016 by Thomas Schatz, Xuan Nga Cao, Mathieu Bernard
 
 """
 
-import os
-import re
-import codecs
-import shutil
+import abkhazia.corpora
 
-"""
-Change paths of your data in the "Parameters" section
-"""
+# TODO Change paths of your data in the "Parameters" section
 
 #######################################################################################
 #######################################################################################
@@ -89,11 +84,14 @@ def link_wavs(wav_path_src, wav_dir, log_dir):
     print ('finished linking wav files')
 
 
-"""
-STEP 3
-Create utterance files. It contains the list of all utterances with the name of the associated wavefiles,
-and if there is more than one utterance per file, the start and end of the utterance in that wavefile expressed in seconds.
-"segments.txt": <utterance-id> <wav-filename> <segment-begin> <segment-end>
+"""STEP 3
+
+Create utterance files. It contains the list of all utterances with
+the name of the associated wavefiles, and if there is more than one
+utterance per file, the start and end of the utterance in that
+wavefile expressed in seconds.  "segments.txt": <utterance-id>
+<wav-filename> <segment-begin> <segment-end>
+
 """
 def make_segment(utt_dir, wrd_dir, output_file):
     outfile = open (output_file, "w")
@@ -278,9 +276,8 @@ def make_phones(phones, data_dir, silences=None, variants=None):
 #######################################################################################
 
 # Raw distribution of the revised Buckeye corpus is available at:
-# http://buckeyecorpus.osu.edu/ (change link later when the revised
-# version will be distributed)
-
+# http://buckeyecorpus.osu.edu/ (TODO change link later when the
+# revised version will be distributed)
 raw_buckeye_path = "/home/mbernard/data/BUCKEYE_revised_original_format/"
 
 

@@ -36,21 +36,21 @@ for corpus, prune_lexicon in zip(corpora, prune_lexicons):
 
 	decode.create_kaldi_recipe(p.join(root, 'corpora', corpus),
 							   p.join(root, 'kaldi', corpus),
-							   kaldi_root, 
+							   kaldi_root,
 							   prune_lexicon=prune_lexicon)
-          
-      ## Estimate LM for posterior decoding recipe from some text ??? 
+
+      ## Estimate LM for posterior decoding recipe from some text ???
       # or use LM in arpa-MIT format
       # or what?
-      
+
       ## Run the recipes
       # how to set the parameters here easily?
       # subprocess.call(cd recipe_path; ./run.sh)
 
       ## Check and process the results
-      
+
       # add an alignments folder to data
-      # add a features folder to data ??? (probably somewhere else?) 
+      # add a features folder to data ??? (probably somewhere else?)
 
 """
 # test on Buckeye for challenge
@@ -128,7 +128,7 @@ all_speakers = [
 			u'049f', u'169f', u'008m', u'111f',
 			u'056f', u'089m', u'168f', u'129f',
 			u'071f', u'081m', u'124m', u'185f',
-			u'040f', u'065f', u'181m', u'119f', 
+			u'040f', u'065f', u'181m', u'119f',
 			u'105m', u'036f'
 			]
 

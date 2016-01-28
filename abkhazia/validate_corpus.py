@@ -6,18 +6,18 @@ Created on Wed Feb  4 00:17:47 2015
 """
 
 """
-This script checks whether a given speech corpus is correctly formatted 
-for usage with abkhazia tools. 
+This script checks whether a given speech corpus is correctly formatted
+for usage with abkhazia tools.
 
 Beware that it automatically corrects some basics problems and thus it can
-modify the original files. For example it sorts the lines of some text files 
+modify the original files. For example it sorts the lines of some text files
 and add default values to phone inventories when they are missing.
 """
-#TODO: optimize homophone processing for large dictionaries
+# TODO: optimize homophone processing for large dictionaries
 
 import contextlib
-import abkhazia.utilities.log2file as log2file
-import abkhazia.utilities.basic_io as io
+import utilities.log2file as log2file
+import utilities.basic_io as io
 import os
 import wave
 import codecs
@@ -34,11 +34,11 @@ def get_duplicates(l):
 	duplicates = [e for e in counts if counts[e] > 1]
 	return duplicates
 
-	
+
 def strcounts2unicode(strcounts):
 	return u", ".join([u"'" + s + u"': " + unicode(c) for s, c in strcounts])
-		
-		
+
+
 def validate(corpus_path, verbose=False):
 
 	"""
@@ -49,8 +49,8 @@ def validate(corpus_path, verbose=False):
 		raise IOError("Corpus folder {0} should contain a 'data' subfolder".format(corpus_path))
 	log_dir = os.path.join(corpus_path, 'logs')
 	if not(os.path.isdir(log_dir)):
-            os.mkdir(os.path.join(corpus_path, "logs"))	
-	
+            os.mkdir(os.path.join(corpus_path, "logs"))
+
 	# log file config
 	log_file = os.path.join(log_dir, "data_validation.log".format(corpus_path))
 	log = log2file.get_log(log_file, verbose)
@@ -100,7 +100,7 @@ def validate(corpus_path, verbose=False):
 				).format(non_mono)
 			)
 		non_16bit = [f for f in wavefiles if width[f] != 2]  # in bytes: 16 bit == 2 bytes
-		if non_16bit:  
+		if non_16bit:
 			raise IOError(
 				(
 				"Currently only files encoded on 16 bits are "
@@ -149,7 +149,7 @@ def validate(corpus_path, verbose=False):
 		else:
 			# more complicated case
 			# find all utterances (plus timestamps) associated to each wavefile
-			# and for each wavefile, check consistency of the timestamps of 
+			# and for each wavefile, check consistency of the timestamps of
 			# all utterances inside it
 			# report progress as this can be a bit long
 			n = len(wavefiles)
@@ -241,7 +241,7 @@ def validate(corpus_path, verbose=False):
 			)
 		log.debug("'segments.txt' file is OK")
 
-		
+
 		"""
 		checking speakers list
 		"""
@@ -266,13 +266,13 @@ def validate(corpus_path, verbose=False):
 				e = set.difference(e_spk, e_seg)
 				log.error("Utterances in utt2spk.txt that are not in segments.txt: {0}".format(e))
 				e = set.difference(e_seg, e_spk)
-				log.error("Utterances in segments.txt that are not in utt2spk.txt: {0}".format(e))			
+				log.error("Utterances in segments.txt that are not in utt2spk.txt: {0}".format(e))
 				raise IOError(
 					(
 					"Utterance-ids in 'segments.txt' and 'utt2spk.txt' are not consistent, "
 					"see details in log {0}"
 					).format(log_file)
-				)		
+				)
 		# speaker ids must have a fixed length
 		l = len(speakers[0])
 		if not(all([len(s) == l for s in speakers])):
@@ -284,7 +284,7 @@ def validate(corpus_path, verbose=False):
 		for utt, spk in zip(utt_ids, speakers):
 			assert utt[:l] == spk, "All utterance-ids must be prefixed by the corresponding speaker-id"
 		log.debug("'speakers' file is OK")
-		
+
 
 		"""
 		checking transcriptions
@@ -311,13 +311,13 @@ def validate(corpus_path, verbose=False):
 				e = set.difference(e_txt, e_seg)
 				log.error("Utterances in text.txt that are not in segments.txt: {0}".format(e))
 				e = set.difference(e_seg, e_txt)
-				log.error("Utterances in segments.txt that are not in text.txt: {0}".format(e))			
+				log.error("Utterances in segments.txt that are not in text.txt: {0}".format(e))
 				raise IOError(
 					(
 					"Utterance-ids in 'segments.txt' and 'text.txt' are not consistent, "
 					"see details in log {0}"
 					).format(log_file)
-				)		
+				)
 		log.debug("'text.txt' file is OK, checking for OOV items later")
 
 
@@ -398,7 +398,7 @@ def validate(corpus_path, verbose=False):
 			with codecs.open(var_file, mode='w', encoding="UTF-8") as out:
 				pass
 			variants = []
-		else:	
+		else:
 			variants = io.read_variants(var_file)
 			all_symbols = [symbol for group in variants for symbol in group]
 			unknown_symbols = [symbol for symbol in all_symbols if not(symbol in phones) and not(symbol in sils)]
@@ -461,7 +461,7 @@ def validate(corpus_path, verbose=False):
 		oov_word_counts = collections.Counter({oov : used_word_counts[oov] for oov in oov_word_types})
 		nb_oov_tokens = sum(oov_word_counts.values())
 		nb_oov_types = len(oov_word_types)
-		log.warning(u"{0} OOV word types in transcriptions out of {1} types in total".format(nb_oov_types, len(used_word_types)))				
+		log.warning(u"{0} OOV word types in transcriptions out of {1} types in total".format(nb_oov_types, len(used_word_types)))
 		log.warning(u"{0} OOV word tokens in transcriptions out of {1} tokens in total".format(nb_oov_tokens, len(used_words)))
 		log.debug(
 			(
@@ -477,7 +477,7 @@ def validate(corpus_path, verbose=False):
 		if oov_proportion_types > 0.1:
 			log.info(u"More than 10 percent of word types used are Out-Of-Vocabulary items!")
 		if oov_proportion_tokens > 0.1:
-			log.info(u"More than 10 percent of word tokens used are Out-Of-Vocabulary items!")		
+			log.info(u"More than 10 percent of word tokens used are Out-Of-Vocabulary items!")
 		# homophones (issue warnings only)
 		str_transcripts = [u" ".join(phone_trans) for phone_trans in transcriptions]
 		counts = collections.Counter(str_transcripts)
@@ -552,8 +552,8 @@ def validate(corpus_path, verbose=False):
 				).format(unused_phones)
 			)
 		log.debug(u"'lexicon.txt' file is OK")
-		
-		# wrap-up		
+
+		# wrap-up
 		log.info("Corpus ready for use with abkhazia!!!")
 
 	except (IOError, AssertionError) as e:

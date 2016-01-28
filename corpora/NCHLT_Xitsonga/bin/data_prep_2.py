@@ -1,24 +1,14 @@
-# -*- coding: utf-8 -*-
-"""
-Created on Wed Feb  4 00:17:47 2015
+# coding: utf-8
 
-@author: Thomas Schatz
-"""
+"""Data preparation for the Xitsonga corpus
 
-"""
-Data preparation for Xitsonga
-"""
-
-import os
-import re
-import codecs
-import shutil
-
-
+Copyright (C) 2015, 2016 by Thomas Schatz, Xuan Nga Cao, Mathieu Bernard
 
 """
-Change paths of your data in the "Parameters" section
-"""
+
+import abkhazia.corpora
+
+# TODO Change paths of your data in the "Parameters" section
 
 #######################################################################################
 #######################################################################################
@@ -82,11 +72,14 @@ def link_wavs(wav_src, wav_dir, log_dir):
 
 
 
-"""
-STEP 3
-Create utterance files. It contains the list of all utterances with the name of the associated wavefiles,
-and if there is more than one utterance per file, the start and end of the utterance in that wavefile expressed in seconds.
-"segments.txt": <utterance-id> <wav-filename>
+"""STEP 3
+
+Create utterance files. It contains the list of all utterances with
+the name of the associated wavefiles, and if there is more than one
+utterance per file, the start and end of the utterance in that
+wavefile expressed in seconds.  "segments.txt": <utterance-id>
+<wav-filename>
+
 """
 def make_segment(wav_dir, output_file):
     outfile = open (output_file, "w")

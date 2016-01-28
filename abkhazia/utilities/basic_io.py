@@ -18,7 +18,7 @@ import numpy as np
 
 
 def cpp_sort(filename):
-	# there is redundancy here but I didn't check which export can be 
+        # there is redundancy here but I didn't check which export can be
 	# safely removed, so better safe than sorry
 	os.environ["LC_ALL"] = "C"
 	subprocess.call("export LC_ALL=C; sort {0} -o {1}".format(filename, filename), shell=True, env=os.environ)
@@ -155,7 +155,7 @@ def match_on_first_col(lines, desired_first_col):
 	# could also have something faster with pandas
 	# see http://stackoverflow.com/questions/15939748/check-if-each-element-in-a-numpy-array-is-in-another-array
 	indices = np.where(np.in1d(np.array(first_col), np.array(desired_first_col)))[0]
-	lines = list(np.array(lines)[indices])		
+	lines = list(np.array(lines)[indices])
 	return lines
 
 
