@@ -8,15 +8,22 @@ Created on Thu Mar  5 11:32:55 2015
 Getting forced alignments and posterior decoding on some corpora
 """
 
-import abkhazia.kaldi.train_test_split as split
-import abkhazia.kaldi.force_align as force_align
-import abkhazia.kaldi.train_and_decode as decode
+import sys
+import os
+sys.path.append(os.path.abspath('.'))
+
+print sys.path
+
+#import abkhazia.kaldi.train_test_split as split
+import train_test_split as split
+import force_align as force_align
+import train_and_decode as decode
 import os.path as p
 import subprocess
 
 
-root = '/home/xcao/github_abkhazia/abkhazia'
-kaldi_root = '/home/xcao/kaldi-trunk'
+root = '/home/mbernard/dev/abkhazia'
+kaldi_root = '/home/mbernard/dev/kaldi'
 #root = '/Users/thomas/Documents/PhD/Recherche/other_gits/abkhazia'
 #kaldi_root = '/Users/thomas/Documents/PhD/Recherche/kaldi/kaldi-trunk'
 #root = '/fhgfs/bootphon/scratch/thomas/abkhazia'
@@ -27,8 +34,8 @@ prune_lexicons = [False]
 for corpus, prune_lexicon in zip(corpora, prune_lexicons):
 	## Instantiate forced alignment recipe
 	force_align.create_kaldi_recipe(p.join(root, 'corpora', corpus),
-									p.join(root, 'kaldi', corpus),
-									kaldi_root)
+                                        p.join(root, 'kaldi', corpus),
+                                        kaldi_root)
 
 	## Instantiate posterior decoding recipe
 	# cutting corpus in half and using different speakers for train and test sets
@@ -36,21 +43,21 @@ for corpus, prune_lexicon in zip(corpora, prune_lexicons):
 
 	decode.create_kaldi_recipe(p.join(root, 'corpora', corpus),
 							   p.join(root, 'kaldi', corpus),
-							   kaldi_root, 
+							   kaldi_root,
 							   prune_lexicon=prune_lexicon)
-          
-      ## Estimate LM for posterior decoding recipe from some text ??? 
+
+      ## Estimate LM for posterior decoding recipe from some text ???
       # or use LM in arpa-MIT format
       # or what?
-      
+
       ## Run the recipes
       # how to set the parameters here easily?
       # subprocess.call(cd recipe_path; ./run.sh)
 
       ## Check and process the results
-      
+
       # add an alignments folder to data
-      # add a features folder to data ??? (probably somewhere else?) 
+      # add a features folder to data ??? (probably somewhere else?)
 
 """
 # test on Buckeye for challenge
@@ -128,7 +135,7 @@ all_speakers = [
 			u'049f', u'169f', u'008m', u'111f',
 			u'056f', u'089m', u'168f', u'129f',
 			u'071f', u'081m', u'124m', u'185f',
-			u'040f', u'065f', u'181m', u'119f', 
+			u'040f', u'065f', u'181m', u'119f',
 			u'105m', u'036f'
 			]
 
