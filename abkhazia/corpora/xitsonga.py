@@ -2,7 +2,7 @@
 
 """Data preparation for the Xitsonga corpus"""
 
-from corpus_preparator import AbstractPreparator
+from abkhazia.corpora.corpus_preparator import AbstractPreparator
 
 
 # IPA transcriptions for all phones

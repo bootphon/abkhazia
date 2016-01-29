@@ -1,16 +1,9 @@
-"""Provides a base class for corpora preparation in the abkhazia format
+"""Provides a base class for corpora preparation in the abkhazia format"""
 
-Copyright (C) 2015, 2016 by Thomas Schatz, Xuan Nga Cao, Mathieu Bernard
-
-"""
-
-import argparse
 import os
-import re
-import codecs
-import shutil
 
-import corpus_validation
+import abkhazia.corpora.corpus_validation
+
 
 class AbstractPreparator(object):
     """This class is a common wrapper to all the data preparation scripts.
@@ -74,7 +67,7 @@ class AbstractPreparator(object):
         self._7_make_phones()
 
     def validate(self, verbose=False):
-        corpus_validation.validate(self.output_dir, verbose)
+        abkhazia.corpora.corpus_validation.validate(self.output_dir, verbose)
 
     def _1_prepare_output_dir(self):
         """Create an empty output directory hierarchy"""

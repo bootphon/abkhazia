@@ -2,8 +2,13 @@
 
 """Data preparation for the revised Buckeye corpus (in the original format)"""
 
-from corpus_preparator import AbstractPreparator
-from corpus_utils import list_files_with_extension
+import codecs
+import os
+import re
+import shutil
+
+from abkhazia.corpora.corpus_preparator import AbstractPreparator
+from abkhazia.corpora.corpus_utils import list_files_with_extension
 
 
 def list_word_files(directory):
