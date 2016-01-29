@@ -1,22 +1,22 @@
-"""Provides generic tools for corpora preparation in the abkhazia format
+"""Provides a base class for corpora preparation in the abkhazia format
 
 Copyright (C) 2015, 2016 by Thomas Schatz, Xuan Nga Cao, Mathieu Bernard
 
 """
 
+import argparse
 import os
 import re
 import codecs
 import shutil
 
+import corpus_validation
 
-class CorpusPreparator(object):
+class AbstractPreparator(object):
     """This class is a common wrapper to all the data preparation scripts.
 
     The successive steps are:
 
-    1. List all files and formats used in corpus. TODO Actually step 1
-        is output_dir preparation.
 
     2. Link speech folder to the data kaldi directory, optionnaly
         rename the wav files
@@ -59,6 +59,7 @@ class CorpusPreparator(object):
             raise IOError(
                 'output directory already exists: {}'.format(output_dir))
         self.output_dir = output_dir
+
         self.data_dir = os.path.join(self.output_dir, 'data')
         self.wavs_dir = os.path.join(self.data_dir, 'wavs')
         self.logs_dir = os.path.join(self.data_dir, 'logs')
@@ -72,28 +73,28 @@ class CorpusPreparator(object):
         self._6_make_lexicon()
         self._7_make_phones()
 
-    def validate(self):
-        # TODO call to validate_corpus.py
-        pass
+    def validate(self, verbose=False):
+        corpus_validation.validate(self.output_dir, verbose)
 
     def _1_prepare_output_dir(self):
+        """Create an empty output directory hierarchy"""
         os.makedirs(self.wavs_dir)
         os.makedirs(self.logs_dir)
 
     def _2_link_wavs(self):
-        pass
+        raise NotImplementedError
 
     def _3_make_segment(self):
-        pass
+        raise NotImplementedError
 
     def _4_make_speaker(self):
-        pass
+        raise NotImplementedError
 
     def _5_make_transcription(self):
-        pass
+        raise NotImplementedError
 
     def _6_make_lexicon(self):
-        pass
+        raise NotImplementedError
 
     def _7_make_phones(self):
-        pass
+        raise NotImplementedError
