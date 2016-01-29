@@ -244,6 +244,26 @@ def copy_phones():
         shutil.copy2(phone_src, phone_dest)
 
 
+#######################################################################################
+#######################################################################################
+##################################### Parameters ######################################
+#######################################################################################
+#######################################################################################
+
+# Distribution of the revised AIC corpus is available at https://catalog.ldc.upenn.edu/LDC2015S12 (free)
+raw_AIC_path = "/home/xcao/cao/multilingual/African_languages/Xitsonga/raw_corpus/nchlt_Xitsonga"
+
+# Path to a directory where the processed corpora is to be stored
+output_dir = "/home/xcao/github_abkhazia/abkhazia/corpora/AIC/"
+
+
+#######################################################################################
+#######################################################################################
+###################################### Main part ######################################
+#######################################################################################
+#######################################################################################
+
+
 #Running the different steps
 #link_wavs()
 #segments_speakers()
@@ -252,6 +272,44 @@ def copy_phones():
 #lexicon()
 copy_phones()
 
-
+AA ɑː
+W w
+DH ð
+Y j
+HH h
+B b
+JH ʤ
+ZH ʒ
+D d
+NG ŋ
+TH θ
+IY iː
+CH ʧ
+AE æ
+EH ɛ
+G g
+F f
+AH ʌ
+K k
+M m
+L l
+AO ɔː
+N n
+P p
+S s
+R r
+EY eɪ
+T t
+AW aʊ
+V v
+AY aɪ
+Z z
+ER ɝ
+IH ɪ
+UW uː
+SH ʃ
+UH ʊ
+OY ɔɪ
+OW oʊ
 
 

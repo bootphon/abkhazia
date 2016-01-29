@@ -1,3 +1,0 @@
-3 files couldn't be decoded: 6272-70171-0018.flac, 8088-284756-0044.flac, 0458-126305-0035.flac
-ERROR while decoding metadata state = FLAC__STREAM_DECODER_ABORTED
-These 3 files were therefore discarded.
