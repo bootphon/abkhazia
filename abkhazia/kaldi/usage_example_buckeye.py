@@ -22,32 +22,34 @@ kaldi_root = '/home/xcao/kaldi-trunk'
 corpora = ['Buckeye']
 prune_lexicons = [False]
 for corpus, prune_lexicon in zip(corpora, prune_lexicons):
-	## Instantiate forced alignment recipe
-	force_align.create_kaldi_recipe(p.join(root, 'corpora', corpus),
-									p.join(root, 'kaldi', corpus),
-									kaldi_root)
+    ## Instantiate forced alignment recipe
+    force_align.create_kaldi_recipe(p.join(root, 'corpora', corpus),
+                                    p.join(root, 'kaldi', corpus),
+                                    kaldi_root)
 
-	## Instantiate posterior decoding recipe
-	# cutting corpus in half and using different speakers for train and test sets
-	split.train_test_split(p.join(root, 'corpora', corpus), train_proportion=.9, split_speakers=False)
+    ## Instantiate posterior decoding recipe
+    # cutting corpus in half and using different speakers for train and test sets
+    split.train_test_split(p.join(root, 'corpora', corpus),
+                           train_proportion=.9,
+                           split_speakers=False)
 
-	decode.create_kaldi_recipe(p.join(root, 'corpora', corpus),
-							   p.join(root, 'kaldi', corpus),
-							   kaldi_root, 
-							   prune_lexicon=prune_lexicon)
-          
-      ## Estimate LM for posterior decoding recipe from some text ??? 
-      # or use LM in arpa-MIT format
-      # or what?
-      
-      ## Run the recipes
-      # how to set the parameters here easily?
-      # subprocess.call(cd recipe_path; ./run.sh)
+    decode.create_kaldi_recipe(p.join(root, 'corpora', corpus),
+                               p.join(root, 'kaldi', corpus),
+                               kaldi_root,
+                               prune_lexicon=prune_lexicon)
 
-      ## Check and process the results
-      
-      # add an alignments folder to data
-      # add a features folder to data ??? (probably somewhere else?) 
+    ## Estimate LM for posterior decoding recipe from some text ???
+    # or use LM in arpa-MIT format
+    # or what?
+
+    ## Run the recipes
+    # how to set the parameters here easily?
+    # subprocess.call(cd recipe_path; ./run.sh)
+
+    ## Check and process the results
+
+    # add an alignments folder to data
+    # add a features folder to data ??? (probably somewhere else?)
 
 """
 # test on Buckeye for challenge
@@ -125,7 +127,7 @@ all_speakers = [
 			u'049f', u'169f', u'008m', u'111f',
 			u'056f', u'089m', u'168f', u'129f',
 			u'071f', u'081m', u'124m', u'185f',
-			u'040f', u'065f', u'181m', u'119f', 
+			u'040f', u'065f', u'181m', u'119f',
 			u'105m', u'036f'
 			]
 

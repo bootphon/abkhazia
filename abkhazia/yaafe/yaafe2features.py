@@ -28,48 +28,51 @@ import abkhazia.utilities.features as feat
 # This can easily be avoided by writing to the h5features
 # file batch by batch.
 def yaafe2features(wavefiles, out_file, feature_type='MFCC'):
-	"""
-	Generate features with yaafe and put them in h5features format.
+    """Generate features with yaafe and put them in h5features format.
 
-	Whole wavefiles are encoded as internal h5features files.
-	To use them with abkhazia's ABX tasks, these need to be segmented
-	according to an abkhazia segments.txt 
-	(abkhazia/utilities/segment_features.py can be used for this)
+    Whole wavefiles are encoded as internal h5features files.
+    To use them with abkhazia's ABX tasks, these need to be segmented
+    according to an abkhazia segments.txt
+    (abkhazia/utilities/segment_features.py can be used for this)
 
-	Supported feature types:
-		- 'MFCC' (default)
-		- 'CMSP13' (cubic-root-compressed 13-frequency-channels Mel spectrogram)
-	"""
-	assert feature_type in ['MFCC', 'CMSP13'], \
-		'Unsupported feature_type {0}'.format(feature_type)
+    Supported feature types:
+    - 'MFCC' (default)
+    - 'CMSP13' (cubic-root-compressed 13-frequency-channels Mel spectrogram)
+    """
+    assert feature_type in ['MFCC', 'CMSP13'], \
+            'Unsupported feature_type {0}'.format(feature_type)
 
-	fp = ya.FeaturePlan(sample_rate=16000)
-	if feature_type == 'MFCC':
-		feat_name = 'mfcc'
-		fp.addFeature('{0}: MFCC blockSize=400 stepSize=160'.format(feat_name))  # 0.025s + 0.01s
-	elif feature_type == 'CMSP13':
-		feat_name = 'melsp'
-		fp.addFeature('{0}: MelSpectrum MelNbFilters=13 blockSize=400 stepSize=160'.format(feat_name))  # 0.025s + 0.01s
-	df = fp.getDataFlow()
-	engine = ya.Engine()
-	engine.load(df)
+    fp = ya.FeaturePlan(sample_rate=16000)
+    if feature_type == 'MFCC':
+        feat_name = 'mfcc'
+        fp.addFeature('{0}: MFCC blockSize=400 stepSize=160'.format(feat_name))  # 0.025s + 0.01s
+    elif feature_type == 'CMSP13':
+        feat_name = 'melsp'
+        fp.addFeature('{0}: MelSpectrum MelNbFilters=13 blockSize=400 stepSize=160'.format(feat_name))  # 0.025s + 0.01s
 
-	wav_ids = []
-	times = []
-	features = []
-	for wavefile in wavefiles:
-		wav_ids.append(p.splitext(p.basename(wavefile))[0])
-		afp = ya.AudioFileProcessor()
-		afp.processFile(engine, wavefile)
-		feat = engine.readAllOutputs()[feat_name]
-		if feature_type == 'CMSP13':
-			# need to add compression by hand
-			feat = np.power(feat, 1/3.)
-		nframes = feat.shape[0]
-		# times according to: http://yaafe.sourceforge.net/features.html?highlight=mfcc#yaafefeatures.Frames
-		times.append(0.01*np.arange(nframes))  # 0.01 here is ad hoc and dependent on 160 above
-		features.append(feat)
-	h5features.write(out_file, 'features', wav_ids, times, features)
+    df = fp.getDataFlow()
+    engine = ya.Engine()
+    engine.load(df)
+
+    wav_ids = []
+    times = []
+    features = []
+    for wavefile in wavefiles:
+        wav_ids.append(p.splitext(p.basename(wavefile))[0])
+        afp = ya.AudioFileProcessor()
+        afp.processFile(engine, wavefile)
+        feat = engine.readAllOutputs()[feat_name]
+
+        if feature_type == 'CMSP13':
+            # need to add compression by hand
+            feat = np.power(feat, 1/3.)
+
+        # times according to:
+        # http://yaafe.sourceforge.net/features.html?highlight=mfcc#yaafefeatures.Frames
+        nframes = feat.shape[0]
+        times.append(0.01*np.arange(nframes))  # 0.01 here is ad hoc and dependent on 160 above
+        features.append(feat)
+    h5features.write(out_file, 'features', wav_ids, times, features)
 
 
 def encode_corpus(corpus, split=None, feature_type='MFCC'):
@@ -90,7 +93,7 @@ def encode_corpus(corpus, split=None, feature_type='MFCC'):
 		segments_file = p.join(corpus, 'data', 'split', split, 'segments.txt')
 		features_dir = p.join(corpus, 'data', 'split', split, 'features')
 	_, wavefiles, _, _ = io.read_segments(segments_file)
-	wavefiles = [p.join(corpus, 'data', 'wavs', wavefile) for wavefile in set(wavefiles)]	
+	wavefiles = [p.join(corpus, 'data', 'wavs', wavefile) for wavefile in set(wavefiles)]
 	if not(p.isdir(features_dir)):
 		os.mkdir(features_dir)
 	# generate features for whole wavefiles first
@@ -108,7 +111,7 @@ def encode_corpus(corpus, split=None, feature_type='MFCC'):
 
 
 # test
-# root = '/Users/thomas/Documents/PhD/Recherche/other_gits/abkhazia/corpora'  
+# root = '/Users/thomas/Documents/PhD/Recherche/other_gits/abkhazia/corpora'
 root = '/fhgfs/bootphon/scratch/thomas/abkhazia/corpora'
 corpus = p.join(root, 'Buckeye')
 #encode_corpus(corpus, split='test', feature_type='CMSP13')
@@ -128,7 +131,7 @@ encode_corpus(corpus, split='train', feature_type='CMSP13')
 
 
 """
-Installing yaafe can be tricky. 
+Installing yaafe can be tricky.
 On our linux cluster (Oberon), a yaafe module is available.
 
 Here are some installation notes for MacOS:
@@ -158,7 +161,7 @@ On OSX Snow Leopard with homebrew:
 
 On OSX Yosemite with homebrew: older sourceforge version did not work,
 had to use github version (which did not work on Snow Leopard)
-	Same as before (or just brew upgrade if already installed): 
+	Same as before (or just brew upgrade if already installed):
 		brew install argtable
 		brew install libsndfile
 		brew install mpg123

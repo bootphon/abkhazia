@@ -49,7 +49,7 @@ def parse_CSJ_core_xml(xml_file):
 	"""
 	tree = ET.ElementTree(file=xml_file)
 	talk = tree.getroot()
-	talk_id = talk.attrib["TalkID"]	
+	talk_id = talk.attrib["TalkID"]
 	speaker = talk.attrib["SpeakerID"]
 	# make sure all speaker-ids have same length
 	if len(speaker) < 4:
@@ -101,7 +101,7 @@ def parse_CSJ_core_xml(xml_file):
 				except:
 					pass
 				print(utt_id)
-				#FIXME understand this 
+				#FIXME understand this
 				#assert u"φ" in moras, utt_id
 		utts[utt_id] = Utt(words, utt_start, utt_stop, channel)
 	return utts
@@ -167,36 +167,36 @@ def reencode(phonemes, encoding=None):
 			out_phn = 'NSN'
 		# 2 - breaking clusters
 		seg_1 = {
-			'ky': 'k', 
-			'ty': 't',
-			'ry': 'r',
-			'cy': 't',
-			'cj': 't',
-			'c': 't',
-			'py': 'p',
-			'ny': 'n',
-			'by': 'b',
-			'my': 'm',
-			'hy': 'h',
-			'gy': 'g',
-			'dy': 'd'
-			}
+                    'ky': 'k',
+                    'ty': 't',
+                    'ry': 'r',
+                    'cy': 't',
+                    'cj': 't',
+                    'c': 't',
+                    'py': 'p',
+                    'ny': 'n',
+                    'by': 'b',
+                    'my': 'm',
+                    'hy': 'h',
+                    'gy': 'g',
+                    'dy': 'd'
+                }
 		seg_2 = {
-			'ky': 'y', 
-			'ty': 'y',
-			'ry': 'y',
-			'cy': 'sy',
-			'cj': 'sj',
-			'c': 's',
-			'py': 'y',
-			'ny': 'y',
-			'by': 'y',
-			'my': 'y',
-			'hy': 'y',
-			'gy': 'y',
-			'dy': 'y'
-			}
-		if out_phn in seg_1:
+                    'ky': 'y',
+                    'ty': 'y',
+                    'ry': 'y',
+                    'cy': 'sy',
+                    'cj': 'sj',
+                    'c': 's',
+                    'py': 'y',
+                    'ny': 'y',
+                    'by': 'y',
+                    'my': 'y',
+                    'hy': 'y',
+                    'gy': 'y',
+                    'dy': 'y'
+                }
+                if out_phn in seg_1:
 			out_phns = [seg_1[out_phn], seg_2[out_phn]]
 		else:
 			out_phns = [out_phn]
@@ -336,7 +336,7 @@ with codecs.open(output_file, mode='w', encoding='UTF-8') as out:
 cpp_sort(output_file)
 
 # segments
-output_file = os.path.join(output_folder, 'segments.txt')	
+output_file = os.path.join(output_folder, 'segments.txt')
 with codecs.open(output_file, mode='w', encoding='UTF-8') as out:
 	for utt_id in all_utts:
 		wavefile = utt_id.split("_")[1] + ".wav"
@@ -394,8 +394,8 @@ consonants = [
 	('d:', u'd:'),  # is this really a geminate (with a voiced stop ?)
 	('g', u'g'),
 	('g:', u'g:'),  # is this really a geminate (with a voiced stop ?)
-	# look at difference between aspiration and gemination, gemination 
-	# is supposed to affect the duration of closure and aspiration the 
+	# look at difference between aspiration and gemination, gemination
+	# is supposed to affect the duration of closure and aspiration the
 	# VOT. This explains that gemination cannot occur at the beginning
 	# of an utterance (no way to determine the duration of closure)
 	('h', u'h'),
@@ -431,7 +431,7 @@ silences = ['SPN', 'NSN']
 variants = []
 
 # piece of code from GP_Mandarin
-output_file = os.path.join(output_folder, 'phones.txt')	
+output_file = os.path.join(output_folder, 'phones.txt')
 with codecs.open(output_file, mode='w', encoding='UTF-8') as out:
 	for phone in phones:
 		out.write(u"{0} {1}\n".format(phone, phones[phone]))
@@ -445,5 +445,3 @@ if not(variants is None):
 	with codecs.open(output_file, mode='w', encoding='UTF-8') as out:
 		for l in variants:
 			out.write(u" ".join(l) + u"\n")
-
-
