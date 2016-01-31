@@ -290,10 +290,16 @@ data_dir = os.path.join(output_dir, 'data')
 if not os.path.isdir(data_dir):
     os.makedirs(data_dir)
 wav_dir = os.path.join(data_dir, 'wavs')
-if not os.path.isdir(wav_dir):
+if os.path.isdir(wav_dir):
+    shutil.rmtree(wav_dir)
+    os.makedirs(wav_dir)
+else:
     os.makedirs(wav_dir)
 log_dir = os.path.join(output_dir, 'logs')
-if not os.path.isdir(log_dir):
+if os.path.isdir(log_dir):
+    shutil.rmtree(log_dir)
+    os.makedirs(log_dir)
+else:
     os.makedirs(log_dir)
 
 """
