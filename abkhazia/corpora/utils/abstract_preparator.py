@@ -3,10 +3,9 @@
 import codecs
 import os
 
+from abkhazia.corpora.utils import validation
 from abkhazia.corpora.utils import DEFAULT_OUTPUT_DIR
 from abkhazia.utilities.log2file import get_log
-import abkhazia.corpora.validation
-
 
 class AbstractPreparator(object):
     """This class is a common wrapper to all the corpus preparators
@@ -24,7 +23,7 @@ class AbstractPreparator(object):
         # init input directory
         if not os.path.isdir(input_dir):
             raise IOError(
-                'input directory does not exist: {}'.format(input_dir))
+                'input directory does not exist:\n{}'.format(input_dir))
         self.input_dir = os.path.abspath(input_dir)
 
         # init output directory
@@ -38,7 +37,7 @@ class AbstractPreparator(object):
         self.wavs_dir = os.path.join(self.data_dir, 'wavs')
         if os.path.exists(self.data_dir):
             raise IOError(
-                'output directory already exists: {}'.format(self.data_dir))
+                'output directory already exists:\n{}'.format(self.data_dir))
         os.makedirs(self.wavs_dir)
 
         # init output files that will be populated by prepare()
@@ -66,18 +65,24 @@ class AbstractPreparator(object):
 
     def prepare(self):
         """Prepare the corpus from raw distribution to abkhazia format"""
-        # prepare the corpus step by step
-        self.link_wavs()
-        self.make_segment()
-        self.make_speaker()
-        self.make_transcription()
-        self.make_lexicon()
-        self.make_phones()
+        self.log.info('preparing the {} corpus, writing to {}'
+                      .format(self.name, self.data_dir))
+        steps = [
+            (self.link_wavs, self.wavs_dir),
+            (self.make_segment, self.segments_file),
+            (self.make_speaker, self.speaker_file),
+            (self.make_transcription, self.transcription_file),
+            (self.make_lexicon, self.lexicon_file),
+            (self.make_phones, self.phones_file)
+        ]
+        for step, target in steps:
+            self.log.info('writing {}'.format(os.path.basename(target)))
+            step()
 
     def validate(self):
-        """Return True if the TODO"""
-        print('validating the prepared {} corpus'.format(self.name))
-        abkhazia.corpora.validation.validate(self.output_dir, self.verbose)
+        """TODO document"""
+        self.log.info('validating the prepared {} corpus'.format(self.name))
+        validation.validate(self.output_dir, self.verbose)
 
     def make_phones(self):
         """Create phones, silences and variants list files
@@ -90,20 +95,23 @@ class AbstractPreparator(object):
         phones.txt: <phone-symbol> <ipa-symbol>
 
         """
-        with codecs.open(self.phones_file, mode='w', encoding='UTF-8') as out:
+        open_utf8 = lambda f: codecs.open(f, mode='w', encoding='UTF-8')
+
+        with open_utf8(self.phones_file) as out:
             for phone in self.phones:
                 out.write(u'{0} {1}\n'.format(phone, self.phones[phone]))
 
-        if self.silences:
-            with codecs.open(self.silences_file, 'w', encoding='UTF-8') as out:
+        if self.silences is not []:
+            with open_utf8(self.silences_file) as out:
                 out.write(u'\n'.join(self.silences))
 
-        if self.variants:
-            with codecs.open(self.variants_file, 'w', encoding='UTF-8') as out:
+        if self.variants is not []:
+            with open_utf8(self.variants_file) as out:
                 for var in self.variants:
                     out.write(u" ".join(var) + u"\n")
 
-        print('finished creating phones.txt, silences.txt, variants.txt')
+        self.log.debug(
+            'finished creating phones.txt, silences.txt, variants.txt')
 
 
     ############################################

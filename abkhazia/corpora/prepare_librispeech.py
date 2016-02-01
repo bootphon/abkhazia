@@ -1,3 +1,4 @@
+#!/usr/bin/env python
 # coding: utf-8
 
 """Data preparation for the LibriSpeech corpus
@@ -24,31 +25,33 @@ This preparator have been tested on 'train-clean-100' and
 import os
 import re
 
-from abkhazia.corpora.preparator.abstract_preparator import AbstractPreparator
-from abkhazia.corpora.utils import list_files_with_extension, flac2wav
+from abkhazia.corpora.utils import AbstractPreparator
+from abkhazia.corpora.utils import list_files_with_extension
+from abkhazia.corpora.utils import flac2wav
+from abkhazia.corpora.utils import default_argument_parser
 
 
 class LibriSpeechPreparator(AbstractPreparator):
     """Convert the LibriSpeech corpus to the abkhazia format"""
-    def __init__(self, input_dir, cmu_dict_dir, librispeech_dict_dir,
+    def __init__(self, input_dir, cmu_dict, librispeech_dict,
                  output_dir=None, verbose=False):
         # call the AbstractPreparator __init__
         super(LibriSpeechPreparator, self).__init__(
             input_dir, output_dir, verbose)
 
         # init path to CMU dictionary
-        if not os.path.isdir(cmu_dict_dir):
+        if not os.path.isfile(cmu_dict):
             raise IOError(
-                'CMU dictionary directory does not exist: {}'
-                .format(cmu_dict_dir))
-        self.cmu_dict_dir = cmu_dict_dir
+                'CMU dictionary does not exist: {}'
+                .format(cmu_dict))
+        self.cmu_dict = cmu_dict
 
         # init path to LibriSpeech dictionary
-        if not os.path.isdir(librispeech_dict_dir):
+        if not os.path.isfile(librispeech_dict):
             raise IOError(
-                'LibriSpeech dictionary directory does not exist: {}'
-                .format(librispeech_dict_dir))
-        self.librispeech_dict_dir = librispeech_dict_dir
+                'LibriSpeech dictionary does not exist: {}'
+                .format(librispeech_dict))
+        self.librispeech_dict_dir = librispeech_dict
 
     name = 'LibriSpeech'
 
@@ -223,3 +226,37 @@ class LibriSpeechPreparator(AbstractPreparator):
             outfile.write(w + ' ' + f + '\n')
         print('finished creating lexicon file')
         outfile.close()
+
+
+# because LibriSpeech need two dictionary files, we can't use the
+# default corpora.utils.main function
+def main():
+    """The command line entry for LibriSpeech corpus preparation"""
+    preparator = LibriSpeechPreparator
+
+    argparser = default_argument_parser(preparator.name, __doc__)
+    dicts = argparser.add_argument_group('dictionaries arguments')
+
+    dicts.add_argument('cmu_dict', help='the CMU dictionary '
+                       'file to use for lexicon generation')
+
+    dicts.add_argument('librispeech_dict', help='the LibriSpeech dictionary '
+                       'file to use for lexicon generation')
+
+    try:
+        # parse command line arguments
+        args = argparser.parse_args()
+
+        # prepare the corpus
+        corpus_prep = preparator(args.input_dir,
+                                 args.cmu_dict, args.librispeech_dict,
+                                 args.output_dir, args.verbose)
+        corpus_prep.prepare()
+        if not args.no_validation:
+            corpus_prep.validate()
+    except Exception as err:
+        print('fatal error: {}'.format(err))
+
+
+if __name__ == '__main__':
+    main()

@@ -1,31 +1,31 @@
+#!/usr/bin/env python
 # coding: utf-8
+"""Data preparation for the Xitsonga corpus"""
 
-"""Data preparation for the Xitsonga corpus
+# Corrections:
+#   text.txt:
+#     removed SIL-ENCE at the beginning and end of each sentence
+#     replaced [s] by <NOISE>
+#   lexicon.txt:
+#     removed <UNK> SPN entry (but left <unk> SPN)
+#     replaced [s] nse by <noise> NSN as this seems to correspond to noise
+#     added words not found in the dictionary (were forgotten from the dev set)
+#   phones.txt:
+#     removed nse nse
+#   silences.txt:
+#     added NSN
+#
+# Pour plus tard:
+#   phones.txt: IPA des trucs peut-être à standardiser
 
-Corrections:
-	text.txt:
-		removed SIL-ENCE at the beginning and end of each sentence
-		replaced [s] by <NOISE>
-	lexicon.txt:
-		removed <UNK> SPN entry (but left <unk> SPN)
-		replaced [s] nse by <noise> NSN as this seems to correspond to noise
-		added words not found in the dictionary (they were forgotten from the dev set)
-	phones.txt:
-		removed nse nse
-	silences.txt:
-		added NSN
 
-Pour plus tard:
-	phones.txt: IPA des trucs peut-être à standardiser
-"""
-
-import codecs
 import os
 import re
 import shutil
 
-from abkhazia.corpora.preparator.abstract_preparator import AbstractPreparator
+from abkhazia.corpora.utils import AbstractPreparator
 from abkhazia.corpora.utils import list_files_with_extension
+from abkhazia.corpora.utils import main
 
 
 class XitsongaPreparator(AbstractPreparator):
@@ -111,7 +111,7 @@ class XitsongaPreparator(AbstractPreparator):
         for wav_file in input_wavs:
             link = os.path.basename(wav_file).replace('nchlt_tso_', '')
             os.symlink(wav_file, os.path.join(self.wavs_dir, link))
-        print('finished linking wav files')
+        self.log.debug('finished linking wav files')
 
     def make_segment(self):
         outfile = open(self.segments_file, "w")
@@ -119,7 +119,7 @@ class XitsongaPreparator(AbstractPreparator):
             bname = os.path.basename(wav_file)
             utt_id = bname.replace('.wav', '')
             outfile.write(utt_id + ' ' + bname + '\n')
-        print('finished creating segments file')
+        self.log.debug('finished creating segments file')
 
     def make_speaker(self):
         outfile = open(self.speaker_file, "w")
@@ -131,7 +131,7 @@ class XitsongaPreparator(AbstractPreparator):
             if m_speaker:
                 speaker_id = m_speaker.group(1)
                 outfile.write(utt_id + ' ' + speaker_id + '\n')
-        print('finished creating utt2spk file')
+        self.log.debug('finished creating utt2spk file')
 
     def make_transcription(self):
         outfile = open(self.transcription_file, "w")
@@ -153,9 +153,9 @@ class XitsongaPreparator(AbstractPreparator):
                 data = ' '.join([line.replace('\n', '')
                                  for line in infile.readlines()])
 
-                #append the list to the main list
+                # append the list to the main list
                 list_total.extend(data.split('</recording>'))
-        print("finished extracting the recording tags")
+        self.log.debug("finished extracting the recording tags")
 
         # Go through each recording and extract the text and utt_id
         # according to pattern
@@ -164,17 +164,17 @@ class XitsongaPreparator(AbstractPreparator):
             if m_text:
                 utt_id = m_text.group(2)
                 text = m_text.group(4)
-                #remove beginning of wav path to have utt_id
+                # remove beginning of wav path to have utt_id
                 utt_id = re.sub("(.*)nchlt_tso_", "", utt_id)
-                #replace [s] by <NOISE>
+                # replace [s] by <NOISE>
                 text = text.replace("[s]", "<NOISE>")
-                #check that the text has the equivalent wav and write to outfile
+                # check that the text has the equivalent wav and write to outfile
                 if utt_id in list_utt:
                     outfile.write(utt_id + ' ' + text + '\n')
                 else:
                     # TODO is it an error ? If so, raise an exception
                     print(utt_id)
-        print('finished creating text file')
+        self.log.debug('finished creating text file')
 
 
     # To do this, we need to get the mlfs for the language. Not sure
@@ -192,7 +192,7 @@ class XitsongaPreparator(AbstractPreparator):
                 # containing all small files
                 list_total.extend(re.split(r'\.\n', data))
 
-        #Go through each small file
+        # Go through each small file
         # TODO use mktemp instead
         outfile_temp = os.path.join(self.logs_dir, 'temp.txt')
         with open(outfile_temp, "w") as out_temp:
@@ -218,7 +218,7 @@ class XitsongaPreparator(AbstractPreparator):
                         elif(len(list_phn) == 4):
                             out_temp.write(' ' + list_phn[2])
                     out_temp.write('\n')
-        print('finished writing temp file')
+        self.log.debug('finished writing temp file')
 
         # open temp dictionary
         dict_word = {}
@@ -236,15 +236,18 @@ class XitsongaPreparator(AbstractPreparator):
                     else:
                         dict_word[word] = phn
 
-        #write lexicon to file, sorted by alphabetical order
+        # write lexicon to file, sorted by alphabetical order
         out_lex = open(self.lexicon_file, "w")
         out_lex.write('<noise> NSN\n')
         out_lex.write('<unk> SPN\n')
         out_lex.write('<NOISE> NSN\n')
-        for w in sorted(dict_word):
-            out_lex.write(w + ' ' + dict_word[w] + '\n')
+        for word in sorted(dict_word):
+            out_lex.write(word + ' ' + dict_word[word] + '\n')
 
         # remove temp file
         os.remove(outfile_temp)
 
-        print('finished creating lexicon file')
+        self.log.debug('finished creating lexicon file')
+
+if __name__ == '__main__':
+    main(XitsongaPreparator, __doc__)

@@ -1,14 +1,15 @@
+#!/usr/bin/env python
 # coding: utf-8
 
 """Data preparation for the revised Buckeye corpus (in the original format)"""
 
-import codecs
 import os
 import re
 import shutil
 
-from abkhazia.corpora.preparator.abstract_preparator import AbstractPreparator
+from abkhazia.corpora.utils import AbstractPreparator
 from abkhazia.corpora.utils import list_files_with_extension
+from abkhazia.corpora.utils import main
 
 
 class BuckeyePreparator(AbstractPreparator):
@@ -122,8 +123,9 @@ class BuckeyePreparator(AbstractPreparator):
         # if wavs folder doesn't exist, create symbolic link to speech data
         else:
             os.symlink(wav_src, self.wavs_dir)
-        print('finished linking wav files')
+        self.log.debug('finished linking wav files')
 
+    # TODO function too big, refactor
     def make_segment(self):
         utt_dir = os.path.join(self.input_dir, 'txt')
         wrd_dir = os.path.join(self.input_dir, 'words_foldings')
@@ -177,7 +179,7 @@ class BuckeyePreparator(AbstractPreparator):
                             current_index = index_offset
                             last_offset = offset
                             outfile.write('\n')
-        print ('finished creating segments file')
+        self.log.debug('finished creating segments file')
 
     def make_speaker(self):
         utt_dir = os.path.join(self.input_dir, 'txt')
@@ -191,7 +193,7 @@ class BuckeyePreparator(AbstractPreparator):
                 speaker_id = re.sub(r"[0-9][0-9](a|b)\.txt", "", bname)
                 for idx, _ in enumerate(lines, start=1):
                     outfile.write(utt + '-sent' + str(idx) + ' ' + speaker_id + '\n')
-        print ('finished creating utt2spk file')
+        self.log.debug('finished creating utt2spk file')
 
     def make_transcription(self):
         utt_dir = os.path.join(self.input_dir, 'txt')
@@ -213,7 +215,7 @@ class BuckeyePreparator(AbstractPreparator):
                         for w in words:
                             outfile.write(w)
                         outfile.write('\n')
-        print ('finished creating text file')
+        self.log.debug('finished creating text file')
 
     def make_lexicon(self):
         wrd_dir = os.path.join(self.input_dir, 'words_foldings')
@@ -234,6 +236,7 @@ class BuckeyePreparator(AbstractPreparator):
                         if word_format_match:
                             word = word_format_match.group(1)
                             phn_trs = word_format_match.group(3)
+                            # TODO what is that ? a comment ? a legacy code ?
                             """
                             Doing some foldings for spoken noise"
                             pattern1 = re.compile("<UNK(.*)")
@@ -261,6 +264,13 @@ class BuckeyePreparator(AbstractPreparator):
                             if word not in dict_word:
                                 dict_word[word] = phn_trs
 
-        for w, f in sorted(dict_word.items(), key=lambda kv: kv[1], reverse=True):
-            outfile.write (w + ' ' + f + '\n')
-        print('finished creating lexicon file')
+        for w, f in sorted(dict_word.items(),
+                           key=lambda kv: kv[1],
+                           reverse=True):
+            outfile.write(w + ' ' + f + '\n')
+
+        self.log.debug('finished creating lexicon file')
+
+
+if __name__ == '__main__':
+    main(BuckeyePreparator)
