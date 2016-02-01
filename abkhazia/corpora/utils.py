@@ -4,9 +4,10 @@
 
 """
 
-import argparse
 import os
 import re
+import shlex
+import subprocess
 
 
 # TODO should be fixed during installation and not relative to __file__
@@ -32,24 +33,14 @@ def list_files_with_extension(directory, extension):
     return matched
 
 
-def main(preparator):
-    """A main function common to all the corpora preparators"""
-    # print args
-    # import sys
+def flac2wav(flac, wav):
+    """Convert a flac file to the wav format
 
-    # define an arguments parser
-    parser = argparse.ArgumentParser()
-    parser.add_argument('input_dir')
-    parser.add_argument('output_dir')
-    parser.add_argument('--no-validation', action='store_true')
+    'flac' must be an existing flac file
+    'wav' is the filename of the created file
 
-    # parse the arguments string
-    args = parser.parse_args()
+    This method lies on the 'flac --decode' system command
 
-    # instanciate the corpora
-    p = preparator(args.input_dir, args.output_dir)
-
-    # convert it to abkhazia format and validate it as needed
-    p.prepare()
-    if not args.no_validation:
-        p.validate()
+    """
+    command = 'flac --decode -f {} -o {}'.format(flac, wav)
+    subprocess.call(shlex.split(command))
