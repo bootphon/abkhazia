@@ -103,7 +103,8 @@ class AbstractPreparator(object):
 
         if self.silences is not []:
             with open_utf8(self.silences_file) as out:
-                out.write(u'\n'.join(self.silences))
+                for sil in self.silences:
+                    out.write(sil + u"\n")
 
         if self.variants is not []:
             with open_utf8(self.variants_file) as out:
