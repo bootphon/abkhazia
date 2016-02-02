@@ -10,8 +10,42 @@ from abkhazia.utilities.log2file import get_log
 class AbstractPreparator(object):
     """This class is a common wrapper to all the corpus preparators
 
-    TODO description of attributes, explications on what is abstract
-    and what is not.
+    The AbstractPreparator provides the basic functionalities all
+    corpus preparators rely on for the conversion of a specific corpus
+    to the abkhazia format. Moreover it proposes a set of abstract
+    methods that each specialized prepartor must implement. Those
+    methods correspond to the corpus preparation steps.
+
+    Parameters
+    ----------
+
+    The following parameters are specified when initializing a new
+    preparator.
+
+    'input_dir' : The input directory containing the raw distribution
+        of the corpus to prepare. This directory must exists on the
+        filesystem.
+
+    'output_dir' : The output directory where to write the prepared
+        version of the corpus. If not specified, a default directory
+        is guessed based on the corpus name.
+
+    'verbose' : This argument serves as initialization of the log2file
+        module. See there for more doc.
+
+
+    Methods
+    -------
+
+    From a user persepctive, the most important methods offered by the
+    abstract preparator are prepare() and validate(). See there
+    documentation for more details.
+
+    In order to specialize the preparator to a new corpus, the
+    following variables must be defined and following methods must be
+    implemented
+
+    TODO
 
     For more details on data preparation, please refer to
     https://github.com/bootphon/abkhazia/wiki/data_preparation
@@ -88,9 +122,12 @@ class AbstractPreparator(object):
         """Create phones, silences and variants list files
 
         The phone inventory contains a list of each symbol used in the
-        pronunciation dictionary
+        pronunciation dictionary.
 
-        TODO document silences and variants
+        The silences inventory contains a list of each symbol used to
+        represent a silence.
+
+        The variants inventory contains TODO
 
         phones.txt: <phone-symbol> <ipa-symbol>
 

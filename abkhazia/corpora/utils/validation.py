@@ -27,17 +27,18 @@ import abkhazia.utilities.basic_io as io
 
 
 def with_default(value, default):
-	return default if value is None else value
+    return default if value is None else value
 
 
-def get_duplicates(l):
-	counts = collections.Counter(l)
-	duplicates = [e for e in counts if counts[e] > 1]
-	return duplicates
+def get_duplicates(iterable):
+    """Return a list of duplicates elements in iterable"""
+    counts = collections.Counter(iterable)
+    duplicates = [e for e in counts if counts[e] > 1]
+    return duplicates
 
 
 def strcounts2unicode(strcounts):
-	return u", ".join([u"'" + s + u"': " + unicode(c) for s, c in strcounts])
+    return u", ".join([u"'" + s + u"': " + unicode(c) for s, c in strcounts])
 
 
 def validate(corpus_path, verbose=False):
