@@ -9,13 +9,13 @@ Created on Wed Feb  4 00:17:47 2015
 Data preparation WSJ for journalist read speech
 """
 
-#TODO besides, paths, needs to change regex to extract the correct files for appropriate corpus
 
 
 import os
 import subprocess
 import re
 import codecs
+import shutil
 
 #######################################################################################
 #######################################################################################
@@ -23,7 +23,10 @@ import codecs
 #######################################################################################
 #######################################################################################
 
-
+"""
+STEP 1
+List all files and formats used in corpus
+"""
 def list_dir(d):
     # filter out .DS_Store files from MacOS if any
 	return [e for e in os.listdir(d) if e != '.DS_Store']
@@ -46,6 +49,7 @@ def list_wsj_files(raw_wsj_path, dir_filter, file_filter):
     return file_list
 
 
+
 def find_corrupted_utts(dot_files):
     bad_utts = []
     for f in dot_files:
@@ -63,20 +67,19 @@ def find_corrupted_utts(dot_files):
                 bad_utts.append(utt_id)
     # could log the result...
     return bad_utts
-    
 
+
+
+"""
+STEP 2A
+Convert wv1 files to wav
+"""
 def wv1_2_wav(wv1_files, wav_dir, sph2pipe, exclude=None):
     """
-    convert .wv1 (flac) files to .wav files
-    
-    wv1_files is the list of full paths to the wv1 files
-    to be converted to wavs
-
-    wav_dir is the directory where the created wavs are put
-
+    wv1_files is the list of full paths to the wv1 files to be converted to wavs
+    wav_dir is the directory where the created wavs are stored
     sph2pipe is the path to the sph2pipe executable
-
-    exclude is a list of utt_id that shouldn't be used
+    exclude is a list of utt_id that shouldn't be used if any
     """
     if exclude is None:
         exclude = []
@@ -88,6 +91,36 @@ def wv1_2_wav(wv1_files, wav_dir, sph2pipe, exclude=None):
         if not(utt_id in exclude):  # exclude some utterances
             out = os.path.join(wav_dir, bname.replace('.wv1', '.wav'))
             subprocess.call(sph2pipe + " -f wav {0} >> {1}".format(inp, out), shell=True)
+    print ("converted all wav files")
+
+
+
+"""
+STEP 2B
+Link speech folder to the data kaldi directory and also rename the wav files
+to have "speaker_ID" of same length (add 0s at the beginning of speaker IDs)
+"""
+def link_wavs(wav_src, wav_dir, log_dir):
+    input_wav = list_wavs(wav_src)
+    if os.path.isdir(wav_dir):
+        shutil.rmtree(wav_dir)
+        os.makedirs(wav_dir)
+        for wav_file in input_wav:
+            bname = os.path.basename(wav_file)
+            filename_split = bname.split("-")
+            speaker_ID = filename_split[0]
+            if (len(speaker_ID) == 2):
+                new_filename = "00" + bname
+                path_new_name = os.path.join(wav_dir, new_filename)
+                os.symlink(wav_file, path_new_name)
+            elif (len(speaker_ID) == 3):
+                new_filename = "0" + bname
+                path_new_name = os.path.join(wav_dir, new_filename)
+                os.symlink(wav_file, path_new_name)
+            else:
+                path_new_name = os.path.join(wav_dir, bname)
+                os.symlink(wav_file, path_new_name)
+    print ('finished linking wav files')
 
 
 def make_utt_list(wav_dir, output_file):
@@ -264,24 +297,23 @@ def make_lexicon(raw_cmu_path, output_file):
 
 # path to raw LDC distribution of WSJ as available from https://catalog.ldc.upenn.edu/LDC93S6A 
 # and https://catalog.ldc.upenn.edu/LDC94S13A (not free)
-#raw_wsj_path = "/fhgfs/bootphon/data/raw_data/WSJ_LDC/"
-#raw_wsj_path = "/Users/thomas/Documents/PhD/Recherche/databases/WSJ_LDC/"
 raw_wsj_path = "/home/xcao/cao/corpus_US/WSJ_LDC/"
+
 # path to CMU dictionary as available from http://www.speech.cs.cmu.edu/cgi-bin/cmudict (free)
 # the recipe was designed using version 0.7a of the dictionary, but other recent versions
 # could probably be used without changing anything 
-#raw_cmu_path = "/fhgfs/bootphon/data/raw_data/CMU_dict/cmudict.0.7a"
-#raw_cmu_path = "/Users/thomas/Documents/PhD/Recherche/databases/CMU_dict/cmudict.0.7a"
 raw_cmu_path = "/home/xcao/cao/corpus_US/CMU_dict/cmudict.0.7a"
+
 # sph2pipe is required for converting .wv1 to .wav.
 # One way to get it is to install kaldi, then sph2pipe can be found in:
 #   /path/to/kaldi/tools/sph2pipe_v2.5/sph2pipe
-#sph2pipe = "/cm/shared/apps/kaldi/tools/sph2pipe_v2.5/sph2pipe"
-#sph2pipe = "/Users/thomas/Documents/PhD/Recherche/kaldi/kaldi-trunk/tools/sph2pipe_v2.5/sph2pipe"
 sph2pipe = "/home/xcao/kaldi-trunk/tools/sph2pipe_v2.5/sph2pipe"
+
+
+# Path to a directory where the converted wav files will be stored
+wav_output_dir = "/home/xcao/cao/corpus_US/wav_WSJ_abkhazia/WSJ_journalist_read"
+
 # Path to a directory where the processed corpora is to be stored
-#output_dir = "/fhgfs/bootphon/scratch/thomas/abkhazia/corpora/WSJ_journalist_read"
-#output_dir = "/Users/thomas/Documents/PhD/Recherche/other_gits/abkhazia/corpora/WSJ_journalist_read"
 output_dir = "/home/xcao/github_abkhazia/abkhazia/corpora/WSJ_journalist_read"
 
 #######################################################################################
@@ -296,6 +328,17 @@ data_dir = os.path.join(output_dir, 'data')
 if not os.path.isdir(data_dir):
     os.makedirs(data_dir)
 wav_dir = os.path.join(data_dir, 'wavs')
+if os.path.isdir(wav_dir):
+    shutil.rmtree(wav_dir)
+    os.makedirs(wav_dir)
+else:
+    os.makedirs(wav_dir)
+log_dir = os.path.join(output_dir, 'logs')
+if os.path.isdir(log_dir):
+    shutil.rmtree(log_dir)
+    os.makedirs(log_dir)
+else:
+    os.makedirs(log_dir)
 
 
 """
@@ -324,39 +367,48 @@ STEP 1 - find corrupted utterances
 bad_utts = find_corrupted_utts(journalist_read_dot)
 print("Found corrupted utterances")
 
+
+
+"""
+STEP 2A
+Convert flac files to wav and also rename the wav files
+"""
+wv1_2_wav(journalist_read_wv1, wav_output_dir, sph2pipe, exclude=bad_utts)
+
+
+
 """
 STEP 2 - Setting up wav folder
 This step can take a lot of time (~70 000 files to convert)
 """
-wv1_2_wav(journalist_read_wv1, wav_dir, sph2pipe, exclude=bad_utts)
-print("Copied wavefiles")
 
 """
 STEP 3 - segments.txt
 """
-output_file = os.path.join(data_dir, "segments.txt")
-make_utt_list(wav_dir, output_file)
-print("Created segments.txt")
+#output_file = os.path.join(data_dir, "segments.txt")
+#make_utt_list(wav_dir, output_file)
+#print("Created segments.txt")
 
 """
 STEP 4 - utt2spk.txt
 """
-output_file = os.path.join(data_dir, "utt2spk.txt")
-make_spk_list(wav_dir, output_file)
-print("Created utt2spk.txt")
+#output_file = os.path.join(data_dir, "utt2spk.txt")
+#make_spk_list(wav_dir, output_file)
+#print("Created utt2spk.txt")
 
 """
 STEP 5 - text.txt
 """
-output_file = os.path.join(data_dir, "text.txt")
-make_transcript(journalist_read_dot, output_file, exclude=bad_utts)
-print("Created text.txt")
+#output_file = os.path.join(data_dir, "text.txt")
+#make_transcript(journalist_read_dot, output_file, exclude=bad_utts)
+#print("Created text.txt")
 
 """
 STEP 6 - phones.txt, silences.txt, variants.txt
     using the CMU phoneset without lexical stress
     variants and with a special NSN phone for
     various kind of noises
+"""
 """
 CMU_phones = [
     ('IY', u'iː'),
@@ -406,10 +458,14 @@ silences = [u"NSN"]  # SPN and SIL will be added automatically
 variants = []  # could use lexical stress variants...
 make_phones(phones, data_dir, silences, variants)
 print("Created phones.txt, silences.txt, variants.txt")
+"""
+
 
 """
 STEP 7 - lexicon.txt
 """
+"""
 output_file = os.path.join(data_dir, "lexicon.txt")
 make_lexicon(raw_cmu_path, output_file)
 print("Created lexicon.txt")
+"""

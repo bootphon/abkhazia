@@ -251,6 +251,7 @@ def copy_phones():
 #######################################################################################
 
 # Distribution of the revised AIC corpus is available at https://catalog.ldc.upenn.edu/LDC2015S12 (free)
+# Needs to wait for the download from the LDC website to have the correct architecture (ask Roberta)
 raw_AIC_path = "/home/xcao/cao/multilingual/African_languages/Xitsonga/raw_corpus/nchlt_Xitsonga"
 
 # Path to a directory where the processed corpora is to be stored
