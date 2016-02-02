@@ -265,7 +265,9 @@ def make_lexicon(i_libri_lex, i_cmu, outfile_lexicon):
 
 
 """
-Create phones.txt, variants.txt, silences.txt
+STEP 7
+The phone inventory contains a list of each symbol used in the pronunciation dictionary
+Create phone list file, "phones.txt": <phone-symbol> <ipa-symbol>
 """
 def make_phones(phones, output_folder, silences=None, variants=None):
     # code taken from GP_Mandarin... could share it ?

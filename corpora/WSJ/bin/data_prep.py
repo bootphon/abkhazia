@@ -6,7 +6,8 @@ Created on Wed Feb  4 00:17:47 2015
 """
 
 """
-Data preparation WSJ for journalist read speech
+Data preparation WSJ
+Tested for journalist read speech
 """
 
 
@@ -49,6 +50,15 @@ def list_wsj_files(raw_wsj_path, dir_filter, file_filter):
     return file_list
 
 
+def list_wavs(input_dir):
+    file_list = []
+    for dirpath, dirs, files in os.walk(input_dir):
+        for f in files:
+              m_file = re.match("(.*)\.wav$", f)
+              if m_file:
+                  file_list.append(os.path.join(dirpath, f))
+    return file_list 
+    
 
 def find_corrupted_utts(dot_files):
     bad_utts = []
@@ -67,6 +77,7 @@ def find_corrupted_utts(dot_files):
                 bad_utts.append(utt_id)
     # could log the result...
     return bad_utts
+    print("Found corrupted utterances")
 
 
 
@@ -97,8 +108,7 @@ def wv1_2_wav(wv1_files, wav_dir, sph2pipe, exclude=None):
 
 """
 STEP 2B
-Link speech folder to the data kaldi directory and also rename the wav files
-to have "speaker_ID" of same length (add 0s at the beginning of speaker IDs)
+Link speech folder to the data kaldi directory
 """
 def link_wavs(wav_src, wav_dir, log_dir):
     input_wav = list_wavs(wav_src)
@@ -107,26 +117,19 @@ def link_wavs(wav_src, wav_dir, log_dir):
         os.makedirs(wav_dir)
         for wav_file in input_wav:
             bname = os.path.basename(wav_file)
-            filename_split = bname.split("-")
-            speaker_ID = filename_split[0]
-            if (len(speaker_ID) == 2):
-                new_filename = "00" + bname
-                path_new_name = os.path.join(wav_dir, new_filename)
-                os.symlink(wav_file, path_new_name)
-            elif (len(speaker_ID) == 3):
-                new_filename = "0" + bname
-                path_new_name = os.path.join(wav_dir, new_filename)
-                os.symlink(wav_file, path_new_name)
-            else:
-                path_new_name = os.path.join(wav_dir, bname)
-                os.symlink(wav_file, path_new_name)
+            path_wav = os.path.join(wav_dir, bname)
+            os.symlink(wav_file, path_wav)
     print ('finished linking wav files')
 
 
-def make_utt_list(wav_dir, output_file):
-    """
-    create segments.txt 
-    """
+
+"""
+STEP 3
+Create utterance files. It contains the list of all utterances with the name of the associated wavefiles,
+and if there is more than one utterance per file, the start and end of the utterance in that wavefile expressed in seconds.
+"segments.txt": <utterance-id> <wav-filename>
+"""
+def make_segment(wav_dir, output_file):
     files = list_dir(wav_dir)
     with codecs.open(output_file, mode='w', encoding='UTF-8') as out:
         for f in files:
@@ -134,12 +137,15 @@ def make_utt_list(wav_dir, output_file):
                 "file {0} in directory {1} is not a wavefile".format(f, wav_dir)
             utt_id = f.replace('.wav', '')
             out.write(u"{0} {1}\n".format(utt_id, f))
+    print ('finished creating segments file')
 
 
-def make_spk_list(wav_dir, output_file):
-    """
-    create utt2spk.txt 
-    """
+"""
+STEP 4
+Create speaker file. It contains the list of all utterances with a unique identifier for the associated speaker.
+"utt2spk.txt": <utterance-id> <speaker-id>
+"""
+def make_speaker(wav_dir, output_file):
     files = list_dir(wav_dir)   
     with codecs.open(output_file, mode='w', encoding='UTF-8') as out:
         for f in files:
@@ -149,6 +155,8 @@ def make_spk_list(wav_dir, output_file):
             # extract the first 3 characters from filename to get speaker_ID
             spk_id = f[:3]
             out.write(u"{0} {1}\n".format(utt_id, spk_id))
+        print ('finished creating utt2spk file')
+
 
 
 def rewrite_wsj_word(w):
@@ -202,7 +210,12 @@ def rewrite_wsj_word(w):
     return w
 
 
-def make_transcript(dot_files, output_file, exclude=None):
+"""
+STEP 5
+Create transcription file. It constains the transcription in word units for each utterance
+"text.txt": <utterance-id> <word1> <word2> ... <wordn>
+"""
+def make_transcription(dot_files, output_file, exclude=None):
     """
     create text.txt from relevant WSJ dot_files
     """
@@ -235,33 +248,17 @@ def make_transcript(dot_files, output_file, exclude=None):
             text = " ".join(words)
             # output to file
             out.write(u"{0} {1}\n".format(utt_id, text))
-   
+    print ('finished creating text file')
 
-def make_phones(phones, output_folder, silences=None, variants=None):
-    """
-    create phones.txt, variants.txt, silences.txt
-    """
-    # code taken from GP_Mandarin... could share it ?
-    output_file = os.path.join(output_folder, 'phones.txt') 
-    with codecs.open(output_file, mode='w', encoding='UTF-8') as out:
-        for phone in phones:
-            out.write(u"{0} {1}\n".format(phone, phones[phone]))
-    if not(silences is None):
-        output_file = os.path.join(output_folder, 'silences.txt')
-        with codecs.open(output_file, mode='w', encoding='UTF-8') as out:
-            for sil in silences:
-                out.write(sil + u"\n")
-    if not(variants is None):
-        output_file = os.path.join(output_folder, 'variants.txt')
-        with codecs.open(output_file, mode='w', encoding='UTF-8') as out:
-            for l in variants:
-                out.write(u" ".join(l) + u"\n")     
-                
 
+
+"""
+STEP 6
+The phonetic dictionary contains a list of words with their phonetic transcription
+Create phonetic dictionary file, "lexicon.txt": <word> <phone_1> <phone_2> ... <phone_n>
+To do this, we need to get the mlfs for the language. Not sure it is available on the NCHLT website.
+"""
 def make_lexicon(raw_cmu_path, output_file):
-    """
-    create lexicon.txt from CMU dictionary
-    """
     with codecs.open(raw_cmu_path, mode='r', encoding='UTF-8') as inp:
         lines = inp.readlines()
     with codecs.open(output_file, mode='w', encoding='UTF-8') as out:
@@ -287,6 +284,33 @@ def make_lexicon(raw_cmu_path, output_file):
         # but it would make sense if to add it here if we used it for some
         # particular kind of noise, but this is not the case at present
         out.write(u"<noise> NSN\n")
+    print ('finished creating lexicon file')
+
+
+
+"""
+STEP 7
+The phone inventory contains a list of each symbol used in the pronunciation dictionary
+Create phone list file, "phones.txt": <phone-symbol> <ipa-symbol>
+"""
+def make_phones(phones, output_folder, silences=None, variants=None):
+    # code taken from GP_Mandarin... could share it ?
+    output_file = os.path.join(output_folder, 'phones.txt') 
+    with codecs.open(output_file, mode='w', encoding='UTF-8') as out:
+        for phone in phones:
+            out.write(u"{0} {1}\n".format(phone, phones[phone]))
+    if not(silences is None):
+        output_file = os.path.join(output_folder, 'silences.txt')
+        with codecs.open(output_file, mode='w', encoding='UTF-8') as out:
+            for sil in silences:
+                out.write(sil + u"\n")
+    if not(variants is None):
+        output_file = os.path.join(output_folder, 'variants.txt')
+        with codecs.open(output_file, mode='w', encoding='UTF-8') as out:
+            for l in variants:
+                out.write(u" ".join(l) + u"\n")     
+                
+
      
 
 #######################################################################################
@@ -309,7 +333,6 @@ raw_cmu_path = "/home/xcao/cao/corpus_US/CMU_dict/cmudict.0.7a"
 #   /path/to/kaldi/tools/sph2pipe_v2.5/sph2pipe
 sph2pipe = "/home/xcao/kaldi-trunk/tools/sph2pipe_v2.5/sph2pipe"
 
-
 # Path to a directory where the converted wav files will be stored
 wav_output_dir = "/home/xcao/cao/corpus_US/wav_WSJ_abkhazia/WSJ_journalist_read"
 
@@ -328,16 +351,10 @@ data_dir = os.path.join(output_dir, 'data')
 if not os.path.isdir(data_dir):
     os.makedirs(data_dir)
 wav_dir = os.path.join(data_dir, 'wavs')
-if os.path.isdir(wav_dir):
-    shutil.rmtree(wav_dir)
-    os.makedirs(wav_dir)
-else:
+if not os.path.isdir(wav_dir):
     os.makedirs(wav_dir)
 log_dir = os.path.join(output_dir, 'logs')
-if os.path.isdir(log_dir):
-    shutil.rmtree(log_dir)
-    os.makedirs(log_dir)
-else:
+if not os.path.isdir(log_dir):
     os.makedirs(log_dir)
 
 
@@ -360,55 +377,92 @@ file_filter_wv1 = lambda f: f[3] == 'c' and f[-4:] == '.wv1'
 journalist_read_wv1 = list_wsj_files(raw_wsj_path, dir_filter, file_filter_wv1)
 journalist_read_dot = list_wsj_files(raw_wsj_path, dir_filter, file_filter_dot)
 
+"""
+#For WSJ_journalist_spontaneous, we selected the following types of files: 'si_tr_j'
+#si = Speaker-Independent
+#tr = Training data
+#jd = Spontaneous Journalist Dictation
+#s = Spontaneous no/unspecified verbal punctuation as opposed to Common read speech, Adaptation read
+dir_filter = lambda d: d in ['si_tr_jd']
+file_filter_dot = lambda f: f[3] == 's' and f[-4:] == '.dot'
+file_filter_wv1 = lambda f: f[3] == 's' and f[-4:] == '.wv1'
+journalist_spontaneous_wv1 = list_wsj_files(raw_wsj_path, dir_filter, file_filter_wv1)
+journalist_spontaneous_dot = list_wsj_files(raw_wsj_path, dir_filter, file_filter_dot)
+"""
 
 """
-STEP 1 - find corrupted utterances
+#For WSJ_main_read, we selected the following types of files: 'si_tr_s', 'si_tr_l', 'sd_tr_s', 'sd_tr_l'
+#si = Speaker-Independent vs sd = Speaker-Dependent
+#tr = Training data
+#s = standard subjects need to read approximately 260 sentences vs l: long sample - these subjects have more sentences: 1800
+#c = common read speech as opposed to Spontaneous, Adaptation read
+dir_filter = lambda d: d in ['si_tr_s', 'si_tr_l', 'sd_tr_s', 'sd_tr_l']
+file_filter_dot = lambda f: f[3] == 'c' and f[-4:] == '.dot'
+file_filter_wv1 = lambda f: f[3] == 'c' and f[-4:] == '.wv1'
+main_read_wv1 = list_wsj_files(raw_wsj_path, dir_filter, file_filter_wv1)
+main_read_dot = list_wsj_files(raw_wsj_path, dir_filter, file_filter_dot)
 """
-bad_utts = find_corrupted_utts(journalist_read_dot)
-print("Found corrupted utterances")
-
 
 
 """
 STEP 2A
 Convert flac files to wav and also rename the wav files
 """
+bad_utts = find_corrupted_utts(journalist_read_dot)
 wv1_2_wav(journalist_read_wv1, wav_output_dir, sph2pipe, exclude=bad_utts)
 
 
 
 """
-STEP 2 - Setting up wav folder
-This step can take a lot of time (~70 000 files to convert)
+STEP 2B
+Link speech folder to the data kaldi directory
 """
+link_wavs(wav_output_dir, wav_dir, log_dir)
+
 
 """
-STEP 3 - segments.txt
+STEP 3
+Create utterance files. It contains the list of all utterances with the name of the associated wavefiles,
+and if there is more than one utterance per file, the start and end of the utterance in that wavefile expressed in seconds.
+"segments.txt": <utterance-id> <wav-filename>
 """
-#output_file = os.path.join(data_dir, "segments.txt")
-#make_utt_list(wav_dir, output_file)
-#print("Created segments.txt")
+output_file = os.path.join(data_dir, 'segments.txt')
+make_segment(wav_dir, output_file)
+
+
 
 """
-STEP 4 - utt2spk.txt
+STEP 4
+Create speaker file. It contains the list of all utterances with a unique identifier for the associated speaker.
+"utt2spk.txt": <utterance-id> <speaker-id>
 """
-#output_file = os.path.join(data_dir, "utt2spk.txt")
-#make_spk_list(wav_dir, output_file)
-#print("Created utt2spk.txt")
+output_file = os.path.join(data_dir, 'utt2spk.txt')
+make_speaker(wav_dir, output_file)
+
 
 """
-STEP 5 - text.txt
+STEP 5
+Create transcription file. It constains the transcription in word units for each utterance
+"text.txt": <utterance-id> <word1> <word2> ... <wordn>
 """
-#output_file = os.path.join(data_dir, "text.txt")
-#make_transcript(journalist_read_dot, output_file, exclude=bad_utts)
-#print("Created text.txt")
+output_file = os.path.join(data_dir, "text.txt")
+bad_utts = find_corrupted_utts(journalist_read_dot)
+make_transcription(journalist_read_dot, output_file, exclude=bad_utts)
+
 
 """
-STEP 6 - phones.txt, silences.txt, variants.txt
-    using the CMU phoneset without lexical stress
-    variants and with a special NSN phone for
-    various kind of noises
+STEP 6
+The phonetic dictionary contains a list of words with their phonetic transcription
+Create phonetic dictionary file, "lexicon.txt": <word> <phone_1> <phone_2> ... <phone_n>
 """
+output_file = os.path.join(data_dir, "lexicon.txt")
+make_lexicon(raw_cmu_path, output_file)
+
+
+"""
+STEP 7
+The phone inventory contains a list of each symbol used in the pronunciation dictionary
+Create phone list file, "phones.txt": <phone-symbol> <ipa-symbol>
 """
 CMU_phones = [
     ('IY', u'iː'),
@@ -458,14 +512,5 @@ silences = [u"NSN"]  # SPN and SIL will be added automatically
 variants = []  # could use lexical stress variants...
 make_phones(phones, data_dir, silences, variants)
 print("Created phones.txt, silences.txt, variants.txt")
-"""
 
 
-"""
-STEP 7 - lexicon.txt
-"""
-"""
-output_file = os.path.join(data_dir, "lexicon.txt")
-make_lexicon(raw_cmu_path, output_file)
-print("Created lexicon.txt")
-"""
