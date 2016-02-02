@@ -40,9 +40,15 @@ def flac2wav(flac, wav):
     'flac' must be an existing flac file
     'wav' is the filename of the created file
 
-    This method lies on the 'flac --decode' system command
+    This method lies on the 'flac --decode' system command. Raises an
+    OSError if the command 'flac' is not found on the system.
 
     """
+    try:
+        subprocess.check_output(shlex.split('which flac'))
+    except:
+        raise OSError('flac is not installed on your system')
+
     command = 'flac --decode -s -f {} -o {}'.format(flac, wav)
     subprocess.call(shlex.split(command))
     #print shlex.split(command)

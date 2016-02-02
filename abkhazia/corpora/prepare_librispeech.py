@@ -17,6 +17,10 @@ LibriSpeech dictionary, which contains the words not found in the cmu
 (not exhaustive list however). The LibriSpeech dictionary is available
 for download at http://www.openslr.org/11/
 
+As the original speech files in LibriSpeech are encoded in flac, this
+preparator convert them to wav. So the 'flac' command must be
+available on your system.
+
 This preparator have been tested on 'train-clean-100' and
 'train-clean-360' versions of LibriSpeech
 
