@@ -43,8 +43,9 @@ def flac2wav(flac, wav):
     This method lies on the 'flac --decode' system command
 
     """
-    command = 'flac --decode -f {} -o {}'.format(flac, wav)
+    command = 'flac --decode -s -f {} -o {}'.format(flac, wav)
     subprocess.call(shlex.split(command))
+    #print shlex.split(command)
 
 
 def default_argument_parser(name, description):
@@ -56,6 +57,11 @@ def default_argument_parser(name, description):
     parser.add_argument('-v', '--verbose', action='store_true',
                         help='display more messages to stdout '
                         '(this can be a lot)')
+
+    parser.add_argument('-w', '--overwrite', action='store_true',
+                        help='delete any existing content on OUTPUT_DIR, '
+                        'whithout this option the program fails if '
+                        'OUT_DIRECTORY already exists')
 
     parser.add_argument('--no-validation', action='store_true',
                         help='disable the corpus validation step')
@@ -90,7 +96,8 @@ def main(preparator, description, argparser=default_argument_parser):
         args = argparser(preparator.name, description).parse_args()
 
         # prepare the corpus
-        corpus_prep = preparator(args.input_dir, args.output_dir, args.verbose)
+        corpus_prep = preparator(args.input_dir, args.output_dir,
+                                 args.verbose, args.overwrite)
         corpus_prep.prepare()
         if not args.no_validation:
             corpus_prep.validate()

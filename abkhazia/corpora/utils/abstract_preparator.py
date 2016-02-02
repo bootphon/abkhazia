@@ -2,6 +2,7 @@
 
 import codecs
 import os
+import shutil
 
 from abkhazia.corpora.utils import validation
 from abkhazia.corpora.utils import DEFAULT_OUTPUT_DIR
@@ -33,6 +34,9 @@ class AbstractPreparator(object):
     'verbose' : This argument serves as initialization of the log2file
         module. See there for more doc.
 
+    'overwrite' : If True, delete any content on 'output_dir' during
+        initialization. If False and if 'output_dir' exists, the
+        initialization fails and raises an exception.
 
     Methods
     -------
@@ -51,7 +55,8 @@ class AbstractPreparator(object):
     https://github.com/bootphon/abkhazia/wiki/data_preparation
 
     """
-    def __init__(self, input_dir, output_dir=None, verbose=False):
+    def __init__(self, input_dir, output_dir=None,
+                 verbose=False, overwrite=False):
         self.verbose = verbose
 
         # init input directory
@@ -66,12 +71,16 @@ class AbstractPreparator(object):
         else:
             self.output_dir = os.path.abspath(output_dir)
 
-        # init output subdirectories hierarchy
+        # check if output directory already exists
+        if overwrite:
+            shutil.rmtree(self.output_dir)
+        elif os.path.exists(self.output_dir):
+            raise IOError(
+                'output directory already exists:\n{}'.format(self.output_dir))
+
+        # create empty hierarchy output_dir/data/wavs
         self.data_dir = os.path.join(self.output_dir, 'data')
         self.wavs_dir = os.path.join(self.data_dir, 'wavs')
-        if os.path.exists(self.data_dir):
-            raise IOError(
-                'output directory already exists:\n{}'.format(self.data_dir))
         os.makedirs(self.wavs_dir)
 
         # init output files that will be populated by prepare()
@@ -86,10 +95,7 @@ class AbstractPreparator(object):
 
         # create the log dir if not existing
         self.logs_dir = os.path.join(self.output_dir, 'logs')
-        try:
-            os.makedirs(self.logs_dir)
-        except os.error:
-            pass
+        os.makedirs(self.logs_dir)
 
         # init the log with the log2file module
         self.log = get_log(os.path.join(self.logs_dir, 'data_preparation.log'),

@@ -12,7 +12,7 @@ at http://www.speech.cs.cmu.edu/cgi-bin/cmudict.  The preparator is
 designed for version 0.7a of the CMU dictionary, but other recent
 versions could probably be used without changing anything
 
-Complementing yhe CMU dictionary, the preparator also uses the
+Complementing the CMU dictionary, the preparator also uses the
 LibriSpeech dictionary, which contains the words not found in the cmu
 (not exhaustive list however). The LibriSpeech dictionary is available
 for download at http://www.openslr.org/11/
@@ -34,10 +34,10 @@ from abkhazia.corpora.utils import default_argument_parser
 class LibriSpeechPreparator(AbstractPreparator):
     """Convert the LibriSpeech corpus to the abkhazia format"""
     def __init__(self, input_dir, cmu_dict, librispeech_dict,
-                 output_dir=None, verbose=False):
+                 output_dir=None, verbose=False, overwrite=False):
         # call the AbstractPreparator __init__
         super(LibriSpeechPreparator, self).__init__(
-            input_dir, output_dir, verbose)
+            input_dir, output_dir, verbose, overwrite)
 
         # init path to CMU dictionary
         if not os.path.isfile(cmu_dict):
@@ -104,7 +104,7 @@ class LibriSpeechPreparator(AbstractPreparator):
     def link_wavs(self):
         for flac in list_files_with_extension(self.input_dir, '.flac'):
             # get the wav name
-            utt_id = os.path.basename(flac).replace('.flac, ')
+            utt_id = os.path.basename(flac).replace('.flac', '')
             speaker_id = utt_id.split('-')[0]
 
             if len(speaker_id) == 2:
@@ -115,7 +115,7 @@ class LibriSpeechPreparator(AbstractPreparator):
                 wav = utt_id
 
             # convert original flac to renamed wav
-            flac2wav(flac, os.path.join(self.wavs_dir, wav))
+            flac2wav(flac, os.path.join(self.wavs_dir, wav + '.wav'))
         print('finished linking wav files')
 
 
@@ -248,9 +248,10 @@ def main():
         args = argparser.parse_args()
 
         # prepare the corpus
-        corpus_prep = preparator(args.input_dir,
-                                 args.cmu_dict, args.librispeech_dict,
-                                 args.output_dir, args.verbose)
+        corpus_prep = preparator(args.input_dir, args.cmu_dict,
+                                 args.librispeech_dict,
+                                 args.output_dir, args.verbose,
+                                 args.overwrite)
         corpus_prep.prepare()
         if not args.no_validation:
             corpus_prep.validate()
