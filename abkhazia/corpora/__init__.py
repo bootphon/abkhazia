@@ -1,7 +1,6 @@
-"""Provides tools for preparation of the supported corpora
+"""Provides tools for preparation of the corpora supported in abkhazia
 
 Each supported corpus have its own data preparation script in
-../corpora/*CORPUS_NAME*/bin/data_prep.py which relies on code in
-there.
+this package.
 
 """

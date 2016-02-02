@@ -273,4 +273,4 @@ class BuckeyePreparator(AbstractPreparator):
 
 
 if __name__ == '__main__':
-    main(BuckeyePreparator)
+    main(BuckeyePreparator, __doc__)

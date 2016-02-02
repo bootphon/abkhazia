@@ -8,9 +8,8 @@ import argparse
 import os
 import re
 import shlex
-import shutil
 import subprocess
-
+import textwrap
 
 # TODO should be fixed during installation and not relative to __file__
 ABKHAZIA_ROOT_DIR = os.path.abspath(
@@ -50,7 +49,10 @@ def flac2wav(flac, wav):
 
 def default_argument_parser(name, description):
     """Return a default argument parser for corpus preparation"""
-    parser = argparse.ArgumentParser(description=description)
+    parser = argparse.ArgumentParser(
+        formatter_class=argparse.RawDescriptionHelpFormatter,
+        description=textwrap.dedent(description))
+
     parser.add_argument('-v', '--verbose', action='store_true',
                         help='display more messages to stdout '
                         '(this can be a lot)')
