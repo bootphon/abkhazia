@@ -8,14 +8,14 @@ http://www.openslr.org/12/
 
 In addition to the LibriSpeech corpus, this preparator need the CMU
 and LibriSpeech dictionaries. The CMU dictionary is available for free
-at http://www.speech.cs.cmu.edu/cgi-bin/cmudict.  The preparator is
+at http://www.speech.cs.cmu.edu/cgi-bin/cmudict. The preparator is
 designed for version 0.7a of the CMU dictionary, but other recent
 versions could probably be used without changing anything
 
 Complementing the CMU dictionary, the preparator also uses the
-LibriSpeech dictionary, which contains the words not found in the cmu
+LibriSpeech dictionary, which contains the words not found in the CMU
 (not exhaustive list however). The LibriSpeech dictionary is available
-for download at http://www.openslr.org/11/
+for download at http://www.openslr.org/resources/11/librispeech-lexicon.txt
 
 As the original speech files in LibriSpeech are encoded in flac, this
 preparator convert them to wav. So the 'flac' command must be
@@ -36,6 +36,8 @@ from abkhazia.corpora.utils import default_argument_parser
 
 # TODO have librispeech_dict as an optionnal argument and guess it
 # from input_dir by default (input_dir/../librispeech-lexicon.txt)
+
+# TODO have command-line option --type train-clean-100
 class LibriSpeechPreparator(AbstractPreparator):
     """Convert the LibriSpeech corpus to the abkhazia format"""
     def __init__(self, input_dir, cmu_dict, librispeech_dict,
@@ -114,15 +116,9 @@ class LibriSpeechPreparator(AbstractPreparator):
         for flac in flac_files:
             # get the wav name
             utt_id = os.path.basename(flac).replace('.flac', '')
-            speaker_id = utt_id.split('-')[0]
-
-            if len(speaker_id) == 2:
-                wav = '00' + utt_id
-            elif len(speaker_id) == 3:
-                wav = '0' + utt_id
-            else:
-                wav = utt_id
-            wav = os.path.join(self.wavs_dir, wav + '.wav')
+            len_sid = len(utt_id.split('-')[0]) # length of speaker_id
+            prefix = '00' if len_sid == 2 else '0' if len_sid == 3 else ''
+            wav = os.path.join(self.wavs_dir, prefix + utt_id + '.wav')
 
             # convert original flac to renamed wav
             flac2wav(flac, wav)
@@ -236,18 +232,17 @@ def main():
     """The command line entry for LibriSpeech corpus preparation"""
     preparator = LibriSpeechPreparator
 
-    argparser = default_argument_parser(preparator.name, __doc__)
-    dicts = argparser.add_argument_group('dictionaries arguments')
+    parser = default_argument_parser(preparator.name, __doc__)
 
-    dicts.add_argument('cmu_dict', help='the CMU dictionary '
-                       'file to use for lexicon generation')
+    parser.add_argument('cmu_dict', help='the CMU dictionary '
+                        'file to use for lexicon generation')
 
-    dicts.add_argument('librispeech_dict', help='the LibriSpeech dictionary '
-                       'file to use for lexicon generation')
+    parser.add_argument('librispeech_dict', help='the LibriSpeech dictionary '
+                        'file to use for lexicon generation')
 
     try:
         # parse command line arguments
-        args = argparser.parse_args()
+        args = parser.parse_args()
 
         # prepare the corpus
         corpus_prep = preparator(args.input_dir, args.cmu_dict,

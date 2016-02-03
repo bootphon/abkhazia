@@ -205,7 +205,9 @@ def validate(corpus_path, verbose=False):
                 wav_stops = list(set(wav_stops))
                 timestamps = wav_starts + wav_stops
                 timestamps.sort()
-                overlapped = [utt for utt, start, stop in utts if timestamps.index(stop)-timestamps.index(start) != 1]
+                # TODO fix that... maybe > 1
+                index = timestamps.index
+                overlapped = [utt for utt, start, stop in utts if index(stop)-index(start) != 1]
                 if overlapped:
                     warning = True
                     log.warning(

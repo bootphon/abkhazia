@@ -14,12 +14,23 @@ import textwrap
 # TODO should be fixed during installation and not relative to __file__
 ABKHAZIA_ROOT_DIR = os.path.abspath(
     os.path.join(os.path.dirname(__file__), '../../..'))
-"""The absolute to the Abkhazia installation directory"""
+"""The absolute to the abkhazia installation directory"""
+
+
+# TODO should be fixed during installation and not relative to ABKHAZIA_ROOT_DIR
+KALDI_ROOT_DIR = os.path.abspath(
+    os.path.join(ABKHAZIA_ROOT_DIR, '../kaldi'))
+"""The absolute to the abkhazia installation directory"""
 
 
 # TODO should go in a config file
 DEFAULT_OUTPUT_DIR = os.path.join(ABKHAZIA_ROOT_DIR, 'corpora')
 """The default output directory for prepared corpora"""
+
+
+def list_directory(directory):
+    """Return os.listdir(directory) with .DS_Store filtered out"""
+    return [e for e in os.listdir(directory) if e != '.DS_Store']
 
 
 def list_files_with_extension(directory, extension):
@@ -51,7 +62,28 @@ def flac2wav(flac, wav):
 
     command = 'flac --decode -s -f {} -o {}'.format(flac, wav)
     subprocess.call(shlex.split(command))
-    #print shlex.split(command)
+
+
+def sph2wav(sph, wav):
+    """Convert a sph file to the wav format
+
+    'sph' must be an existing sph file
+    'wav' if the filename of the created file
+
+    sph2pipe is required for converting sph to wav. One way to get it
+    is to install kaldi, then sph2pipe can be found in:
+    /path/to/kaldi/tools/sph2pipe_v2.5/sph2pipe
+
+    Else sph2pipe can be freely downloaded at
+    https://www.ldc.upenn.edu/sites/www.ldc.upenn.edu/files/ctools/sph2pipe_v2.5.tar.gz
+
+    """
+    sph2pipe = os.path.join(KALDI_ROOT_DIR, 'tools/sph2pipe_v2.5/sph2pipe')
+    if not os.path.isfile(sph2pipe):
+        raise OSError('sph2pipe not found on your system')
+
+    command = sph2pipe + ' -f wav {0} {1}'.format(sph, wav)
+    subprocess.call(shlex.split(command))
 
 
 def default_argument_parser(name, description):
@@ -64,23 +96,20 @@ def default_argument_parser(name, description):
                         help='display more messages to stdout '
                         '(this can be a lot)')
 
-    parser.add_argument('-w', '--overwrite', action='store_true',
-                        help='delete any existing content on OUTPUT_DIR, '
-                        'whithout this option the program fails if '
-                        'OUT_DIRECTORY already exists')
-
-    parser.add_argument('--no-validation', action='store_true',
-                        help='disable the corpus validation step')
-
-
-    corpus = parser.add_argument_group('corpus preparation arguments')
-
-    corpus.add_argument('-o', '--output-dir', default=None,
+    parser.add_argument('-o', '--output-dir', default=None,
                         help='root directory of the prepared corpus, '
                         'if not specified use {}'
                         .format(os.path.join(DEFAULT_OUTPUT_DIR, name)))
 
-    corpus.add_argument('input_dir',
+    parser.add_argument('-w', '--overwrite', action='store_true',
+                        help='delete any existing content on OUTPUT_DIR, '
+                        'whithout this option the program fails if '
+                        'OUTPUT_DIR already exists')
+
+    parser.add_argument('--no-validation', action='store_true',
+                        help='disable the corpus validation step')
+
+    parser.add_argument('input_dir',
                         help='root directory of the raw corpus distribution, '
                         'must be an existing directory on the filesystem')
 
@@ -98,14 +127,15 @@ def main(preparator, description, argparser=default_argument_parser):
 
     """
     try:
-        # parse command line arguments
         args = argparser(preparator.name, description).parse_args()
 
-        # prepare the corpus
         corpus_prep = preparator(args.input_dir, args.output_dir,
                                  args.verbose, args.overwrite)
+
         corpus_prep.prepare()
+
         if not args.no_validation:
             corpus_prep.validate()
+
     except Exception as err:
         print('fatal error: {}'.format(err))
