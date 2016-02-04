@@ -3,13 +3,12 @@
 
 """Data preparation for the Wall Street Journal corpus"""
 
-import codecs
 import os
 import re
 
 from abkhazia.corpora.utils import AbstractPreparator
 from abkhazia.corpora.utils import list_directory
-from abkhazia.corpora.utils import sph2wav
+from abkhazia.corpora.utils import sph2wav, open_utf8
 from abkhazia.corpora.utils import default_argument_parser
 
 
@@ -185,12 +184,16 @@ class WallStreetJournalPreparator(AbstractPreparator):
         """
         bad_utts = []
         for f in dot_files:
-            for line in codecs.open(f, mode='r', encoding='UTF-8').readlines():
+            for line in open_utf8(f, 'r').xreadlines():
                 if '[bad_recording]' in line:
                     utt_id = re.match(r'(.*) \((.*)\)', line).group(2)
                     bad_utts.append(utt_id)
-        # TODO log the results if any
+
+        if bad_utts is not []:
+            self.log.warning('Found {} corrupted utterances'.format(len(bad_utts)))
+
         return bad_utts
+
 
     def link_wavs(self):
         # convert the list of input audio files to wav
@@ -203,7 +206,7 @@ class WallStreetJournalPreparator(AbstractPreparator):
 
 
     def make_segment(self):
-        with codecs.open(self.segments_file, 'w', encoding='UTF-8') as out:
+        with open_utf8(self.segments_file, 'w') as out:
             for wav in list_directory(self.wavs_dir):
                 utt_id = os.path.basename(wav).replace('.wav', '')
                 out.write(u"{0} {1}\n".format(utt_id, wav))
@@ -211,7 +214,7 @@ class WallStreetJournalPreparator(AbstractPreparator):
 
 
     def make_speaker(self):
-        with codecs.open(self.speaker_file, 'w', encoding='UTF-8') as out:
+        with open_utf8(self.speaker_file, 'w') as out:
             for wav in list_directory(self.wavs_dir):
                 utt_id = os.path.basename(wav).replace('.wav', '')
                 # speaker_id are the first 3 characters of the filename
@@ -223,10 +226,10 @@ class WallStreetJournalPreparator(AbstractPreparator):
         # concatenate all the transcription files
         transcription = []
         for trs in self.input_transcriptions:
-            transcription += codecs.open(trs, 'r', encoding='UTF-8').readlines()
+            transcription += open_utf8(trs, 'r').readlines()
 
         # parse each line and write it to output file in abkhazia format
-        with codecs.open(self.transcription_file, 'w', encoding='UTF-8') as out:
+        with open_utf8(self.transcription_file, 'w') as out:
             for line in transcription:
                 # parse utt_id and text
                 matches = re.match(r'(.*) \((.*)\)', line.strip())
@@ -251,8 +254,6 @@ class WallStreetJournalPreparator(AbstractPreparator):
 
 
     def make_lexicon(self):
-        open_utf8 = lambda f, m: codecs.open(f, mode=m, encoding='UTF-8')
-
         with open_utf8(self.lexicon_file, 'w') as out:
             for line in open_utf8(self.cmu_dict, 'r').readlines():
                 # remove newline and trailing spaces

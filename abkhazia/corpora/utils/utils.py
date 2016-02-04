@@ -5,6 +5,7 @@
 """
 
 import argparse
+import codecs
 import os
 import re
 import shlex
@@ -28,13 +29,26 @@ DEFAULT_OUTPUT_DIR = os.path.join(ABKHAZIA_ROOT_DIR, 'corpora')
 """The default output directory for prepared corpora"""
 
 
-def list_directory(directory):
+def open_utf8(filename, mode='rb'):
+    """Open a file encoded in UTF-8 and return its handler"""
+    return codecs.open(filename, mode=mode, encoding='UTF-8')
+
+
+def list_directory(directory, abspath=False):
     """Return os.listdir(directory) with .DS_Store filtered out"""
-    return [e for e in os.listdir(directory) if e != '.DS_Store']
+    lsd = [e for e in os.listdir(directory) if e != '.DS_Store']
+    if abspath:
+        lsd = [os.path.abspath(os.path.join(directory, e)) for e in lsd]
+    return lsd
 
 
 def list_files_with_extension(directory, extension):
-    """Return a list of all files of given extension in directory hierarchy"""
+    """Return all files of given extension in directory hierarchy
+
+    The files are returned in a list with a path relative to
+    'directory'
+
+    """
     # the regular expression to match in filenames
     expr = r'(.*)' + extension + '$'
 
@@ -86,6 +100,41 @@ def sph2wav(sph, wav):
     subprocess.call(shlex.split(command))
 
 
+def shn2wav(shn, wav):
+    """Convert a shn file to the wav format
+
+    'shn' must be an existing sph file
+    'wav' if the filename of the created file
+
+    sox and shorten commands are required
+
+    shorten is available at
+    http://etree.org/shnutils/shorten/dist/src/shorten-3.6.1.tar.gz
+
+    sox is available at http://sox.sourceforge.net/ or in repositories
+    of most Linux distribution (sudo apt-get install sox)
+
+    """
+    for cmd in ['shorten', 'sox']:
+        try:
+            subprocess.check_output(shlex.split('which {}'.format(cmd)))
+        except:
+            raise OSError('{} is not installed on your system'.format(cmd))
+
+    tmp = shn + '.tmp'
+    command1 = 'shorten -x {} {}'.format(shn, tmp)
+    command2 = ('sox -t raw -r 16000 -e signed-integer -b 16 {} -t wav {}'
+                .format(tmp, wav))
+
+    for cmd in [command1, command2]:
+        subprocess.call(shlex.split(cmd))
+
+    try:
+        os.remove(tmp)
+    except os.error:
+        pass
+
+
 def default_argument_parser(name, description):
     """Return a default argument parser for corpus preparation"""
     parser = argparse.ArgumentParser(
@@ -101,10 +150,10 @@ def default_argument_parser(name, description):
                         'if not specified use {}'
                         .format(os.path.join(DEFAULT_OUTPUT_DIR, name)))
 
-    parser.add_argument('-w', '--overwrite', action='store_true',
-                        help='delete any existing content on OUTPUT_DIR, '
-                        'whithout this option the program fails if '
-                        'OUTPUT_DIR already exists')
+    # parser.add_argument('-w', '--overwrite', action='store_true',
+    #                     help='delete any existing content on OUTPUT_DIR, '
+    #                     'whithout this option the program fails if '
+    #                     'OUTPUT_DIR already exists')
 
     parser.add_argument('--no-validation', action='store_true',
                         help='disable the corpus validation step')
@@ -129,8 +178,8 @@ def main(preparator, description, argparser=default_argument_parser):
     try:
         args = argparser(preparator.name, description).parse_args()
 
-        corpus_prep = preparator(args.input_dir, args.output_dir,
-                                 args.verbose, args.overwrite)
+        corpus_prep = preparator(
+            args.input_dir, args.output_dir, args.verbose)
 
         corpus_prep.prepare()
 

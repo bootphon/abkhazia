@@ -229,18 +229,17 @@ class LibriSpeechPreparator(AbstractPreparator):
 # because LibriSpeech need two dictionary files, we can't use the
 # default corpora.utils.main function
 def main():
-    """The command line entry for LibriSpeech corpus preparation"""
-    preparator = LibriSpeechPreparator
-
-    parser = default_argument_parser(preparator.name, __doc__)
-
-    parser.add_argument('cmu_dict', help='the CMU dictionary '
-                        'file to use for lexicon generation')
-
-    parser.add_argument('librispeech_dict', help='the LibriSpeech dictionary '
-                        'file to use for lexicon generation')
-
+    """The command line entry for the LibriSpeech corpus preparation"""
     try:
+        preparator = LibriSpeechPreparator
+        parser = default_argument_parser(preparator.name, __doc__)
+
+        parser.add_argument('cmu_dict', help='the CMU dictionary '
+                            'file to use for lexicon generation')
+
+        parser.add_argument('librispeech_dict', help='the LibriSpeech '
+                            'dictionary file to use for lexicon generation')
+
         # parse command line arguments
         args = parser.parse_args()
 
