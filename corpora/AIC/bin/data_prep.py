@@ -12,15 +12,9 @@ Data preparation AIC - LSCP version
 import os
 import re
 import shutil
+import subprocess
+import codecs
 
-
-
-# paths - needs to change paths and versions of Librispeech
-# create 'data' directory if doesn't exist
-raw_path = "/home/xcao/cao/projects/LDC_distribution/data/"
-cmu_path = "/home/xcao/cao/corpus_US/CMU_dict/"
-abkhazia_path_data = "/home/xcao/github_abkhazia/abkhazia/corpora/AIC/data/"
-abkhazia_path = "/home/xcao/github_abkhazia/abkhazia/corpora/AIC/"
 
 #######################################################################################
 #######################################################################################
@@ -28,91 +22,155 @@ abkhazia_path = "/home/xcao/github_abkhazia/abkhazia/corpora/AIC/"
 #######################################################################################
 #######################################################################################
 
-#STEP 1
-# filter out .DS_Store files from MacOS if any
+"""
+STEP 1
+List all files and formats used in corpus
+"""
 def list_dir(d):
 	return [e for e in os.listdir(d) if e != '.DS_Store']
 
+#Get list of flac files
+def list_flac(input_dir):
+    file_list = []
+    for dirpath, dirs, files in os.walk(input_dir):
+        for f in files:
+              m_file = re.match("(.*)\.flac", f)
+              if m_file:
+                  file_list.append(os.path.join(dirpath, f))
+    return file_list
 
-#STEP 2
-#link speech folder to the data kaldi directory
-def link_wavs():
-    wavs_path = os.path.join(abkhazia_path_data, "wavs")
-    wavs_path_src = os.path.join(raw_path, 'speech')
-    logs_path = os.path.join(abkhazia_path, "logs")
+def list_wavs(input_dir):
+    file_list = []
+    for dirpath, dirs, files in os.walk(input_dir):
+        for f in files:
+              m_file = re.match("(.*)\.wav$", f)
+              if m_file:
+                  file_list.append(os.path.join(dirpath, f))
+    return file_list
+    
+
+"""
+STEP 2A
+Convert flac files to wav
+"""
+
+"""
+    flac_files is the list of full paths to the flac files
+    to be converted to wavs
+    wav_dir is the directory where the created wavs are stored
+    flac is the path to the flac executable
+    exclude is a list of utt_id that shouldn't be used if any
+"""
+def flac_2_wav(flac_files, wav_dir, flac, exclude=None):
+    if exclude is None:
+        exclude = []
+    if not(os.path.isdir(wav_dir)):
+        os.mkdir(wav_dir)
+    for inp in flac_files:
+        print(inp)
+        bname = os.path.basename(inp)
+        utt_id = bname.replace('.flac', '')
+        if not(utt_id in exclude):  # exclude some utterances
+            #convert the inp file
+            #-d is decode and by default will be in wav
+            subprocess.call(flac + " -d -f {0}".format(inp), shell=True)
+            wav_file = inp.replace ('.flac', '.wav')
+            #move the wav file to the assigned directory
+            shutil.move(wav_file, wav_dir)
+    print ("converted all wav files")
+
+
+
+"""
+STEP 2B
+Link speech folder to the data kaldi directory and also rename the wav files
+to have "speaker_ID" of same length (add 0s at the beginning of speaker IDs)
+"""
+def link_wavs(wav_path_src, wav_dir, log_dir):
+    #if folder already exists and has link, unlink and recreate link
+    if os.path.isdir(wav_dir):
+        if os.path.islink(wav_dir):
+            os.unlink(wav_dir)
+            os.symlink(wav_path_src, wav_dir)
+        #if folder already exists and is unlinked, remove folder and re-create symbolic link
+        else:
+            shutil.rmtree(wav_dir)
+            os.symlink(wav_path_src, wav_dir)
     #if wavs folder doesn't exist, create symbolic link to speech data
-    if not os.path.isdir(wavs_path):
-        os.symlink(wavs_path_src, wavs_path)
-    #if already exists, remove folder and re-create symbolic link to speech data
     else:
-        os.remove(wavs_path)
-        os.symlink(wavs_path_src, wavs_path)
-    #if logs folder doesn't exist, create folder
-    if not os.path.isdir(logs_path):
-        os.makedirs(logs_path)
-    print ('finished linking wavs directory and creating logs directory')
-     
-
-#STEP 3
-#Create segments file: <utterance-id> <wav-filename>
-#Create speakers file: <utterance-id> <speaker-id>
-#Argument is name of wav directory
-def segments_speakers():
-    output_file_segment = os.path.join(abkhazia_path_data, 'segments.txt')
-    output_file_speaker = os.path.join(abkhazia_path_data, 'utt2spk.txt')
-    outfile1 = open(output_file_segment, "w")
-    outfile2 = open(output_file_speaker, "w")
-    #get filenames from wavs folder
-    wav_input_dir = os.path.join(abkhazia_path_data, 'wavs')
-    files = os.listdir(wav_input_dir)
-    for filename in files:
-        #split filename by "-" and get the first elt as speaker_ID
-        filename_split = filename.split("_")
-        speaker_ID = filename_split[0]
-        #get basename of the file as utt_ID
-        utt_ID = os.path.splitext(filename)[0]
-        outfile1.write(utt_ID + ' ' + filename + '\n')
-        outfile2.write(utt_ID + ' ' + speaker_ID + '\n')
-    print ('finished creating segments and speakers files')
-    outfile1.close()
-    outfile2.close()
+        os.symlink(wav_path_src, wav_dir)
+    print ('finished linking wav files')
 
 
-#STEP 4
-#Create text file: <utterance-id> <word1> <word2> ... <wordn>
-def text():
-    #normal_weird_combined.txt a merge of weird.txt and normal.txt
-    #it corresponds to text.txt so should just create a symbolic link
-    #if not distributed, merge between the 2.Otherwise just append the 2
-    original_text_path = os.path.join(raw_path, "text/normal_weird_combined.txt")
-    dest_text_path = os.path.join(abkhazia_path_data,"text.txt")
-    #if file exists, just create symbolic link
-    if os.path.isdir(original_text_path):
-        os.symlink(original_text_path, dest_text_path)
-    #else, merge the 2 files
-    else:
-        input_file = os.path.join(raw_path, 'text/normal.txt')
-        input_file2 = os.path.join(raw_path, 'text/weird.txt')
-        infile = open(input_file, "r")
-        infile2 = open(input_file2, "r")
-        outfile = open(dest_text_path, "w")
-        for line in infile:
+
+"""
+STEP 3
+Create utterance files. It contains the list of all utterances with the name of the associated wavefiles,
+and if there is more than one utterance per file, the start and end of the utterance in that wavefile expressed in seconds.
+"segments.txt": <utterance-id> <wav-filename>
+"""
+def make_segment(wav_dir, output_file):
+    outfile = open (output_file, "w")
+    input_wav = list_wavs(wav_dir)
+    for wav_file in input_wav:
+        bname = os.path.basename(wav_file)
+        utt_id = bname.replace('.wav', '')
+        outfile.write(utt_id + ' ' + bname + '\n')
+    print ('finished creating segments file')
+    
+    
+"""
+STEP 4
+Create speaker file. It contains the list of all utterances with a unique identifier for the associated speaker.
+"utt2spk.txt": <utterance-id> <speaker-id>
+"""
+def make_speaker(wav_dir, output_file):
+    outfile = open (output_file, "w")
+    input_wav = list_wavs(wav_dir)
+    for wav_file in input_wav:
+        bname = os.path.basename(wav_file)
+        filename_split = bname.split("_")
+        utt_id = bname.replace('.wav', '')
+        speaker_id = filename_split[0]
+        outfile.write(utt_id + ' ' + speaker_id + '\n')
+    print ('finished creating utt2spk file')
+
+
+
+"""
+STEP 5
+Create transcription file. It constains the transcription in word units for each utterance
+"text.txt": <utterance-id> <word1> <word2> ... <wordn>
+"""
+def make_transcription(input_file1, input_file2, output_file):
+    infile1 = open(input_file1, "r")
+    infile2 = open(input_file2, "r")
+    outfile = open(output_file, "w")
+    for line in infile1:
             outfile.write(line)
-        for line in infile2:
+    for line in infile2:
             outfile.write(line)
     print ('finished creating text file')
-    infile.close()
+    infile1.close()
     infile2.close()
     outfile.close()
+    
 
 
-#STEP 5
+"""
+STEP 6
+The phonetic dictionary contains a list of words with their phonetic transcription
+Create phonetic dictionary file, "lexicon.txt": <word> <phone_1> <phone_2> ... <phone_n>
+"""
 #Create temp lexicon file and temp OOVs
 #No transcription for the words, we will use the CMU but will need to convert to the symbols used in the AIC
-def temp_cmu_lexicon():
+def temp_cmu_lexicon(in_cmu, in_text, out_temp_lex, out_OOV):
     dict_word = {}
     cmu_dict = {}
-    infile = open(os.path.join(cmu_path, 'cmudict.0.7a'), 'r')
+    infile = open(in_cmu, "r")
+    infile2 = open (in_text, "r")
+    outfile = open(out_temp_lex, "w")
+    outfile2 = open(out_OOV, "w")
     #open CMU dict
     for line in infile:
         dictionary = re.match("(.*)\s\s(.*)", line)
@@ -126,11 +184,7 @@ def temp_cmu_lexicon():
             #create the combined dictionary
             cmu_dict[entry] = phn;
     infile.close()
-    infile2 = open(os.path.join(abkhazia_path_data, 'text.txt'), 'r')
-    output_file_text = os.path.join(abkhazia_path, 'logs/temp_lexicon_cmu.txt')
-    output_file_text2 = os.path.join(abkhazia_path, 'logs/temp_OOV.txt')
-    outfile = open(output_file_text, "w")
-    outfile2 = open(output_file_text2, "w")
+    
     for line in infile2:
         m = re.match("([fm0-9]+)_([ps])_(.*?)\s(.*)", line)
         if m:
@@ -150,19 +204,15 @@ def temp_cmu_lexicon():
             outfile.write (w + ' ' + cmu_dict[w] + '\n')
         else:
             outfile2.write(w + '\t' + str(f) + '\n')
-    print ('finished creating lexicon file')
+    print ('finished creating temp lexicon file')
+    
 
 
-#STEP 6
-#Create lexicon file: <word> <phone_1> <phone_2> ... <phone_n>
-def lexicon():
+def make_lexicon(in_temp_lex, in_OOV, output_file_text):
     array_phn = []
-    output_file_text = os.path.join(abkhazia_path_data, 'lexicon.txt')
+    infile = open(in_temp_lex, "r")
+    infile2 = open (in_OOV, "r")
     outfile = open(output_file_text, "w")
-    output_file_text2 = os.path.join(abkhazia_path, 'logs/OOV.txt')
-    outfile2 = open(output_file_text2, "w")
-    infile = open(os.path.join(abkhazia_path, 'logs/temp_lexicon_cmu.txt'), 'r')
-    infile2 = open(os.path.join(abkhazia_path, 'logs/temp_OOV.txt'), 'r')
     for line in infile:
         #non greedy match to extract phonetic transcription
         m = re.match("(.*?)\s(.*)", line)
@@ -229,19 +279,38 @@ def lexicon():
                     outfile.write(' ' + p)
                 outfile.write('\n')
             else:
-                outfile2.write(sound + '\n')
+                print(sound)
+    infile.close()
+    infile2.close()
+    print ('finished creating lexicon file')
+    outfile.close()
     #remove the temp files
-    os.remove('/home/xcao/github_abkhazia/abkhazia/corpora/AIC/logs/temp_lexicon_cmu.txt')
-    os.remove('/home/xcao/github_abkhazia/abkhazia/corpora/AIC/logs/temp_OOV.txt')
+    os.remove(in_temp_lex)
+    os.remove(in_OOV)
 
 
-#STEP 7
-#Copy phone files - should be distributed in the new AIC version
-def copy_phones():
-    phone_src = os.path.join(raw_path, 'phones.txt')
-    phone_dest = os.path.join(abkhazia_path_data, 'phones.txt')
-    if not os.path.isdir(phone_dest):
-        shutil.copy2(phone_src, phone_dest)
+
+"""
+STEP 7
+The phone inventory contains a list of each symbol used in the pronunciation dictionary
+Create phone list file, "phones.txt": <phone-symbol> <ipa-symbol>
+"""
+def make_phones(phones, output_folder, silences=None, variants=None):
+    # code taken from GP_Mandarin... could share it ?
+    output_file = os.path.join(output_folder, 'phones.txt') 
+    with codecs.open(output_file, mode='w', encoding='UTF-8') as out:
+        for phone in phones:
+            out.write(u"{0} {1}\n".format(phone, phones[phone]))
+    if not(silences is None):
+        output_file = os.path.join(output_folder, 'silences.txt')
+        with codecs.open(output_file, mode='w', encoding='UTF-8') as out:
+            for sil in silences:
+                out.write(sil + u"\n")
+    if not(variants is None):
+        output_file = os.path.join(output_folder, 'variants.txt')
+        with codecs.open(output_file, mode='w', encoding='UTF-8') as out:
+            for l in variants:
+                out.write(u" ".join(l) + u"\n")
 
 
 #######################################################################################
@@ -250,9 +319,26 @@ def copy_phones():
 #######################################################################################
 #######################################################################################
 
-# Distribution of the revised AIC corpus is available at https://catalog.ldc.upenn.edu/LDC2015S12 (free)
-# Needs to wait for the download from the LDC website to have the correct architecture (ask Roberta)
-raw_AIC_path = "/home/xcao/cao/multilingual/African_languages/Xitsonga/raw_corpus/nchlt_Xitsonga"
+# Distribution of the revised AIC corpus is freely available at LDC: https://catalog.ldc.upenn.edu/LDC2015S12
+# However, you need to be signed in as an organization to add the corpus to the cart.
+# If you are an individual, sign up for an account but you need to click on "create your organization" on the registration page
+# to add your organization and have administration privileges.
+
+raw_AIC_path = "/home/xcao/cao/corpus_US/AI_corpus/articulation_index_lcsp"
+
+# flac is required for converting .flac to .wav.
+flac = "/usr/bin/flac"
+
+
+# path to CMU dictionary as available from http://www.speech.cs.cmu.edu/cgi-bin/cmudict (free)
+# the recipe was designed using version 0.7a of the dictionary, but other recent versions
+# could probably be used without changing anything
+# complementing with the LibriSpeech dict which contains the words not found in the cmu (not exhaustive list however)
+# available for download at http://www.openslr.org/11/
+raw_cmu_path = "/home/xcao/cao/corpus_US/CMU_dict/"
+
+# Path to a directory where the converted wav files will be stored
+wav_output_dir = "/home/xcao/cao/corpus_US/AI_corpus/wav_AI_lscp"
 
 # Path to a directory where the processed corpora is to be stored
 output_dir = "/home/xcao/github_abkhazia/abkhazia/corpora/AIC/"
@@ -264,53 +350,137 @@ output_dir = "/home/xcao/github_abkhazia/abkhazia/corpora/AIC/"
 #######################################################################################
 #######################################################################################
 
+# setting up some paths and directories
+data_dir = os.path.join(output_dir, 'data')
+if not os.path.isdir(data_dir):
+    os.makedirs(data_dir)
+wav_dir = os.path.join(data_dir, 'wavs')
+if not os.path.isdir(wav_dir):
+    os.makedirs(wav_dir)
+log_dir = os.path.join(output_dir, 'logs')
+if not os.path.isdir(log_dir):
+    os.makedirs(log_dir)
 
-#Running the different steps
-#link_wavs()
-#segments_speakers()
-#text()
-#temp_cmu_lexicon()
-#lexicon()
-copy_phones()
 
-AA ɑː
-W w
-DH ð
-Y j
-HH h
-B b
-JH ʤ
-ZH ʒ
-D d
-NG ŋ
-TH θ
-IY iː
-CH ʧ
-AE æ
-EH ɛ
-G g
-F f
-AH ʌ
-K k
-M m
-L l
-AO ɔː
-N n
-P p
-S s
-R r
-EY eɪ
-T t
-AW aʊ
-V v
-AY aɪ
-Z z
-ER ɝ
-IH ɪ
-UW uː
-SH ʃ
-UH ʊ
-OY ɔɪ
-OW oʊ
+"""
+STEP 2A
+Convert flac files to wav and copy the wav files
+"""
+#flac_files = list_flac(raw_AIC_path)
+#flac_2_wav(flac_files, wav_output_dir, flac, exclude=None)
 
+
+"""
+STEP 2B
+Link speech folder to the data kaldi directory
+"""
+#link_wavs(wav_output_dir, wav_dir, log_dir)
+
+
+"""
+STEP 3
+Create utterance files. It contains the list of all utterances with the name of the associated wavefiles,
+and if there is more than one utterance per file, the start and end of the utterance in that wavefile expressed in seconds.
+"segments.txt": <utterance-id> <wav-filename>
+"""
+#output_file = os.path.join(data_dir, 'segments.txt')
+#wav_dir = os.path.join(data_dir, 'wavs')
+#make_segment(wav_dir, output_file)
+
+
+"""
+STEP 4
+Create speaker file. It contains the list of all utterances with a unique identifier for the associated speaker.
+"utt2spk.txt": <utterance-id> <speaker-id>
+"""
+#output_file = os.path.join(data_dir, 'utt2spk.txt')
+#wav_dir = os.path.join(data_dir, 'wavs')
+#make_speaker(wav_dir, output_file)
+
+
+"""
+STEP 5
+Create transcription file. It constains the transcription in word units for each utterance
+"text.txt": <utterance-id> <word1> <word2> ... <wordn>
+"""
+#input_file1 = os.path.join(raw_AIC_path, 'data/text/normal.txt')
+#input_file2 = os.path.join(raw_AIC_path, 'data/text/weird.txt')
+#output_file_text = os.path.join(data_dir, 'text.txt')
+#make_transcription(input_file1, input_file2, output_file_text)
+
+
+
+"""
+STEP 6
+The phonetic dictionary contains a list of words with their phonetic transcription
+Create phonetic dictionary file, "lexicon.txt": <word> <phone_1> <phone_2> ... <phone_n>
+"""
+#cmu_infile = os.path.join(raw_cmu_path, 'cmudict.0.7a')
+#text_infile = os.path.join(data_dir, 'text.txt')
+#out_temp_lex = os.path.join(log_dir, 'temp_lexicon_cmu.txt')
+#out_OOV = os.path.join(log_dir, 'temp_OOV.txt')
+#temp_cmu_lexicon(cmu_infile, text_infile, out_temp_lex, out_OOV)
+
+
+#in_temp_lex = os.path.join(log_dir, 'temp_lexicon_cmu.txt')
+#in_OOV = os.path.join(log_dir, 'temp_OOV.txt')
+#output_file_text = os.path.join(data_dir, 'lexicon.txt')
+#make_lexicon (in_temp_lex, in_OOV, output_file_text)
+
+
+
+"""
+STEP 7
+The phone inventory contains a list of each symbol used in the pronunciation dictionary
+Create phone list file, "phones.txt": <phone-symbol> <ipa-symbol>
+# get IPA transcriptions for all phones
+"""
+AIC_phones = [
+    ('a', u'ɑː'),
+    ('xq', u'æ'),
+    ('xa', u'ʌ'),
+    ('c', u'ɔː'),
+    ('xw', u'aʊ'),
+    ('xy', u'aɪ'),
+    ('xr', u'ɝ'),
+    ('xe', u'ɛ'),
+    ('e', u'eɪ'),
+    ('xi', u'ɪ'),
+    ('i', u'iː'),
+    ('o', u'oʊ'),
+    ('xo', u'ɔɪ'),
+    ('xu', u'ʊ'),
+    ('u', u'uː'),
+    ('b', u'b'),
+    ('xc', u'ʧ'),
+    ('d', u'd'),
+    ('xd', u'ð'),
+    ('f', u'f'),
+    ('g', u'g'),
+    ('h', u'h'),
+    ('xj', u'ʤ'),
+    ('k', u'k'),
+    ('l', u'l'),
+    ('m', u'm'),
+    ('n', u'n'),
+    ('xg', u'ŋ'),
+    ('p', u'p'),
+    ('r', u'r'),
+    ('s', u's'),
+    ('xs', u'ʃ'),
+    ('t', u't'),
+    ('xt', u'θ'),
+    ('v', u'v'),
+    ('w', u'w'),
+    ('y', u'j'),
+    ('z', u'z'),
+    ('xz', u'ʒ'),
+]
+phones = {}
+for phone, ipa in AIC_phones:
+    phones[phone] = ipa
+silences = [u"NSN"]  # SPN and SIL will be added automatically
+variants = []  # could use lexical stress variants...
+make_phones(phones, data_dir, silences, variants)
+print("Created phones.txt, silences.txt, variants.txt")
 

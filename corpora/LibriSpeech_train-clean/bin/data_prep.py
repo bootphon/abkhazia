@@ -214,7 +214,6 @@ def make_transcription(wav_dir, output_file, o_corrupted, input_dir):
 STEP 6
 The phonetic dictionary contains a list of words with their phonetic transcription
 Create phonetic dictionary file, "lexicon.txt": <word> <phone_1> <phone_2> ... <phone_n>
-To do this, we need to get the mlfs for the language. Not sure it is available on the NCHLT website.
 """
 
 def make_lexicon(i_libri_lex, i_cmu, outfile_lexicon):
@@ -331,7 +330,7 @@ if os.path.isdir(data_dir):
 else:
     os.makedirs(data_dir)
 wav_dir = os.path.join(data_dir, 'wavs')
-if os.path.isdir(wav_dir):
+if not os.path.isdir(wav_dir):
     shutil.rmtree(wav_dir)
     os.makedirs(wav_dir)
 else:
@@ -346,7 +345,7 @@ else:
 
 """
 STEP 2A
-Convert flac files to wav and also rename the wav files
+Convert flac files to wav and copy the wav files
 """
 flac_files = list_flac(raw_librispeech_path)
 flac_2_wav(flac_files, wav_output_dir, flac, exclude=None)
