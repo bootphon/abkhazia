@@ -8,7 +8,7 @@
 /corpora/*
 !/corpora/README.txt
 
-# In corpora folder allow corpus-specific bin folders 
+# In corpora folder allow corpus-specific bin folders
 # containing scripts and instructions to prepare
 # everything that is needed from the raw corpus distribution
 !/corpora/*/
@@ -71,3 +71,5 @@ target/
 # emacs
 \#*
 *~
+# local python virtual env
+.pyenv/

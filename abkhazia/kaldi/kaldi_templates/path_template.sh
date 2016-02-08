@@ -6,7 +6,7 @@ export LC_ALL=C  # For expected sorting and joining behaviour
 KALDI_ROOT=/cm/shared/apps/kaldi
 
 KALDISRC=$KALDI_ROOT/src
-KALDIBIN=$KALDISRC/bin:$KALDISRC/featbin:$KALDISRC/fgmmbin:$KALDISRC/fstbin  
+KALDIBIN=$KALDISRC/bin:$KALDISRC/featbin:$KALDISRC/fgmmbin:$KALDISRC/fstbin
 KALDIBIN=$KALDIBIN:$KALDISRC/gmmbin:$KALDISRC/latbin:$KALDISRC/nnetbin
 KALDIBIN=$KALDIBIN:$KALDISRC/sgmmbin:$KALDISRC/lmbin:
 KALDIBIN=$KALDIBIN:$KALDISRC/kwsbin:$KALDISRC/ivectorbin

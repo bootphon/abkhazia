@@ -1,1 +1,0 @@
-This folder contains the scripts for all GlobalPhone databases and is shared among the different languages. The original folder is in GP_Mandarin.

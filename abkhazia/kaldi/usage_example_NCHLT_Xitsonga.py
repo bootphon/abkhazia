@@ -8,18 +8,11 @@ Created on Thu Mar  5 11:32:55 2015
 Getting forced alignments and posterior decoding on some corpora
 """
 
-import sys
-import os
-sys.path.append(os.path.abspath('.'))
-
-print sys.path
-
-#import abkhazia.kaldi.train_test_split as split
-import train_test_split as split
-import force_align as force_align
-import train_and_decode as decode
+import abkhazia.kaldi.train_test_split as split
+import abkhazia.kaldi.force_align as force_align
+import abkhazia.kaldi.train_and_decode as decode
 import os.path as p
-import subprocess
+#import subprocess
 
 
 root = '/home/mbernard/dev/abkhazia'
@@ -32,32 +25,32 @@ kaldi_root = '/home/mbernard/dev/kaldi'
 corpora = ['NCHLT_Xitsonga']
 prune_lexicons = [False]
 for corpus, prune_lexicon in zip(corpora, prune_lexicons):
-	## Instantiate forced alignment recipe
-	force_align.create_kaldi_recipe(p.join(root, 'corpora', corpus),
-                                        p.join(root, 'kaldi', corpus),
-                                        kaldi_root)
+    ## Instantiate forced alignment recipe
+    force_align.create_kaldi_recipe(p.join(root, 'corpora', corpus),
+                                    p.join(root, 'kaldi', corpus),
+                                    kaldi_root)
 
-	## Instantiate posterior decoding recipe
-	# cutting corpus in half and using different speakers for train and test sets
-	split.train_test_split(p.join(root, 'corpora', corpus), train_proportion=.9, split_speakers=False)
+    ## Instantiate posterior decoding recipe
+    # cutting corpus in half and using different speakers for train and test
+    split.train_test_split(p.join(root, 'corpora', corpus),
+                           train_proportion=.9, split_speakers=False)
 
-	decode.create_kaldi_recipe(p.join(root, 'corpora', corpus),
-							   p.join(root, 'kaldi', corpus),
-							   kaldi_root,
-							   prune_lexicon=prune_lexicon)
+    decode.create_kaldi_recipe(p.join(root, 'corpora', corpus),
+                               p.join(root, 'kaldi', corpus),
+                               kaldi_root,
+                               prune_lexicon=prune_lexicon)
 
-      ## Estimate LM for posterior decoding recipe from some text ???
-      # or use LM in arpa-MIT format
-      # or what?
+    ## Estimate LM for posterior decoding recipe from some text ???
+    # or use LM in arpa-MIT format
+    # or what?
 
-      ## Run the recipes
-      # how to set the parameters here easily?
-      # subprocess.call(cd recipe_path; ./run.sh)
+    ## Run the recipes
+    # how to set the parameters here easily?
+    # subprocess.call(cd recipe_path; ./run.sh)
 
-      ## Check and process the results
-
-      # add an alignments folder to data
-      # add a features folder to data ??? (probably somewhere else?)
+    ## Check and process the results
+    # add an alignments folder to data
+    # add a features folder to data ??? (probably somewhere else?)
 
 """
 # test on Buckeye for challenge
@@ -147,6 +140,6 @@ test_speakers = [
 			u'138m', u'127f', u'144m', u'133f',
 			u'145m', u'129f', u'140f', u'136f'
 			]
-train_speakers = list(set.difference(set(all_speakers), set(test_speakers)))
-train_test_split(corpus_path, train_speakers=train_speakers, split_speakers=False)
+train_spkr = list(set.difference(set(all_speakers), set(test_speakers)))
+train_test_split(corpus_path, train_speakers=train_spkr, split_speakers=False)
 """

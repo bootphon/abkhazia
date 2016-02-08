@@ -1,0 +1,25 @@
+This file lists all the TODOs in abkhazia in the org-mode format
+
+* Installation
+** Manage paths to dependancies
+fix some paths at installation (maybe in a config file):
+    path to kaldi
+    path to CMUdict
+    path to flac, sox, shorten
+* Corpora preparation
+** remove cmu_dict parameter and feed it during installation
+** Smart overwrite of exitisting wavs
+Consume a lot of time, really annoying when debugging preparators
+  - [X] remove the --overwrite parameter and do it by default
+  - [ ] change the preparator interface to have list_audio_files() and
+    convert_wavfile() instead of make_wavs()
+** In validation
+  - [ ] fix this bug of overlapping utterances (at least in Buckeye,
+    see for other corpora)
+** WSJ
+   - [ ] debug WSJ (entire corpus)
+   - [ ] debug WSJ journalist-read
+** GlobalPhone
+  - [ ] validate Mandarin
+  - [ ] debug Vietnamese
+** test CSJ preparation !
