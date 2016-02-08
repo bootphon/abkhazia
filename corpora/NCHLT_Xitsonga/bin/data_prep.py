@@ -358,7 +358,6 @@ make_lexicon(outfile_lexicon, outfile_temp, mlf_dir)
 STEP 7
 The phone inventory contains a list of each symbol used in the pronunciation dictionary
 Create phone list file, "phones.txt": <phone-symbol> <ipa-symbol>
-# get IPA transcriptions for all phones
 """
 Xitsonga_phones = [
     ('n\'', u'ɳ'),
