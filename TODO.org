@@ -17,8 +17,9 @@ Consume a lot of time, really annoying when debugging preparators
   - [ ] fix this bug of overlapping utterances (at least in Buckeye,
     see for other corpora)
 ** WSJ
-  - [X] Modify the command line options to prepare all if --type not specified
-  - [X] Document this in 'prepare_wsj.py --help'
+   - [ ] debug WSJ (entire corpus)
+   - [ ] debug WSJ journalist-read
 ** GlobalPhone
-  - validate Mandarin
-  - debug Vietnamese
+  - [ ] validate Mandarin
+  - [ ] debug Vietnamese
+** test CSJ preparation !
