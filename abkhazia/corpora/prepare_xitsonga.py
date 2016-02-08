@@ -96,12 +96,12 @@ class XitsongaPreparator(AbstractPreparator):
 
     variants = []  # could use lexical stress variants...
 
-    def link_wavs(self):
-        # delete any existing wav tree TODO this should not occur
-        # because __init__ raise on this case
-        if os.path.isdir(self.wavs_dir):
-            shutil.rmtree(self.wavs_dir)
-            os.makedirs(self.wavs_dir)
+    def make_wavs(self):
+        # # delete any existing wav tree TODO this should not occur
+        # # because __init__ raise on this case
+        # if os.path.isdir(self.wavs_dir):
+        #     shutil.rmtree(self.wavs_dir)
+        #     os.makedirs(self.wavs_dir)
 
         # get the list of wav files in corpus
         input_wavs = list_files_with_extension(

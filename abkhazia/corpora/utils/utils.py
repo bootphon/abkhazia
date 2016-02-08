@@ -185,6 +185,5 @@ def main(preparator, description, argparser=default_argument_parser):
 
         if not args.no_validation:
             corpus_prep.validate()
-
     except Exception as err:
         print('fatal error: {}'.format(err))

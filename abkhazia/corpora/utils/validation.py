@@ -1,3 +1,4 @@
+#!/usr/bin/env python
 # -*- coding: utf-8 -*-
 """
 Created on Wed Feb  4 00:17:47 2015
@@ -20,6 +21,7 @@ import codecs
 import collections
 import contextlib
 import os
+import progressbar
 import wave
 
 import abkhazia.utilities.log2file as log2file
@@ -51,14 +53,14 @@ def validate(corpus_path, verbose=False):
             os.mkdir(os.path.join(corpus_path, "logs"))
 
     # log file config
-    log_file = os.path.join(log_dir, "data_validation.log".format(corpus_path))
+    log_file = os.path.join(log_dir, "data_validation.log")
     log = log2file.get_log(log_file, verbose)
 
     try:
         """
         wav directory must contain only mono wavefiles in 16KHz, 16 bit PCM format
         """
-        log.debug("Checking 'wavs' folder")
+        log.info("Checking 'wavs' folder")
         wav_dir = os.path.join(data_dir, 'wavs')
         wavefiles = [e for e in os.listdir(wav_dir) if e != '.DS_Store']
         durations = {}
@@ -124,11 +126,14 @@ def validate(corpus_path, verbose=False):
         # unique utterance-ids
         duplicates = get_duplicates(utt_ids)
         if duplicates:
+            log.error("There is utterance-ids in "
+                      "'segments.txt' used several times: {0}"
+                      .format(duplicates))
             raise IOError(
                 (
-                "The following utterance-ids in "
-                "'segments.txt' are used several times: {0}"
-                ).format(duplicates)
+                "There is utterance-ids in "
+                "'segments.txt' used several times: {0}"
+                ).format(len(duplicates))
             )
         # all referenced wavs are in wav folder
         missing_wavefiles = set.difference(set(wavs), set(wavefiles))
@@ -300,11 +305,14 @@ def validate(corpus_path, verbose=False):
         if not(utt_ids_txt == utt_ids):
             duplicates = get_duplicates(utt_ids_txt)
             if duplicates:
+                log.error("There is several utterance-ids "
+                          "used several times in 'text.txt': {0}"
+                          .format(duplicates))
                 raise IOError(
                     (
-                    "The following utterance-ids "
-                    "are used several times in 'text.txt': {0}"
-                    ).format(duplicates)
+                    "There is several utterance-ids "
+                    "used several times in 'text.txt': {0}"
+                    ).format(len(duplicates))
                 )
             else:
                 e_txt = set(utt_ids_txt)
@@ -331,9 +339,9 @@ def validate(corpus_path, verbose=False):
             "'variants.txt'"
             )
         )
-        # phones
-        #TODO: check xsampa compatibility and/or compatibility with articulatory features databases of IPA
-        # or just basic IPA correctness
+        # phones TODO: check xsampa compatibility and/or compatibility
+        # with articulatory features databases of IPA or just basic
+        # IPA correctness
         phon_file = os.path.join(data_dir, "phones.txt")
         phones, ipas = io.read_phones(phon_file)
         assert not(u"SIL" in phones), \
@@ -392,6 +400,7 @@ def validate(corpus_path, verbose=False):
                 u"The following symbols are used in both 'phones.txt' "
                 u"and 'silences.txt': {0}"
                 ).format(inter)
+
         # variants
         var_file = os.path.join(data_dir, "variants.txt")
         if not(os.path.exists(var_file)):
@@ -402,7 +411,8 @@ def validate(corpus_path, verbose=False):
         else:
             variants = io.read_variants(var_file)
             all_symbols = [symbol for group in variants for symbol in group]
-            unknown_symbols = [symbol for symbol in all_symbols if not(symbol in phones) and not(symbol in sils)]
+            unknown_symbols = [symbol for symbol in all_symbols
+                               if not(symbol in phones) and not(symbol in sils)]
             assert not(unknown_symbols), \
                 (
                 u"The following symbols are present "
@@ -557,23 +567,26 @@ def validate(corpus_path, verbose=False):
         # wrap-up
         log.info("Corpus ready for use with abkhazia!!!")
 
-    except (IOError, AssertionError) as e:
-        log.error(e)
-        raise e
+    except (IOError, AssertionError) as err:
+        log.error(err)
+        raise err
+
+def main():
+    """Command line entry for corpus validation"""
+    try:
+        parser = argparse.ArgumentParser(
+            description='checks whether a corpus is correctly '
+            'formatted for use with the abkhazia library')
+
+        parser.add_argument('corpus_path',
+                            help='path to the folder containing the corpus '
+                            'in abkhazia format')
+
+        parser.add_argument('--verbose', action='store_true', help='verbose flag')
+        args = parser.parse_args()
+        validate(args.corpus_path, args.verbose)
+    except(IOError, AssertionError) as err:
+        print('fatal error: {}'.format(err))
 
 if __name__ == '__main__':
-    parser = argparse.ArgumentParser(description=\
-        (
-        "checks whether "
-        "a corpus is correctly formatted for use with the abkhazia library"
-        )
-    )
-    parser.add_argument('corpus_path', help=\
-        (
-        "path to the folder containing the corpus "
-        "in abkhazia format"
-        )
-    )
-    parser.add_argument('--verbose', action='store_true', help='verbose flag')
-    args = parser.parse_args()
-    validate(args.corpus_path, args.verbose)
+    main()

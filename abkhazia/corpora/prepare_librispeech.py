@@ -7,8 +7,10 @@ The raw distribution of LibriSpeech is available at
 http://www.openslr.org/12/
 
 In addition to the LibriSpeech corpus, this preparator need the CMU
-and LibriSpeech dictionaries. The CMU dictionary is available for free
-at http://www.speech.cs.cmu.edu/cgi-bin/cmudict. The preparator is
+and LibriSpeech dictionaries.
+
+The CMU dictionary is available for free at
+http://www.speech.cs.cmu.edu/cgi-bin/cmudict. The preparator is
 designed for version 0.7a of the CMU dictionary, but other recent
 versions could probably be used without changing anything
 
@@ -27,12 +29,15 @@ This preparator have been tested on 'train-clean-100' and
 """
 
 import os
+import progressbar
 import re
 
-from abkhazia.corpora.utils import AbstractPreparator
-from abkhazia.corpora.utils import list_files_with_extension
-from abkhazia.corpora.utils import flac2wav
-from abkhazia.corpora.utils import default_argument_parser
+from abkhazia.corpora.utils import (
+    AbstractPreparator,
+    list_files_with_extension,
+    flac2wav,
+    default_argument_parser
+)
 
 # TODO have librispeech_dict as an optionnal argument and guess it
 # from input_dir by default (input_dir/../librispeech-lexicon.txt)
@@ -40,26 +45,6 @@ from abkhazia.corpora.utils import default_argument_parser
 # TODO have command-line option --type train-clean-100
 class LibriSpeechPreparator(AbstractPreparator):
     """Convert the LibriSpeech corpus to the abkhazia format"""
-    def __init__(self, input_dir, cmu_dict, librispeech_dict,
-                 output_dir=None, verbose=False, overwrite=False):
-        # call the AbstractPreparator __init__
-        super(LibriSpeechPreparator, self).__init__(
-            input_dir, output_dir, verbose, overwrite)
-
-        # init path to CMU dictionary
-        if not os.path.isfile(cmu_dict):
-            raise IOError(
-                'CMU dictionary does not exist: {}'
-                .format(cmu_dict))
-        self.cmu_dict = cmu_dict
-
-        # init path to LibriSpeech dictionary
-        if not os.path.isfile(librispeech_dict):
-            raise IOError(
-                'LibriSpeech dictionary does not exist: {}'
-                .format(librispeech_dict))
-        self.librispeech_dict = librispeech_dict
-
     name = 'LibriSpeech'
 
     phones = {
@@ -108,20 +93,48 @@ class LibriSpeechPreparator(AbstractPreparator):
 
     variants = []  # could use lexical stress variants...
 
-    # TODO this function can easily be parallelized (using joblib for example)
-    def link_wavs(self):
-        flac_files = list_files_with_extension(self.input_dir, '.flac')
-        self.log.info('converting {} flac files to wav...'.format(len(flac_files)))
+    def __init__(self, input_dir, cmu_dict,
+                 librispeech_dict=None, output_dir=None, verbose=False):
+        # call the AbstractPreparator __init__
+        super(LibriSpeechPreparator, self).__init__(
+            input_dir, output_dir, verbose)
 
-        for flac in flac_files:
+        # init path to CMU dictionary
+        if not os.path.isfile(cmu_dict):
+            raise IOError(
+                'CMU dictionary does not exist: {}'
+                .format(cmu_dict))
+        self.cmu_dict = cmu_dict
+
+        # guess librispeech dictionary if not specified
+        if librispeech_dict is None:
+            librispeech_dict = os.path.join(
+                self.input_dir, '..', 'librispeech-lexicon.txt')
+            self.log.debug('guessed librispeech dictionary: {}'
+                           .format(librispeech_dict))
+
+        # init path to LibriSpeech dictionary
+        if not os.path.isfile(librispeech_dict):
+            raise IOError(
+                'LibriSpeech dictionary does not exist: {}'
+                .format(librispeech_dict))
+        self.librispeech_dict = librispeech_dict
+
+    # TODO this function can easily be parallelized (using joblib for example)
+    def make_wavs(self):
+        flacs = list_files_with_extension(self.input_dir, '.flac')
+        self.log.info('converting {} flac files to wav...'.format(len(flacs)))
+
+        for flac in progressbar.ProgressBar()(flacs):
             # get the wav name
             utt_id = os.path.basename(flac).replace('.flac', '')
             len_sid = len(utt_id.split('-')[0]) # length of speaker_id
             prefix = '00' if len_sid == 2 else '0' if len_sid == 3 else ''
             wav = os.path.join(self.wavs_dir, prefix + utt_id + '.wav')
 
-            # convert original flac to renamed wav
-            flac2wav(flac, wav)
+            # convert original flac to renamed wav if not exist
+            if not os.path.isfile(wav):
+                flac2wav(flac, wav)
         self.log.debug('finished linking wav files')
 
     def make_segment(self):
@@ -218,7 +231,7 @@ class LibriSpeechPreparator(AbstractPreparator):
 
         # Loop through the words in transcripts by descending
         # frequency and create the lexicon by looking up in the
-        # combined dictionary. If still OOV, output to OOV.txt
+        # combined dictionary.
         with open(self.lexicon_file, "w") as outfile:
             for w, f in sorted(cmu_combined.items()):
                 outfile.write(w + ' ' + f + '\n')
@@ -237,17 +250,20 @@ def main():
         parser.add_argument('cmu_dict', help='the CMU dictionary '
                             'file to use for lexicon generation')
 
-        parser.add_argument('librispeech_dict', help='the LibriSpeech '
-                            'dictionary file to use for lexicon generation')
+        parser.add_argument('-l', '--librispeech-lexicon',
+                            default=None,
+                            help='the librispeech-lexicon.txt file '
+                            'at the root of the LibriSpeech distribution. '
+                            'If not specified, guess it from INPUT_DIR')
 
         # parse command line arguments
         args = parser.parse_args()
 
         # prepare the corpus
-        corpus_prep = preparator(args.input_dir, args.cmu_dict,
-                                 args.librispeech_dict,
-                                 args.output_dir, args.verbose,
-                                 args.overwrite)
+        corpus_prep = preparator(
+            args.input_dir, args.cmu_dict,
+            args.librispeech_lexicon, args.output_dir, args.verbose)
+
         corpus_prep.prepare()
         if not args.no_validation:
             corpus_prep.validate()
