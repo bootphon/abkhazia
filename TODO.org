@@ -7,6 +7,7 @@ fix some paths at installation (maybe in a config file):
     path to CMUdict
     path to flac, sox, shorten
 * Corpora preparation
+** remove cmu_dict parameter and feed it during installation
 ** Smart overwrite of exitisting wavs
 Consume a lot of time, really annoying when debugging preparators
   - [X] remove the --overwrite parameter and do it by default
@@ -16,10 +17,8 @@ Consume a lot of time, really annoying when debugging preparators
   - [ ] fix this bug of overlapping utterances (at least in Buckeye,
     see for other corpora)
 ** WSJ
-  - Modify the command line options to prepare all if --type not specified
-  - Document this in 'prepare_wsj.py --help'
-** LibriSpeech
-  - suppress cmu_dict and librispeech_dict from parameters
+  - [X] Modify the command line options to prepare all if --type not specified
+  - [X] Document this in 'prepare_wsj.py --help'
 ** GlobalPhone
   - validate Mandarin
   - debug Vietnamese
