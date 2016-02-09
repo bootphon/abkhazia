@@ -20,7 +20,8 @@ ABKHAZIA_ROOT_DIR = os.path.abspath(
 
 # TODO should be fixed during installation and not relative to ABKHAZIA_ROOT_DIR
 KALDI_ROOT_DIR = os.path.abspath(
-    os.path.join(ABKHAZIA_ROOT_DIR, '../kaldi'))
+    #os.path.join(ABKHAZIA_ROOT_DIR, '../kaldi'))
+	'/home/xcao/kaldi-trunk')
 """The absolute to the abkhazia installation directory"""
 
 
