@@ -1,2 +1,0 @@
-This is where the results from kaldi data analyses will go, you don't
-need to put anything in this folder yourself.

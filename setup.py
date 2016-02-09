@@ -1,3 +1,17 @@
+# Copyright 2016 Thomas Schatz, Xuan Nga Cao, Mathieu Bernard
+#
+# This file is part of abkhazia: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+# Abkhazia is distributed in the hope that it will be useful, but
+# WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+# General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with abkahzia. If not, see <http://www.gnu.org/licenses/>.
 """Setup script for the abkhazia package"""
 
 import os
@@ -15,16 +29,17 @@ REQUIREMENTS = [] if ON_RTD else [
     #'matplotlib',
     #'numpy >= 1.8.0',
     #'pandas',
-    #'yaafelib'
+    #'yaafelib',
+    #'progressbar'
 ]
 
 setup(
     name='abkhazia',
     version=VERSION,
-    description='Performing ABX and kaldi experiments on speech corpora in a unified way',
+    description='ABX and kaldi experiments on speech corpora made easy',
     long_description=open('README.md').read(),
-    #keywords='HDF5 h5py features read write',
     author='Thomas Schatz, Mathieu Bernard, Roland Thiolliere, Xuan Nga Cao',
+    author_email='mmathieubernardd@gmail.com',
     url='https://github.com/bootphon/abkhazia',
     license='Apache-2.0',
     packages=find_packages(exclude=['test']),

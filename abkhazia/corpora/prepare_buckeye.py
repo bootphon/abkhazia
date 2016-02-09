@@ -1,5 +1,20 @@
 #!/usr/bin/env python
 # coding: utf-8
+# Copyright 2016 Thomas Schatz, Xuan Nga Cao, Mathieu Bernard
+#
+# This file is part of abkhazia: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+# Abkhazia is distributed in the hope that it will be useful, but
+# WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+# General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with abkahzia. If not, see <http://www.gnu.org/licenses/>.
+
 """Data preparation for the revised Buckeye corpus (in the original format)"""
 
 import os
@@ -157,8 +172,9 @@ class BuckeyePreparator(AbstractPreparator):
                             offset_line = lines_2[index_offset-1]
                             match_offset = re.match(r'\s\s+(.*)\s+(121|122)\s(.*)', offset_line)
                             if not match_offset:
-                                print(offset_line)
-                                raise IOError
+                                raise IOError('offset line unmatched: {}'
+                                              .format(offset_line))
+
                             offset = match_offset.group(1)
                             outfile.write(str(offset))
                             current_index = index_offset
@@ -192,7 +208,9 @@ class BuckeyePreparator(AbstractPreparator):
                 utt = bname.replace('.txt', '')
                 speaker_id = re.sub(r"[0-9][0-9](a|b)\.txt", "", bname)
                 for idx, _ in enumerate(lines, start=1):
-                    outfile.write(utt + '-sent' + str(idx) + ' ' + speaker_id + '\n')
+                    outfile.write(utt + '-sent' + str(idx)
+                                  + ' ' + speaker_id + '\n')
+
         self.log.debug('finished creating utt2spk file')
 
     def make_transcription(self):
@@ -270,7 +288,6 @@ class BuckeyePreparator(AbstractPreparator):
             outfile.write(w + ' ' + f + '\n')
 
         self.log.debug('finished creating lexicon file')
-
 
 if __name__ == '__main__':
     main(BuckeyePreparator, __doc__)

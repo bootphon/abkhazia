@@ -1,4 +1,18 @@
 # -*- coding: utf-8 -*-
+# Copyright 2016 Thomas Schatz, Xuan Nga Cao, Mathieu Bernard
+#
+# This file is part of abkhazia: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+# Abkhazia is distributed in the hope that it will be useful, but
+# WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+# General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with abkahzia. If not, see <http://www.gnu.org/licenses/>.
 """
 Created on Mon Dec  1 15:05:38 2014
 
@@ -33,7 +47,7 @@ def segment_features(features_file, segments_file, out_file):
 			wav_id = os.path.splitext(wavefile)[0]
 			times, features = h5features.read(features_file, from_internal_file=wav_id)
 			times, features = times[wav_id], features[wav_id]  # no need for dict here
-			utt_ids, utt_times, utt_features = [], [], []	
+			utt_ids, utt_times, utt_features = [], [], []
 			for utt_id, _, start, stop in utts:
 				# select features for appropriate segment
 				utt_ids.append(utt_id)
@@ -42,4 +56,3 @@ def segment_features(features_file, segments_file, out_file):
 				utt_features.append(features[indices,:])
 			# write to out_file once for each wavefile
 			h5features.write(out_file, 'features', utt_ids, utt_times, utt_features)
-

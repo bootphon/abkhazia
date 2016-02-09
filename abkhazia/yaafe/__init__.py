@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 # Copyright 2015, 2016 Thomas Schatz
 #
 # This file is part of abkhazia: you can redistribute it and/or modify
@@ -12,3 +13,8 @@
 #
 # You should have received a copy of the GNU General Public License
 # along with abkahzia. If not, see <http://www.gnu.org/licenses/>.
+"""
+Created on Wed Feb  4 00:17:47 2015
+
+@author: Thomas Schatz
+"""

@@ -1,4 +1,18 @@
 # -*- coding: utf-8 -*-
+# Copyright 2015, 2016 Thomas Schatz
+#
+# This file is part of abkhazia: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+# Abkhazia is distributed in the hope that it will be useful, but
+# WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+# General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with abkahzia. If not, see <http://www.gnu.org/licenses/>.
 """
 Created on Thu Mar  5 11:32:55 2015
 
@@ -37,7 +51,7 @@ def setup_lexicon(corpus_path, recipe_path, prune_lexicon=False, train_name=None
 	else:
 		shutil.copy(p.join(corpus_path, 'data', 'lexicon.txt'),
 					p.join(dict_path, 'lexicon.txt'))
-	
+
 
 def setup_phone_lexicon(corpus_path, recipe_path, name):
 	dict_path = get_dict_path(recipe_path, name)
@@ -75,7 +89,7 @@ def setup_phones(corpus_path, recipe_path, name='dict'):
 def setup_silences(corpus_path, recipe_path, name='dict'):
 	dict_path = get_dict_path(recipe_path, name)
 	shutil.copy(p.join(corpus_path, 'data', 'silences.txt'),
-				p.join(dict_path, 'silence_phones.txt'))	
+				p.join(dict_path, 'silence_phones.txt'))
 	with codecs.open(p.join(dict_path, 'optional_silence.txt'),
 					 mode='w', encoding='UTF-8') as out:
 		out.write(u'SIL\n')
@@ -132,7 +146,7 @@ def setup_utt2spk(corpus_path, recipe_path, in_split=None, out_split=None, desir
 							  	  desired_utts)
 
 
-def setup_segments(corpus_path, recipe_path, in_split=None, out_split=None, desired_utts=None):	
+def setup_segments(corpus_path, recipe_path, in_split=None, out_split=None, desired_utts=None):
 	i_path, o_path = get_data_path(corpus_path, recipe_path, in_split, out_split)
 	with codecs.open(p.join(i_path, 'segments.txt'),
 					 mode='r', encoding='UTF-8') as inp:
@@ -159,13 +173,13 @@ def setup_wav(corpus_path, recipe_path, in_split=None, out_split=None, desired_u
 		lines = inp.readlines()
 	if not(desired_utts is None):
 		# select utterances that are long enough (>= 15 ms)
-		lines = io.match_on_first_col(lines, desired_utts) 
+		lines = io.match_on_first_col(lines, desired_utts)
 	wavs = set()
 	for line in lines:
 		elements = line.strip().split(u" ")
 		wav_id = elements[1]
 		wavs.add(wav_id)
-	# write wav.scp 
+	# write wav.scp
 	with codecs.open(p.join(o_path, 'wav.scp'),
 					 mode='w', encoding='UTF-8') as out:
 		for wav_id in wavs:
@@ -196,7 +210,7 @@ def setup_kaldi_folders(kaldi_root, recipe_path):
 		os.remove(utils_link)
 	subprocess.call("ln -s {0} {1}".format(steps_dir, steps_link), shell=True)
 	subprocess.call("ln -s {0} {1}".format(utils_dir, utils_link), shell=True)
-	conf_dir = p.join(recipe_path, 'conf')	
+	conf_dir = p.join(recipe_path, 'conf')
 	if p.exists(conf_dir):
 		shutil.rmtree(conf_dir)
 	os.mkdir(conf_dir)

@@ -7,8 +7,8 @@ undef $field_end;
 
 
 if ($ARGV[0] eq "-f") {
-  shift @ARGV; 
-  $field_spec = shift @ARGV; 
+  shift @ARGV;
+  $field_spec = shift @ARGV;
   if ($field_spec =~ m/^\d+$/) {
     $field_begin = $field_spec - 1; $field_end = $field_spec - 1;
   }
@@ -21,7 +21,7 @@ if ($ARGV[0] eq "-f") {
     }
   }
   if (!defined $field_begin && !defined $field_end) {
-    die "Bad argument to -f option: $field_spec"; 
+    die "Bad argument to -f option: $field_spec";
   }
 }
 $symtab = shift @ARGV;
@@ -67,6 +67,3 @@ while (<>) {
   }
   print "\n";
 }
-
-
-

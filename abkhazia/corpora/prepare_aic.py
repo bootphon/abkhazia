@@ -1,5 +1,20 @@
 #!/usr/bin/env python
 # coding: utf-8
+# Copyright 2016 Thomas Schatz, Xuan Nga Cao, Mathieu Bernard
+#
+# This file is part of abkhazia: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+# Abkhazia is distributed in the hope that it will be useful, but
+# WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+# General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with abkahzia. If not, see <http://www.gnu.org/licenses/>.
+
 """Data preparation for the revised AIC corpus
 
 Distribution of the revised AIC corpus is freely available at LDC:
@@ -130,7 +145,7 @@ class AICPreparator(AbstractPreparator):
             for line in open(input_file2, 'r'):
                 out.write(line)
 
-        print ('finished creating text file')
+        self.log.debug('finished creating text file')
 
     def make_lexicon(self):
         temp_lex = os.path.join(self.logs_dir, 'temp_lexicon_cmu.txt')
@@ -164,12 +179,9 @@ class AICPreparator(AbstractPreparator):
         for line in open(self.transcription_file, "r"):
             matched = re.match(r"([fm0-9]+)_([ps])_(.*?)\s(.*)", line)
             if matched:
-                utt = matched.group(4)
-                for word in utt.upper().split():
-                    if word not in dict_word:
-                        dict_word[word] = 1
-                    else:
-                        dict_word[word] += 1
+                for word in matched.group(4).upper().split():
+                    dict_word[word] = (1 if word not in dict_word
+                                       else dict_word[word] + 1)
 
         # Loop through the words in prompts by descending frequency and
         # create the lexicon by looking up in the CMU dictionary. OOVs

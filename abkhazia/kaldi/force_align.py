@@ -1,4 +1,18 @@
 # -*- coding: utf-8 -*-
+# Copyright 2015, 2016 Thomas Schatz
+#
+# This file is part of abkhazia: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+# Abkhazia is distributed in the hope that it will be useful, but
+# WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+# General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with abkahzia. If not, see <http://www.gnu.org/licenses/>.
 """
 Created on Thu Mar  5 11:32:55 2015
 
@@ -22,10 +36,10 @@ other kaldi recipe.
 import os.path as p
 import os
 import abkhazia.utilities.basic_io as io
-import abkhazia.kaldi.abkhazia2kaldi as a2k 
+import abkhazia.kaldi.abkhazia2kaldi as a2k
 
 # Main function of this module: 'create_kaldi_recipe'
-# TODO: 
+# TODO:
 #	- document the input and output of create_kaldi_recipe
 #	- document the input and output of the created recipe and how to run it
 #	- write a command-line interface to create_kaldi_recipe
@@ -69,7 +83,7 @@ def create_kaldi_recipe(corpus_path, output_path, kaldi_root,
 	a2k.setup_segments(corpus_path, recipe_path, desired_utts=desired_utts)  # segments
 	a2k.setup_wav(corpus_path, recipe_path, desired_utts=desired_utts)  # wav.scp
 	# do some cpp_sorting just to be sure (for example if the abkhazia corpus has
-	# been copied to a different machine after its creation, there might be 
+	# been copied to a different machine after its creation, there might be
 	# some machine-dependent differences in the required orders)
 	files = ['text', 'utt2spk', 'segments', 'wav.scp']
 	for f in files:
@@ -78,6 +92,6 @@ def create_kaldi_recipe(corpus_path, output_path, kaldi_root,
 			io.cpp_sort(path)
 	# Other files and folders (common to all splits)
 	a2k.setup_wav_folder(corpus_path, recipe_path)  # wav folder
-	a2k.setup_kaldi_folders(kaldi_root, recipe_path)  # misc. kaldi symlinks, directories and files 
+	a2k.setup_kaldi_folders(kaldi_root, recipe_path)  # misc. kaldi symlinks, directories and files
 	a2k.setup_machine_specific_scripts(recipe_path)  # path.sh, cmd.sh
 	a2k.setup_main_scripts(recipe_path, 'force_align.sh')  # score.sh, run.sh

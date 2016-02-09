@@ -1,4 +1,18 @@
 # -*- coding: utf-8 -*-
+# Copyright 2015, 2016 Thomas Schatz
+#
+# This file is part of abkhazia: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+# Abkhazia is distributed in the hope that it will be useful, but
+# WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+# General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with abkahzia. If not, see <http://www.gnu.org/licenses/>.
 """
 Created on Thu Mar  5 11:32:55 2015
 
@@ -33,9 +47,9 @@ for corpus, prune_lexicon in zip(corpora, prune_lexicons):
 
 	decode.create_kaldi_recipe(p.join(root, 'corpora', corpus),
 							   p.join(root, 'kaldi', corpus),
-							   kaldi_root, 
+							   kaldi_root,
 							   prune_lexicon=prune_lexicon)
-          
+
 	## Run the recipes
 	# how to set the parameters here easily?
 	# subprocess.call(cd recipe_path; ./run.sh)
@@ -44,7 +58,7 @@ for corpus, prune_lexicon in zip(corpora, prune_lexicons):
 	# include an ad hoc part relying on undocumented kaldi features
 
 	# add an alignments folder to data
-	# add a features folder to data ??? (probably somewhere else?) 
+	# add a features folder to data ??? (probably somewhere else?)
 
 """
 # test on Buckeye for challenge
@@ -122,7 +136,7 @@ all_speakers = [
 			u'049f', u'169f', u'008m', u'111f',
 			u'056f', u'089m', u'168f', u'129f',
 			u'071f', u'081m', u'124m', u'185f',
-			u'040f', u'065f', u'181m', u'119f', 
+			u'040f', u'065f', u'181m', u'119f',
 			u'105m', u'036f'
 			]
 

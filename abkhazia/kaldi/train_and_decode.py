@@ -1,4 +1,18 @@
 # -*- coding: utf-8 -*-
+# Copyright 2015, 2016 Thomas Schatz
+#
+# This file is part of abkhazia: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+# Abkhazia is distributed in the hope that it will be useful, but
+# WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+# General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with abkahzia. If not, see <http://www.gnu.org/licenses/>.
 """
 Created on Thu Mar  5 11:32:55 2015
 
@@ -26,17 +40,17 @@ import os.path as p
 import os
 import shutil
 import abkhazia.utilities.basic_io as io
-import abkhazia.kaldi.abkhazia2kaldi as a2k 
+import abkhazia.kaldi.abkhazia2kaldi as a2k
 
 # Main function of this module: 'create_kaldi_recipe'
-# TODO: 
+# TODO:
 #	- document the input and output of create_kaldi_recipe
 #	- document the input and output of the created recipe and how to run it
 #	- write a command-line interface to create_kaldi_recipe
 
 
 def create_kaldi_recipe(corpus_path, output_path, kaldi_root,
-					recipe_name="train_and_decode",																			
+					recipe_name="train_and_decode",
 					train_name='train', test_name='test',
 					prune_lexicon=False):
 	"""
@@ -58,7 +72,7 @@ def create_kaldi_recipe(corpus_path, output_path, kaldi_root,
 			were included and many other common words weren't), which could lead
 			to overestimated performance on words from the lexicon appearing in
 			the test only.
-			Removes from the lexicon all words that are not present at least 
+			Removes from the lexicon all words that are not present at least
 			once in the training set.
 	"""
 	# Checking paths
@@ -88,7 +102,7 @@ def create_kaldi_recipe(corpus_path, output_path, kaldi_root,
 		a2k.setup_segments(corpus_path, recipe_path, in_split, out_split, desired_utts)  # segments
 		a2k.setup_wav(corpus_path, recipe_path, in_split, out_split, desired_utts)  # wav.scp
 		# do some cpp_sorting just to be sure (for example if the abkhazia corpus has
-		# been copied to a different machine after its creation, there might be 
+		# been copied to a different machine after its creation, there might be
 		# some machine-dependent differences in the required orders)
 		files = ['text', 'utt2spk', 'segments', 'wav.scp']
 		for f in files:
@@ -115,17 +129,17 @@ def create_kaldi_recipe(corpus_path, output_path, kaldi_root,
 	lexicon = p.join(corpus_path, 'data', 'lexicon.txt')
 	text = p.join(corpus_path, 'data', 'split', train_name, 'text.txt')
 	out_dir = a2k.get_dict_path(recipe_path, name='phone_bigram')
-	io.word2phone(lexicon, text, p.join(out_dir, 'lm_text.txt'))	
+	io.word2phone(lexicon, text, p.join(out_dir, 'lm_text.txt'))
 	# create empty 'phone' file, just to indicate the LM is phone_level
 	with open(p.join(out_dir, 'phone'), 'w'):
 		pass
 	# Other files and folders (common to all splits)
 	a2k.setup_wav_folder(corpus_path, recipe_path)  # wav folder
-	a2k.setup_kaldi_folders(kaldi_root, recipe_path)  # misc. kaldi symlinks, directories and files 
+	a2k.setup_kaldi_folders(kaldi_root, recipe_path)  # misc. kaldi symlinks, directories and files
 	a2k.setup_machine_specific_scripts(recipe_path)  # path.sh, cmd.sh
 	a2k.setup_main_scripts(recipe_path, 'train_and_decode.sh')  # score.sh, run.sh
 	a2k.setup_lm_scripts(recipe_path)
-	
+
 
 """
 For future reference: creating a phone-loop G.txt:
@@ -136,13 +150,13 @@ For future reference: creating a phone-loop G.txt:
 			# should I, C++ sort the created files ?
 			out.write(u'0 0 {0} {1}\n'.format(word, word))
 		out.write(u'0 0.0')  # final node
-	# note that optional silences are added when composing G with L (lexicon) 
+	# note that optional silences are added when composing G with L (lexicon)
 	# when calling prepare_lang.sh, except if silence_prob is set to 0
 """
 
 """
 Note on phone-level language models for acoustic models trained with word_position_dependent
-phones (this is the default in kaldi): 
+phones (this is the default in kaldi):
 
 A customized version of prepare_lang.sh is copied in the 'local' folder of the recipe,
 by this script. This version creates appropriate word_position_dependent pronunciation
@@ -150,7 +164,7 @@ variants for the 'phone' lexicon.
 The recipe phone_loop_lm.sh in kaldi_templates uses this prepare_lang.sh when its
 word_position_dependent option is set to true, otherwise the default prepare_lang.sh
 (in 'utils') is used. As a result of this customization the script validate_lang.pl also
-needs to be slightly amended and a custom version is also copied by in the 
+needs to be slightly amended and a custom version is also copied by in the
 local folder and used by the custom prepare_lang.sh.
 """
 
@@ -164,7 +178,7 @@ local folder and used by the custom prepare_lang.sh.
 # would conflict with the C expansion step in HCLG and for word-position-dependent variants
 # this poses problem at the lattice stage, where lattices become big and word-position
 # variants are considered as different decodings, which they shouldn't…
-# Probably the clean solution to specify a LM on allophonic variants would be to modify the 
+# Probably the clean solution to specify a LM on allophonic variants would be to modify the
 # C step (in HCLG) to allow an expansion weighted by a given LM. This means meddling inside
 # kaldi code, so we won't do it unless we really really need it.
 
@@ -172,5 +186,5 @@ local folder and used by the custom prepare_lang.sh.
 # the splits and the LMs)
 
 # Check in validate_corpus that adding _I, _B, _E or _S suffixes to
-# phones does not create conflicts, otherwise issue a warning to say that 
+# phones does not create conflicts, otherwise issue a warning to say that
 # word_position_dependent models won't be usable.

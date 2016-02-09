@@ -1,4 +1,4 @@
-# Copyright 2015, 2016 Thomas Schatz
+# Copyright 2016 Roland Thiolliere
 #
 # This file is part of abkhazia: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by

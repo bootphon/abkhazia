@@ -1,22 +1,13 @@
 # Abkhazia-specific rules
 
-# Allow only a readme in data directories
+# Ignore data directories
 /ABXpy/*
-!/ABXpy/README.txt
 /kaldi/*
-!/kaldi/README.txt
 /corpora/*
-!/corpora/README.txt
-
-# In corpora folder allow corpus-specific bin folders
-# containing scripts and instructions to prepare
-# everything that is needed from the raw corpus distribution
-!/corpora/*/
-/corpora/*/*
-!/corpora/*/bin
 
 # MacOS .DS_Store
 *.DS_Store
+
 # Some temporary files
 *~
 

@@ -1,11 +1,25 @@
 # -*- coding: utf-8 -*-
+# Copyright 2015, 2016 Thomas Schatz
+#
+# This file is part of abkhazia: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+# Abkhazia is distributed in the hope that it will be useful, but
+# WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+# General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with abkahzia. If not, see <http://www.gnu.org/licenses/>.
 """
 Created on Thu Mar  5 11:32:55 2015
 
 @author: Thomas Schatz
 
 
-Exporting transcriptions and lattice posteriors from a kaldi recipe to h5features format. 
+Exporting transcriptions and lattice posteriors from a kaldi recipe to h5features format.
 """
 
 import h5features
@@ -46,8 +60,8 @@ def transcription2features(phones_file, tra_file, out_file, word_position_depend
 
 	This avoids problems with long phones if coding only the centerpoint
 	of a phone (a long time interval within the phone, but that does not
-	include the centerpoint will have empty representation). Allowing 
-	representations indexed by time intervals instead of time points could 
+	include the centerpoint will have empty representation). Allowing
+	representations indexed by time intervals instead of time points could
 	be more elegant when one wants to use edit_distance but this would require
 	some (substantial but not huge) recoding in h5features and ABXpy.distances.
 	One would need to check that the time-intervals have no overlap and are
@@ -131,13 +145,13 @@ def lattice2features(phones_file, post_file, out_file, word_position_dependent=T
 				frame.append(token)
 		utt_features = np.zeros(shape=(len(frames), d), dtype=np.float64)
 		for f, frame in enumerate(frames):
-			assert len(frame) % 2 == 0 
+			assert len(frame) % 2 == 0
 			probas = [float(p) for p in frame[1::2]]
 			phones = [phonemap[code] for code in frame[::2]]
 			# optimisation 1 would be mapping directly a given code to a given posterior dim
 			for phone, proba in zip(phones, probas):
 				i = phone_order.index(phone)
-				# add to previous proba since different variants of a same phone will map to 
+				# add to previous proba since different variants of a same phone will map to
 				# the same dimension i of the posteriorgram
 				utt_features[f, i] = utt_features[f, i] + proba
 		# normalize posteriorgrams to correct for rounding or thresholding errors

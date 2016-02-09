@@ -1,7 +1,18 @@
-"""
-@author Roland Thiolliere
-"""
-
+# -*- coding: utf-8 -*-
+# Copyright 2016 Roland Thiolliere
+#
+# This file is part of abkhazia: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+# Abkhazia is distributed in the hope that it will be useful, but
+# WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+# General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with abkahzia. If not, see <http://www.gnu.org/licenses/>.
 """
 This script contains functions to train an ABnet for a list of pairs of same words
 and to calculate the embeddings using a trained ABnet.
@@ -73,7 +84,7 @@ def train(same_pair_file, output_path,
     if same_speaker_ratio:
         raise NotImplementedError
     assert features_type in ['fbanks'], 'feature type not supported'
-    
+
     with open(p.join(output_path, 'README.txt'), 'w') as fout:
         fout.write(README.format(
             features_type, nframes, n_layers,
@@ -156,7 +167,7 @@ def decode(model_path, wavefile_list, output_file,
     prepare.h5features_fbanks(index['files'], output_file, featfunc=do_transform)
     if verbose:
         print('bottleneck features calculated, all done.')
-    
+
 
 README="""The neural network was trained with the following arguments:
 features: {}
@@ -235,7 +246,7 @@ def train_from_features(same_pair_file, output_path, features_file,
     """
     if same_speaker_ratio:
         raise NotImplementedError
-    
+
     with open(p.join(output_path, 'README.txt'), 'w') as fout:
         fout.write(README.format(
             features_type, nframes, n_layers,

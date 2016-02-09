@@ -1,5 +1,20 @@
 #!/usr/bin/env python
 # coding: utf-8
+# Copyright 2016 Thomas Schatz, Xuan Nga Cao, Mathieu Bernard
+#
+# This file is part of abkhazia: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+# Abkhazia is distributed in the hope that it will be useful, but
+# WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+# General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with abkahzia. If not, see <http://www.gnu.org/licenses/>.
+
 """Data preparation for the revised CSJ corpus"""
 
 # MoraId == number or x or φ ??
@@ -37,7 +52,8 @@ except ImportError:
 
 from abkhazia.corpora.utils import (
     AbstractPreparator,
-    open_utf8)
+    open_utf8,
+    main)
 
 # from https://stackoverflow.com/questions/38987
 def merge_two_dicts(x, y):
@@ -355,6 +371,9 @@ class CSJPreparator(AbstractPreparator):
 
         core_txt = os.path.join(os.path.dirname(os.path.abspath(__file__)),
                                 'csj', 'CSJ_core.txt')
+        if not os.path.exists(core_txt):
+
+
         core_files = [l[:-1] for l in open(core_txt, 'r').readlines()]
         xml_dir = os.path.join(self.input_dir, 'XML')
 
@@ -422,3 +441,7 @@ class CSJPreparator(AbstractPreparator):
                 transcript = u" ".join(self.lexicon[word])
                 out.write(u"{0} {1}\n".format(word, transcript))
         cpp_sort(self.lexicon_file)
+
+
+if __name__ == '__main__':
+    main(CSJPreparator, __doc__)

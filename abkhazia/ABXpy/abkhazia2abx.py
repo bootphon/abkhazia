@@ -1,4 +1,18 @@
 # -*- coding: utf-8 -*-
+# Copyright 2015, 2016 Thomas Schatz
+#
+# This file is part of abkhazia: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+# Abkhazia is distributed in the hope that it will be useful, but
+# WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+# General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with abkahzia. If not, see <http://www.gnu.org/licenses/>.
 """
 Created on Mon Dec  1 15:05:38 2014
 
@@ -87,8 +101,8 @@ def filter_alignment(alignment_file, output_file, segment_file):
 
 
 def add_segment_info(segment_info_file, item_file_in, item_file_out):
-	""" 
-	Add columns indicating C/V/special and tone where applicable 
+	"""
+	Add columns indicating C/V/special and tone where applicable
 	"""
 	with codecs.open(segment_info_file, mode='r', encoding='UTF-8') as inp:
 		lines = inp.readlines()
@@ -117,7 +131,7 @@ def add_segment_info(segment_info_file, item_file_in, item_file_out):
 
 
 def remove_bad_phones(bad_phones, item_file_in, item_file_out):
-	""" 
+	"""
 	Remove occurences of the specified phones (as main phone or in context)
 	"""
 	with codecs.open(item_file_in, mode='r', encoding='UTF-8') as inp:

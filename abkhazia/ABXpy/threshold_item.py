@@ -1,4 +1,18 @@
 # -*- coding: utf-8 -*-
+# Copyright 2015, 2016 Thomas Schatz
+#
+# This file is part of abkhazia: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+# Abkhazia is distributed in the hope that it will be useful, but
+# WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+# General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with abkahzia. If not, see <http://www.gnu.org/licenses/>.
 """
 Created on Fri Nov 28 17:07:55 2014
 
@@ -18,7 +32,7 @@ import ABXpy.database.database as database
 def threshold_item(item_file, output_file, columns, lower_threshold=1, upper_threshold=np.inf, seed=0):
     """
     Randomly sample items in item_file in order to limit the number of element in each cell
-    to upper_threshold, where a cell is defined as a unique value of the specified columns 
+    to upper_threshold, where a cell is defined as a unique value of the specified columns
     """
     np.random.seed(seed)
     # read input file
@@ -44,5 +58,5 @@ item_file = root + corpus + '.item'
 lower_threshold = 1
 upper_threshold = 5
 out_file = root + corpus + '_threshold_' + str(lower_threshold) + '_' + str(upper_threshold) + '.item'
-columns = ['phone', 'prev-phone', 'next-phone', 'talker'] #['phone', 'talker']                
+columns = ['phone', 'prev-phone', 'next-phone', 'talker'] #['phone', 'talker']
 threshold_item(item_file, out_file, columns, lower_threshold=lower_threshold, upper_threshold=upper_threshold)
