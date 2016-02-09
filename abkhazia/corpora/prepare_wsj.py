@@ -339,7 +339,7 @@ class JournalistReadPreparator(WallStreetJournalPreparator):
 
     """
     name = WallStreetJournalPreparator.name + '-journalist-read'
-    dir_pattern = ['si_tr_j']
+    directory_pattern = ['si_tr_j']
     file_pattern = 'c'
 
 
