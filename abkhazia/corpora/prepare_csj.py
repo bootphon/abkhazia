@@ -43,13 +43,14 @@
 
 import os
 from collections import namedtuple
-from abkhazia.utilities.basic_io import cpp_sort
+from pkg_resources import Requirement, resource_filename
 
 try:
     import xml.etree.cElementTree as ET
 except ImportError:
     import xml.etree.ElementTree as ET
 
+from abkhazia.utilities.basic_io import cpp_sort
 from abkhazia.corpora.utils import (
     AbstractPreparator,
     open_utf8,
@@ -369,15 +370,14 @@ class CSJPreparator(AbstractPreparator):
         # call the AbstractPreparator __init__
         super(CSJPreparator, self).__init__(input_dir, output_dir, verbose)
 
-        core_txt = os.path.join(os.path.dirname(os.path.abspath(__file__)),
-                                'csj', 'CSJ_core.txt')
-        if not os.path.exists(core_txt):
+        # load the core_CSJ.txt from the abkhazia installation path
+        core = resource_filename(Requirement.parse('abkhazia'), 'CSJ_core.txt')
+        if not os.path.exists(core):
+            raise OSError('core_CSJ not found in {}'.format(core))
+        core_files = [l[:-1] for l in open(core, 'r').readlines()]
 
-
-        core_files = [l[:-1] for l in open(core_txt, 'r').readlines()]
+        # select laymen talks only, from core part of the corpus
         xml_dir = os.path.join(self.input_dir, 'XML')
-
-        # select laymen talks only, from CORE part of the corpus
         self.data_files = os.listdir(xml_dir)
         self.data_files = [f.replace('.xml', '') for f in self.data_files]
         self.data_files = [f for f in self.data_files

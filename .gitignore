@@ -5,6 +5,11 @@
 /kaldi/*
 /corpora/*
 
+# Ignore files generated during configuration
+/abkhazia/share/abkhazia.cfg
+/abkhazia/share/cmudict.0.7a
+
+
 # MacOS .DS_Store
 *.DS_Store
 

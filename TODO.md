@@ -4,20 +4,18 @@
 
 ### Manage paths to dependancies
 
-fix some paths at installation (in a config file):
-- path to kaldi
-- path to CMUdict
-- path to flac, sox, shorten
+- [ ] test and use data-directory in code
 
-### Download 3rd party code and data
+- kaldi:
+  - [X] kaldi-root in share/abkahzia.cfg
+  - [ ] use it in the code -> refactor corpora/utils/utils.py
+  - [ ] sph2pipe -> express it from kaldi
 
-- cmu dict
-- sph2pipe
-- shorten
+- CMU dictionary:
+  - [X] download it during installation
+  - [ ] use it in the code -> AbstractPreparatorWithCMU class
 
 ## Corpora preparation
-
-- remove cmu_dict parameter and feed it during installation
 
 - Smart overwrite of exitisting wavs
 
