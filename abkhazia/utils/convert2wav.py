@@ -14,6 +14,7 @@
 # along with abkahzia. If not, see <http://www.gnu.org/licenses/>.
 """Provides functions to convert various audio formats to wav"""
 
+from joblib import Parallel, delayed
 import os
 import shlex
 import subprocess
@@ -92,3 +93,30 @@ def shn2wav(shn, wav):
         os.remove(tmp)
     except os.error:
         pass
+
+
+def convert(inputs, wavs, fileformat, njobs=1, verbose=5):
+    """Convert a range of audio files to the wav format
+
+    inputs: list of input files to convert
+    outputs: list of the converted wav files
+    fileformat: audio format of the input files, must be in {flac, sph, shn}
+    njobs: the number of parallel conversions
+
+    We must have len(inputs) == len(wavs)
+
+    """
+    try:
+        fnc = {
+            'flac': flac2wav,
+            'sph': sph2wav,
+            'shn': shn2wav
+        }[fileformat]
+    except KeyError:
+        raise IOError('{} is not a supported format'.format(fileformat))
+
+    if not all(os.path.isfile(i) for i in inputs):
+        raise IOError('some input files do not exist')
+
+    Parallel(n_jobs=njobs, verbose=verbose)(
+        delayed(fnc)(i, o) for i, o in zip(inputs, wavs))

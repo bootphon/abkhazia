@@ -30,7 +30,7 @@ import progressbar
 import re
 
 from abkhazia.utils import list_files_with_extension
-from abkhazia.utils.convert2wav import flac2wav
+from abkhazia.utils.convert2wav import convert
 from abkhazia.corpora.utils import (
     AbstractPreparatorWithCMU, default_argument_parser)
 
@@ -93,14 +93,12 @@ class AICPreparator(AbstractPreparatorWithCMU):
 
     def make_wavs(self):
         flacs = list_files_with_extension(self.input_dir, '.flac')
+        wavs = [os.path.join(
+            self.wavs_dir, os.path.basename(flac).replace('.flac', '.wav'))
+                for flac in flacs]
+
         self.log.info('converting {} flac files to wav...'.format(len(flacs)))
-
-        for flac in progressbar.ProgressBar()(flacs):
-            wav = os.path.join(
-                self.wavs_dir, os.path.basename(flac).replace('.flac', '.wav'))
-
-            if not os.path.exists(wav):
-                flac2wav(flac, wav)
+        convert(flacs, wavs, 'flac', 4)
 
     def make_segment(self):
         with open(self.segments_file, 'w') as out:

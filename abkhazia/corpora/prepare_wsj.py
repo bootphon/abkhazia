@@ -15,19 +15,14 @@
 # You should have received a copy of the GNU General Public License
 # along with abkahzia. If not, see <http://www.gnu.org/licenses/>.
 
-"""Data preparation for the Wall Street Journal corpus
-
-To prepare wav files, the executable 'sph2pipe' must be present on
-your PATH.
-
-"""
+"""Data preparation for the Wall Street Journal corpus"""
 
 import os
 import progressbar
 import re
 
-from abkhazia.utils import list_files_with_extension, list_directory, open_utf8
-from abkhazia.utils.convert2wav import sph2wav
+from abkhazia.utils import list_directory, open_utf8
+from abkhazia.utils.convert2wav import convert
 from abkhazia.corpora.utils import (
     AbstractPreparatorWithCMU, default_argument_parser)
 
@@ -183,11 +178,13 @@ class WallStreetJournalPreparator(AbstractPreparatorWithCMU):
         self.log.debug('directory pattern is {}, file pattern is {}'
                        .format(self.directory_pattern, self.file_pattern))
 
+        # setup directory filter
         if self.directory_pattern is None:
             dir_filter = lambda d: True
         else:
             dir_filter = lambda d: d in self.directory_pattern
 
+        # setup file pattern
         if self.file_pattern is None:
             filter_dot = lambda f: f[-4:] == '.dot'
             filter_wv1 = lambda f: f[-4:] == '.wv1'
@@ -197,27 +194,28 @@ class WallStreetJournalPreparator(AbstractPreparatorWithCMU):
             filter_wv1 = lambda f: (
                 f[3] == self.file_pattern and f[-4:] == '.wv1')
 
-        self.input_recordings = self.list_files(dir_filter, filter_wv1)
-        self.input_transcriptions = self.list_files(dir_filter, filter_dot)
+        # filter out the non desired input files
+        self.input_recordings = self.filter_files(dir_filter, filter_wv1)
+        self.input_transcriptions = self.filter_files(dir_filter, filter_dot)
+
         self.log.info('selected {} speech files and {} transcription files'
                       .format(len(self.input_recordings),
                               len(self.input_transcriptions)))
 
-        # filter out the corrupted utterances from recordings. The tag
-        # '[bad_recording]' in a transcript indicates a problem with
-        # the associated recording (if it even exists) so exclude it
+        # filter out the corrupted utterances from input files. The
+        # tag '[bad_recording]' in a transcript indicates a problem
+        # with the associated recording (if it exists) so exclude it
         self.bad_utts = []
         for trs in self.input_transcriptions:
             for line in open_utf8(trs, 'r').xreadlines():
                 if '[bad_recording]' in line:
-                    #print trs, line
                     utt_id = re.match(r'(.*) \((.*)\)', line).group(2)
                     self.bad_utts.append(utt_id)
 
-        self.log.info('Found {} corrupted utterances'
-                      .format(len(self.bad_utts)))
+        self.log.debug('Found {} corrupted utterances'
+                       .format(len(self.bad_utts)))
 
-    def list_files(self, dir_filter, file_filter):
+    def filter_files(self, dir_filter, file_filter):
         """Return a list of abspaths to relevant WSJ files"""
         matched = []
         for path, dirs, _ in os.walk(self.input_dir):
@@ -228,16 +226,19 @@ class WallStreetJournalPreparator(AbstractPreparatorWithCMU):
         return matched
 
     def make_wavs(self):
+        # filter out bad utterances
+        sphs = [sph for sph in self.input_recordings
+                if os.path.basename(sph).replace('.wv1', '')
+                not in self.bad_utts]
+
+        # build output wavs files
+        wavs = [os.path.join(
+            self.wavs_dir, os.path.basename(sph).replace('.wv1', '.wav'))
+                for sph in sphs]
+
         self.log.info('converting {} sph files to wav...'
-                      .format(len(self.input_recordings)))
-
-        for sph in progressbar.ProgressBar()(self.input_recordings):
-            utt_id = os.path.basename(sph).replace('.wv1', '')
-            if utt_id not in self.bad_utts:  # exclude some utterances
-                wav = os.path.join(self.wavs_dir, utt_id + '.wav')
-                if not os.path.exists(wav):
-                    sph2wav(sph, wav)
-
+                      .format(len(sphs)))
+        convert(sphs, wavs, 'sph', 4)
         self.log.debug('converted all files to wav')
 
     def make_segment(self):
@@ -253,6 +254,7 @@ class WallStreetJournalPreparator(AbstractPreparatorWithCMU):
                 utt_id = os.path.basename(wav).replace('.wav', '')
                 # speaker_id are the first 3 characters of the filename
                 out.write(u"{0} {1}\n".format(utt_id, utt_id[:3]))
+
         self.log.debug('finished creating utt2spk file')
 
     def make_transcription(self):
@@ -311,6 +313,7 @@ class WallStreetJournalPreparator(AbstractPreparatorWithCMU):
             # some particular kind of noise, but this is not the case
             # at present
             out.write(u"<noise> NSN\n")
+
         self.log.debug('finished creating lexicon file')
 
 
@@ -388,14 +391,13 @@ def main():
         parser = default_argument_parser(
             WallStreetJournalPreparator.name, __doc__)
 
-        parser.add_argument('-s', '--selection', default=None,
-                            metavar='SELECTION', type=int,
-                            choices=range(1, len(selection)+1),
-                            help='the subpart of WSJ to prepare. If not '
-                            'specified, prepare the entire corpus. '
-                            'Choose SELECTION in {}. ('
-                            .format(range(1, len(selection)+1))
-                            + selection_descr + ')')
+        parser.add_argument(
+            '-s', '--selection', default=None,
+            metavar='SELECTION', type=int,
+            choices=range(1, len(selection)+1),
+            help='the subpart of WSJ to prepare. If not specified, '
+            'prepare the entire corpus. Choose SELECTION in {}. ('
+            .format(range(1, len(selection)+1)) + selection_descr + ')')
 
         parser.add_argument(
             '--cmu-dict', default=None,

@@ -24,7 +24,7 @@ import shutil
 from abkhazia.corpora.utils import AbstractPreparator
 from abkhazia.utils import list_directory, open_utf8
 from abkhazia.utils import list_files_with_extension
-from abkhazia.utils.convert2wav import shn2wav
+from abkhazia.utils.convert2wav import convert
 
 
 def strip_accolades(expr):
@@ -108,19 +108,12 @@ class AbstractGlobalPhonePreparator(AbstractPreparator):
                 if os.path.basename(f).replace('.adc.shn', '')
                 not in self.exclude_wavs]
 
-        # converting shn files to wav, display a progress bar
+        wavs = [os.path.join(
+            self.wavs_dir, os.path.basename(shn).replace('.adc.shn', '.wav'))
+                for shn in shns]
+
         self.log.info('converting {} shn files to wav'.format(len(shns)))
-
-        for shn in progressbar.ProgressBar(len(shns))(shns):
-            # get the name of the target wav file
-            wav = os.path.join(
-                self.wavs_dir,
-                os.path.basename(shn).replace('.adc.shn', '.wav'))
-
-            # do not convert if the file already exist
-            if not os.path.exists(wav):
-                shn2wav(shn, wav)
-
+        convert(shns, wavs, 'shn', 4)
         self.log.debug('finished importing wav files')
 
     def make_segment(self):

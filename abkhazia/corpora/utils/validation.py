@@ -58,6 +58,13 @@ def strcounts2unicode(strcounts):
     return u", ".join([u"'" + s + u"': " + unicode(c) for s, c in strcounts])
 
 
+def scann_wav(wav):
+    with contextlib.closing(wave.open(wav, 'r')) as fwav:
+        nbc, width, rate, nframes, comptype, compname = fwav.getparams()
+    return (nbc, width, rate, nframes, comptype, compname,
+            nframes/float(rate))
+
+
 def validate(corpus_path, verbose=False):
     """Check corpus directory structure and set log files up"""
     data_dir = os.path.join(corpus_path, 'data')
@@ -78,7 +85,7 @@ def validate(corpus_path, verbose=False):
         log.info("Checking 'wavs' folder")
         wav_dir = os.path.join(data_dir, 'wavs')
         wavefiles = [e for e in os.listdir(wav_dir) if e != '.DS_Store']
-        durations = {}
+
         wrong_extensions = [f for f in wavefiles if f[-4:] != ".wav"]
         if wrong_extensions:
             raise IOError(
@@ -87,13 +94,16 @@ def validate(corpus_path, verbose=False):
                 "not have a '.wav' extension: {0}"
                 ).format(wrong_extensions)
             )
-        nb_channels, width, rate, nframes, comptype, compname = {}, {}, {}, {}, {}, {}
+
+        # TODO parallelize this !
+        nb_channels, width, rate, nframes, comptype, compname, durations = {}, {}, {}, {}, {}, {}, {}
         for f in progressbar.ProgressBar()(wavefiles):
             filepath = os.path.join(wav_dir, f)
             with contextlib.closing(wave.open(filepath,'r')) as fh:
                 (nb_channels[f], width[f], rate[f],
                  nframes[f], comptype[f], compname[f]) = fh.getparams()
                 durations[f] = nframes[f]/float(rate[f])
+
         empty_files = [f for f in wavefiles if nframes[f] == 0]
         if empty_files:
             raise IOError("The following files are empty: {0}".format(empty_files))

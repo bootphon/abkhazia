@@ -36,7 +36,7 @@ import os
 import progressbar
 import re
 
-from abkhazia.utils.convert2wav import flac2wav
+from abkhazia.utils.convert2wav import convert
 from abkhazia.utils import list_files_with_extension
 from abkhazia.corpora.utils import (
     AbstractPreparatorWithCMU, default_argument_parser)
@@ -114,21 +114,17 @@ class LibriSpeechPreparator(AbstractPreparatorWithCMU):
                 .format(librispeech_dict))
         self.librispeech_dict = librispeech_dict
 
-    # TODO this function can easily be parallelized (using joblib for example)
     def make_wavs(self):
         flacs = list_files_with_extension(self.input_dir, '.flac')
-        self.log.info('converting {} flac files to wav...'.format(len(flacs)))
-
-        for flac in progressbar.ProgressBar()(flacs):
-            # get the wav name
+        wavs = []
+        for flac in flacs:
             utt_id = os.path.basename(flac).replace('.flac', '')
             len_sid = len(utt_id.split('-')[0]) # length of speaker_id
             prefix = '00' if len_sid == 2 else '0' if len_sid == 3 else ''
-            wav = os.path.join(self.wavs_dir, prefix + utt_id + '.wav')
+            wavs.append(os.path.join(self.wavs_dir, prefix + utt_id + '.wav'))
 
-            # convert original flac to renamed wav if not exist
-            if not os.path.isfile(wav):
-                flac2wav(flac, wav)
+        self.log.info('converting {} flac files to wav...'.format(len(flacs)))
+        convert(flacs, wavs, 'flac', 4)
         self.log.debug('finished linking wav files')
 
     def make_segment(self):
