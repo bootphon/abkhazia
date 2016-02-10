@@ -15,12 +15,12 @@
 
 """Provides a base class for corpus preparation in the abkhazia format"""
 
-import codecs
 import os
-import shutil
+from pkg_resources import Requirement, resource_filename
 
-from abkhazia.utilities.log2file import get_log
-from abkhazia.corpora.utils import open_utf8, validation, DEFAULT_OUTPUT_DIR
+from abkhazia.utils import get_log, open_utf8
+from abkhazia.corpora.utils import validation, DEFAULT_OUTPUT_DIR
+
 
 class AbstractPreparator(object):
     """This class is a common wrapper to all the corpus preparators
@@ -63,7 +63,7 @@ class AbstractPreparator(object):
     abstract preparator are prepare() and validate().
 
     prepare(): convert the original data in 'input_dir' to a corpus in
-        the abkhazia format, store the data in 'outputdir'
+        the abkhazia format, store the data in 'output_dir'
 
     validate(): after preparation, checks the created corpus is
         compatible with abkhazia
@@ -96,7 +96,8 @@ class AbstractPreparator(object):
         # create empty hierarchy output_dir/data/wavs
         self.data_dir = os.path.join(self.output_dir, 'data')
         self.wavs_dir = os.path.join(self.data_dir, 'wavs')
-        if not os.path.isdir(self.wavs_dir):
+        if (not os.path.isdir(self.wavs_dir) and
+            not os.path.islink(self.wavs_dir)):
             os.makedirs(self.wavs_dir)
 
         # init output files that will be populated by prepare()
@@ -109,8 +110,8 @@ class AbstractPreparator(object):
         self.variants_file = fname('variants')
         self.silences_file = fname('silences')
 
-        self.log.info('{} preparator created, reading from {}'
-                      .format(self.name, self.input_dir))
+        self.log.info('creating {} preparator'.format(self.name))
+
 
     def prepare(self):
         """Prepare the corpus from raw distribution to abkhazia format
@@ -119,8 +120,7 @@ class AbstractPreparator(object):
         ensure consistency with the abkhazia format.
 
         """
-        self.log.info('preparing the {} corpus, writing to {}'
-                      .format(self.name, self.data_dir))
+        self.log.info('writing to {}'.format(self.data_dir))
 
         # the successive preparation steps associated with the target
         # they will populate
@@ -261,3 +261,36 @@ class AbstractPreparator(object):
 
         """
         raise NotImplementedError
+
+
+class AbstractPreparatorWithCMU(AbstractPreparator):
+    """Specialized wrapper for preparators relying on the CMU dictionary
+
+    Abkhazia automatically downloaded the dictionary for you during
+    installation. It is available for free at
+    http://www.speech.cs.cmu.edu/cgi-bin/cmudict. The preparator is
+    designed for version 0.7a of the CMU dictionary, but other recent
+    versions could probably be used without changing anything.
+
+    """
+    default_cmu_dict = resource_filename(
+        Requirement.parse('abkhazia'), 'abkhazia/share/cmudict.0.7a')
+
+    def __init__(self, input_dir,
+                 cmu_dict=None, output_dir=None, verbose=False):
+
+        # call the AbstractPreparator __init__
+        super(AbstractPreparatorWithCMU, self).__init__(
+            input_dir, output_dir, verbose)
+
+        # init path to CMU dictionary
+        if cmu_dict is None:
+            cmu_dict = self.default_cmu_dict
+
+        if not os.path.isfile(cmu_dict):
+            raise IOError(
+                'CMU dictionary does not exist: {}'
+                .format(cmu_dict))
+
+        self.cmu_dict = cmu_dict
+        self.log.debug('CMU dictionary is {}'.format(self.cmu_dict))

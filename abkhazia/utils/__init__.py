@@ -13,8 +13,8 @@
 #
 # You should have received a copy of the GNU General Public License
 # along with abkahzia. If not, see <http://www.gnu.org/licenses/>.
-"""
-Created on Wed Feb  4 00:17:47 2015
+"""This package provides various utilities to abkhazia"""
 
-@author: Thomas Schatz
-"""
+from .utils import *
+from .log2file import get_log
+from .config import get_config

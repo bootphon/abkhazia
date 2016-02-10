@@ -20,18 +20,8 @@
 The raw distribution of LibriSpeech is available at
 http://www.openslr.org/12/
 
-In addition to the LibriSpeech corpus, this preparator need the CMU
-and LibriSpeech dictionaries.
-
-The CMU dictionary is available for free at
-http://www.speech.cs.cmu.edu/cgi-bin/cmudict. The preparator is
-designed for version 0.7a of the CMU dictionary, but other recent
-versions could probably be used without changing anything
-
-Complementing the CMU dictionary, the preparator also uses the
-LibriSpeech dictionary, which contains the words not found in the CMU
-(not exhaustive list however). The LibriSpeech dictionary is available
-for download at http://www.openslr.org/resources/11/librispeech-lexicon.txt
+The LibriSpeech dictionary is available for download at
+http://www.openslr.org/resources/11/librispeech-lexicon.txt
 
 As the original speech files in LibriSpeech are encoded in flac, this
 preparator convert them to wav. So the 'flac' command must be
@@ -46,18 +36,14 @@ import os
 import progressbar
 import re
 
+from abkhazia.utils.convert2wav import flac2wav
+from abkhazia.utils import list_files_with_extension
 from abkhazia.corpora.utils import (
-    AbstractPreparator,
-    list_files_with_extension,
-    flac2wav,
-    default_argument_parser
-)
+    AbstractPreparatorWithCMU, default_argument_parser)
 
-# TODO have librispeech_dict as an optionnal argument and guess it
-# from input_dir by default (input_dir/../librispeech-lexicon.txt)
 
 # TODO have command-line option --type train-clean-100
-class LibriSpeechPreparator(AbstractPreparator):
+class LibriSpeechPreparator(AbstractPreparatorWithCMU):
     """Convert the LibriSpeech corpus to the abkhazia format"""
     name = 'LibriSpeech'
 
@@ -107,18 +93,12 @@ class LibriSpeechPreparator(AbstractPreparator):
 
     variants = []  # could use lexical stress variants...
 
-    def __init__(self, input_dir, cmu_dict,
-                 librispeech_dict=None, output_dir=None, verbose=False):
-        # call the AbstractPreparator __init__
-        super(LibriSpeechPreparator, self).__init__(
-            input_dir, output_dir, verbose)
+    def __init__(self, input_dir, librispeech_dict=None,
+                 cmu_dict=None, output_dir=None, verbose=False):
 
-        # init path to CMU dictionary
-        if not os.path.isfile(cmu_dict):
-            raise IOError(
-                'CMU dictionary does not exist: {}'
-                .format(cmu_dict))
-        self.cmu_dict = cmu_dict
+        # call the AbstractPreparatorWithCMU __init__
+        super(LibriSpeechPreparator, self).__init__(
+            input_dir, cmu_dict, output_dir, verbose)
 
         # guess librispeech dictionary if not specified
         if librispeech_dict is None:
@@ -261,8 +241,11 @@ def main():
         preparator = LibriSpeechPreparator
         parser = default_argument_parser(preparator.name, __doc__)
 
-        parser.add_argument('cmu_dict', help='the CMU dictionary '
-                            'file to use for lexicon generation')
+        parser.add_argument('--cmu-dict', default=None,
+                            help='the CMU dictionary '
+                            'file to use for lexicon generation. '
+                            'If not specified use {}'
+                            .format(preparator.default_cmu_dict))
 
         parser.add_argument('-l', '--librispeech-lexicon',
                             default=None,
@@ -281,6 +264,7 @@ def main():
         corpus_prep.prepare()
         if not args.no_validation:
             corpus_prep.validate()
+
     except Exception as err:
         print('fatal error: {}'.format(err))
 

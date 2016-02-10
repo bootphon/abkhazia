@@ -57,11 +57,11 @@ from abkhazia.corpora.utils import (
     main)
 
 # from https://stackoverflow.com/questions/38987
-def merge_two_dicts(x, y):
+def merge_two_dicts(first, second):
     '''Given two dicts, merge them into a new dict as a shallow copy'''
-    z = x.copy()
-    z.update(y)
-    return z
+    third = first.copy()
+    third.update(second)
+    return third
 
 
 Phone = namedtuple('Phone', 'id type start end')
@@ -371,7 +371,8 @@ class CSJPreparator(AbstractPreparator):
         super(CSJPreparator, self).__init__(input_dir, output_dir, verbose)
 
         # load the core_CSJ.txt from the abkhazia installation path
-        core = resource_filename(Requirement.parse('abkhazia'), 'CSJ_core.txt')
+        core = resource_filename(
+            Requirement.parse('abkhazia'), 'abkhazia/share/CSJ_core.txt')
         if not os.path.exists(core):
             raise OSError('core_CSJ not found in {}'.format(core))
         core_files = [l[:-1] for l in open(core, 'r').readlines()]

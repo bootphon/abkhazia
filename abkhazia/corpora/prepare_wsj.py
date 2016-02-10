@@ -26,17 +26,13 @@ import os
 import progressbar
 import re
 
+from abkhazia.utils import list_files_with_extension, list_directory, open_utf8
+from abkhazia.utils.convert2wav import sph2wav
 from abkhazia.corpora.utils import (
-    AbstractPreparator,
-    list_files_with_extension,
-    list_directory,
-    sph2wav,
-    open_utf8,
-    default_argument_parser
-)
+    AbstractPreparatorWithCMU, default_argument_parser)
 
 
-class WallStreetJournalPreparator(AbstractPreparator):
+class WallStreetJournalPreparator(AbstractPreparatorWithCMU):
     """Convert the WSJ corpus to the abkhazia format"""
 
     name = 'WallStreetJournal'
@@ -174,17 +170,11 @@ class WallStreetJournalPreparator(AbstractPreparator):
         # if we reached this point without returning, return w as is
         return word
 
-    def __init__(self, input_dir, cmu_dict,
-                 output_dir=None, verbose=False):
+    def __init__(self, input_dir,
+                 cmu_dict=None, output_dir=None, verbose=False):
         # call the AbstractPreparator __init__
         super(WallStreetJournalPreparator, self).__init__(
-            input_dir, output_dir, verbose)
-
-        # init path to the CMU dictionary
-        if not os.path.isfile(cmu_dict):
-            raise IOError(
-                'CMU dictionary does not exist: {}'.format(cmu_dict))
-        self.cmu_dict = cmu_dict
+            input_dir, cmu_dict, output_dir, verbose)
 
         # select only a subpart of recordings and transcriptions.
         # Listing files using the following 2 criterions: 1- files are
@@ -407,8 +397,11 @@ def main():
                             .format(range(1, len(selection)+1))
                             + selection_descr + ')')
 
-        parser.add_argument('cmu_dict', help='the CMU dictionary '
-                            'file to use for lexicon generation')
+        parser.add_argument(
+            '--cmu-dict', default=None,
+            help='the CMU dictionary file to use for lexicon generation. '
+            'If not specified use {}'.format(
+                WallStreetJournalPreparator.default_cmu_dict))
 
         # parse command line arguments
         args = parser.parse_args()

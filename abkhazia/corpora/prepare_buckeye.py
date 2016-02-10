@@ -21,11 +21,8 @@ import os
 import re
 import shutil
 
-from abkhazia.corpora.utils import (
-    AbstractPreparator,
-    list_files_with_extension,
-    main
-)
+from abkhazia.utils import list_files_with_extension
+from abkhazia.corpora.utils import AbstractPreparator, default_main
 
 
 class BuckeyePreparator(AbstractPreparator):
@@ -126,18 +123,17 @@ class BuckeyePreparator(AbstractPreparator):
     def make_wavs(self):
         wav_src = os.path.join(self.input_dir, 'wav')
 
-        # if folder already exists and has link, unlink and recreate link
+        # if folder already exists and is a link, unlink
+        if os.path.islink(self.wavs_dir):
+            os.unlink(self.wavs_dir)
+
+        # if folder already exists and is not a link, remove folder
         if os.path.isdir(self.wavs_dir):
-            if os.path.islink(self.wavs_dir):
-                os.unlink(self.wavs_dir)
-            # if folder already exists and is unlinked, remove folder and
-            # re-create symbolic link
-            else:
-                shutil.rmtree(self.wavs_dir)
-            os.symlink(wav_src, self.wavs_dir)
-        # if wavs folder doesn't exist, create symbolic link to speech data
-        else:
-            os.symlink(wav_src, self.wavs_dir)
+            shutil.rmtree(self.wavs_dir)
+
+        # create link
+        os.symlink(wav_src, self.wavs_dir)
+
         self.log.debug('finished linking wav files')
 
     # TODO function too big, refactor
@@ -289,5 +285,6 @@ class BuckeyePreparator(AbstractPreparator):
 
         self.log.debug('finished creating lexicon file')
 
+
 if __name__ == '__main__':
-    main(BuckeyePreparator, __doc__)
+    default_main(BuckeyePreparator, __doc__)

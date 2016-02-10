@@ -22,9 +22,9 @@ import re
 import shutil
 
 from abkhazia.corpora.utils import AbstractPreparator
-from abkhazia.corpora.utils import list_directory
-from abkhazia.corpora.utils import list_files_with_extension
-from abkhazia.corpora.utils import shn2wav, open_utf8
+from abkhazia.utils import list_directory, open_utf8
+from abkhazia.utils import list_files_with_extension
+from abkhazia.utils.convert2wav import shn2wav
 
 
 def strip_accolades(expr):

@@ -39,8 +39,8 @@ import os
 import progressbar
 import wave
 
-import abkhazia.utilities.log2file as log2file
-import abkhazia.utilities.basic_io as io
+import abkhazia.utils.log2file as log2file
+import abkhazia.utils.basic_io as io
 
 
 def with_default(value, default):
@@ -88,7 +88,7 @@ def validate(corpus_path, verbose=False):
                 ).format(wrong_extensions)
             )
         nb_channels, width, rate, nframes, comptype, compname = {}, {}, {}, {}, {}, {}
-        for f in wavefiles:
+        for f in progressbar.ProgressBar()(wavefiles):
             filepath = os.path.join(wav_dir, f)
             with contextlib.closing(wave.open(filepath,'r')) as fh:
                 (nb_channels[f], width[f], rate[f],

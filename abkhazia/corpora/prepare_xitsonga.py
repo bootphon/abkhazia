@@ -35,12 +35,13 @@
 
 
 import os
+import progressbar
 import re
 import shutil
 
+from abkhazia.utils import list_files_with_extension
 from abkhazia.corpora.utils import AbstractPreparator
-from abkhazia.corpora.utils import list_files_with_extension
-from abkhazia.corpora.utils import main
+from abkhazia.corpora.utils import default_main
 
 
 class XitsongaPreparator(AbstractPreparator):
@@ -123,7 +124,7 @@ class XitsongaPreparator(AbstractPreparator):
             os.path.join(self.input_dir, 'audio'), '.wav')
 
         # rename all wav files so that they start by speaker_ID
-        for wav_file in input_wavs:
+        for wav_file in progressbar.ProgressBar()(input_wavs):
             link = os.path.basename(wav_file).replace('nchlt_tso_', '')
             os.symlink(wav_file, os.path.join(self.wavs_dir, link))
         self.log.debug('finished linking wav files')
@@ -265,4 +266,4 @@ class XitsongaPreparator(AbstractPreparator):
         self.log.debug('finished creating lexicon file')
 
 if __name__ == '__main__':
-    main(XitsongaPreparator, __doc__)
+    default_main(XitsongaPreparator, __doc__)

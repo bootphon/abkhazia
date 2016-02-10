@@ -30,10 +30,11 @@ REQUIREMENTS = [] if ON_RTD else [
     #'cpickle',
     #'h5features',
     #'matplotlib',
-    #'numpy >= 1.8.0',
+    'numpy >= 1.8.0',
     #'pandas',
     #'yaafelib',
-    'progressbar'
+    'progressbar',
+    'joblib'
 ]
 
 setup(

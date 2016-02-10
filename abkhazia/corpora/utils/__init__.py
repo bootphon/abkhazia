@@ -15,4 +15,4 @@
 """Provides some utilities functions for corpus preparation"""
 
 from .utils import *
-from .abstract_preparator import AbstractPreparator
+from .abstract_preparator import AbstractPreparator, AbstractPreparatorWithCMU

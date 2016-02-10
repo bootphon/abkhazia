@@ -23,26 +23,18 @@ signed in as an organization to add the corpus to the cart. If you are
 an individual, sign up for an account but you need to click on "create
 your organization" on the registration page to add your organization
 and have administration privileges.
-
-In addition to the revised AIC corpus, this preparator need the the
-CMU dictionary, available for free at
-http://www.speech.cs.cmu.edu/cgi-bin/cmudict. The preparator is
-designed for version 0.7a of the CMU dictionary, but other recent
-versions could probably be used without changing anything
-
 """
 
 import os
 import progressbar
 import re
 
+from abkhazia.utils import list_files_with_extension
+from abkhazia.utils.convert2wav import flac2wav
 from abkhazia.corpora.utils import (
-    AbstractPreparator,
-    list_files_with_extension,
-    flac2wav,
-    default_argument_parser)
+    AbstractPreparatorWithCMU, default_argument_parser)
 
-class AICPreparator(AbstractPreparator):
+class AICPreparator(AbstractPreparatorWithCMU):
     """Convert the AIC corpus to the abkhazia format"""
 
     name = 'AIC'
@@ -93,16 +85,11 @@ class AICPreparator(AbstractPreparator):
 
     variants = []  # could use lexical stress variants...
 
-    def __init__(self, input_dir, cmu_dict, output_dir=None, verbose=False):
+    def __init__(self, input_dir,
+                 cmu_dict=None, output_dir=None, verbose=False):
         # call the AbstractPreparator __init__
-        super(AICPreparator, self).__init__(input_dir, output_dir, verbose)
-
-        # init path to CMU dictionary
-        if not os.path.isfile(cmu_dict):
-            raise IOError(
-                'CMU dictionary does not exist: {}'
-                .format(cmu_dict))
-        self.cmu_dict = cmu_dict
+        super(AICPreparator, self).__init__(
+            input_dir, cmu_dict, output_dir, verbose)
 
     def make_wavs(self):
         flacs = list_files_with_extension(self.input_dir, '.flac')
@@ -283,8 +270,11 @@ def main():
         preparator = AICPreparator
         parser = default_argument_parser(preparator.name, __doc__)
 
-        parser.add_argument('cmu_dict', help='the CMU dictionary '
-                            'file to use for lexicon generation')
+        parser.add_argument('--cmu-dict', default=None,
+                            help='the CMU dictionary '
+                            'file to use for lexicon generation. '
+                            'If not specified use {}'
+                            .format(preparator.default_cmu_dict))
 
         # parse command line arguments
         args = parser.parse_args()
