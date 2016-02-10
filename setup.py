@@ -1,3 +1,4 @@
+#!/usr/bin/env python
 # Copyright 2016 Thomas Schatz, Xuan Nga Cao, Mathieu Bernard
 #
 # This file is part of abkhazia: you can redistribute it and/or modify
@@ -17,6 +18,8 @@
 import os
 from setuptools import setup, find_packages
 
+SETUP_DIR = os.path.dirname(os.path.abspath(__file__))
+
 VERSION = '0.2'
 
 # On Reads The Docs we don't install any package
@@ -30,20 +33,35 @@ REQUIREMENTS = [] if ON_RTD else [
     #'numpy >= 1.8.0',
     #'pandas',
     #'yaafelib',
-    #'progressbar'
+    'progressbar'
 ]
 
 setup(
     name='abkhazia',
     version=VERSION,
-    description='ABX and kaldi experiments on speech corpora made easy',
-    long_description=open('README.md').read(),
+    packages=find_packages(),
+    scripts=[],
+
+    # install python dependencies from PyPI
+    install_requires=REQUIREMENTS,
+
+    # install other dependancies
+    # dependency_links=[
+    #     'https://github.com/bootphon/h5features/archive/v1.1.tar.gz#egg=h5features-1.1',
+    #     'https://github.com/bootphon/ABXpy/archive/v0.2.tar.gz#egg=ABXpy-0.2'
+    # ],
+
+    # include any files in abkhazia/share
+    package_data={
+        'abkhazia': ['share/*']
+    },
+
+    # metadata for upload to PyPI
     author='Thomas Schatz, Mathieu Bernard, Roland Thiolliere, Xuan Nga Cao',
     author_email='mmathieubernardd@gmail.com',
+    description='ABX and kaldi experiments on speech corpora made easy',
+    license='GPL3',
+    keywords='speech ASR kaldi ABX',
     url='https://github.com/bootphon/abkhazia',
-    license='Apache-2.0',
-    packages=find_packages(exclude=['test']),
-    include_package_data=True,
-    zip_safe=False,
-    install_requires=REQUIREMENTS,
+    long_description=open('README.md').read(),
 )
