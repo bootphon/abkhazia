@@ -52,8 +52,8 @@ you and will initialize a default configuration file in
  Rerun this script and correct the prompted configuration errors until
  it succed. Then move to next step:
 
-    python setup.py install
     python setup.py build
+    python setup.py install
 
 
 ## Licence
