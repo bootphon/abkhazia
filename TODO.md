@@ -1,6 +1,6 @@
 <!-- -*-org-*- this comment force org-mode in emacs -->
 
-* Corpora preparation
+* Corpora preparation *
 
 - WSJ (entire corpus) fatal error:
 
@@ -23,16 +23,16 @@
 
 - test CSJ preparation !
 
-* Corpora validation
+* Corpora validation *
 
 - [ ] fix this bug of overlapping utterances (at least in
   Buckeye, see for other corpora)
 
-* Documentation
+* Documentation *
 
 Import wiki in docs/ and update it!
 
-* Have a single abkhazia executable
+* Have a single abkhazia executable *
 - Have a unique abkhazia command, with subcommands (git like)
 - Load config, init log and load share only once, at top level.
 - install it with setuptools
