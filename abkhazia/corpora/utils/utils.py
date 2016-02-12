@@ -36,6 +36,11 @@ def default_argument_parser(name, description):
                         help='display more messages to stdout '
                         '(this can be a lot)')
 
+    parser.add_argument('-j', '--njobs', type=int, default=4,
+                        help='number of jobs to launch when doing parallel '
+                        'computations (mainly for wav conversion). '
+                        'Default is to launch 4 jobs.')
+
     parser.add_argument('-o', '--output-dir', default=None,
                         help='root directory of the prepared corpus, '
                         'if not specified use {}'
@@ -65,7 +70,7 @@ def default_main(preparator, description, argparser=default_argument_parser):
         args = argparser(preparator.name, description).parse_args()
 
         corpus_prep = preparator(
-            args.input_dir, args.output_dir, args.verbose)
+            args.input_dir, args.output_dir, args.verbose, args.njobs)
 
         corpus_prep.prepare()
         if not args.no_validation:
@@ -73,3 +78,5 @@ def default_main(preparator, description, argparser=default_argument_parser):
 
     except Exception as err:
         print('fatal error: {}'.format(err))
+    except (KeyboardInterrupt, SystemExit):
+        print('exiting')

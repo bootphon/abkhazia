@@ -1,30 +1,39 @@
-# TODO
+<!-- -*-org-*- this comment force org-mode in emacs -->
 
-## Corpora preparation
+* Corpora preparation
 
-- Smart overwrite of exitisting wavs
+- WSJ (entire corpus) fatal error:
 
-    Consume a lot of time, really annoying when debugging preparators
-    - [X] remove the --overwrite parameter and do it by default
-    - [ ] change the preparator interface to have list_audio_files()
-      abstract. Implement make_wavs in AbstractPreparator.
-
-- debug WSJ (entire corpus)
+  There is several utterance-ids used several times in 'text.txt' 5608
+  - [X] no duplicates in trs input files (all have different abspath)
+  - [ ] check for duplicates in different subfolders
 
 - LibriSpeech train-clean-100
-
-    fatal error: Utterance-ids in 'segments.txt' and 'text.txt' are
-    not consistent, see details in log
-    /home/mbernard/data/abkhazia/corpora/LibriSpeech/logs/data_validation.log
+  - [ ] have a --type option to select subpart of the corpus
+  (test-clean, train-clean-100, etc)
 
 - GlobalPhone
   - [ ] debug Mandarin
   - [ ] debug Vietnamese
 
+- Buckeyepreparator
+    Some utterances are overlapping in time, see details in log file
+    /home/mbernard/data/abkhazia/corpora/Buckeye/logs/data_validation.log
+    s0902a-sent19 s0902a-sent20
+
 - test CSJ preparation !
 
-## Corpora validation
+* Corpora validation
 
-- [X] add a progress bar while scanning wavs
 - [ ] fix this bug of overlapping utterances (at least in
   Buckeye, see for other corpora)
+
+* Documentation
+
+Import wiki in docs/ and update it!
+
+* Have a single abkhazia executable
+- Have a unique abkhazia command, with subcommands (git like)
+- Load config, init log and load share only once, at top level.
+- install it with setuptools
+- on KeyboardInterrupt, delete any non terminated data/directory

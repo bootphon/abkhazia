@@ -50,11 +50,9 @@ try:
 except ImportError:
     import xml.etree.ElementTree as ET
 
-from abkhazia.utilities.basic_io import cpp_sort
-from abkhazia.corpora.utils import (
-    AbstractPreparator,
-    open_utf8,
-    main)
+from abkhazia.utils import open_utf8
+from abkhazia.utils.basic_io import cpp_sort
+from abkhazia.corpora.utils import AbstractPreparator, default_main
 
 # from https://stackoverflow.com/questions/38987
 def merge_two_dicts(first, second):
@@ -308,6 +306,8 @@ class CSJPreparator(AbstractPreparator):
     """convert the CSJ corpus to the abkhazia format"""
     name = 'CSJ'
 
+    audio_format = 'wav'
+
     vowels = {
         'a': u'ä',
         'e': u'e',
@@ -366,9 +366,10 @@ class CSJPreparator(AbstractPreparator):
 
     variants = []
 
-    def __init__(self, input_dir, output_dir=None, verbose=False):
+    def __init__(self, input_dir, output_dir=None, verbose=False, njobs=1):
         # call the AbstractPreparator __init__
-        super(CSJPreparator, self).__init__(input_dir, output_dir, verbose)
+        super(CSJPreparator, self).__init__(
+            input_dir, output_dir, verbose, njobs)
 
         # load the core_CSJ.txt from the abkhazia installation path
         core = resource_filename(
@@ -403,11 +404,11 @@ class CSJPreparator(AbstractPreparator):
         # all_phones = set([phone for transcript in self.lexicon.values()
         #                   for phone in transcript])
 
-    def make_wavs(self):
-        for data in self.data_files:
-            source = os.path.join(self.input_dir, 'Waveforms', data + '.wav')
-            target = os.path.join(self.wavs_dir, data + '.wav')
-            os.symlink(source, target)
+    def list_audio_files(self):
+        inputs = [os.path.join(self.input_dir, 'Waveforms', data + '.wav')
+                  for data in self.data_files]
+        outputs = [os.path.join(data + '.wav') for data in self.data_files]
+        return inputs, outputs
 
     def make_segment(self):
         with open_utf8(self.segments_file, 'w') as out:
@@ -445,4 +446,4 @@ class CSJPreparator(AbstractPreparator):
 
 
 if __name__ == '__main__':
-    main(CSJPreparator, __doc__)
+    default_main(CSJPreparator, __doc__)

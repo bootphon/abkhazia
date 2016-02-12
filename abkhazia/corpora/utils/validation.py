@@ -64,7 +64,6 @@ def scann_wav(wav):
     return (nbc, width, rate, nframes, comptype, compname,
             nframes/float(rate))
 
-
 def validate(corpus_path, verbose=False):
     """Check corpus directory structure and set log files up"""
     data_dir = os.path.join(corpus_path, 'data')
@@ -95,18 +94,28 @@ def validate(corpus_path, verbose=False):
                 ).format(wrong_extensions)
             )
 
-        # TODO parallelize this !
-        nb_channels, width, rate, nframes, comptype, compname, durations = {}, {}, {}, {}, {}, {}, {}
+        # TODO parallelize this using scann_wav !
+        nb_channels = {}
+        width = {}
+        rate = {}
+        nframes = {}
+        comptype = {}
+        compname = {}
+        durations = {}
         for f in progressbar.ProgressBar()(wavefiles):
-            filepath = os.path.join(wav_dir, f)
-            with contextlib.closing(wave.open(filepath,'r')) as fh:
-                (nb_channels[f], width[f], rate[f],
-                 nframes[f], comptype[f], compname[f]) = fh.getparams()
+            try:
+                filepath = os.path.join(wav_dir, f)
+                with contextlib.closing(wave.open(filepath,'r')) as fh:
+                    (nb_channels[f], width[f], rate[f],
+                     nframes[f], comptype[f], compname[f]) = fh.getparams()
                 durations[f] = nframes[f]/float(rate[f])
+            except EOFError:
+                nframes[f] = 0
 
         empty_files = [f for f in wavefiles if nframes[f] == 0]
         if empty_files:
             raise IOError("The following files are empty: {0}".format(empty_files))
+
         weird_rates = [f for f in wavefiles if rate[f] != 16000]
         if weird_rates:
             raise IOError(
@@ -156,8 +165,8 @@ def validate(corpus_path, verbose=False):
                       .format(duplicates))
             raise IOError(
                 (
-                "There is utterance-ids in "
-                "'segments.txt' used several times: {0}"
+                    "There is {} utterance-ids in "
+                    "'segments.txt' used several times, see log for details"
                 ).format(len(duplicates))
             )
         # all referenced wavs are in wav folder

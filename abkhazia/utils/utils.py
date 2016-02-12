@@ -17,6 +17,8 @@
 import codecs
 import os
 import re
+import shutil
+
 
 def open_utf8(filename, mode='rb'):
     """Open a file encoded in UTF-8 and return its handler"""
@@ -31,11 +33,11 @@ def list_directory(directory, abspath=False):
     return lsd
 
 
-def list_files_with_extension(directory, extension):
+def list_files_with_extension(directory, extension, abspath=False):
     """Return all files of given extension in directory hierarchy
 
     The files are returned in a list with a path relative to
-    'directory'
+    'directory' except if abspath is True
 
     """
     # the regular expression to match in filenames
@@ -45,4 +47,20 @@ def list_files_with_extension(directory, extension):
     matched = []
     for path, _, files in os.walk(directory):
         matched += [os.path.join(path, f) for f in files if re.match(expr, f)]
+    if abspath:
+        matched = [os.path.abspath(m) for m in matched]
     return matched
+
+
+def remove(path):
+    """Remove a file, link or directory"""
+    if os.path.isdir(path):
+        shutil.rmtree(path)
+    else:
+        # works for files and links
+        os.remove(path)
+
+
+def is_empty_file(path):
+    """Return True if the file `path` is empty"""
+    return os.stat(path).st_size == 0

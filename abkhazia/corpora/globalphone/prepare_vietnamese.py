@@ -125,7 +125,7 @@ import tempfile
 import os
 import re
 
-from abkhazia.corpora.utils import open_utf8, list_directory
+from abkhazia import utils
 from abkhazia.corpora.globalphone import AbstractGlobalPhonePreparator
 
 
@@ -289,7 +289,7 @@ class VietnamesePreparator(AbstractGlobalPhonePreparator):
         words_to_drop = [u'$', u'(', u')']
 
         # read input file
-        with open_utf8(self.dictionary, 'r') as inp:
+        with utils.open_utf8(self.dictionary, 'r') as inp:
             lines = inp.readlines()
 
         # generate output file
@@ -297,7 +297,7 @@ class VietnamesePreparator(AbstractGlobalPhonePreparator):
         os.close(fid)
 
         # correct content
-        with open_utf8(corrected_dictionary, 'w') as out:
+        with utils.open_utf8(corrected_dictionary, 'w') as out:
             for line in lines:  #open_utf8(self.dictionary, 'r').readlines():
                 # skip secondary pronunciations
                 if u'(2)' not in line:
@@ -340,14 +340,14 @@ class VietnamesePreparator(AbstractGlobalPhonePreparator):
         corrected_transcription_dir = tempfile.mkdtemp()
 
         # get the list of transcription files
-        trss = list_directory(self.transcription_dir, abspath=True)
+        trss = utils.list_directory(self.transcription_dir, abspath=True)
 
         self.log.info('correcting {} transcription files in {}'
                       .format(len(trss), corrected_transcription_dir))
 
         for trs in trss:
             # read transcript file
-            lines = open_utf8(trs, 'r').readlines()
+            lines = utils.open_utf8(trs, 'r').readlines()
 
             # correct odd lines
             lines[2::2] = [line.replace(u'_', u' ').replace(u'  ', u' ').strip()
@@ -355,7 +355,7 @@ class VietnamesePreparator(AbstractGlobalPhonePreparator):
 
             # write corrected version to temp
             output_file = os.path.join(corrected_transcription_dir, trs)
-            with open_utf8(output_file, 'w') as out:
+            with utils.open_utf8(output_file, 'w') as out:
                 for line in lines:
                     out.write(line)
 

@@ -14,17 +14,12 @@
 # You should have received a copy of the GNU General Public License
 # along with abkahzia. If not, see <http://www.gnu.org/licenses/>.
 
-import codecs
-#import joblib
 import os
-import progressbar
 import re
 import shutil
 
+from abkhazia.utils import list_directory, open_utf8, list_files_with_extension
 from abkhazia.corpora.utils import AbstractPreparator
-from abkhazia.utils import list_directory, open_utf8
-from abkhazia.utils import list_files_with_extension
-from abkhazia.utils.convert2wav import convert
 
 
 def strip_accolades(expr):
@@ -46,6 +41,8 @@ class AbstractGlobalPhonePreparator(AbstractPreparator):
     """
     name = 'GlobalPhone'
 
+    audio_format = 'shn'
+
     language = NotImplemented
     """the language for which the preparator is specilized for"""
 
@@ -55,10 +52,10 @@ class AbstractGlobalPhonePreparator(AbstractPreparator):
     exclude_wavs = []
     """a list (possibly empty) of wav files to ignore"""
 
-    def __init__(self, input_dir, output_dir=None, verbose=False):
+    def __init__(self, input_dir, output_dir=None, verbose=False, njobs=1):
         # call the AbstractPreparator __init__
         super(AbstractGlobalPhonePreparator, self).__init__(
-            input_dir, output_dir, verbose)
+            input_dir, output_dir, verbose, njobs)
 
         self.transcription_dir = os.path.join(
             self.input_dir, 'GlobalPhone-{0}/{0}/{1}'
@@ -74,9 +71,11 @@ class AbstractGlobalPhonePreparator(AbstractPreparator):
         self._erase_trs = self.correct_transcription()
 
     def correct_transcription(self):
+        """TODO"""
         return False
 
     def correct_dictionary(self):
+        """TODO"""
         return False
 
     def __del__(self):
@@ -95,35 +94,34 @@ class AbstractGlobalPhonePreparator(AbstractPreparator):
         except AttributeError:
             pass
 
-    def make_wavs(self):
+    def list_audio_files(self):
+        # for some languages, there are corrupted wavefiles that we
+        # need to exclude from preparation
+        self.log.info('{} audio files excluded'.format(len(self.exclude_wavs)))
+
         # src_dir is the 'adc' directory from the GlobalPhone
         # distribution of the language considered
         src_dir = os.path.join(
             self.input_dir, 'GlobalPhone-{0}/{0}/adc'.format(self.language))
 
-        # for some languages, there are corrupted wavefiles that
-        # we need to ignore
-        self.log.info('{} audio files excluded'.format(len(self.exclude_wavs)))
-        shns = [f for f in list_files_with_extension(src_dir, '.adc.shn')
+        shns = [f for f in
+                list_files_with_extension(src_dir, '.adc.shn', abspath=True)
                 if os.path.basename(f).replace('.adc.shn', '')
                 not in self.exclude_wavs]
 
-        wavs = [os.path.join(
-            self.wavs_dir, os.path.basename(shn).replace('.adc.shn', '.wav'))
+        wavs = [os.path.basename(shn).replace('.adc.shn', '.wav')
                 for shn in shns]
 
-        self.log.info('converting {} shn files to wav'.format(len(shns)))
-        convert(shns, wavs, 'shn', 4)
-        self.log.debug('finished importing wav files')
+        return shns, wavs
 
     def make_segment(self):
-        with codecs.open(self.segments_file, mode='w', encoding='UTF-8') as out:
+        with open_utf8(self.segments_file, 'w') as out:
             for wav in list_files_with_extension(self.wavs_dir, 'wav'):
                 wav = os.path.basename(wav)
                 out.write(u'{} {}\n'.format(wav.replace('.wav', ''), wav))
 
     def make_speaker(self):
-        with codecs.open(self.speaker_file, mode='w', encoding='UTF-8') as out:
+        with open_utf8(self.speaker_file, 'w') as out:
             for wav in list_files_with_extension(self.wavs_dir, 'wav'):
                 wav = os.path.basename(wav)
                 out.write(u'{} {}\n'.format(wav.replace('.wav', ''), wav[:5]))
@@ -168,19 +166,19 @@ class AbstractGlobalPhonePreparator(AbstractPreparator):
             transcript = []
             for phone in trs:
                 if phone[0] == u'{':
-                    p = phone[1:]
-                    assert p != u'WB', trs
+                    phn = phone[1:]
+                    assert phn != u'WB', trs
                 elif phone[-1] == u'}':
-                    p = phone[:-1]
-                    assert p == u'WB', trs
+                    phn = phone[:-1]
+                    assert phn == u'WB', trs
                 else:
-                    p = phone
-                    assert p != u'WB', trs
+                    phn = phone
+                    assert phn != u'WB', trs
 
-                assert not(u'{' in p), trs
-                assert not(u'}' in p), trs
-                if p != u'WB':
-                    transcript.append(p)
+                assert not(u'{' in phn), trs
+                assert not(u'}' in phn), trs
+                if phn != u'WB':
+                    transcript.append(phn)
             transcripts.append(u' '.join(transcript))
 
         # generate output file

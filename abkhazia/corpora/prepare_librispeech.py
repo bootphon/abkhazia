@@ -36,7 +36,6 @@ import os
 import progressbar
 import re
 
-from abkhazia.utils.convert2wav import convert
 from abkhazia.utils import list_files_with_extension
 from abkhazia.corpora.utils import (
     AbstractPreparatorWithCMU, default_argument_parser)
@@ -46,6 +45,8 @@ from abkhazia.corpora.utils import (
 class LibriSpeechPreparator(AbstractPreparatorWithCMU):
     """Convert the LibriSpeech corpus to the abkhazia format"""
     name = 'LibriSpeech'
+
+    audio_format = 'flac'
 
     phones = {
         'IY': u'iː',
@@ -93,12 +94,12 @@ class LibriSpeechPreparator(AbstractPreparatorWithCMU):
 
     variants = []  # could use lexical stress variants...
 
-    def __init__(self, input_dir, librispeech_dict=None,
-                 cmu_dict=None, output_dir=None, verbose=False):
+    def __init__(self, input_dir, librispeech_dict=None, cmu_dict=None,
+                 output_dir=None, verbose=False, njobs=1):
 
         # call the AbstractPreparatorWithCMU __init__
         super(LibriSpeechPreparator, self).__init__(
-            input_dir, cmu_dict, output_dir, verbose)
+            input_dir, cmu_dict, output_dir, verbose, njobs)
 
         # guess librispeech dictionary if not specified
         if librispeech_dict is None:
@@ -114,18 +115,16 @@ class LibriSpeechPreparator(AbstractPreparatorWithCMU):
                 .format(librispeech_dict))
         self.librispeech_dict = librispeech_dict
 
-    def make_wavs(self):
+    def list_audio_files(self):
         flacs = list_files_with_extension(self.input_dir, '.flac')
         wavs = []
         for flac in flacs:
             utt_id = os.path.basename(flac).replace('.flac', '')
-            len_sid = len(utt_id.split('-')[0]) # length of speaker_id
+            len_sid = len(utt_id.split('-')[0])  # length of speaker_id
             prefix = '00' if len_sid == 2 else '0' if len_sid == 3 else ''
-            wavs.append(os.path.join(self.wavs_dir, prefix + utt_id + '.wav'))
+            wavs.append(prefix + utt_id + '.wav')
 
-        self.log.info('converting {} flac files to wav...'.format(len(flacs)))
-        convert(flacs, wavs, 'flac', 4)
-        self.log.debug('finished linking wav files')
+        return flacs, wavs
 
     def make_segment(self):
         with open(self.segments_file, 'w') as outfile:
@@ -223,8 +222,8 @@ class LibriSpeechPreparator(AbstractPreparatorWithCMU):
         # frequency and create the lexicon by looking up in the
         # combined dictionary.
         with open(self.lexicon_file, "w") as outfile:
-            for w, f in sorted(cmu_combined.items()):
-                outfile.write(w + ' ' + f + '\n')
+            for word, freq in sorted(cmu_combined.items()):
+                outfile.write(word + ' ' + freq + '\n')
 
         self.log.debug('finished creating lexicon file')
 
@@ -254,8 +253,8 @@ def main():
 
         # prepare the corpus
         corpus_prep = preparator(
-            args.input_dir, args.cmu_dict,
-            args.librispeech_lexicon, args.output_dir, args.verbose)
+            args.input_dir, args.cmu_dict, args.librispeech_lexicon,
+            args.output_dir, args.verbose, args.njobs)
 
         corpus_prep.prepare()
         if not args.no_validation:

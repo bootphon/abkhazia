@@ -15,11 +15,10 @@
 # You should have received a copy of the GNU General Public License
 # along with abkahzia. If not, see <http://www.gnu.org/licenses/>.
 
-"""Data preparation for the revised Buckeye corpus (in the original format)"""
+"""Data preparation for the revised Buckeye corpus"""
 
 import os
 import re
-import shutil
 
 from abkhazia.utils import list_files_with_extension
 from abkhazia.corpora.utils import AbstractPreparator, default_main
@@ -29,6 +28,8 @@ class BuckeyePreparator(AbstractPreparator):
     """Convert the Buckeye corpus to the abkhazia format"""
 
     name = 'Buckeye'
+
+    audio_format = 'wav'
 
     # IPA transcriptions for all phones in the Buckeye corpus. The
     # following phones are never found in the transcriptions: set([u'own',
@@ -120,21 +121,9 @@ class BuckeyePreparator(AbstractPreparator):
 
     variants = []  # could use lexical stress variants...
 
-    def make_wavs(self):
-        wav_src = os.path.join(self.input_dir, 'wav')
-
-        # if folder already exists and is a link, unlink
-        if os.path.islink(self.wavs_dir):
-            os.unlink(self.wavs_dir)
-
-        # if folder already exists and is not a link, remove folder
-        if os.path.isdir(self.wavs_dir):
-            shutil.rmtree(self.wavs_dir)
-
-        # create link
-        os.symlink(wav_src, self.wavs_dir)
-
-        self.log.debug('finished linking wav files')
+    def list_audio_files(self):
+        wavs = list_files_with_extension(self.input_dir, '.wav', abspath=True)
+        return wavs, [os.path.basename(w) for w in wavs]
 
     # TODO function too big, refactor
     def make_segment(self):
@@ -161,12 +150,18 @@ class BuckeyePreparator(AbstractPreparator):
                     assert len(lines_2) == sum(length_utt),\
                         '{} {}'.format(len(lines_2), sum(length_utt))
                     for n in range(len(length_utt)):
-                        if (n == 0):
+                        if n == 0:
                             onset = '0.000'
-                            outfile.write(utt + '-sent' + str(n+1) + ' ' + bname_wav + ' ' + onset + ' ')
+                            outfile.write(utt + '-sent' +
+                                          str(n+1) + ' ' +
+                                          bname_wav + ' ' +
+                                          onset + ' ')
+
                             index_offset = length_utt[n]
                             offset_line = lines_2[index_offset-1]
-                            match_offset = re.match(r'\s\s+(.*)\s+(121|122)\s(.*)', offset_line)
+
+                            match_offset = re.match(
+                                r'\s\s+(.*)\s+(121|122)\s(.*)', offset_line)
                             if not match_offset:
                                 raise IOError('offset line unmatched: {}'
                                               .format(offset_line))
@@ -178,10 +173,15 @@ class BuckeyePreparator(AbstractPreparator):
                             outfile.write('\n')
                         else:
                             onset = last_offset
-                            outfile.write(utt + '-sent' + str(n+1) + ' ' + bname_wav + ' ' + str(onset) + ' ')
+                            outfile.write(utt + '-sent' +
+                                          str(n+1) + ' ' +
+                                          bname_wav + ' ' +
+                                          str(onset) + ' ')
+
                             index_offset = length_utt[n]+current_index
                             offset_line = lines_2[index_offset-1]
-                            match_offset = re.match(r'\s\s+(.*)\s+(121|122)\s(.*)', offset_line)
+                            match_offset = re.match(
+                                r'\s\s+(.*)\s+(121|122)\s(.*)', offset_line)
                             if not match_offset:
                                 raise IOError(
                                     'offset not matched {}'.format(offset_line))
@@ -222,12 +222,12 @@ class BuckeyePreparator(AbstractPreparator):
                     outfile.write(utt + '-sent' + str(idx) + ' ')
                     words = val.split()
                     if len(words) > 1:
-                        for w in words[:-1]:
-                            outfile.write(w + ' ')
+                        for word in words[:-1]:
+                            outfile.write(word + ' ')
                         outfile.write(str(words[-1]) + '\n')
                     else:
-                        for w in words:
-                            outfile.write(w)
+                        for word in words:
+                            outfile.write(word)
                         outfile.write('\n')
         self.log.debug('finished creating text file')
 
@@ -243,45 +243,47 @@ class BuckeyePreparator(AbstractPreparator):
                 lines = infile_txt.readlines()
                 for line in lines:
                     line.strip()
-                    format_match = re.match(r'\s\s+(.*)\s+(121|122)\s(.*)', line)
+                    format_match = re.match(
+                        r'\s\s+(.*)\s+(121|122)\s(.*)', line)
+
                     if format_match:
                         word_trs = format_match.group(3)
-                        word_format_match = re.match("(.*); (.*); (.*); (.*)", word_trs)
+                        word_format_match = re.match(
+                            "(.*); (.*); (.*); (.*)", word_trs)
+
                         if word_format_match:
                             word = word_format_match.group(1)
                             phn_trs = word_format_match.group(3)
                             # TODO what is that ? a comment ? a legacy code ?
-                            """
-                            Doing some foldings for spoken noise"
-                            pattern1 = re.compile("<UNK(.*)")
-                            if pattern1.match(word):
-                                phn_trs = phn_trs.replace('UNKNOWN', 'SPN')
-                            pattern2 = re.compile("<(CUT|cut)(.*)")
-                            if pattern2.match(word):
-                                phn_trs = phn_trs.replace('CUTOFF', 'SPN')
-                            pattern3 = re.compile("<LAU(.*)")
-                            if pattern3.match(word):
-                                phn_trs = phn_trs.replace('LAUGH', 'SPN')
-                            pattern4 = re.compile("<(EXT|EXt)(.*)")
-                            if pattern4.match(word):
-                                phn_trs = phn_trs.replace('LENGTH_TAG', 'SPN')
-                            pattern5 = re.compile("<ERR(.*)")
-                            if pattern5.match(word):
-                                phn_trs = phn_trs.replace('ERROR', 'SPN')
-                            pattern6 = re.compile("<HES(.*)")
-                            if pattern6.match(word):
-                                phn_trs = phn_trs.replace('HESITATION_TAG', 'SPN')
-                            pattern7 = re.compile("<EXCL(.*)")
-                            if pattern7.match(word):
-                                phn_trs = phn_trs.replace('EXCLUDE', 'SPN')
-                            """
+                            # Doing some foldings for spoken noise"
+                            # pattern1 = re.compile("<UNK(.*)")
+                            # if pattern1.match(word):
+                            #     phn_trs = phn_trs.replace('UNKNOWN', 'SPN')
+                            # pattern2 = re.compile("<(CUT|cut)(.*)")
+                            # if pattern2.match(word):
+                            #     phn_trs = phn_trs.replace('CUTOFF', 'SPN')
+                            # pattern3 = re.compile("<LAU(.*)")
+                            # if pattern3.match(word):
+                            #     phn_trs = phn_trs.replace('LAUGH', 'SPN')
+                            # pattern4 = re.compile("<(EXT|EXt)(.*)")
+                            # if pattern4.match(word):
+                            #     phn_trs = phn_trs.replace('LENGTH_TAG', 'SPN')
+                            # pattern5 = re.compile("<ERR(.*)")
+                            # if pattern5.match(word):
+                            #     phn_trs = phn_trs.replace('ERROR', 'SPN')
+                            # pattern6 = re.compile("<HES(.*)")
+                            # if pattern6.match(word):
+                            # phn_trs = phn_trs.replace('HESITATION_TAG', 'SPN')
+                            # pattern7 = re.compile("<EXCL(.*)")
+                            # if pattern7.match(word):
+                            #     phn_trs = phn_trs.replace('EXCLUDE', 'SPN')
+
                             if word not in dict_word:
                                 dict_word[word] = phn_trs
 
-        for w, f in sorted(dict_word.items(),
-                           key=lambda kv: kv[1],
-                           reverse=True):
-            outfile.write(w + ' ' + f + '\n')
+        for word, freq in sorted(
+                dict_word.items(), key=lambda kv: kv[1], reverse=True):
+            outfile.write(word + ' ' + freq + '\n')
 
         self.log.debug('finished creating lexicon file')
 

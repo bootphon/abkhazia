@@ -18,11 +18,9 @@
 """Data preparation for the Wall Street Journal corpus"""
 
 import os
-import progressbar
 import re
 
 from abkhazia.utils import list_directory, open_utf8
-from abkhazia.utils.convert2wav import convert
 from abkhazia.corpora.utils import (
     AbstractPreparatorWithCMU, default_argument_parser)
 
@@ -31,6 +29,8 @@ class WallStreetJournalPreparator(AbstractPreparatorWithCMU):
     """Convert the WSJ corpus to the abkhazia format"""
 
     name = 'WallStreetJournal'
+
+    audio_format = 'sph'
 
     # IPA transcription of the CMU phones
     phones = {
@@ -79,8 +79,9 @@ class WallStreetJournalPreparator(AbstractPreparatorWithCMU):
 
     variants = []  # could use lexical stress variants...
 
+    # those two attribute are None when preparing the whole corpus but
+    # redifined for subpart preparation (see classes above)
     file_pattern = None
-
     directory_pattern = None
 
     @staticmethod
@@ -158,18 +159,19 @@ class WallStreetJournalPreparator(AbstractPreparatorWithCMU):
         if word[0] == '[' and word[-1] == ']':
             return '<noise>'
 
-        # This is a common issue; the CMU dictionary has it as -DASH.
+        # This is a common issue: the CMU dictionary has it as -DASH.
         if word == '--DASH':
             return '-DASH'
 
         # if we reached this point without returning, return w as is
         return word
 
-    def __init__(self, input_dir,
-                 cmu_dict=None, output_dir=None, verbose=False):
+    def __init__(self, input_dir, cmu_dict=None,
+                 output_dir=None, verbose=False, njobs=1):
+
         # call the AbstractPreparator __init__
         super(WallStreetJournalPreparator, self).__init__(
-            input_dir, cmu_dict, output_dir, verbose)
+            input_dir, cmu_dict, output_dir, verbose, njobs)
 
         # select only a subpart of recordings and transcriptions.
         # Listing files using the following 2 criterions: 1- files are
@@ -212,7 +214,7 @@ class WallStreetJournalPreparator(AbstractPreparatorWithCMU):
                     utt_id = re.match(r'(.*) \((.*)\)', line).group(2)
                     self.bad_utts.append(utt_id)
 
-        self.log.debug('Found {} corrupted utterances'
+        self.log.info('found {} corrupted utterances'
                        .format(len(self.bad_utts)))
 
     def filter_files(self, dir_filter, file_filter):
@@ -223,23 +225,22 @@ class WallStreetJournalPreparator(AbstractPreparatorWithCMU):
                 for d_path, _, files in os.walk(os.path.join(path, d)):
                     matched += [os.path.join(d_path, f)
                                 for f in files if file_filter(f)]
-        return matched
 
-    def make_wavs(self):
+        # TODO when preparing the whole corpus, this function create
+        # duplicate entries. Must correct the function (only 1 os.walk
+        # needed) instead of this little fix
+        return list(set(matched))  # was return matched
+
+    def list_audio_files(self):
         # filter out bad utterances
         sphs = [sph for sph in self.input_recordings
                 if os.path.basename(sph).replace('.wv1', '')
                 not in self.bad_utts]
 
         # build output wavs files
-        wavs = [os.path.join(
-            self.wavs_dir, os.path.basename(sph).replace('.wv1', '.wav'))
-                for sph in sphs]
+        wavs = [os.path.basename(sph).replace('.wv1', '.wav') for sph in sphs]
 
-        self.log.info('converting {} sph files to wav...'
-                      .format(len(sphs)))
-        convert(sphs, wavs, 'sph', 4)
-        self.log.debug('converted all files to wav')
+        return sphs, wavs
 
     def make_segment(self):
         with open_utf8(self.segments_file, 'w') as out:
@@ -260,6 +261,10 @@ class WallStreetJournalPreparator(AbstractPreparatorWithCMU):
     def make_transcription(self):
         # concatenate all the transcription files
         transcription = []
+
+        import collections
+        print [item for item, count in collections.Counter(self.input_transcriptions).items() if count > 1]
+
         for trs in self.input_transcriptions:
             transcription += open_utf8(trs, 'r').readlines()
 
@@ -414,14 +419,16 @@ def main():
 
         # prepare the corpus
         corpus_prep = preparator(args.input_dir, args.cmu_dict,
-                                 args.output_dir, args.verbose)
+                                 args.output_dir, args.verbose, args.njobs)
 
         corpus_prep.prepare()
         if not args.no_validation:
             corpus_prep.validate()
 
-    except Exception as err:
-        print('fatal error: {}'.format(err))
+    except (OSError, IOError, ValueError, AttributeError) as err:
+        print 'fatal error: {}'.format(err)
+    except KeyboardInterrupt:
+        print 'keyboard interrupt, exiting'
 
 if __name__ == '__main__':
     main()

@@ -47,7 +47,7 @@ First run the configuration script. It will check the dependancies for
 you and will initialize a default configuration file in
 `abkahzia/share/abkahzia.cfg`.
 
-    ./configure.sh
+    ./configure
 
  Rerun this script and correct the prompted configuration errors until
  it succed. Then move to next step:

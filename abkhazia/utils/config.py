@@ -16,23 +16,30 @@
 
 import ConfigParser
 import os
-from pkg_resources import Requirement, resource_filename
+import pkg_resources as pkg
 
 
 def get_config(config_file=None):
-    """Return a ConfigParser with the abkhazia configuration loaded"""
+    """Return a ConfigParser with the abkhazia configuration loaded
+
+    The function raises OSError if the configuration is not found
+
+    """
     # if file not specified, try to get the installed one
     if config_file is None:
-        config_file = resource_filename(
-            Requirement.parse('abkhazia'), 'share/abkhazia.cfg')
+        try:
+            config_file = pkg.resource_filename(
+                pkg.Requirement.parse('abkhazia'), 'share/abkhazia.cfg')
+        except pkg.DistributionNotFound:
+            pass
 
     # if not found, try to get it relatively to this file
-    if not os.path.isfile(config_file):
+    if config_file is None or not os.path.isfile(config_file):
         config_file = os.path.join(
             os.path.dirname(os.path.abspath(__file__)),
             '..', 'share/abkhazia.cfg')
 
-    if not os.path.isfile(config_file):
+    if config_file is None or not os.path.isfile(config_file):
         raise OSError('abkhazia configuration file not found {}'
                       .format(config_file))
 

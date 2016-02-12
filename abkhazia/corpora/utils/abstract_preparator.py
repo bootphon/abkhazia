@@ -18,7 +18,7 @@
 import os
 from pkg_resources import Requirement, resource_filename
 
-from abkhazia.utils import get_log, open_utf8
+from abkhazia import utils
 from abkhazia.corpora.utils import validation, DEFAULT_OUTPUT_DIR
 
 
@@ -69,8 +69,14 @@ class AbstractPreparator(object):
         compatible with abkhazia
 
     """
-    def __init__(self, input_dir, output_dir=None, verbose=False):
+    def __init__(self, input_dir,
+                 output_dir=None, verbose=False, njobs=1):
         self.verbose = verbose
+
+        # init njobs for parallelized preparation steps
+        if not isinstance(njobs, int) or not njobs > 0:
+            raise IOError('njobs must be a strictly positive integer')
+        self.njobs = njobs
 
         # init input directory
         if not os.path.isdir(input_dir):
@@ -89,16 +95,13 @@ class AbstractPreparator(object):
         if not os.path.isdir(self.logs_dir):
             os.makedirs(self.logs_dir)
 
-        # init the log with the log2file module
-        self.log = get_log(os.path.join(self.logs_dir, 'data_preparation.log'),
-                           self.verbose)
+        # init the log
+        self.log = utils.get_log(
+            os.path.join(self.logs_dir, 'data_preparation.log'), self.verbose)
 
-        # create empty hierarchy output_dir/data/wavs
+        # init the directories output_dir/data/wavs
         self.data_dir = os.path.join(self.output_dir, 'data')
         self.wavs_dir = os.path.join(self.data_dir, 'wavs')
-        if (not os.path.isdir(self.wavs_dir) and
-            not os.path.islink(self.wavs_dir)):
-            os.makedirs(self.wavs_dir)
 
         # init output files that will be populated by prepare()
         fname = lambda name: os.path.join(self.data_dir, name + '.txt')
@@ -110,8 +113,8 @@ class AbstractPreparator(object):
         self.variants_file = fname('variants')
         self.silences_file = fname('silences')
 
-        self.log.info('creating {} preparator'.format(self.name))
-
+        self.log.info('converting {} to abkhazia'.format(self.name))
+        self.log.info('reading from {}'.format(self.input_dir))
 
     def prepare(self):
         """Prepare the corpus from raw distribution to abkhazia format
@@ -120,18 +123,20 @@ class AbstractPreparator(object):
         ensure consistency with the abkhazia format.
 
         """
-        self.log.info('writing to {}'.format(self.data_dir))
+        self.log.info('writing to {}'.format(self.output_dir))
 
         # the successive preparation steps associated with the target
         # they will populate
         steps = [
-            (self.make_wavs, self.wavs_dir),
             (self.make_segment, self.segments_file),
             (self.make_speaker, self.speaker_file),
             (self.make_transcription, self.transcription_file),
             (self.make_lexicon, self.lexicon_file),
             (self.make_phones, self.phones_file)
         ]
+
+        # make_wavs has it own log message, run it separatly
+        self.make_wavs()
 
         # run each step one after another
         for step, target in steps:
@@ -147,6 +152,83 @@ class AbstractPreparator(object):
         """
         self.log.info('validating the prepared {} corpus'.format(self.name))
         validation.validate(self.output_dir, self.verbose)
+
+    def make_wavs(self):
+        """Convert to wav and copy the corpus audio files
+
+        Because converting thousands of files can be heavy, only the
+        files that are not already present in self.output_dir are
+        converted.
+
+        Moreover any file present in output_dir but not listed as a
+        desired wav file will be deleted.
+
+        To save some disk space, if the corpus audio file
+        format is wav, the files will be linked and not copied.
+
+        This method relies on self.list_audio_files() to get the input
+        and output files.
+
+        """
+        # get the list of input and output files to prepare
+        inputs, outputs = self.list_audio_files()
+
+        self.log.info('preparing {} wav files'.format(len(inputs)))
+
+        # this should not occur, but if child class is badly
+        # implemented...
+        if len(inputs) != len(outputs):
+            raise ValueError('inputs and outputs must have the same size')
+
+        if os.path.isdir(self.wavs_dir):
+            # the wav directory exists: detect target files already
+            # present and delete any undesired file.
+            self.log.info('scanning {}...'.format(self.wavs_dir))
+            target = dict((o, i) for i, o in zip(inputs, outputs))
+            found = 0
+            deleted = 0
+            for file in os.listdir(self.wavs_dir):
+                if file in target and not utils.is_empty_file(
+                        os.path.join(self.wavs_dir, file)):
+                    del target[file]
+                    found += 1
+                else:
+                    utils.remove(os.path.join(self.wavs_dir, file))
+                    deleted += 1
+            self.log.info('found {} files, deleted {} undesired files'
+                          .format(found, deleted))
+
+            # the job is done if all the files are already here, else we
+            # continue the preparation
+            if len(target) == 0:
+                self.log.info('all wav files already present in the directory')
+                return
+
+            # update the inputs and outputs
+            inputs = target.values()
+            outputs = target.keys()
+
+        else: # self.wavs_dir does not exist
+            os.makedirs(self.wavs_dir)
+
+        # append path to the directory in outputs
+        outputs = [os.path.join(self.wavs_dir, o) for o in outputs]
+
+        # link wav files instead of copying them TODO this must be
+        # an option from command line, make a specialized class ?
+        if self.audio_format == 'wav':
+            self.log.info('linking wav files...')
+            for i, o in zip(inputs, outputs):
+                os.link(i, o)
+
+        else:  # if original files are not wav, convert them
+            self.log.info('converting {} {} files to wav...'
+                          .format(len(inputs), self.audio_format))
+            utils.convert(inputs, outputs, self.audio_format, self.njobs)
+
+        self.log.debug('finished converting wavs')
+
+
 
     def make_phones(self):
         """Create phones, silences and variants list files
@@ -169,19 +251,19 @@ class AbstractPreparator(object):
 
 
         """
-        with open_utf8(self.phones_file, 'w') as out:
+        with utils.open_utf8(self.phones_file, 'w') as out:
             for phone in self.phones:
                 out.write(u'{0} {1}\n'.format(phone, self.phones[phone]))
         self.log.debug('writed {}'.format(self.phones_file))
 
         if self.silences is not []:
-            with open_utf8(self.silences_file, 'w') as out:
+            with utils.open_utf8(self.silences_file, 'w') as out:
                 for sil in self.silences:
                     out.write(sil + u"\n")
             self.log.debug('writed {}'.format(self.silences_file))
 
         if self.variants is not []:
-            with open_utf8(self.variants_file, 'w') as out:
+            with utils.open_utf8(self.variants_file, 'w') as out:
                 for var in self.variants:
                     out.write(u" ".join(var) + u"\n")
             self.log.debug('writed {}'.format(self.variants_file))
@@ -197,6 +279,14 @@ class AbstractPreparator(object):
     name = NotImplemented
     """The name of the corpus"""
 
+    audio_format = NotImplemented
+    """The format of audio files in the corpus
+
+    This format must be 'wav' or a format supported by the
+    abkhazia.utils.convert2wav.convert function.
+
+    """
+
     phones = NotImplemented
     """A dict associating each phone in corpus with it's IPA symbol"""
 
@@ -206,11 +296,15 @@ class AbstractPreparator(object):
     variants = []
     """A list of tonal variants associated with the phones"""
 
-    def make_wavs(self):
-        """Links the corpus speech folder to the output directory
+    def list_audio_files(self):
+        """Return a tuple (inputs, outputs) of two lists of audio files
 
-        Populate self.wavs_dir with symbolic links to the corpus
-        speech files. Optionnaly rename them.
+        'inputs' is the list of audio files to convert to
+            abkahzia. Filenames in the list must be absolute paths.
+
+        'outputs' is the list of target files to create in
+            'self.wavs_dir'. Filenames in the list must be only
+            basenames (ie pure filenames with no path).
 
         """
         raise NotImplementedError
@@ -273,15 +367,16 @@ class AbstractPreparatorWithCMU(AbstractPreparator):
     versions could probably be used without changing anything.
 
     """
+    # TODO be safe, this can raise
     default_cmu_dict = resource_filename(
         Requirement.parse('abkhazia'), 'abkhazia/share/cmudict.0.7a')
 
-    def __init__(self, input_dir,
-                 cmu_dict=None, output_dir=None, verbose=False):
+    def __init__(self, input_dir, cmu_dict=None,
+                 output_dir=None, verbose=False, njobs=1):
 
         # call the AbstractPreparator __init__
         super(AbstractPreparatorWithCMU, self).__init__(
-            input_dir, output_dir, verbose)
+            input_dir, output_dir, verbose, njobs)
 
         # init path to CMU dictionary
         if cmu_dict is None:

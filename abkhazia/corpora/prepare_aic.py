@@ -15,7 +15,7 @@
 # You should have received a copy of the GNU General Public License
 # along with abkahzia. If not, see <http://www.gnu.org/licenses/>.
 
-"""Data preparation for the revised AIC corpus
+"""Data preparation for the revised Articulation Index Corpus
 
 Distribution of the revised AIC corpus is freely available at LDC:
 https://catalog.ldc.upenn.edu/LDC2015S12. However, you need to be
@@ -26,18 +26,18 @@ and have administration privileges.
 """
 
 import os
-import progressbar
 import re
 
 from abkhazia.utils import list_files_with_extension
-from abkhazia.utils.convert2wav import convert
 from abkhazia.corpora.utils import (
     AbstractPreparatorWithCMU, default_argument_parser)
 
+
 class AICPreparator(AbstractPreparatorWithCMU):
     """Convert the AIC corpus to the abkhazia format"""
-
     name = 'AIC'
+
+    audio_format = 'flac'
 
     phones = {
         'a': u'ɑː',
@@ -85,20 +85,17 @@ class AICPreparator(AbstractPreparatorWithCMU):
 
     variants = []  # could use lexical stress variants...
 
-    def __init__(self, input_dir,
-                 cmu_dict=None, output_dir=None, verbose=False):
+    def __init__(self, input_dir, cmu_dict=None,
+                 output_dir=None, verbose=False, njobs=1):
         # call the AbstractPreparator __init__
         super(AICPreparator, self).__init__(
-            input_dir, cmu_dict, output_dir, verbose)
+            input_dir, cmu_dict, output_dir, verbose, njobs)
 
-    def make_wavs(self):
-        flacs = list_files_with_extension(self.input_dir, '.flac')
-        wavs = [os.path.join(
-            self.wavs_dir, os.path.basename(flac).replace('.flac', '.wav'))
+    def list_audio_files(self):
+        flacs = list_files_with_extension(self.input_dir, '.flac', abspath=True)
+        wavs = [os.path.basename(flac).replace('.flac', '.wav')
                 for flac in flacs]
-
-        self.log.info('converting {} flac files to wav...'.format(len(flacs)))
-        convert(flacs, wavs, 'flac', 4)
+        return flacs, wavs
 
     def make_segment(self):
         with open(self.segments_file, 'w') as out:
@@ -173,11 +170,12 @@ class AICPreparator(AbstractPreparatorWithCMU):
         # should be the sounds and will be written in temp OOV.txt
         outfile = open(out_temp_lex, "w")
         outfile2 = open(out_oov, "w")
-        for w, f in sorted(dict_word.items(), key=lambda kv: kv[1], reverse=True):
-            if w in cmu_dict.viewkeys():
-                outfile.write (w + ' ' + cmu_dict[w] + '\n')
+        for word, freq in sorted(
+                dict_word.items(), key=lambda kv: kv[1], reverse=True):
+            if word in cmu_dict.viewkeys():
+                outfile.write(word + ' ' + cmu_dict[word] + '\n')
             else:
-                outfile2.write(w + '\t' + str(f) + '\n')
+                outfile2.write(word + '\t' + str(freq) + '\n')
 
         self.log.debug('finished creating temp lexicon file')
 
@@ -187,12 +185,12 @@ class AICPreparator(AbstractPreparatorWithCMU):
         array_phn = []
         for line in open(temp_lex, 'r'):
             # non greedy match to extract phonetic transcription
-            m = re.match("(.*?)\s(.*)", line)
-            if m:
-                word = m.group(1)
+            matched = re.match(r'(.*?)\s(.*)', line)
+            if matched:
+                word = matched.group(1)
                 word = word.lower()
 
-                phn_trs = m.group(2)
+                phn_trs = matched.group(2)
                 # convert the CMU symbols to AIC symbols
                 phn_trs = phn_trs.replace('AA', 'a')
                 phn_trs = phn_trs.replace('AE', 'xq')
@@ -237,22 +235,22 @@ class AICPreparator(AbstractPreparatorWithCMU):
 
         # for the sounds
         for line in open(oov, 'r'):
-            m = re.match("(.*)\t(.*)", line)
-            if m:
-                sound = m.group(1)
+            matched = re.match("(.*)\t(.*)", line)
+            if matched:
+                sound = matched.group(1)
                 sound = sound.lower()
-                freq = m.group(2)
+                freq = matched.group(2)
                 freq = int(freq)
                 # discard the OOV with freq 1 because they are the
                 # typos. They will remain OOVs
-                if (freq > 1):
+                if freq > 1:
                     phn_trs = sound
                     # need to split the sound into phones to have the
                     # phonetic transcription
                     array_phn = phn_trs.split(":")
                     outfile.write(sound)
-                    for p in array_phn:
-                        outfile.write(' ' + p)
+                    for phn in array_phn:
+                        outfile.write(' ' + phn)
                     outfile.write('\n')
                 # else:
                 #     self.log.debug(sound)
@@ -260,33 +258,36 @@ class AICPreparator(AbstractPreparatorWithCMU):
         outfile.close()
         self.log.debug('finished creating lexicon file')
 
+
 # because AIC need the CMU dictionary, we can't use the default
 # corpora.utils.main function
 def main():
     """The command line entry for the AIC corpus preparation"""
-    try:
-        preparator = AICPreparator
-        parser = default_argument_parser(preparator.name, __doc__)
+    #    try:
+    preparator = AICPreparator
+    parser = default_argument_parser(preparator.name, __doc__)
 
-        parser.add_argument('--cmu-dict', default=None,
-                            help='the CMU dictionary '
-                            'file to use for lexicon generation. '
-                            'If not specified use {}'
-                            .format(preparator.default_cmu_dict))
+    parser.add_argument(
+        '--cmu-dict', default=None,
+        help='the CMU dictionary file to use for lexicon generation. '
+        'If not specified use {}'.format(preparator.default_cmu_dict))
 
-        # parse command line arguments
-        args = parser.parse_args()
+    # parse command line arguments
+    args = parser.parse_args()
 
-        # prepare the corpus
-        corpus_prep = preparator(
-            args.input_dir, args.cmu_dict, args.output_dir, args.verbose)
+    # prepare the corpus
+    corpus_prep = preparator(args.input_dir, args.cmu_dict,
+                             args.output_dir, args.verbose, args.njobs)
 
-        corpus_prep.prepare()
-        if not args.no_validation:
-            corpus_prep.validate()
+    corpus_prep.prepare()
+    if not args.no_validation:
+        corpus_prep.validate()
 
-    except Exception as err:
-        print('fatal error: {}'.format(err))
+    # except Exception as err:
+    #     print('fatal error: {}'.format(err))
+    # except (KeyboardInterrupt, SystemExit):
+    #     print('exiting')
+
 
 if __name__ == '__main__':
     main()

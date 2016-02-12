@@ -35,9 +35,7 @@
 
 
 import os
-import progressbar
 import re
-import shutil
 
 from abkhazia.utils import list_files_with_extension
 from abkhazia.corpora.utils import AbstractPreparator
@@ -48,6 +46,8 @@ class XitsongaPreparator(AbstractPreparator):
     """Convert the Xitsonga corpus to the abkhazia format"""
 
     name = 'NCHLT_Xitsonga'
+
+    audio_format = 'wav'
 
     # IPA transcriptions for all phones
     phones = {
@@ -112,22 +112,14 @@ class XitsongaPreparator(AbstractPreparator):
 
     variants = []  # could use lexical stress variants...
 
-    def make_wavs(self):
-        # # delete any existing wav tree TODO this should not occur
-        # # because __init__ raise on this case
-        # if os.path.isdir(self.wavs_dir):
-        #     shutil.rmtree(self.wavs_dir)
-        #     os.makedirs(self.wavs_dir)
+    def list_audio_files(self):
+        # get the list of wav files in corpus, relative to input_dir
+        inputs = [os.path.join('audio', wav) for wav in
+                      list_files_with_extension(os.path.join(self.input_dir, 'audio'), '.wav')]
 
-        # get the list of wav files in corpus
-        input_wavs = list_files_with_extension(
-            os.path.join(self.input_dir, 'audio'), '.wav')
+        outputs = [os.path.basename(wav).replace('nchlt_tso_', '') for wav in inputs]
 
-        # rename all wav files so that they start by speaker_ID
-        for wav_file in progressbar.ProgressBar()(input_wavs):
-            link = os.path.basename(wav_file).replace('nchlt_tso_', '')
-            os.symlink(wav_file, os.path.join(self.wavs_dir, link))
-        self.log.debug('finished linking wav files')
+        return inputs, outputs
 
     def make_segment(self):
         outfile = open(self.segments_file, "w")

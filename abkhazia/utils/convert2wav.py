@@ -47,8 +47,7 @@ def sph2wav(sph, wav):
     'wav' if the filename of the created file
 
     sph2pipe is required for converting sph to wav. This function look
-    at it in the kaldi-directory entry in the abkahzia configuration
-    file.
+    at it in the abkahzia configuration file.
 
     """
     sph2pipe = os.path.join(get_config().get('kaldi', 'kaldi-directory'),
@@ -95,7 +94,7 @@ def shn2wav(shn, wav):
         pass
 
 
-def convert(inputs, wavs, fileformat, njobs=1, verbose=5):
+def convert(inputs, outputs, fileformat, njobs=1, verbose=5):
     """Convert a range of audio files to the wav format
 
     inputs: list of input files to convert
@@ -103,9 +102,12 @@ def convert(inputs, wavs, fileformat, njobs=1, verbose=5):
     fileformat: audio format of the input files, must be in {flac, sph, shn}
     njobs: the number of parallel conversions
 
-    We must have len(inputs) == len(wavs)
+    We must have len(inputs) == len(wavs), all files in inputs must
+    exist. For details on the verbose level, please refeer to the
+    joblib documentation.
 
     """
+    # mapping from file format to conversion function
     try:
         fnc = {
             'flac': flac2wav,
@@ -115,8 +117,15 @@ def convert(inputs, wavs, fileformat, njobs=1, verbose=5):
     except KeyError:
         raise IOError('{} is not a supported format'.format(fileformat))
 
-    if not all(os.path.isfile(i) for i in inputs):
-        raise IOError('some input files do not exist')
+    # assert inputs and outputs have the same size
+    if not len(inputs) == len(outputs):
+        raise IOError('inputs and outputs have a different size')
 
+    # assert all input files exist
+    for i in inputs:
+        if not os.path.isfile(i):
+            raise IOError('input file does not exist: {}'.format(i))
+
+    # convert files in parallel
     Parallel(n_jobs=njobs, verbose=verbose)(
-        delayed(fnc)(i, o) for i, o in zip(inputs, wavs))
+        delayed(fnc)(i, o) for i, o in zip(inputs, outputs))

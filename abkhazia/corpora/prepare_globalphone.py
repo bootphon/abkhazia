@@ -50,7 +50,7 @@ def main():
         args = parser.parse_args()
         for language in args.language:
             corpus_prep = preparators[language](
-                args.input_dir, args.output_dir, args.verbose)
+                args.input_dir, args.output_dir, args.verbose, args.njobs)
 
             corpus_prep.prepare()
             if not args.no_validation:

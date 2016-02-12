@@ -134,7 +134,7 @@ Detect potential defective transcripts:
 import tempfile
 import os
 
-from abkhazia.corpora.utils import open_utf8
+from abkhazia.utils import open_utf8
 from abkhazia.corpora.globalphone import AbstractGlobalPhonePreparator
 
 class MandarinPreparator(AbstractGlobalPhonePreparator):
