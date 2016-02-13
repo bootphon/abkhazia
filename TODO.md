@@ -2,26 +2,21 @@
 
 * Corpora preparation
 
-  1. WSJ (entire corpus) fatal error:
+  - WSJ (entire corpus) fatal error:
 
     There is several utterance-ids used several times in 'text.txt' 5608
     - [X] no duplicates in trs input files (all have different abspath)
     - [ ] check for duplicates in different subfolders
-
-  2. LibriSpeech train-clean-100
-    - [ ] have a --type option to select subpart of the corpus
-    (test-clean, train-clean-100, etc)
-
-  3. GlobalPhone
+  - GlobalPhone
     - [ ] debug Mandarin
     - [ ] debug Vietnamese
-
-  4. Buckeyepreparator
+  - Buckeyepreparator
     Some utterances are overlapping in time, see details in log file
     /home/mbernard/data/abkhazia/corpora/Buckeye/logs/data_validation.log
     s0902a-sent19 s0902a-sent20
-
-  5. test CSJ preparation !
+  - test CSJ preparation !
+  - [ ] for wav corpora, have a --copy option
+    by default wav files are not converted nor copied, just linked
 
 * Corpora validation
 

@@ -197,7 +197,9 @@ def validate(corpus_path, verbose=False):
             short_wavs = []
             for i, wav in enumerate(wavefiles):
                 duration = durations[wav]
-                utts = [(utt, with_default(sta, 0), with_default(sto, duration)) for utt, w, sta, sto in zip(utt_ids, wavs, starts, stops) if w == wav]
+                utts = [(utt, with_default(sta, 0), with_default(sto, duration))
+                        for utt, w, sta, sto in zip(utt_ids, wavs, starts, stops) if w == wav]
+
                 # first check that start < stop and within file duration
                 for utt_id, start, stop in utts:
                     assert stop >= start, \
@@ -208,6 +210,7 @@ def validate(corpus_path, verbose=False):
                         "Stop time for utterance {0} is not compatible with file duration".format(utt_id)
                     if stop-start < .015:
                         short_wavs.append(utt_id)
+
                 # then check if there is overlap in time between the different utterances
                 # and if there is, issue a warning (not an error)
                 # 1. check that no two utterances start or finish at the same time
@@ -219,10 +222,12 @@ def validate(corpus_path, verbose=False):
                         same_start[start] = [utt for utt, sta, _ in utts if sta == start]
                 wav_stops = [stop for _, _, stop in utts]
                 counts = collections.Counter(wav_stops)
+
                 same_stop = {}
                 for stop in counts:
                     if counts[stop] > 1:
                         same_stop[stop] = [utt for utt, _, sto in utts if sto == stop]
+
                 if same_start:
                     warning = True
                     log.warning(
@@ -231,6 +236,7 @@ def validate(corpus_path, verbose=False):
                         "in wavefile {0}: {1}"
                         ).format(wav, same_start)
                     )
+
                 if same_stop:
                     warning = True
                     log.warning(
@@ -239,6 +245,7 @@ def validate(corpus_path, verbose=False):
                         "in wavefile {0}: {1}"
                         ).format(wav, same_stop)
                     )
+
                 # 2. now it suffices to check the following:
                 wav_starts = list(set(wav_starts))
                 wav_stops = list(set(wav_stops))
@@ -246,7 +253,8 @@ def validate(corpus_path, verbose=False):
                 timestamps.sort()
                 # TODO fix that... maybe > 1
                 index = timestamps.index
-                overlapped = [utt for utt, start, stop in utts if index(stop)-index(start) != 1]
+                overlapped = [utt for utt, start, stop in utts
+                              if index(stop)-index(start) != 1]
                 if overlapped:
                     warning = True
                     log.warning(
