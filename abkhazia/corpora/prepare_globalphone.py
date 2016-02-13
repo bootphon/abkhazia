@@ -30,34 +30,36 @@ from abkhazia.corpora.globalphone import (
 # a custom main function to deals with the different languages
 def main():
     """The command line entry for the GlobalPhone corpus preparation"""
-    try:
-        # all the supported languages mapped to their preparators
-        preparators = {
-            'Mandarin': MandarinPreparator,
-            'Vietnamese': VietnamesePreparator
-        }
+#    try:
+    # all the supported languages mapped to their preparators
+    preparators = {
+        'Mandarin': MandarinPreparator,
+        'Vietnamese': VietnamesePreparator
+    }
 
-        # add a language selection option to the arguments parser
-        parser = default_argument_parser('GlobalPhone', __doc__)
-        parser.add_argument(
-            '-l', '--language', nargs='+', metavar='LANGUAGE',
-            default=preparators.keys(), choices=preparators.keys(),
-            help='specify the languages to prepare in {}, '
-            'if this option is not specified prepare all the '
-            'supported languages'.format(preparators.keys()))
+    # add a language selection option to the arguments parser
+    parser = default_argument_parser('GlobalPhone', __doc__)
+    parser.add_argument(
+        '-l', '--language', nargs='+', metavar='LANGUAGE',
+        default=preparators.keys(), choices=preparators.keys(),
+        help='specify the languages to prepare in {}, '
+        'if this option is not specified prepare all the '
+        'supported languages'.format(preparators.keys()))
 
-        # prepare the corpus for the specified languages
-        args = parser.parse_args()
-        for language in args.language:
-            corpus_prep = preparators[language](
-                args.input_dir, args.output_dir, args.verbose, args.njobs)
+    # prepare the corpus for the specified languages
+    args = parser.parse_args()
+    for language in args.language:
+        corpus_prep = preparators[language](
+            args.input_dir, args.output_dir, args.verbose, args.njobs)
 
-            corpus_prep.prepare()
-            if not args.no_validation:
-                corpus_prep.validate()
+        corpus_prep.prepare()
+        if not args.no_validation:
+            corpus_prep.validate()
 
-    except Exception as err:
-        print('fatal error: {}'.format(err))
+    # except Exception as err:
+    #     print 'fatal error: {}'.format(err)
+    # except KeyboardInterrupt:
+    #     print 'keyboard interruption, exiting'
 
 
 if __name__ == '__main__':

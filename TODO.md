@@ -3,13 +3,9 @@
 * Corpora preparation
 
   - WSJ (entire corpus) fatal error:
-
     There is several utterance-ids used several times in 'text.txt' 5608
     - [X] no duplicates in trs input files (all have different abspath)
     - [ ] check for duplicates in different subfolders
-  - GlobalPhone
-    - [ ] debug Mandarin
-    - [ ] debug Vietnamese
   - Buckeyepreparator
     Some utterances are overlapping in time, see details in log file
     /home/mbernard/data/abkhazia/corpora/Buckeye/logs/data_validation.log
@@ -17,11 +13,6 @@
   - test CSJ preparation !
   - [ ] for wav corpora, have a --copy option
     by default wav files are not converted nor copied, just linked
-
-* Corpora validation
-
-  - [ ] fix this bug of overlapping utterances (at least in
-    Buckeye, see for other corpora)
 
 * Documentation
 

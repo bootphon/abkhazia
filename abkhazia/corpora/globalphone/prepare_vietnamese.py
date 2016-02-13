@@ -342,9 +342,6 @@ class VietnamesePreparator(AbstractGlobalPhonePreparator):
         # get the list of transcription files
         trss = utils.list_directory(self.transcription_dir, abspath=True)
 
-        self.log.info('correcting {} transcription files in {}'
-                      .format(len(trss), corrected_transcription_dir))
-
         for trs in trss:
             # read transcript file
             lines = utils.open_utf8(trs, 'r').readlines()
@@ -353,13 +350,16 @@ class VietnamesePreparator(AbstractGlobalPhonePreparator):
             lines[2::2] = [line.replace(u'_', u' ').replace(u'  ', u' ').strip()
                            + u'\n' for line in lines[2::2]]
 
-            # write corrected version to temp
-            output_file = os.path.join(corrected_transcription_dir, trs)
+            # # write corrected version to temp
+            output_file = os.path.join(
+                corrected_transcription_dir, os.path.basename(trs))
+
             with utils.open_utf8(output_file, 'w') as out:
                 for line in lines:
                     out.write(line)
 
-        self.log.info('Transcripts corrected, writed to {}'.
-                      format(self.transcription_dir))
+        self.log.info('corrected {} transcription files in {}'
+                      .format(len(trss), corrected_transcription_dir))
+
         self.transcription_dir = corrected_transcription_dir
         return True

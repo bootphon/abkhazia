@@ -22,14 +22,6 @@ from abkhazia.utils import list_directory, open_utf8, list_files_with_extension
 from abkhazia.corpora.utils import AbstractPreparator
 
 
-def strip_accolades(expr):
-    """Returns 'expr' with accolade stripped, raise if no accolades"""
-    if not (expr[0] == '{' and expr[-1] == '}'):
-        raise RuntimeError(
-            'Bad formatting for word or transcript: {0}'.format(expr))
-    return expr[1:-1]
-
-
 class AbstractGlobalPhonePreparator(AbstractPreparator):
     """Convert the GlobalPhone corpus to the abkhazia format
 
@@ -51,6 +43,14 @@ class AbstractGlobalPhonePreparator(AbstractPreparator):
 
     exclude_wavs = []
     """a list (possibly empty) of wav files to ignore"""
+
+    @staticmethod
+    def strip_accolades(expr):
+        """Returns 'expr' with accolade stripped, raise if no accolades"""
+        if not (expr[0] == '{' and expr[-1] == '}'):
+            raise RuntimeError(
+                'Bad formatting for word or transcript: {0}'.format(expr))
+        return expr[1:-1]
 
     def __init__(self, input_dir, output_dir=None, verbose=False, njobs=1):
         # call the AbstractPreparator __init__
@@ -147,22 +147,23 @@ class AbstractGlobalPhonePreparator(AbstractPreparator):
 
     def make_lexicon(self):
         # parse dictionary lines
-        words = transcripts = []
-        for line in open_utf8(self.dictionary, 'r').xreadlines():
+        words, transcripts = [], []
+        for line in open_utf8(self.dictionary, 'r').readlines():
             # suppress linebreaks (this does not take into account fancy
             # unicode linebreaks), see
             # http://stackoverflow.com/questions/3219014
-            line = re.sub(ur'\r\n?|\n', u'', line).split(u' ')
+            line = re.sub(u'\r\n?|\n', u'', line).split(u' ')
+            #print line
 
             # parse word
-            word = strip_accolades(line[0])
+            word = self.strip_accolades(line[0])
             if u'{' in word or u'}' in word:
                 raise RuntimeError(
                     'Bad formatting of word {}'.format(word))
             words.append(word)
 
             # parse phonetic transcription
-            trs = strip_accolades(u' '.join(line[1:])).split(u' ')
+            trs = self.strip_accolades(u' '.join(line[1:])).split(u' ')
             transcript = []
             for phone in trs:
                 if phone[0] == u'{':
@@ -184,4 +185,4 @@ class AbstractGlobalPhonePreparator(AbstractPreparator):
         # generate output file
         with open_utf8(self.lexicon_file, 'w') as out:
             for word, trs in zip(words, transcripts):
-                out.write('{} {}\n'.format(word, trs))
+                out.write(u'{} {}\n'.format(word, trs))

@@ -80,7 +80,8 @@ def shn2wav(shn, wav):
         except:
             raise OSError('{} is not installed on your system'.format(cmd))
 
-    tmp = shn + '.tmp'
+    # TODO use mkstemp instead
+    tmp = wav + '.tmp'
     command1 = 'shorten -x {} {}'.format(shn, tmp)
     command2 = ('sox -t raw -r 16000 -e signed-integer -b 16 {} -t wav {}'
                 .format(tmp, wav))
