@@ -78,5 +78,5 @@ def default_main(preparator, description, argparser=default_argument_parser):
 
     except Exception as err:
         print('fatal error: {}'.format(err))
-    except (KeyboardInterrupt, SystemExit):
+    except KeyboardInterrupt:
         print('exiting')

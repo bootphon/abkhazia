@@ -81,7 +81,7 @@ def validate(corpus_path, verbose=False):
         """
         wav directory must contain only mono wavefiles in 16KHz, 16 bit PCM format
         """
-        log.info("Checking 'wavs' folder")
+        log.info("checking 'wavs' folder...")
         wav_dir = os.path.join(data_dir, 'wavs')
         wavefiles = [e for e in os.listdir(wav_dir) if e != '.DS_Store']
 
@@ -190,12 +190,11 @@ def validate(corpus_path, verbose=False):
             # and for each wavefile, check consistency of the timestamps of
             # all utterances inside it
             # report progress as this can be a bit long
-            n = len(wavefiles)
-            next_display_prop = 0.1
-            log.debug("Checked timestamps consistency for 0% of wavefiles")
             warning = True
             short_wavs = []
-            for i, wav in enumerate(wavefiles):
+
+            log.info("checking timestamps consistency...")
+            for wav in progressbar.ProgressBar()(wavefiles):
                 duration = durations[wav]
                 utts = [(utt, with_default(sta, 0), with_default(sto, duration))
                         for utt, w, sta, sto in zip(utt_ids, wavs, starts, stops) if w == wav]
@@ -247,13 +246,12 @@ def validate(corpus_path, verbose=False):
                     )
 
                 # 2. now it suffices to check the following:
-                wav_starts = list(set(wav_starts))
-                wav_stops = list(set(wav_stops))
-                timestamps = wav_starts + wav_stops
+                timestamps = list(set(wav_starts)) + list(set(wav_stops))
                 timestamps.sort()
                 # TODO fix that... maybe > 1
                 index = timestamps.index
-                overlapped = [utt for utt, start, stop in utts
+                overlapped = [(utt, index(stop)-index(start))
+                              for utt, start, stop in utts
                               if index(stop)-index(start) != 1]
                 if overlapped:
                     warning = True
@@ -263,16 +261,6 @@ def validate(corpus_path, verbose=False):
                         "overlapping in time: {1}"
                         ).format(wav, overlapped)
                     )
-                # report progress as the for loop can be a bit long
-                prop = (i+1)/float(n)
-                if prop >= next_display_prop:
-                    log.debug(
-                        (
-                        "Checked timestamps consistency for "
-                        "{0}% of wavefiles"
-                        ).format(int(round(100*next_display_prop)))
-                    )
-                    next_display_prop = next_display_prop + 0.1
             if warning:
                 log.info(
                     (

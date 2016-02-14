@@ -187,13 +187,13 @@ class AbstractPreparator(object):
             target = dict((o, i) for i, o in zip(inputs, outputs))
             found = 0
             deleted = 0
-            for file in os.listdir(self.wavs_dir):
-                if file in target and not utils.is_empty_file(
-                        os.path.join(self.wavs_dir, file)):
-                    del target[file]
+            for wav in os.listdir(self.wavs_dir):
+                if wav in target and not utils.is_empty_file(
+                        os.path.join(self.wavs_dir, wav)):
+                    del target[wav]
                     found += 1
                 else:
-                    utils.remove(os.path.join(self.wavs_dir, file))
+                    utils.remove(os.path.join(self.wavs_dir, wav))
                     deleted += 1
             self.log.info('found {} files, deleted {} undesired files'
                           .format(found, deleted))
@@ -218,15 +218,15 @@ class AbstractPreparator(object):
         # an option from command line, make a specialized class ?
         if self.audio_format == 'wav':
             self.log.info('linking wav files...')
-            for i, o in zip(inputs, outputs):
-                os.link(i, o)
+            for inp, out in zip(inputs, outputs):
+                os.link(inp, out)
+            self.log.debug('finished linking wavs')
 
         else:  # if original files are not wav, convert them
             self.log.info('converting {} {} files to wav...'
                           .format(len(inputs), self.audio_format))
             utils.convert(inputs, outputs, self.audio_format, self.njobs)
-
-        self.log.debug('finished converting wavs')
+            self.log.debug('finished converting wavs')
 
 
 
