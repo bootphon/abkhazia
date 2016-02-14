@@ -6,12 +6,9 @@
     There is several utterance-ids used several times in 'text.txt' 5608
     - [X] no duplicates in trs input files (all have different abspath)
     - [ ] check for duplicates in different subfolders
-  - Buckeyepreparator
-    Some utterances are overlapping in time, see details in log file
-    /home/mbernard/data/abkhazia/corpora/Buckeye/logs/data_validation.log
-    s0902a-sent19 s0902a-sent20
-  - test CSJ preparation !
-  - [ ] for wav corpora, have a --copy option
+  - Buckeye and CSJ
+    Some utterances are overlapping in time
+  - for wav corpora, have a --copy option
     by default wav files are not converted nor copied, just linked
 
 * Documentation
