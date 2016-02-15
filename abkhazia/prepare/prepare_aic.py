@@ -1,4 +1,3 @@
-#!/usr/bin/env python
 # coding: utf-8
 # Copyright 2016 Thomas Schatz, Xuan Nga Cao, Mathieu Bernard
 #
@@ -29,14 +28,15 @@ import os
 import re
 
 from abkhazia.utils import list_files_with_extension
-from abkhazia.corpora.utils import (
-    AbstractPreparatorWithCMU, default_argument_parser)
+from abkhazia.prepare import AbstractPreparatorWithCMU
+from abkhazia.prepare.utils import default_argument_parser
 
 
 class AICPreparator(AbstractPreparatorWithCMU):
     """Convert the AIC corpus to the abkhazia format"""
     name = 'AIC'
-
+    description = 'Articulation Index Corpus LSCP'
+    url = 'https://catalog.ldc.upenn.edu/LDC2015S12'
     audio_format = 'flac'
 
     phones = {
@@ -252,8 +252,8 @@ class AICPreparator(AbstractPreparatorWithCMU):
                     for phn in array_phn:
                         outfile.write(' ' + phn)
                     outfile.write('\n')
-                # else:
-                #     self.log.debug(sound)
+                else:
+                    self.log.debug(sound)
 
         outfile.close()
         self.log.debug('finished creating lexicon file')
@@ -287,7 +287,3 @@ def main():
     #     print('fatal error: {}'.format(err))
     # except (KeyboardInterrupt, SystemExit):
     #     print('exiting')
-
-
-if __name__ == '__main__':
-    main()

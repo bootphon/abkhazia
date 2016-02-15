@@ -22,8 +22,8 @@ extraction step requires 'shorten' and 'sox' on the path.
 
 """
 
-from abkhazia.corpora.utils import default_argument_parser
-from abkhazia.corpora.globalphone import (
+from abkhazia.prepare.utils import default_argument_parser
+from abkhazia.prepare.globalphone import (
     MandarinPreparator,
     VietnamesePreparator)
 

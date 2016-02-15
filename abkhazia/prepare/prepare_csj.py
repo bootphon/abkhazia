@@ -1,4 +1,3 @@
-#!/usr/bin/env python
 # coding: utf-8
 # Copyright 2016 Thomas Schatz, Xuan Nga Cao, Mathieu Bernard
 #
@@ -52,7 +51,7 @@ except ImportError:
 
 from abkhazia.utils import open_utf8
 from abkhazia.utils.basic_io import cpp_sort
-from abkhazia.corpora.utils import AbstractPreparator, default_main
+from abkhazia.prepare import AbstractPreparator
 
 # from https://stackoverflow.com/questions/38987
 def merge_two_dicts(first, second):
@@ -81,7 +80,8 @@ Utt = namedtuple('Utt', 'words start end channel')
 class CSJPreparator(AbstractPreparator):
     """convert the CSJ corpus to the abkhazia format"""
     name = 'CSJ'
-
+    description = 'Corpus of Spontaneous Japanese'
+    url = 'http://www.ninjal.ac.jp/english/products/csj'
     audio_format = 'wav'
 
     vowels = {
@@ -455,7 +455,3 @@ class CSJPreparator(AbstractPreparator):
                 transcript = u" ".join(self.lexicon[word])
                 out.write(u"{0} {1}\n".format(word, transcript))
         cpp_sort(self.lexicon_file)
-
-
-if __name__ == '__main__':
-    default_main(CSJPreparator, __doc__)

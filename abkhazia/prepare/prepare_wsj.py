@@ -21,15 +21,15 @@ import os
 import re
 
 from abkhazia.utils import list_directory, open_utf8
-from abkhazia.corpora.utils import (
-    AbstractPreparatorWithCMU, default_argument_parser)
-
+from abkhazia.prepare import AbstractPreparatorWithCMU
 
 class WallStreetJournalPreparator(AbstractPreparatorWithCMU):
     """Convert the WSJ corpus to the abkhazia format"""
 
     name = 'WallStreetJournal'
-
+    description = 'Wall Street Journal ASR Corpus'
+    url = ['WSJ0 - https://catalog.ldc.upenn.edu/LDC93S6A',
+           'WSJ1 - https://catalog.ldc.upenn.edu/LDC94S13A']
     audio_format = 'sph'
 
     # IPA transcription of the CMU phones
@@ -322,6 +322,47 @@ class WallStreetJournalPreparator(AbstractPreparatorWithCMU):
         self.log.debug('finished creating lexicon file')
 
 
+    # mapping of the three WSJ variations
+    selection = [
+        ('journalist-read', JournalistReadPreparator),
+        ('journalist-spontaneous', JournalistSpontaneousPreparator),
+        ('main-read', MainReadPreparator)
+    ]
+
+    @classmethod
+    def parser(cls):
+        selection_descr = ', '.join([str(i+1) + ' is ' + cls.selection[i][0]
+                                     for i in range(len(cls.selection))])
+
+        p = super(WallStreetJournalPreparator, cls).parser()
+        p.add_argument(
+            '-s', '--selection', default=None,
+            metavar='SELECTION', type=int,
+            choices=range(1, len(cls.selection)+1),
+            help='the subpart of WSJ to prepare. If not specified, '
+            'prepare the entire corpus. Choose SELECTION in {}. ('
+            .format(range(1, len(cls.selection)+1)) + selection_descr + ')')
+        return p
+
+    @classmethod
+    def main(cls, argv):
+        """The command line entry for WSJ corpus preparation"""
+        # parse command line arguments
+        args = cls.parser().parse_args(argv)
+
+        # select the preparator
+        preparator = (WallStreetJournalPreparator if args.selection is None
+                      else cls.selection[args.selection-1][1])
+
+        # prepare the corpus
+        prep = preparator(args.input_dir, args.cmu_dict,
+                          args.output_dir, args.verbose, args.njobs)
+
+        if not args.only_validation:
+            prep.prepare()
+        if not args.no_validation:
+            prep.validate()
+
 # TODO check if that's correct (in particular no sd_tr_s or l in WSJ1
 # and no si_tr_l in WSJ0 ??)
 
@@ -375,60 +416,3 @@ class MainReadPreparator(WallStreetJournalPreparator):
     name = WallStreetJournalPreparator.name + '-main-read'
     directory_pattern = ['si_tr_s', 'si_tr_l', 'sd_tr_s', 'sd_tr_l']
     file_pattern = 'c'
-
-
-# To deal with specific WSJ command line arguments, we can't use the
-# default corpora.utils.main function
-def main():
-    """The command line entry for WSJ corpus preparation"""
-    try:
-        # mapping of the three WSJ variations
-        selection = [
-            ('journalist-read', JournalistReadPreparator),
-            ('journalist-spontaneous', JournalistSpontaneousPreparator),
-            ('main-read', MainReadPreparator)
-        ]
-
-        selection_descr = ', '.join([str(i+1) + ' is ' + selection[i][0]
-                                     for i in range(len(selection))])
-
-        # add WSJ specific arguments to the parser
-        parser = default_argument_parser(
-            WallStreetJournalPreparator.name, __doc__)
-
-        parser.add_argument(
-            '-s', '--selection', default=None,
-            metavar='SELECTION', type=int,
-            choices=range(1, len(selection)+1),
-            help='the subpart of WSJ to prepare. If not specified, '
-            'prepare the entire corpus. Choose SELECTION in {}. ('
-            .format(range(1, len(selection)+1)) + selection_descr + ')')
-
-        parser.add_argument(
-            '--cmu-dict', default=None,
-            help='the CMU dictionary file to use for lexicon generation. '
-            'If not specified use {}'.format(
-                WallStreetJournalPreparator.default_cmu_dict))
-
-        # parse command line arguments
-        args = parser.parse_args()
-
-        # select the preparator
-        preparator = (WallStreetJournalPreparator if args.selection is None
-                      else selection[args.selection-1][1])
-
-        # prepare the corpus
-        corpus_prep = preparator(args.input_dir, args.cmu_dict,
-                                 args.output_dir, args.verbose, args.njobs)
-
-        corpus_prep.prepare()
-        if not args.no_validation:
-            corpus_prep.validate()
-
-    except (OSError, IOError, ValueError, AttributeError) as err:
-        print 'fatal error: {}'.format(err)
-    except KeyboardInterrupt:
-        print 'keyboard interrupt, exiting'
-
-if __name__ == '__main__':
-    main()

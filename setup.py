@@ -57,6 +57,13 @@ setup(
         'abkhazia': ['share/*']
     },
 
+    # define the command-line script to use
+    entry_points={
+        'console_scripts': [
+            'abkhazia = abkhazia.scripts.main:main'
+        ]
+    },
+
     # metadata for upload to PyPI
     author='Thomas Schatz, Mathieu Bernard, Roland Thiolliere, Xuan Nga Cao',
     author_email='mmathieubernardd@gmail.com',

@@ -76,7 +76,7 @@ def default_main(preparator, description, argparser=default_argument_parser):
         if not args.no_validation:
             corpus_prep.validate()
 
-    except Exception as err:
+    except (IOError, OSError, RuntimeError) as err:
         print('fatal error: {}'.format(err))
     except KeyboardInterrupt:
         print('exiting')

@@ -126,7 +126,7 @@ import os
 import re
 
 from abkhazia import utils
-from abkhazia.corpora.globalphone import AbstractGlobalPhonePreparator
+from abkhazia.prepare.globalphone import AbstractGlobalPhonePreparator
 
 
 class VietnamesePreparator(AbstractGlobalPhonePreparator):

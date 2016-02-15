@@ -15,11 +15,13 @@
 
 """Provides a base class for corpus preparation in the abkhazia format"""
 
+import argparse
 import os
 from pkg_resources import Requirement, resource_filename
 
 from abkhazia import utils
-from abkhazia.corpora.utils import validation, DEFAULT_OUTPUT_DIR
+from abkhazia.prepare import validation
+from abkhazia.prepare.utils import DEFAULT_OUTPUT_DIR
 
 
 class AbstractPreparator(object):
@@ -60,7 +62,8 @@ class AbstractPreparator(object):
     -------
 
     From a user perspective, the most important methods offered by the
-    abstract preparator are prepare() and validate().
+    abstract preparator are prepare() and validate(). When used from
+    command-line, the main() method is called.
 
     prepare(): convert the original data in 'input_dir' to a corpus in
         the abkhazia format, store the data in 'output_dir'
@@ -68,9 +71,72 @@ class AbstractPreparator(object):
     validate(): after preparation, checks the created corpus is
         compatible with abkhazia
 
+    main(): parse input arguments and prepore/validate as required
+
     """
-    def __init__(self, input_dir,
-                 output_dir=None, verbose=False, njobs=1):
+    @classmethod
+    def default_output_dir(cls):
+        return os.path.join(
+            utils.config.get_config().get('abkhazia', 'data-directory'),
+            'corpora', cls.name)
+
+    @classmethod
+    def parser(cls):
+        """Return a default argument parser for corpus preparation"""
+        prog = 'abkhazia prepare {}'.format(cls.name.lower())
+
+        parser = argparse.ArgumentParser(
+            prog=prog,
+            usage=('%(prog)s <input-dir> [--output-dir OUTPUT_DIR]\n'
+                   + ' '*(len(prog)+8)
+                   + ('\n' + ' '*(len(prog)+8)).join([
+                       '[--help] [--verbose] [--njobs NJOBS]',
+                       '[--no-validation|--only-validation]'])),
+            description=cls.description)
+
+        group = parser.add_argument_group('directories')
+
+        group.add_argument(
+            'input_dir', metavar='input-dir',
+            help='root directory of the raw corpus distribution')
+
+        group.add_argument(
+            '-o', '--output-dir', default=None,
+            help='output directory of the prepared corpus, '
+            'if not specified use {}'.format(cls.default_output_dir()))
+
+        parser.add_argument(
+            '-v', '--verbose', action='store_true',
+            help='display more messages to stdout')
+
+        parser.add_argument(
+            '-j', '--njobs', type=int, default=4,
+            help='number of jobs to launch when doing parallel '
+            'computations (mainly for wav conversion). '
+            'Default is to launch %(default)s jobs.')
+
+        group = parser.add_argument_group('validation options')
+        group = group.add_mutually_exclusive_group()
+        group.add_argument(
+            '--no-validation', action='store_true',
+            help='disable the corpus validation step (do only preparation)')
+        group.add_argument(
+            '--only-validation', action='store_true',
+            help='disable the corpus preparation step (do only validation)')
+
+        return parser
+
+    @classmethod
+    def main(cls, argv):
+        args = cls.parser().parse_args(argv)
+        prep = cls(args.input_dir, args.output_dir, args.verbose, args.njobs)
+        if not args.only_validation:
+            prep.prepare()
+        if not args.no_validation:
+            prep.validate()
+
+
+    def __init__(self, input_dir, output_dir=None, verbose=False, njobs=1):
         self.verbose = verbose
 
         # init njobs for parallelized preparation steps
@@ -86,7 +152,7 @@ class AbstractPreparator(object):
 
         # init output directory
         if output_dir is None:
-            self.output_dir = os.path.join(DEFAULT_OUTPUT_DIR, self.name)
+            self.output_dir = self.default_output_dir()
         else:
             self.output_dir = os.path.abspath(output_dir)
 
@@ -153,6 +219,7 @@ class AbstractPreparator(object):
         self.log.info('validating the prepared {} corpus'.format(self.name))
         validation.validate(self.output_dir, self.verbose)
 
+
     def make_wavs(self):
         """Convert to wav and copy the corpus audio files
 
@@ -187,13 +254,13 @@ class AbstractPreparator(object):
             target = dict((o, i) for i, o in zip(inputs, outputs))
             found = 0
             deleted = 0
-            for file in os.listdir(self.wavs_dir):
-                if file in target and not utils.is_empty_file(
-                        os.path.join(self.wavs_dir, file)):
-                    del target[file]
+            for wav in os.listdir(self.wavs_dir):
+                if wav in target and not utils.is_empty_file(
+                        os.path.join(self.wavs_dir, wav)):
+                    del target[wav]
                     found += 1
                 else:
-                    utils.remove(os.path.join(self.wavs_dir, file))
+                    utils.remove(os.path.join(self.wavs_dir, wav))
                     deleted += 1
             self.log.info('found {} files, deleted {} undesired files'
                           .format(found, deleted))
@@ -278,6 +345,9 @@ class AbstractPreparator(object):
 
     name = NotImplemented
     """The name of the corpus"""
+
+    description = ''
+    """A brief description of the corpus"""
 
     audio_format = NotImplemented
     """The format of audio files in the corpus
@@ -371,9 +441,29 @@ class AbstractPreparatorWithCMU(AbstractPreparator):
     default_cmu_dict = resource_filename(
         Requirement.parse('abkhazia'), 'abkhazia/share/cmudict.0.7a')
 
+    @classmethod
+    def parser(cls):
+        p = super(AbstractPreparatorWithCMU, cls).parser()
+        p.usage += '\n' + ' '*(len(p.prog)+8) + '[--cmu-dict CMU_DICT]'
+        p.add_argument(
+            '--cmu-dict', default=None,
+            help='the CMU dictionary file to use for lexicon generation. '
+            'If not specified use {}'.format(cls.default_cmu_dict))
+        return p
+
+
+    @classmethod
+    def main(cls, argv):
+        args = cls.parser().parse_args(argv)
+        prep = cls(args.input_dir, args.cmu_dict,
+                   args.output_dir, args.verbose, args.njobs)
+        if not args.only_validation:
+            prep.prepare()
+        if not args.no_validation:
+            prep.validate()
+
     def __init__(self, input_dir, cmu_dict=None,
                  output_dir=None, verbose=False, njobs=1):
-
         # call the AbstractPreparator __init__
         super(AbstractPreparatorWithCMU, self).__init__(
             input_dir, output_dir, verbose, njobs)

@@ -1,4 +1,3 @@
-#!/usr/bin/env python
 # coding: utf-8
 # Copyright 2016 Thomas Schatz, Xuan Nga Cao, Mathieu Bernard
 #
@@ -38,15 +37,14 @@ import os
 import re
 
 from abkhazia.utils import list_files_with_extension
-from abkhazia.corpora.utils import AbstractPreparator
-from abkhazia.corpora.utils import default_main
-
+from abkhazia.prepare import AbstractPreparator
 
 class XitsongaPreparator(AbstractPreparator):
     """Convert the Xitsonga corpus to the abkhazia format"""
 
     name = 'NCHLT_Xitsonga'
-
+    description = 'NCHLT Xitsonga Speech Corpus'
+    url = 'http://rma.nwu.ac.za/index.php/nchlt-speech-corpus-ts.html'
     audio_format = 'wav'
 
     # IPA transcriptions for all phones

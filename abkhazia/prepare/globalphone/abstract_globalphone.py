@@ -19,7 +19,7 @@ import re
 import shutil
 
 from abkhazia.utils import list_directory, open_utf8, list_files_with_extension
-from abkhazia.corpora.utils import AbstractPreparator
+from abkhazia.prepare.utils import AbstractPreparator
 
 
 class AbstractGlobalPhonePreparator(AbstractPreparator):
