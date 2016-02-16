@@ -128,7 +128,7 @@ class BuckeyePreparator(AbstractPreparator):
     # TODO function too big, refactor
     def make_segment(self):
         utt_dir = os.path.join(self.input_dir, 'txt')
-        wrd_dir = os.path.join(self.input_dir, 'words_foldings')
+        wrd_dir = os.path.join(self.input_dir, 'words_fold')
 
         outfile = open(self.segments_file, "w")
         for utts in list_files_with_extension(utt_dir, '.txt'):
@@ -138,7 +138,7 @@ class BuckeyePreparator(AbstractPreparator):
                 last_offset = 0
                 lines = infile_txt.readlines()
                 bname = os.path.basename(utts)
-                bname_word = bname.replace('txt', 'words_new')
+                bname_word = bname.replace('txt', 'words')
                 bname_wav = bname.replace('txt', 'wav')
                 utt = bname.replace('.txt', '')
                 length_utt = [len(line.strip().split()) for line in lines]
@@ -232,11 +232,11 @@ class BuckeyePreparator(AbstractPreparator):
         self.log.debug('finished creating text file')
 
     def make_lexicon(self):
-        wrd_dir = os.path.join(self.input_dir, 'words_foldings')
+        wrd_dir = os.path.join(self.input_dir, 'words_fold')
 
         dict_word = {}
         outfile = open(self.lexicon_file, "w")
-        for utts in list_files_with_extension(wrd_dir, '.words_new'):
+        for utts in list_files_with_extension(wrd_dir, '.words'):
             with open(utts) as infile_txt:
                 # for each line of transcription, store the words in a
                 # dictionary and increase frequency
