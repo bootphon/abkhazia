@@ -15,12 +15,11 @@
 
 """Provides a base class for corpus preparation in the abkhazia format"""
 
+import argparse
 import os
 from pkg_resources import Requirement, resource_filename
 
 from abkhazia import utils
-from abkhazia.corpora.utils import validation, DEFAULT_OUTPUT_DIR
-
 
 class AbstractPreparator(object):
     """This class is a common wrapper to all the corpus preparators
@@ -60,17 +59,26 @@ class AbstractPreparator(object):
     -------
 
     From a user perspective, the most important methods offered by the
-    abstract preparator are prepare() and validate().
-
-    prepare(): convert the original data in 'input_dir' to a corpus in
-        the abkhazia format, store the data in 'output_dir'
-
-    validate(): after preparation, checks the created corpus is
-        compatible with abkhazia
+    abstract preparator is prepare(). It converts the original data in
+    'input_dir' to a corpus in the abkhazia format, storing the data
+    in 'output_dir'
 
     """
-    def __init__(self, input_dir,
-                 output_dir=None, verbose=False, njobs=1):
+    @classmethod
+    def default_output_dir(cls):
+        """Return the default output directory for corpus preparation
+
+        This dircetory is 'data-directory'/corpora/'name', where
+        'data-directory' is read from the abkhazia configuration file
+        and 'name' is self.name
+
+        """
+        return os.path.join(
+            utils.config.get_config().get('abkhazia', 'data-directory'),
+            'corpora', cls.name)
+
+
+    def __init__(self, input_dir, output_dir=None, verbose=False, njobs=1):
         self.verbose = verbose
 
         # init njobs for parallelized preparation steps
@@ -86,7 +94,7 @@ class AbstractPreparator(object):
 
         # init output directory
         if output_dir is None:
-            self.output_dir = os.path.join(DEFAULT_OUTPUT_DIR, self.name)
+            self.output_dir = self.default_output_dir()
         else:
             self.output_dir = os.path.abspath(output_dir)
 
@@ -142,16 +150,6 @@ class AbstractPreparator(object):
         for step, target in steps:
             self.log.info('preparing {}'.format(os.path.basename(target)))
             step()
-
-    def validate(self):
-        """Check that the prepared data conforms to the abkhazia format
-
-        This method must not be overloaded in child classes as it
-        ensure consistency with the abkhazia format.
-
-        """
-        self.log.info('validating the prepared {} corpus'.format(self.name))
-        validation.validate(self.output_dir, self.verbose)
 
     def make_wavs(self):
         """Convert to wav and copy the corpus audio files
@@ -219,7 +217,7 @@ class AbstractPreparator(object):
         if self.audio_format == 'wav':
             self.log.info('linking wav files...')
             for inp, out in zip(inputs, outputs):
-                os.link(inp, out)
+                os.symlink(inp, out)
             self.log.debug('finished linking wavs')
 
         else:  # if original files are not wav, convert them
@@ -227,7 +225,6 @@ class AbstractPreparator(object):
                           .format(len(inputs), self.audio_format))
             utils.convert(inputs, outputs, self.audio_format, self.njobs)
             self.log.debug('finished converting wavs')
-
 
 
     def make_phones(self):
@@ -278,6 +275,9 @@ class AbstractPreparator(object):
 
     name = NotImplemented
     """The name of the corpus"""
+
+    description = NotImplemented
+    """A one line description of the corpus"""
 
     audio_format = NotImplemented
     """The format of audio files in the corpus
@@ -373,7 +373,6 @@ class AbstractPreparatorWithCMU(AbstractPreparator):
 
     def __init__(self, input_dir, cmu_dict=None,
                  output_dir=None, verbose=False, njobs=1):
-
         # call the AbstractPreparator __init__
         super(AbstractPreparatorWithCMU, self).__init__(
             input_dir, output_dir, verbose, njobs)

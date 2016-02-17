@@ -1,4 +1,3 @@
-#!/usr/bin/env python
 # coding: utf-8
 # Copyright 2016 Thomas Schatz, Xuan Nga Cao, Mathieu Bernard
 #
@@ -21,14 +20,14 @@ import os
 import re
 
 from abkhazia.utils import list_files_with_extension
-from abkhazia.corpora.utils import AbstractPreparator, default_main
-
+from abkhazia.prepare import AbstractPreparator
 
 class BuckeyePreparator(AbstractPreparator):
     """Convert the Buckeye corpus to the abkhazia format"""
 
     name = 'Buckeye'
-
+    description = 'Buckeye Corpus of conversational speech'
+    url = 'http://buckeyecorpus.osu.edu'
     audio_format = 'wav'
 
     # IPA transcriptions for all phones in the Buckeye corpus. The
@@ -286,7 +285,3 @@ class BuckeyePreparator(AbstractPreparator):
             outfile.write(word + ' ' + freq + '\n')
 
         self.log.debug('finished creating lexicon file')
-
-
-if __name__ == '__main__':
-    default_main(BuckeyePreparator, __doc__)

@@ -1,4 +1,3 @@
-"""This package provides preparation clesses for the GlobalPhone corpus"""
 # Copyright 2016 Thomas Schatz, Xuan Nga Cao, Mathieu Bernard
 #
 # This file is part of abkhazia: you can redistribute it and/or modify
@@ -14,6 +13,9 @@
 # You should have received a copy of the GNU General Public License
 # along with abkahzia. If not, see <http://www.gnu.org/licenses/>.
 
-from .abstract_globalphone import AbstractGlobalPhonePreparator
-from .prepare_mandarin import MandarinPreparator
-from .prepare_vietnamese import VietnamesePreparator
+class AbkhaziaTrain(object):
+    name = 'train'
+    description = 'Train (or retrain) an acoustic model and test it'
+
+    def __init__(self):
+        raise NotImplementedError

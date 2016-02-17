@@ -1,4 +1,3 @@
-#!/usr/bin/env python
 # coding: utf-8
 # Copyright 2016 Thomas Schatz, Xuan Nga Cao, Mathieu Bernard
 #
@@ -40,14 +39,6 @@
 #   case, in preprocessing regroup these SUW.
 #
 # TODO remove redundancy from utt_ids (spk_id present twice ...)
-#
-# TODO group allophonic variants according to phonetics, is there
-# really non-allophonic ones? Not if we consider 'y' as a phone
-#
-# Q -> long obstruents
-# other q's -> glottal stops ?
-# NH -> N
-# other H -> long vowels
 
 import os
 from collections import namedtuple
@@ -60,11 +51,11 @@ except ImportError:
 
 from abkhazia.utils import open_utf8
 from abkhazia.utils.basic_io import cpp_sort
-from abkhazia.corpora.utils import AbstractPreparator, default_main
+from abkhazia.prepare import AbstractPreparator
 
 # from https://stackoverflow.com/questions/38987
 def merge_two_dicts(first, second):
-    """Given two dicts, merge them into a new dict as a shallow copy"""
+    '''Given two dicts, merge them into a new dict as a shallow copy'''
     third = first.copy()
     third.update(second)
     return third
@@ -76,10 +67,21 @@ Word = namedtuple('Word', 'phonemes start end')
 Utt = namedtuple('Utt', 'words start end channel')
 
 
+
+# TODO group allophonic variants according to phonetics, is there really
+# non-allophonic ones? Not if we consider 'y' as a phone
+#
+# Q -> long obstruents
+# other q's -> glottal stops ?
+# NH -> N
+# other H -> long vowels
+
+
 class CSJPreparator(AbstractPreparator):
     """convert the CSJ corpus to the abkhazia format"""
     name = 'CSJ'
-
+    description = 'Corpus of Spontaneous Japanese'
+    url = 'http://www.ninjal.ac.jp/english/products/csj'
     audio_format = 'wav'
 
     vowels = {
@@ -420,7 +422,6 @@ class CSJPreparator(AbstractPreparator):
         outputs = [os.path.join(data + '.wav') for data in self.data_files]
         return inputs, outputs
 
-
     def make_segment(self):
         with open_utf8(self.segments_file, 'w') as out:
             for utt_id in self.all_utts:
@@ -454,7 +455,3 @@ class CSJPreparator(AbstractPreparator):
                 transcript = u" ".join(self.lexicon[word])
                 out.write(u"{0} {1}\n".format(word, transcript))
         cpp_sort(self.lexicon_file)
-
-
-if __name__ == '__main__':
-    default_main(CSJPreparator, __doc__)

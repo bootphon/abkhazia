@@ -135,7 +135,8 @@ import tempfile
 import os
 
 from abkhazia.utils import open_utf8
-from abkhazia.corpora.globalphone import AbstractGlobalPhonePreparator
+from abkhazia.prepare.globalphone_abstract_preparator import (
+    AbstractGlobalPhonePreparator)
 
 class MandarinPreparator(AbstractGlobalPhonePreparator):
     """Mandarin specific preprocessing for the GlobalPhone corpus"""

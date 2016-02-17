@@ -12,3 +12,12 @@
 #
 # You should have received a copy of the GNU General Public License
 # along with abkahzia. If not, see <http://www.gnu.org/licenses/>.
+
+"""Provides tools for preparation of the corpora supported in abkhazia
+
+Each supported corpus have its own data preparation script in
+this package.
+
+"""
+
+from .abstract_preparator import AbstractPreparator, AbstractPreparatorWithCMU

@@ -1,4 +1,3 @@
-#!/usr/bin/env python
 # coding: utf-8
 # Copyright 2016 Thomas Schatz, Xuan Nga Cao, Mathieu Bernard
 #
@@ -29,14 +28,14 @@ import os
 import re
 
 from abkhazia.utils import list_files_with_extension
-from abkhazia.corpora.utils import (
-    AbstractPreparatorWithCMU, default_argument_parser)
+from abkhazia.prepare import AbstractPreparatorWithCMU
 
 
 class AICPreparator(AbstractPreparatorWithCMU):
     """Convert the AIC corpus to the abkhazia format"""
     name = 'AIC'
-
+    description = 'Articulation Index Corpus LSCP'
+    url = 'https://catalog.ldc.upenn.edu/LDC2015S12'
     audio_format = 'flac'
 
     phones = {
@@ -252,42 +251,8 @@ class AICPreparator(AbstractPreparatorWithCMU):
                     for phn in array_phn:
                         outfile.write(' ' + phn)
                     outfile.write('\n')
-                # else:
-                #     self.log.debug(sound)
+                else:
+                    self.log.debug(sound)
 
         outfile.close()
         self.log.debug('finished creating lexicon file')
-
-
-# because AIC need the CMU dictionary, we can't use the default
-# corpora.utils.main function
-def main():
-    """The command line entry for the AIC corpus preparation"""
-    #    try:
-    preparator = AICPreparator
-    parser = default_argument_parser(preparator.name, __doc__)
-
-    parser.add_argument(
-        '--cmu-dict', default=None,
-        help='the CMU dictionary file to use for lexicon generation. '
-        'If not specified use {}'.format(preparator.default_cmu_dict))
-
-    # parse command line arguments
-    args = parser.parse_args()
-
-    # prepare the corpus
-    corpus_prep = preparator(args.input_dir, args.cmu_dict,
-                             args.output_dir, args.verbose, args.njobs)
-
-    corpus_prep.prepare()
-    if not args.no_validation:
-        corpus_prep.validate()
-
-    # except Exception as err:
-    #     print('fatal error: {}'.format(err))
-    # except (KeyboardInterrupt, SystemExit):
-    #     print('exiting')
-
-
-if __name__ == '__main__':
-    main()

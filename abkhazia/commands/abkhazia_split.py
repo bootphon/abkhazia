@@ -12,10 +12,11 @@
 #
 # You should have received a copy of the GNU General Public License
 # along with abkahzia. If not, see <http://www.gnu.org/licenses/>.
+"""Implementation of the 'abkazia split' command"""
 
-"""Provides tools for preparation of the corpora supported in abkhazia
+class AbkhaziaSplit(object):
+    name = 'split'
+    description = 'Split a corpus in train and test sets'
 
-Each supported corpus have its own data preparation script in
-this package.
-
-"""
+    def __init__(self):
+        raise NotImplementedError('split command not implemented')

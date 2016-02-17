@@ -12,7 +12,10 @@
 #
 # You should have received a copy of the GNU General Public License
 # along with abkahzia. If not, see <http://www.gnu.org/licenses/>.
-"""Provides some utilities functions for corpus preparation"""
 
-from .utils import *
-from .abstract_preparator import AbstractPreparator, AbstractPreparatorWithCMU
+class AbkhaziaAlign(object):
+    name = 'align'
+    description = 'Compute forced-aligment'
+
+    def __init__(self):
+        raise NotImplementedError

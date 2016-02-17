@@ -1,4 +1,3 @@
-#!/usr/bin/env python
 # coding: utf-8
 # Copyright 2016 Thomas Schatz, Xuan Nga Cao, Mathieu Bernard
 #
@@ -29,13 +28,14 @@ import os
 import re
 
 from abkhazia.utils import list_files_with_extension
-from abkhazia.corpora.utils import (
-    AbstractPreparatorWithCMU, default_argument_parser, DEFAULT_OUTPUT_DIR)
+from abkhazia.prepare import AbstractPreparatorWithCMU
 
 class LibriSpeechPreparator(AbstractPreparatorWithCMU):
     """Convert the LibriSpeech corpus to the abkhazia format"""
     name = 'LibriSpeech'
-
+    description = 'LibriSpeech ASR Corpus'
+    url = ['corpus - http://www.openslr.org/12',
+           'dictionary - http://www.openslr.org/11']
     audio_format = 'flac'
 
     phones = {
@@ -227,65 +227,3 @@ class LibriSpeechPreparator(AbstractPreparatorWithCMU):
                 outfile.write(word + ' ' + freq + '\n')
 
         self.log.debug('finished creating lexicon file')
-
-
-# because LibriSpeech need two dictionary files, we can't use the
-# default corpora.utils.main function
-def main():
-    """The command line entry for the LibriSpeech corpus preparation"""
-    try:
-        # mapping of the LibriSpeech variations. TODO this is actually
-        # hard-coded to present a selection on --help. See if we can
-        # parse input_dir instead of this mapping...
-        selection = ['dev-clean', 'dev-other',
-                     'test-clean', 'test-other',
-                     'train-clean-100', 'train-clean-360']
-
-        selection_descr = ', '.join([str(i+1) + ' is ' + selection[i]
-                                     for i in range(len(selection))])
-
-        preparator = LibriSpeechPreparator
-        parser = default_argument_parser(preparator.name, __doc__)
-
-        parser.add_argument(
-            '-s', '--selection', default=None,
-            metavar='SELECTION', type=int,
-            help='the subpart of LibriSpeech to prepare. If not specified, '
-            'prepare the entire corpus. Choose SELECTION in {}. ('
-            .format(range(1, len(selection)+1)) + selection_descr + ')')
-
-        parser.add_argument(
-            '--cmu-dict', default=None,
-            help='the CMU dictionary file to use for lexicon generation. '
-            'If not specified use {}'.format(preparator.default_cmu_dict))
-
-        parser.add_argument(
-            '-l', '--librispeech-lexicon', default=None,
-            help='the librispeech-lexicon.txt file at the root '
-            'of the LibriSpeech distribution. '
-            'If not specified, guess it from INPUT_DIR')
-
-        # parse command line arguments
-        args = parser.parse_args()
-
-        selection = (None if args.selection is None
-                     else selection[args.selection-1])
-
-        # prepare the corpus
-        corpus_prep = preparator(
-            args.input_dir, selection,
-            args.cmu_dict, args.librispeech_lexicon,
-            args.output_dir, args.verbose, args.njobs)
-
-        corpus_prep.prepare()
-        if not args.no_validation:
-            corpus_prep.validate()
-
-    except Exception as err:
-        print('fatal error: {}'.format(err))
-    except KeyboardInterrupt:
-        print 'keyboard interruption, exiting'
-
-
-if __name__ == '__main__':
-    main()

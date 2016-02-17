@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 # Copyright 2016 Thomas Schatz, Xuan Nga Cao, Mathieu Bernard
 #
 # This file is part of abkhazia: you can redistribute it and/or modify
@@ -14,31 +13,9 @@
 # You should have received a copy of the GNU General Public License
 # along with abkahzia. If not, see <http://www.gnu.org/licenses/>.
 
-"""
-Created on Wed Feb  4 00:17:47 2015
+class AbkhaziaDecode(object):
+    name = 'decode'
+    description = 'Compute phone posteriograms or transcription'
 
-@author: Thomas Schatz
-"""
-import argparse
-
-
-def extract_stats(corpus_path, verbose=False):
-	pass
-
-
-if __name__ == '__main__':
-	parser = argparse.ArgumentParser(description=\
-		(
-		"extracts standard statistics "
-		"from a corpus formatted for use with the abkhazia library"
-		)
-	)
-	parser.add_argument('corpus_path', help=\
-		(
-		"path to the folder containing the corpus "
-		"in abkhazia format"
-		)
-	)
-	parser.add_argument('--verbose', action='store_true', help='verbose flag')
-	args = parser.parse_args()
-	extract_stats(args.corpus_path, args.verbose)
+    def __init__(self):
+        raise NotImplementedError
