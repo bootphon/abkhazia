@@ -1,4 +1,3 @@
-#!/usr/bin/env python
 # -*- coding: utf-8 -*-
 # Copyright 2016 Thomas Schatz, Xuan Nga Cao, Mathieu Bernard
 #
@@ -29,9 +28,8 @@ Beware that it automatically corrects some basics problems and thus it can
 modify the original files. For example it sorts the lines of some text files
 and add default values to phone inventories when they are missing.
 """
-# TODO: optimize homophone processing for large dictionaries
+# TODO optimize homophone processing for large dictionaries
 
-import argparse
 import codecs
 import collections
 import contextlib
@@ -71,7 +69,7 @@ def validate(corpus_path, verbose=False):
         raise IOError("Corpus folder {0} should contain a 'data' subfolder".format(corpus_path))
     log_dir = os.path.join(corpus_path, 'logs')
     if not(os.path.isdir(log_dir)):
-            os.mkdir(os.path.join(corpus_path, "logs"))
+        os.mkdir(os.path.join(corpus_path, "logs"))
 
     # log file config
     log_file = os.path.join(log_dir, "data_validation.log")
@@ -490,7 +488,7 @@ def validate(corpus_path, verbose=False):
         if not(u"<unk>" in dict_words):
             log.warning("No '<unk>' word in lexicon, adding one")
             with codecs.open(dict_file, mode='a', encoding="UTF-8") as out:
-                    out.write(u"<unk> SPN\n")
+                out.write(u"<unk> SPN\n")
             dict_words.append(u"<unk>")
             transcriptions.append([u"SPN"])
         else:
@@ -612,23 +610,3 @@ def validate(corpus_path, verbose=False):
     except (IOError, AssertionError) as err:
         log.error(err)
         raise err
-
-def main():
-    """Command line entry for corpus validation"""
-    try:
-        parser = argparse.ArgumentParser(
-            description='checks whether a corpus is correctly '
-            'formatted for use with the abkhazia library')
-
-        parser.add_argument('corpus_path',
-                            help='path to the folder containing the corpus '
-                            'in abkhazia format')
-
-        parser.add_argument('--verbose', action='store_true', help='verbose flag')
-        args = parser.parse_args()
-        validate(args.corpus_path, args.verbose)
-    except(IOError, AssertionError) as err:
-        print('fatal error: {}'.format(err))
-
-if __name__ == '__main__':
-    main()

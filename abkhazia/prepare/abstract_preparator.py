@@ -20,9 +20,6 @@ import os
 from pkg_resources import Requirement, resource_filename
 
 from abkhazia import utils
-from abkhazia.prepare import validation
-from abkhazia.prepare.utils import DEFAULT_OUTPUT_DIR
-
 
 class AbstractPreparator(object):
     """This class is a common wrapper to all the corpus preparators
@@ -62,78 +59,23 @@ class AbstractPreparator(object):
     -------
 
     From a user perspective, the most important methods offered by the
-    abstract preparator are prepare() and validate(). When used from
-    command-line, the main() method is called.
-
-    prepare(): convert the original data in 'input_dir' to a corpus in
-        the abkhazia format, store the data in 'output_dir'
-
-    validate(): after preparation, checks the created corpus is
-        compatible with abkhazia
-
-    main(): parse input arguments and prepore/validate as required
+    abstract preparator is prepare(). It converts the original data in
+    'input_dir' to a corpus in the abkhazia format, storing the data
+    in 'output_dir'
 
     """
     @classmethod
     def default_output_dir(cls):
+        """Return the default output directory for corpus preparation
+
+        This dircetory is 'data-directory'/corpora/'name', where
+        'data-directory' is read from the abkhazia configuration file
+        and 'name' is self.name
+
+        """
         return os.path.join(
             utils.config.get_config().get('abkhazia', 'data-directory'),
             'corpora', cls.name)
-
-    @classmethod
-    def parser(cls):
-        """Return a default argument parser for corpus preparation"""
-        prog = 'abkhazia prepare {}'.format(cls.name.lower())
-
-        parser = argparse.ArgumentParser(
-            prog=prog,
-            usage=('%(prog)s <input-dir> [--output-dir OUTPUT_DIR]\n'
-                   + ' '*(len(prog)+8)
-                   + ('\n' + ' '*(len(prog)+8)).join([
-                       '[--help] [--verbose] [--njobs NJOBS]',
-                       '[--no-validation|--only-validation]'])),
-            description=cls.description)
-
-        group = parser.add_argument_group('directories')
-
-        group.add_argument(
-            'input_dir', metavar='input-dir',
-            help='root directory of the raw corpus distribution')
-
-        group.add_argument(
-            '-o', '--output-dir', default=None,
-            help='output directory of the prepared corpus, '
-            'if not specified use {}'.format(cls.default_output_dir()))
-
-        parser.add_argument(
-            '-v', '--verbose', action='store_true',
-            help='display more messages to stdout')
-
-        parser.add_argument(
-            '-j', '--njobs', type=int, default=4,
-            help='number of jobs to launch when doing parallel '
-            'computations (mainly for wav conversion). '
-            'Default is to launch %(default)s jobs.')
-
-        group = parser.add_argument_group('validation options')
-        group = group.add_mutually_exclusive_group()
-        group.add_argument(
-            '--no-validation', action='store_true',
-            help='disable the corpus validation step (do only preparation)')
-        group.add_argument(
-            '--only-validation', action='store_true',
-            help='disable the corpus preparation step (do only validation)')
-
-        return parser
-
-    @classmethod
-    def main(cls, argv):
-        args = cls.parser().parse_args(argv)
-        prep = cls(args.input_dir, args.output_dir, args.verbose, args.njobs)
-        if not args.only_validation:
-            prep.prepare()
-        if not args.no_validation:
-            prep.validate()
 
 
     def __init__(self, input_dir, output_dir=None, verbose=False, njobs=1):
@@ -209,17 +151,6 @@ class AbstractPreparator(object):
             self.log.info('preparing {}'.format(os.path.basename(target)))
             step()
 
-    def validate(self):
-        """Check that the prepared data conforms to the abkhazia format
-
-        This method must not be overloaded in child classes as it
-        ensure consistency with the abkhazia format.
-
-        """
-        self.log.info('validating the prepared {} corpus'.format(self.name))
-        validation.validate(self.output_dir, self.verbose)
-
-
     def make_wavs(self):
         """Convert to wav and copy the corpus audio files
 
@@ -285,8 +216,8 @@ class AbstractPreparator(object):
         # an option from command line, make a specialized class ?
         if self.audio_format == 'wav':
             self.log.info('linking wav files...')
-            for i, o in zip(inputs, outputs):
-                os.link(i, o)
+            for inp, out in zip(inputs, outputs):
+                os.symlink(inp, out)
 
         else:  # if original files are not wav, convert them
             self.log.info('converting {} {} files to wav...'
@@ -294,7 +225,6 @@ class AbstractPreparator(object):
             utils.convert(inputs, outputs, self.audio_format, self.njobs)
 
         self.log.debug('finished converting wavs')
-
 
 
     def make_phones(self):
@@ -346,8 +276,8 @@ class AbstractPreparator(object):
     name = NotImplemented
     """The name of the corpus"""
 
-    description = ''
-    """A brief description of the corpus"""
+    description = NotImplemented
+    """A one line description of the corpus"""
 
     audio_format = NotImplemented
     """The format of audio files in the corpus
@@ -440,27 +370,6 @@ class AbstractPreparatorWithCMU(AbstractPreparator):
     # TODO be safe, this can raise
     default_cmu_dict = resource_filename(
         Requirement.parse('abkhazia'), 'abkhazia/share/cmudict.0.7a')
-
-    @classmethod
-    def parser(cls):
-        p = super(AbstractPreparatorWithCMU, cls).parser()
-        p.usage += '\n' + ' '*(len(p.prog)+8) + '[--cmu-dict CMU_DICT]'
-        p.add_argument(
-            '--cmu-dict', default=None,
-            help='the CMU dictionary file to use for lexicon generation. '
-            'If not specified use {}'.format(cls.default_cmu_dict))
-        return p
-
-
-    @classmethod
-    def main(cls, argv):
-        args = cls.parser().parse_args(argv)
-        prep = cls(args.input_dir, args.cmu_dict,
-                   args.output_dir, args.verbose, args.njobs)
-        if not args.only_validation:
-            prep.prepare()
-        if not args.no_validation:
-            prep.validate()
 
     def __init__(self, input_dir, cmu_dict=None,
                  output_dir=None, verbose=False, njobs=1):

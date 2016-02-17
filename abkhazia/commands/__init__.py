@@ -12,10 +12,3 @@
 #
 # You should have received a copy of the GNU General Public License
 # along with abkahzia. If not, see <http://www.gnu.org/licenses/>.
-
-class AbkhaziaSplit(object):
-    name = 'split'
-    description = 'Split a corpus in train and test sets'
-
-    def __init__(self):
-        raise NotImplementedError('split command not implemented')

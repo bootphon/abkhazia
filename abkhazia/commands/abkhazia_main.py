@@ -19,16 +19,15 @@ import argparse
 import sys
 import textwrap
 
-from abkhazia.scripts import (
-    AbkhaziaPrepare,
-    AbkhaziaSplit,
-    AbkhaziaTrain,
-    AbkhaziaDecode,
-    AbkhaziaAlign)
+from abkhazia.commands.abkhazia_prepare import AbkhaziaPrepare
+from abkhazia.commands.abkhazia_split import AbkhaziaSplit
+from abkhazia.commands.abkhazia_train import AbkhaziaTrain
+from abkhazia.commands.abkhazia_decode import AbkhaziaDecode
+from abkhazia.commands.abkhazia_align import AbkhaziaAlign
+
 
 class Abkhazia(object):
     """Parse the first input argument and call the requested subcommand"""
-
     # the possible subcommand classes
     _command_classes = [
         AbkhaziaPrepare,
@@ -58,26 +57,33 @@ class Abkhazia(object):
 
         parser.add_argument('command', help='Subcommand to run')
 
-        # parse only the first argument, must be a valid command
-        args = parser.parse_args([sys.argv[1]])
-
-        # dispatch to command class with same name
         try:
-            dict(self._commands)[args.command]()
-        except KeyError:
-            print 'Unrecognized command: {}'.format(args.command)
+            # parse only the first argument, must be a valid command
+            command_name = parser.parse_args([sys.argv[1]]).command
+        except IndexError:
+            print 'You must provide a subcommand'
             parser.print_help()
             exit(1)
 
+        try:
+            command = dict(self._commands)[command_name]
+        except KeyError:
+            print 'Unrecognized command: {}'.format(command_name)
+            parser.print_help()
+            exit(1)
+
+        # execute the command (ie. instanciates the command class)
+        command()
+
 def main():
     """call Abkhazia()"""
-    Abkhazia()
-    # try:
-    #     Abkhazia()
-    # except Exception as err:
-    #     print 'fatal error: {}'.format(err)
-    # except KeyboardInterrupt:
-    #     print 'keyboard interruption, exiting'
+    # Abkhazia(); sys.exit(0)
+    try:
+        Abkhazia()
+    except (IOError, OSError, RuntimeError) as err:
+        print 'fatal error: {}'.format(err)
+    except KeyboardInterrupt:
+        print 'keyboard interruption, exiting'
 
 if __name__ == '__main__':
     main()

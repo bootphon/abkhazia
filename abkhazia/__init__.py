@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 # Copyright 2016 Thomas Schatz, Xuan Nga Cao, Mathieu Bernard
 #
 # This file is part of abkhazia: you can redistribute it and/or modify

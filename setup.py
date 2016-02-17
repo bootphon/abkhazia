@@ -54,13 +54,13 @@ setup(
 
     # include any files in abkhazia/share
     package_data={
-        'abkhazia': ['share/*']
+        'abkhazia': ['share/*.*', 'share/kaldi_templates/*']
     },
 
     # define the command-line script to use
     entry_points={
         'console_scripts': [
-            'abkhazia = abkhazia.scripts.main:main'
+            'abkhazia = abkhazia.commands.abkhazia_main:main'
         ]
     },
 

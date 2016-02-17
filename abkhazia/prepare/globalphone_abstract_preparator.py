@@ -19,7 +19,7 @@ import re
 import shutil
 
 from abkhazia.utils import list_directory, open_utf8, list_files_with_extension
-from abkhazia.prepare.utils import AbstractPreparator
+from abkhazia.prepare import AbstractPreparator
 
 
 class AbstractGlobalPhonePreparator(AbstractPreparator):
@@ -32,6 +32,12 @@ class AbstractGlobalPhonePreparator(AbstractPreparator):
 
     """
     name = 'GlobalPhone'
+    description = 'GlobalPhone multilingual read speech corpus'
+    url = [
+        'Mandarin - '
+        'http://catalog.elra.info/product_info.php?products_id=817',
+        'Vietnamese - '
+        'http://catalog.elra.info/product_info.php?products_id=1144']
 
     audio_format = 'shn'
 
@@ -140,10 +146,11 @@ class AbstractGlobalPhonePreparator(AbstractPreparator):
                 # (this does not take into account fancy unicode
                 # linebreaks), see
                 # http://stackoverflow.com/questions/3219014
-                trs = [re.sub(ur'\r\n?|\n', u'', e) for e in lines[2::2]]
+                transcriptions = [re.sub(ur'\r\n?|\n', u'', e)
+                                  for e in lines[2::2]]
 
-                for i, t in zip(ids, trs):
-                    out.write(u'{} {}\n'.format(i, t))
+                for i, trs in zip(ids, transcriptions):
+                    out.write(u'{} {}\n'.format(i, trs))
 
     def make_lexicon(self):
         # parse dictionary lines

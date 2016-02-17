@@ -29,7 +29,6 @@ import re
 
 from abkhazia.utils import list_files_with_extension
 from abkhazia.prepare import AbstractPreparatorWithCMU
-from abkhazia.prepare.utils import default_argument_parser
 
 
 class AICPreparator(AbstractPreparatorWithCMU):
@@ -257,33 +256,3 @@ class AICPreparator(AbstractPreparatorWithCMU):
 
         outfile.close()
         self.log.debug('finished creating lexicon file')
-
-
-# because AIC need the CMU dictionary, we can't use the default
-# corpora.utils.main function
-def main():
-    """The command line entry for the AIC corpus preparation"""
-    #    try:
-    preparator = AICPreparator
-    parser = default_argument_parser(preparator.name, __doc__)
-
-    parser.add_argument(
-        '--cmu-dict', default=None,
-        help='the CMU dictionary file to use for lexicon generation. '
-        'If not specified use {}'.format(preparator.default_cmu_dict))
-
-    # parse command line arguments
-    args = parser.parse_args()
-
-    # prepare the corpus
-    corpus_prep = preparator(args.input_dir, args.cmu_dict,
-                             args.output_dir, args.verbose, args.njobs)
-
-    corpus_prep.prepare()
-    if not args.no_validation:
-        corpus_prep.validate()
-
-    # except Exception as err:
-    #     print('fatal error: {}'.format(err))
-    # except (KeyboardInterrupt, SystemExit):
-    #     print('exiting')

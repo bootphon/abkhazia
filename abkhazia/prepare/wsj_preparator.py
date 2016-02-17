@@ -262,9 +262,6 @@ class WallStreetJournalPreparator(AbstractPreparatorWithCMU):
         # concatenate all the transcription files
         transcription = []
 
-        import collections
-        print [item for item, count in collections.Counter(self.input_transcriptions).items() if count > 1]
-
         for trs in self.input_transcriptions:
             transcription += open_utf8(trs, 'r').readlines()
 
@@ -322,49 +319,11 @@ class WallStreetJournalPreparator(AbstractPreparatorWithCMU):
         self.log.debug('finished creating lexicon file')
 
 
-    # mapping of the three WSJ variations
-    selection = [
-        ('journalist-read', JournalistReadPreparator),
-        ('journalist-spontaneous', JournalistSpontaneousPreparator),
-        ('main-read', MainReadPreparator)
-    ]
-
-    @classmethod
-    def parser(cls):
-        selection_descr = ', '.join([str(i+1) + ' is ' + cls.selection[i][0]
-                                     for i in range(len(cls.selection))])
-
-        p = super(WallStreetJournalPreparator, cls).parser()
-        p.add_argument(
-            '-s', '--selection', default=None,
-            metavar='SELECTION', type=int,
-            choices=range(1, len(cls.selection)+1),
-            help='the subpart of WSJ to prepare. If not specified, '
-            'prepare the entire corpus. Choose SELECTION in {}. ('
-            .format(range(1, len(cls.selection)+1)) + selection_descr + ')')
-        return p
-
-    @classmethod
-    def main(cls, argv):
-        """The command line entry for WSJ corpus preparation"""
-        # parse command line arguments
-        args = cls.parser().parse_args(argv)
-
-        # select the preparator
-        preparator = (WallStreetJournalPreparator if args.selection is None
-                      else cls.selection[args.selection-1][1])
-
-        # prepare the corpus
-        prep = preparator(args.input_dir, args.cmu_dict,
-                          args.output_dir, args.verbose, args.njobs)
-
-        if not args.only_validation:
-            prep.prepare()
-        if not args.no_validation:
-            prep.validate()
-
 # TODO check if that's correct (in particular no sd_tr_s or l in WSJ1
 # and no si_tr_l in WSJ0 ??)
+
+class EntireCorpusPreparator(WallStreetJournalPreparator):
+    pass
 
 class JournalistReadPreparator(WallStreetJournalPreparator):
     """Prepare only the journalist read speech from WSJ

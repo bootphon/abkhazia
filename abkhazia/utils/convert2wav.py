@@ -55,7 +55,7 @@ def sph2wav(sph, wav):
     if not os.path.isfile(sph2pipe):
         raise OSError('sph2pipe not found on your system')
 
-    command = sph2pipe + ' -f wav {0} {1}'.format(sph, wav)
+    command = sph2pipe + ' -f wav {} {}'.format(sph, wav)
     subprocess.call(shlex.split(command))
 
 

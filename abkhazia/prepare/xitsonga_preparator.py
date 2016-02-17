@@ -254,6 +254,3 @@ class XitsongaPreparator(AbstractPreparator):
         os.remove(outfile_temp)
 
         self.log.debug('finished creating lexicon file')
-
-if __name__ == '__main__':
-    default_main(XitsongaPreparator, __doc__)
