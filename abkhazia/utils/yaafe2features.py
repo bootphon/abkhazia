@@ -18,9 +18,9 @@ Created on Mon Dec  1 15:05:38 2014
 @author: Thomas Schatz
 
 This module requires:
-	- numpy
-	- h5features (https://github.com/bootphon/h5features)
-	- yaafelib
+  - numpy
+  - h5features (https://github.com/bootphon/h5features)
+  - yaafelib
 
 On Oberon, you can get yaafelib available in your python
 environment by executing 'module load yaafe' in the terminal.
@@ -34,8 +34,8 @@ import h5features
 import os.path as p
 import os
 import shutil
-import abkhazia.utilities.basic_io as io
-import abkhazia.utilities.features as feat
+import abkhazia.utils.basic_io as io
+import abkhazia.utils.features as feat
 
 #TODO All features are loaded in memory simultaneously
 # which can take a lot of space for big corpora.
@@ -144,59 +144,57 @@ encode_corpus(corpus, split='test', feature_type='CMSP13')
 encode_corpus(corpus, split='train', feature_type='CMSP13')
 
 
-"""
-Installing yaafe can be tricky.
-On our linux cluster (Oberon), a yaafe module is available.
+# Installing yaafe can be tricky.
+# On our linux cluster (Oberon), a yaafe module is available.
 
-Here are some installation notes for MacOS:
+# Here are some installation notes for MacOS:
 
-On OSX Snow Leopard with homebrew:
-	brew install argtable
-	brew install libsndfile
-	brew install mpg123
-	brew install fftw
-	download Yaafe repository from sourceforge (not github): http://sourceforge.net/projects/yaafe/files/yaafe-v0.64.tgz/download
-	cd to yaafe-v0.64
-	mkdir ../yaafe
-	mkdir build
-	cd build
-	cmake -DCMAKE_INSTALL_PREFIX=../../yaafe -DWITH_MPG123=ON ..
-	#maybe cmake -DCMAKE_INSTALL_PREFIX=../../yaafe .. works just as well
-	make
-	make install
+# On OSX Snow Leopard with homebrew:
+# 	brew install argtable
+# 	brew install libsndfile
+# 	brew install mpg123
+# 	brew install fftw
+# 	download Yaafe repository from sourceforge (not github): http://sourceforge.net/projects/yaafe/files/yaafe-v0.64.tgz/download
+# 	cd to yaafe-v0.64
+# 	mkdir ../yaafe
+# 	mkdir build
+# 	cd build
+# 	cmake -DCMAKE_INSTALL_PREFIX=../../yaafe -DWITH_MPG123=ON ..
+# 	#maybe cmake -DCMAKE_INSTALL_PREFIX=../../yaafe .. works just as well
+# 	make
+# 	make install
 
-	Then to use yaafe:
-		export INSTALL_DIR="/Users/thomas/Documents/PhD/Recherche/Code/yaafe"
-		export YAAFE_PATH=$INSTALL_DIR/yaafe_extensions
-		export PATH=$PATH:$INSTALL_DIR/bin
-		export DYLD_LIBRARY_PATH=$DYLD_LIBRARY_PATH:$INSTALL_DIR/lib
-		export PYTHONPATH=$PYTHONPATH:$INSTALL_DIR/python_packages
-		(with spyder, needs to be done before launching spyder)
+# 	Then to use yaafe:
+# 		export INSTALL_DIR="/Users/thomas/Documents/PhD/Recherche/Code/yaafe"
+# 		export YAAFE_PATH=$INSTALL_DIR/yaafe_extensions
+# 		export PATH=$PATH:$INSTALL_DIR/bin
+# 		export DYLD_LIBRARY_PATH=$DYLD_LIBRARY_PATH:$INSTALL_DIR/lib
+# 		export PYTHONPATH=$PYTHONPATH:$INSTALL_DIR/python_packages
+# 		(with spyder, needs to be done before launching spyder)
 
-On OSX Yosemite with homebrew: older sourceforge version did not work,
-had to use github version (which did not work on Snow Leopard)
-	Same as before (or just brew upgrade if already installed):
-		brew install argtable
-		brew install libsndfile
-		brew install mpg123
-		brew install fftw
-	Then:
-		git clone https://github.com/Yaafe/Yaafe.git
-		cd Yaafe
-		mkdir ../yaafe_install
-		git submodule init  # to prepare Eigen code under the externals directory
-		git submodule update
-		mkdir build
-		cd build
-		cmake -DCMAKE_INSTALL_PREFIX=../../yaafe_install -DWITH_MPG123=ON ..
-		#maybe cmake -DCMAKE_INSTALL_PREFIX=../../yaafe_install .. works just as well
-		make
-		make install
-	Then to use yaafe:
-		export INSTALL_DIR="/Users/thomas/Documents/PhD/Recherche/Code/yaafe_install"
-		export PATH=$PATH:$INSTALL_DIR/bin
-		export YAAFE_PATH=$INSTALL_DIR/lib/python2.7/site-packages
-		export DYLD_LIBRARY_PATH=$DYLD_LIBRARY_PATH:$INSTALL_DIR/lib
-		export PYTHONPATH=$PYTHONPATH:$INSTALL_DIR/lib/python2.7/site-packages
-(with spyder, needs to be done before launching spyder)
-"""
+# On OSX Yosemite with homebrew: older sourceforge version did not work,
+# had to use github version (which did not work on Snow Leopard)
+# 	Same as before (or just brew upgrade if already installed):
+# 		brew install argtable
+# 		brew install libsndfile
+# 		brew install mpg123
+# 		brew install fftw
+# 	Then:
+# 		git clone https://github.com/Yaafe/Yaafe.git
+# 		cd Yaafe
+# 		mkdir ../yaafe_install
+# 		git submodule init  # to prepare Eigen code under the externals directory
+# 		git submodule update
+# 		mkdir build
+# 		cd build
+# 		cmake -DCMAKE_INSTALL_PREFIX=../../yaafe_install -DWITH_MPG123=ON ..
+# 		#maybe cmake -DCMAKE_INSTALL_PREFIX=../../yaafe_install .. works just as well
+# 		make
+# 		make install
+# 	Then to use yaafe:
+# 		export INSTALL_DIR="/Users/thomas/Documents/PhD/Recherche/Code/yaafe_install"
+# 		export PATH=$PATH:$INSTALL_DIR/bin
+# 		export YAAFE_PATH=$INSTALL_DIR/lib/python2.7/site-packages
+# 		export DYLD_LIBRARY_PATH=$DYLD_LIBRARY_PATH:$INSTALL_DIR/lib
+# 		export PYTHONPATH=$PYTHONPATH:$INSTALL_DIR/lib/python2.7/site-packages
+# (with spyder, needs to be done before launching spyder)

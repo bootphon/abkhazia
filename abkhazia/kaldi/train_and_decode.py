@@ -39,8 +39,8 @@ recipe.
 import os.path as p
 import os
 import shutil
-import abkhazia.utilities.basic_io as io
-import abkhazia.kaldi.abkhazia2kaldi as a2k
+import abkhazia.utils.basic_io as io
+import abkhazia.utils.kaldi.abkhazia2kaldi as a2k
 
 # Main function of this module: 'create_kaldi_recipe'
 # TODO:
