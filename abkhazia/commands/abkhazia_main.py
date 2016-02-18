@@ -16,6 +16,7 @@
 """The abkhazia entry point from command line"""
 
 import argparse
+import pkg_resources
 import sys
 import textwrap
 
@@ -63,27 +64,55 @@ class Abkhazia(object):
         except IndexError:
             print 'You must provide a subcommand'
             parser.print_help()
-            exit(1)
+            sys.exit(1)
 
         try:
+            # get the command class from its name
             command = dict(self._commands)[command_name]
         except KeyError:
             print 'Unrecognized command: {}'.format(command_name)
             parser.print_help()
-            exit(1)
+            sys.exit(1)
 
         # execute the command (ie. instanciates the command class)
         command()
 
+
+class CatchExceptions(object):
+    """A decorator wrapping 'function' in a try/except block
+
+    When an exception occurs, display a user friendly message before
+    exiting.
+
+    """
+    def __init__(self, function):
+        self.function = function
+
+    def __call__(self):
+        try:
+            self.function()
+
+        except (IOError, OSError, RuntimeError) as err:
+            print 'fatal error: {}'.format(err)
+            sys.exit(1)
+
+        except pkg_resources.DistributionNotFound:
+            print ('fatal error: abkhazia package not found\n'
+                   'please reinstall abkhazia on your platform')
+            sys.exit(1)
+
+        except KeyboardInterrupt:
+            print 'keyboard interruption, exiting'
+            sys.exit(1)
+
+
+# when debugging the abkhazia command-line behavior, it can be usefull
+# to don't catch any exception, so the full error traceback error is
+# printed. To do so, just comment the '@CatchExceptions' line
+@CatchExceptions
 def main():
-    """call Abkhazia()"""
-    # Abkhazia(); sys.exit(0)
-    try:
-        Abkhazia()
-    except (IOError, OSError, RuntimeError) as err:
-        print 'fatal error: {}'.format(err)
-    except KeyboardInterrupt:
-        print 'keyboard interruption, exiting'
+    """abkhazia main entry point in command line"""
+    Abkhazia()
 
 if __name__ == '__main__':
     main()
