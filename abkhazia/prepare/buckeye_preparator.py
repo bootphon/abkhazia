@@ -120,6 +120,14 @@ class BuckeyePreparator(AbstractPreparator):
 
     variants = []  # could use lexical stress variants...
 
+    def __init__(self, input_dir, output_dir=None,
+                 verbose=False, njobs=1, copy_wavs=False):
+        # call the AbstractPreparator __init__
+        super(BuckeyePreparator, self).__init__(
+            input_dir, output_dir, verbose, njobs)
+
+        self.copy_wavs = copy_wavs
+
     def list_audio_files(self):
         wavs = list_files_with_extension(self.input_dir, '.wav', abspath=True)
         return wavs, [os.path.basename(w) for w in wavs]

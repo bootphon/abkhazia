@@ -18,7 +18,7 @@ import argparse
 import sys
 import textwrap
 
-from abkhazia.prepare import validation
+
 from abkhazia.prepare.aic_preparator import AICPreparator
 from abkhazia.prepare.buckeye_preparator import BuckeyePreparator
 from abkhazia.prepare.csj_preparator import CSJPreparator
@@ -38,23 +38,22 @@ from abkhazia.prepare.wsj_preparator import (
     JournalistSpontaneousPreparator,
     MainReadPreparator)
 
+from abkhazia.prepare import validation
+
 
 class AbstractFactory(object):
+    """The Factory class runs a corpus preparator from command-line arguments
+
+    A Factory class is dedicated to a single corpus preparator. It
+    does the following things:
+
+    * parser(): define and return an argument parser for the preparator
+    * init_preparator(): instanciates the preparator and return it
+    * run(): wrap the 2 previous functions, called from AbkhaziaPrepare
+
+    """
     preparator = NotImplemented
-
-    @classmethod
-    def run(cls):
-        """Initialize and run a preparator from command line arguments"""
-        args = cls.parser().parse_args(sys.argv[3:])
-
-        if not args.only_validation:
-            cls.init_preparator(args).prepare()
-
-        if not args.no_validation:
-            output_dir = (cls.preparator.default_output_dir()
-                          if args.output_dir is None
-                          else args.output_dir)
-            validation.validate(output_dir, args.verbose)
+    """The corpus preparator attached to the factory"""
 
     @classmethod
     def parser(cls):
@@ -102,13 +101,42 @@ class AbstractFactory(object):
             '--only-validation', action='store_true',
             help='disable the corpus preparation step (do only validation)')
 
+        if cls.preparator.audio_format == 'wav':
+            parser.add_argument(
+                '--copy-wavs', action='store_true',
+                help='the audio files of this corpus are already in wav. '
+                'By default abkhazia will import them as symbolic links, '
+                'use this option to force copy')
+
+            parser.usage += ' [--copy-wavs]'
+
         return parser
 
     @classmethod
     def init_preparator(cls, args):
         """Return an initialized preparator from parsed arguments"""
-        return cls.preparator(
-            args.input_dir, args.output_dir, args.verbose, args.njobs)
+        if cls.preparator.audio_format == 'wav':
+            prep = cls.preparator(args.input_dir, args.output_dir,
+                                  args.verbose, args.njobs, args.copy_wavs)
+        else:
+            prep = cls.preparator(args.input_dir, args.output_dir,
+                                  args.verbose, args.njobs)
+        return prep
+
+    @classmethod
+    def run(cls):
+        """Initialize and run a preparator from command line arguments"""
+        args = cls.parser().parse_args(sys.argv[3:])
+
+        if not args.only_validation:
+            cls.init_preparator(args).prepare()
+
+        if not args.no_validation:
+            output_dir = (cls.preparator.default_output_dir()
+                          if args.output_dir is None
+                          else args.output_dir)
+            validation.validate(output_dir, args.verbose)
+
 
 
 class AbstractFactoryWithCMU(AbstractFactory):
@@ -293,11 +321,12 @@ class AbkhaziaPrepare(object):
     ))
 
     @staticmethod
-    def format_url(item, sep='\n'):
-        if isinstance(item, str):
-            return sep + item
+    def format_url(url, sep='\n'):
+        """Return a string from the string (or list of strings) 'url'"""
+        if isinstance(url, str):
+            return sep + url
         else:
-            return sep + sep.join(item)
+            return sep + sep.join(url)
 
     def describe_corpora(self):
         """Return a list of strings describing the supported corpora"""
@@ -313,7 +342,7 @@ class AbkhaziaPrepare(object):
         long_description = (
             self.description + '\n'
             + "type 'abkhazia prepare <corpus> --help' for help "
-            + "on a specific corpus\n\n"
+            + 'on a specific corpus\n\n'
             + 'supported corpora are:\n    '
             + '\n    '.join(self.describe_corpora()))
 

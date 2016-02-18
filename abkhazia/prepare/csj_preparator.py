@@ -142,10 +142,13 @@ class CSJPreparator(AbstractPreparator):
 
     variants = []
 
-    def __init__(self, input_dir, output_dir=None, verbose=False, njobs=1):
+    def __init__(self, input_dir, output_dir=None,
+                 verbose=False, njobs=1, copy_wavs=False):
         # call the AbstractPreparator __init__
         super(CSJPreparator, self).__init__(
             input_dir, output_dir, verbose, njobs)
+
+        self.copy_wavs = copy_wavs
 
         # load the core_CSJ.txt from the abkhazia installation path
         core = resource_filename(

@@ -110,6 +110,14 @@ class XitsongaPreparator(AbstractPreparator):
 
     variants = []  # could use lexical stress variants...
 
+    def __init__(self, input_dir, output_dir=None,
+                 verbose=False, njobs=1, copy_wavs=False):
+        # call the AbstractPreparator __init__
+        super(XitsongaPreparator, self).__init__(
+            input_dir, output_dir, verbose, njobs)
+
+        self.copy_wavs = copy_wavs
+
     def list_audio_files(self):
         # get the list of wav files in corpus, relative to input_dir
         inputs = [os.path.join('audio', wav) for wav in

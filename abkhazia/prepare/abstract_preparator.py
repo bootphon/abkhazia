@@ -15,9 +15,9 @@
 
 """Provides a base class for corpus preparation in the abkhazia format"""
 
-import argparse
 import os
-from pkg_resources import Requirement, resource_filename
+import pkg_resources
+import shutil
 
 from abkhazia import utils
 
@@ -77,10 +77,7 @@ class AbstractPreparator(object):
             utils.config.get_config().get('abkhazia', 'data-directory'),
             'corpora', cls.name)
 
-
     def __init__(self, input_dir, output_dir=None, verbose=False, njobs=1):
-        self.verbose = verbose
-
         # init njobs for parallelized preparation steps
         if not isinstance(njobs, int) or not njobs > 0:
             raise IOError('njobs must be a strictly positive integer')
@@ -104,6 +101,7 @@ class AbstractPreparator(object):
             os.makedirs(self.logs_dir)
 
         # init the log
+        self.verbose = verbose
         self.log = utils.get_log(
             os.path.join(self.logs_dir, 'data_preparation.log'), self.verbose)
 
@@ -151,6 +149,35 @@ class AbstractPreparator(object):
             self.log.info('preparing {}'.format(os.path.basename(target)))
             step()
 
+    def prepare_wavs_dir(self, inputs, outputs):
+        """Detect outputs already present and delete any undesired file"""
+        self.log.info('scanning {}...'.format(self.wavs_dir))
+
+        target = dict((o, i) for i, o in zip(inputs, outputs))
+        found = 0
+        deleted = 0
+        for wav in os.listdir(self.wavs_dir):
+            # the complete path to the wav file
+            path = os.path.join(self.wavs_dir, wav)
+
+            # the target file is found in the directory, delete it if
+            # it is empty, delete it it's a link and we force copying
+            if wav in target and (
+                    not (utils.is_empty_file(path)) and
+                    (not os.path.islink(path) and self.copy_wavs)):
+                del target[wav]
+                found += 1
+            else:
+                utils.remove(path)
+                deleted += 1
+
+        self.log.info('found {} files, deleted {} undesired files'
+                      .format(found, deleted))
+
+        # return the updated inputs and outputs
+        return target.values(), target.keys()
+
+
     def make_wavs(self):
         """Convert to wav and copy the corpus audio files
 
@@ -173,52 +200,34 @@ class AbstractPreparator(object):
 
         self.log.info('preparing {} wav files'.format(len(inputs)))
 
-        # this should not occur, but if child class is badly
-        # implemented...
+        # should not occur, but if child class is badly implemented...
         if len(inputs) != len(outputs):
             raise ValueError('inputs and outputs must have the same size')
 
         if os.path.isdir(self.wavs_dir):
-            # the wav directory exists: detect target files already
-            # present and delete any undesired file.
-            self.log.info('scanning {}...'.format(self.wavs_dir))
-            target = dict((o, i) for i, o in zip(inputs, outputs))
-            found = 0
-            deleted = 0
-            for wav in os.listdir(self.wavs_dir):
-                if wav in target and not utils.is_empty_file(
-                        os.path.join(self.wavs_dir, wav)):
-                    del target[wav]
-                    found += 1
-                else:
-                    utils.remove(os.path.join(self.wavs_dir, wav))
-                    deleted += 1
-            self.log.info('found {} files, deleted {} undesired files'
-                          .format(found, deleted))
+            # the wavs directory already exists, clean and prepare for copy
+            inputs, outputs = self.prepare_wavs_dir(inputs, outputs)
 
-            # the job is done if all the files are already here, else we
-            # continue the preparation
-            if len(target) == 0:
+            # the job is done if all the files are already here, else
+            # we continue the preparation
+            if len(inputs) == 0:
                 self.log.info('all wav files already present in the directory')
                 return
-
-            # update the inputs and outputs
-            inputs = target.values()
-            outputs = target.keys()
-
         else: # self.wavs_dir does not exist
             os.makedirs(self.wavs_dir)
 
         # append path to the directory in outputs
         outputs = [os.path.join(self.wavs_dir, o) for o in outputs]
 
-        # link wav files instead of copying them TODO this must be
-        # an option from command line, make a specialized class ?
+        # link or copy wav files in function of self.copy_wavs
         if self.audio_format == 'wav':
-            self.log.info('linking wav files...')
+            action = (('copying', shutil.copy) if self.copy_wavs
+                      else ('linking', os.symlink))
+
+            self.log.info('{} wav files...'.format(action[0]))
             for inp, out in zip(inputs, outputs):
-                os.symlink(inp, out)
-            self.log.debug('finished linking wavs')
+                action[1](inp, out)
+            self.log.debug('finished {} wavs'.format(action[0]))
 
         else:  # if original files are not wav, convert them
             self.log.info('converting {} {} files to wav...'
@@ -284,6 +293,16 @@ class AbstractPreparator(object):
 
     This format must be 'wav' or a format supported by the
     abkhazia.utils.convert2wav.convert function.
+
+    """
+
+    # TODO this is actually a design error, we should have a decorator
+    # or subclass instead
+    copy_wavs = False
+    """A boolean used only for corpora with original audio files in wav
+
+    By default abkhazia will link wav files, setting this to True will
+    force copy. Used in the make_wavs() method.
 
     """
 
@@ -367,9 +386,9 @@ class AbstractPreparatorWithCMU(AbstractPreparator):
     versions could probably be used without changing anything.
 
     """
-    # TODO be safe, this can raise
-    default_cmu_dict = resource_filename(
-        Requirement.parse('abkhazia'), 'abkhazia/share/cmudict.0.7a')
+    default_cmu_dict = pkg_resources.resource_filename(
+        pkg_resources.Requirement.parse('abkhazia'),
+        'abkhazia/share/cmudict.0.7a')
 
     def __init__(self, input_dir, cmu_dict=None,
                  output_dir=None, verbose=False, njobs=1):
