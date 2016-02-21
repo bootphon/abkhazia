@@ -18,7 +18,6 @@ import argparse
 import sys
 import textwrap
 
-
 from abkhazia.prepare.aic_preparator import AICPreparator
 from abkhazia.prepare.buckeye_preparator import BuckeyePreparator
 from abkhazia.prepare.csj_preparator import CSJPreparator
@@ -136,7 +135,6 @@ class AbstractFactory(object):
                           if args.output_dir is None
                           else args.output_dir)
             validation.validate(output_dir, args.verbose)
-
 
 
 class AbstractFactoryWithCMU(AbstractFactory):

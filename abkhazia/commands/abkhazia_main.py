@@ -20,11 +20,9 @@ import pkg_resources
 import sys
 import textwrap
 
-from abkhazia.commands.abkhazia_prepare import AbkhaziaPrepare
-from abkhazia.commands.abkhazia_split import AbkhaziaSplit
-from abkhazia.commands.abkhazia_train import AbkhaziaTrain
-from abkhazia.commands.abkhazia_decode import AbkhaziaDecode
-from abkhazia.commands.abkhazia_align import AbkhaziaAlign
+from abkhazia.commands import (AbkhaziaPrepare, AbkhaziaSplit,
+                               AbkhaziaTrain, AbkhaziaDecode,
+                               AbkhaziaAlign)
 
 
 class Abkhazia(object):
@@ -39,7 +37,7 @@ class Abkhazia(object):
     ]
 
     # a dict mapping each command name to class
-    _commands = [(c.name, c) for c in _command_classes]
+    commands = [(c.name, c) for c in _command_classes]
 
     # a string describing abkhazia and its subcommands
     description = (
@@ -48,7 +46,7 @@ class Abkhazia(object):
         + '\n\n'
         + 'possible commands are:\n    '
         + '\n    '.join(('{}\t{}'.format(n, c.description)
-                         for n, c in _commands)))
+                         for n, c in commands)))
 
     def __init__(self):
         parser = argparse.ArgumentParser(
@@ -68,7 +66,7 @@ class Abkhazia(object):
 
         try:
             # get the command class from its name
-            command = dict(self._commands)[command_name]
+            command = dict(self.commands)[command_name]
         except KeyError:
             print 'Unrecognized command: {}'.format(command_name)
             parser.print_help()
@@ -98,7 +96,7 @@ class CatchExceptions(object):
 
         except pkg_resources.DistributionNotFound:
             print ('fatal error: abkhazia package not found\n'
-                   'please reinstall abkhazia on your platform')
+                   'please install abkhazia on your platform')
             sys.exit(1)
 
         except KeyboardInterrupt:
@@ -106,9 +104,10 @@ class CatchExceptions(object):
             sys.exit(1)
 
 
-# when debugging the abkhazia command-line behavior, it can be usefull
-# to don't catch any exception, so the full error traceback error is
-# printed. To do so, just comment the '@CatchExceptions' line
+# when debugging the abkhazia command-line tools from a terminal, it
+# can be usefull to don't catch any exception, so the full error
+# traceback error is printed. To do so, just comment the following
+# line
 @CatchExceptions
 def main():
     """abkhazia main entry point in command line"""

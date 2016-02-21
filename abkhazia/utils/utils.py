@@ -53,12 +53,15 @@ def list_files_with_extension(directory, extension, abspath=False):
 
 
 def remove(path):
-    """Remove a file, link or directory"""
-    if os.path.isdir(path):
-        shutil.rmtree(path)
-    else:
-        # works for files and links
-        os.remove(path)
+    """Remove a file, link or directory, raise OSError on failure"""
+    try:
+        if os.path.isdir(path):
+            shutil.rmtree(path)
+        else:
+            # works for files and links
+            os.remove(path)
+    except (shutil.Error, os.error) as err:
+        raise OSError(err)
 
 
 def is_empty_file(path):

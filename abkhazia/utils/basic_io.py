@@ -22,6 +22,8 @@ import numpy as np
 import subprocess
 import wave
 
+from abkhazia.utils import open_utf8
+
 def cpp_sort(filename):
     """In place sort of `filename` through the sort command"""
     # there is redundancy here but I didn't check which export can be
@@ -33,32 +35,39 @@ def cpp_sort(filename):
 
 def basic_parse(line, filename):
     # check line break
-    assert not('\r' in line), "'{0}' contains non Unix-style linebreaks".format(filename)
+    assert not('\r' in line), \
+        "'{0}' contains non Unix-style linebreaks".format(filename)
+
     # check spacing
-    assert not('  ' in line), "'{0}' contains lines with two consecutive spaces".format(filename)
+    assert not('  ' in line), \
+        "'{0}' contains lines with two consecutive spaces".format(filename)
+
     # remove line break
     line = line[:-1]
+
     # parse line
-    l = line.split(" ")
-    return l
+    return line.split(" ")
 
 
 def read_utt2spk(filename):
     utt_ids, speakers = [], []
-    with codecs.open(filename, mode='r', encoding="UTF-8") as inp:
-        lines = inp.readlines()
-    for line in lines:
-        l = basic_parse(line, filename)
-        assert(len(l) == 2), "'utt2spk.txt' should contain only lines with two columns"
-        utt_ids.append(l[0])
-        speakers.append(l[1])
+
+    for line in open_utf8(filename, 'r').readlines():
+        line = basic_parse(line, filename)
+        assert(len(line) == 2), \
+            "'utt2spk.txt' should contain only lines with two columns"
+
+        utt_ids.append(line[0])
+        speakers.append(line[1])
+
     return utt_ids, speakers
 
 
 def read_segments(filename):
     utt_ids, wavs, starts, stops = [], [], [], []
-    with codecs.open(filename, mode='r', encoding="UTF-8") as inp:
+    with open_utf8(filename, 'r') as inp:
         lines = inp.readlines()
+
     for line in lines:
         l = basic_parse(line, filename)
         assert(len(l) == 2 or len(l) == 4), \
@@ -158,9 +167,9 @@ def match_on_first_col(lines, desired_first_col):
     """ desired_first_col is a list of possible values for the first column
     of each line in lines """
     first_col = [line.strip().split(u" ")[0] for line in lines]
-    # need numpy here to get something fast easily
-    # could also have something faster with pandas
-    # see http://stackoverflow.com/questions/15939748/check-if-each-element-in-a-numpy-array-is-in-another-array
+    # need numpy here to get something fast easily, could also have
+    # something faster with pandas see
+    # http://stackoverflow.com/questions/15939748
     indices = np.where(np.in1d(np.array(first_col), np.array(desired_first_col)))[0]
     lines = list(np.array(lines)[indices])
     return lines
