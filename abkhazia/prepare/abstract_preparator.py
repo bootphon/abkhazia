@@ -149,9 +149,25 @@ class AbstractPreparator(object):
             self.log.info('preparing {}'.format(os.path.basename(target)))
             step()
 
+    def broken_wav(self, wav):
+        """Return True if the wav needs to be copied again
+
+        wav : absolute path to a file in self.wavs_dir
+
+        A wav file is broken if:
+          - the file is empty
+          - the file is a link and self.copy_wavs is True
+
+        """
+        if utils.is_empty_file(wav):
+            return True
+        if os.path.islink(wav) and self.copy_wavs:
+            return True
+        return False
+
     def prepare_wavs_dir(self, inputs, outputs):
         """Detect outputs already present and delete any undesired file"""
-        self.log.info('scanning {}...'.format(self.wavs_dir))
+        self.log.debug('scanning {}...'.format(self.wavs_dir))
 
         target = dict((o, i) for i, o in zip(inputs, outputs))
         found = 0
@@ -162,17 +178,15 @@ class AbstractPreparator(object):
 
             # the target file is found in the directory, delete it if
             # it is empty, delete it it's a link and we force copying
-            if wav in target and (
-                    not (utils.is_empty_file(path)) and
-                    (not os.path.islink(path) and self.copy_wavs)):
+            if wav in target and not self.broken_wav(path):
                 del target[wav]
                 found += 1
             else:
                 utils.remove(path)
                 deleted += 1
 
-        self.log.info('found {} files, deleted {} undesired files'
-                      .format(found, deleted))
+        self.log.debug('found {} files, deleted {} undesired files'
+                       .format(found, deleted))
 
         # return the updated inputs and outputs
         return target.values(), target.keys()
