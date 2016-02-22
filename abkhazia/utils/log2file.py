@@ -21,12 +21,12 @@ possible levels are:
 
     CRITICAL, ERROR, WARNING, INFO, DEBUG or NOTSET.
 
-The log2file module currently implements the following behavior:
-    - NOTSET messages are ignored
-    - INFO messages are printed to sys.stdout
-    - all other messages are logged to the specified file
-    - if verbose option is set to True, all messages are also printed
-      to sys.stdout
+The log2file module implements the following behavior:
+
+  - NOTSET messages are ignored
+  - all other messages are logged to the specified file
+  - if verbose option is set to True, all messages are also printed to
+    sys.stdout, if verbose is False, the DEBUG message are not printed
 
 The log file is UTF-8 encoded.
 
@@ -35,14 +35,14 @@ The log file is UTF-8 encoded.
 import logging
 import sys
 
-
 class LevelFilter(logging.Filter):
+    """A utility class to filter out undesirated levels from log output"""
     def __init__(self, passlevels):
+        super(LevelFilter, self).__init__()
         self.passlevels = passlevels
 
     def filter(self, record):
         return record.levelno in self.passlevels
-
 
 def get_log(log_file, verbose=False):
     """Configure and return a logger instance"""
@@ -58,9 +58,9 @@ def get_log(log_file, verbose=False):
     log_handler.setFormatter(formatter)
     log_handler.setLevel(logging.DEBUG)
 
-    log_filter = LevelFilter([logging.DEBUG, logging.INFO,
-                              logging.WARNING, logging.ERROR,
-                              logging.CRITICAL])
+    log_filter = LevelFilter(
+        [logging.DEBUG, logging.INFO,
+         logging.WARNING, logging.ERROR, logging.CRITICAL])
     log_handler.addFilter(log_filter)
     log.addHandler(log_handler)
 
@@ -71,11 +71,13 @@ def get_log(log_file, verbose=False):
     log_handler.setLevel(logging.DEBUG)
 
     if verbose:
-        log_filter = LevelFilter([logging.DEBUG, logging.INFO,
-                                  logging.WARNING, logging.ERROR,
-                                  logging.CRITICAL])
+        log_filter = LevelFilter(
+            [logging.DEBUG, logging.INFO,
+             logging.WARNING, logging.ERROR, logging.CRITICAL])
     else:
-        log_filter = LevelFilter([logging.INFO])
+        log_filter = LevelFilter(
+            [logging.INFO, logging.WARNING,
+             logging.ERROR, logging.CRITICAL])
     log_handler.addFilter(log_filter)
     log.addHandler(log_handler)
 

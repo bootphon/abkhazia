@@ -16,7 +16,6 @@
 
 * Misc
 
-- log2file. display all > degub
 - have a Corpus class ?
 
 * Documentation
