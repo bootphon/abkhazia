@@ -11,17 +11,18 @@
     - XN fixing new directory structure
     - Some utterances are overlapping in time
   - CSJ
+
     Some utterances are overlapping in time, some overlaps are 2, only
     one is 3. Is it a problem ?
 
 * Misc
 
-- parallel processing
-  - [ ] have a utils.parallelize module -> qsub or joblib, use kaldi scripts ?
-  - [ ] // csj_preparator
-  - [ ] // wav.convert and wav.scan
+  - parallel processing
+    - [ ] have a utils.parallelize module -> qsub or joblib, use kaldi scripts ?
+    - [ ] // csj_preparator
+    - [ ] // wav.convert and wav.scan
 
-- have a Corpus class ?
+  - have a Corpus class ?
 
 * Documentation
 
