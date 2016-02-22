@@ -43,6 +43,7 @@
 import os
 from collections import namedtuple
 from pkg_resources import Requirement, resource_filename
+import progressbar
 
 try:
     import xml.etree.cElementTree as ET
@@ -164,10 +165,11 @@ class CSJPreparator(AbstractPreparator):
         self.data_files = [f for f in self.data_files
                            if f[0] == 'S' and f in core_files]
 
-        # gather label data
+        # gather label data TODO parallelize
+        self.log.info('parsing {} xml files...'.format(len(self.data_files)))
         self.all_utts = {}
         self.lexicon = {}
-        for data in self.data_files:
+        for data in progressbar.ProgressBar()(self.data_files):
             utts = self.parse_core_xml(os.path.join(xml_dir, data + '.xml'))
             utts, utt_lexicon = self.extract_basic_transcript(utts)
 

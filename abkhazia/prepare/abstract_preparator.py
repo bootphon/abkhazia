@@ -119,8 +119,8 @@ class AbstractPreparator(object):
         self.variants_file = fname('variants')
         self.silences_file = fname('silences')
 
-        self.log.info('converting {} to abkhazia'.format(self.name))
-        self.log.info('reading from {}'.format(self.input_dir))
+        self.log.debug('converting {} to abkhazia'.format(self.name))
+        self.log.debug('reading from {}'.format(self.input_dir))
 
     def prepare(self):
         """Prepare the corpus from raw distribution to abkhazia format
@@ -225,7 +225,7 @@ class AbstractPreparator(object):
             # the job is done if all the files are already here, else
             # we continue the preparation
             if len(inputs) == 0:
-                self.log.info('all wav files already present in the directory')
+                self.log.debug('all wav files already present in the directory')
                 return
         else: # self.wavs_dir does not exist
             os.makedirs(self.wavs_dir)
@@ -238,7 +238,7 @@ class AbstractPreparator(object):
             action = (('copying', shutil.copy) if self.copy_wavs
                       else ('linking', os.symlink))
 
-            self.log.info('{} wav files...'.format(action[0]))
+            self.log.debug('{} wav files...'.format(action[0]))
             for inp, out in zip(inputs, outputs):
                 action[1](inp, out)
             self.log.debug('finished {} wavs'.format(action[0]))
@@ -246,7 +246,7 @@ class AbstractPreparator(object):
         else:  # if original files are not wav, convert them
             self.log.info('converting {} {} files to wav...'
                           .format(len(inputs), self.audio_format))
-            utils.convert(inputs, outputs, self.audio_format, self.njobs)
+            utils.wav.convert(inputs, outputs, self.audio_format, self.njobs)
             self.log.debug('finished converting wavs')
 
 
