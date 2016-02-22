@@ -36,13 +36,13 @@ kaldi_root = '/home/xcao/kaldi-trunk'
 corpora = ['Buckeye']
 prune_lexicons = [False]
 for corpus, prune_lexicon in zip(corpora, prune_lexicons):
-    ## Instantiate forced alignment recipe
+    # Instantiate forced alignment recipe
     force_align.create_kaldi_recipe(p.join(root, 'corpora', corpus),
                                     p.join(root, 'kaldi', corpus),
                                     kaldi_root)
 
-    ## Instantiate posterior decoding recipe
-    # cutting corpus in half and using different speakers for train and test sets
+    # Instantiate posterior decoding recipe.  cutting corpus in half
+    # and using different speakers for train and test sets
     split.train_test_split(p.join(root, 'corpora', corpus),
                            train_proportion=.9,
                            split_speakers=False)

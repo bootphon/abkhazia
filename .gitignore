@@ -1,14 +1,15 @@
 # Abkhazia-specific rules
 
 # Ignore data directories
-/ABXpy/*
-/kaldi/*
-/corpora/*
+/data/*
 
 # Ignore files generated during configuration
 /abkhazia/share/abkhazia.cfg
 /abkhazia/share/cmudict.0.7a
 
+# ignore builded documentation
+/docs/build/*
+/docs/Makefile
 
 # MacOS .DS_Store
 *.DS_Store

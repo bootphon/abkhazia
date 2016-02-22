@@ -1,5 +1,4 @@
-# Copyright 2015 Thomas Schatz
-# Copyright 2016 Thomas Schatz, Xuan Nga Cao, Mathieu Bernard
+# Copyright 2015, 2016 Thomas Schatz, Xuan Nga Cao, Mathieu Bernard
 #
 # This file is part of abkhazia: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -23,6 +22,11 @@ import abkhazia.utils.basic_io as io
 
 
 def get_dict_path(recipe_path, name='dict'):
+    """Return `recipe_path`/data/local/`name`
+
+    Create the directory if it does not exist
+
+    """
     dict_path = os.path.join(recipe_path, 'data', 'local', name)
     if not os.path.isdir(dict_path):
         os.makedirs(dict_path)

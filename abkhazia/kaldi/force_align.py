@@ -28,7 +28,7 @@ other kaldi recipe.
 
 import os
 import abkhazia.utils.basic_io as io
-import abkhazia.utils.kaldi.abkhazia2kaldi as a2k
+import abkhazia.kaldi.abkhazia2kaldi as a2k
 
 # Main function of this module: 'create_kaldi_recipe'
 # TODO
@@ -49,7 +49,8 @@ def create_kaldi_recipe(corpus_path, output_path, kaldi_root,
 
     """
     # Checking paths
-    assert os.path.isdir(corpus_path), "Directory doesn't exist: {0}".format(corpus_path)
+    assert os.path.isdir(corpus_path), \
+        "Directory doesn't exist: {0}".format(corpus_path)
 
     recipe_path = os.path.join(output_path, recipe_name, 's5')
     if os.path.isdir(recipe_path):

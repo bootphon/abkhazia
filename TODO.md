@@ -14,6 +14,11 @@
     Some utterances are overlapping in time, some overlaps are 2, only
     one is 3. Is it a problem ?
 
+* Misc
+
+- log2file. display all > degub
+- have a Corpus class ?
+
 * Documentation
 
   Import wiki in docs/ and update it!
