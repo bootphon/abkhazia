@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 # Copyright 2016 Thomas Schatz, Xuan Nga Cao, Mathieu Bernard
 #
 # This file is part of abkhazia: you can redistribute it and/or modify
@@ -13,588 +12,658 @@
 #
 # You should have received a copy of the GNU General Public License
 # along with abkahzia. If not, see <http://www.gnu.org/licenses/>.
+'''Provides a class for validating an abkahzia corpus'''
 
-"""
-Created on Wed Feb  4 00:17:47 2015
-
-@author: Thomas Schatz
-"""
-
-"""
-This script checks whether a given speech corpus is correctly formatted
-for usage with abkhazia tools.
-
-Beware that it automatically corrects some basics problems and thus it can
-modify the original files. For example it sorts the lines of some text files
-and add default values to phone inventories when they are missing.
-"""
-# TODO optimize homophone processing for large dictionaries
-
-import codecs
 import collections
-import contextlib
 import os
 import progressbar
-import wave
 
+import abkhazia.utils as utils
 import abkhazia.utils.log2file as log2file
 import abkhazia.utils.basic_io as io
 
 
-def with_default(value, default):
-    return default if value is None else value
+# TODO optimize homophone processing for large dictionaries
+class Validation(object):
+    '''Checks a given speech corpus is in the abkhazia format
+
+    corpus_path : path to the root directory of the abkhazia prepared
+      corpus to validate. Must contain a 'data' subdircetory. The
+      validation will create and populate the file
+      `corpus_path`/logs/data_validation.log
+
+    verbose : if True, display all log messages to stdout, if False,
+      do not display DEBUG messages. Default is False.
+
+    Beware that it automatically corrects some basics problems and
+    thus it can modify the original files. For example it sorts the
+    lines of some text files and add default values to phone
+    inventories when they are missing.
+
+    Methods
+    -------
+
+    The one call solution to validate the corpus is to call
+    validate(). If you want a fine-grained validation, use the
+    specialized validate_SOMETHING() methods.
+
+    '''
+    def __init__(self, corpus_path, verbose=False):
+        # init the corpus data directory
+        self.data_dir = os.path.join(corpus_path, 'data')
+        if not os.path.isdir(self.data_dir):
+            raise IOError("Corpus folder {} must contain a 'data' subfolder"
+                          .format(corpus_path))
+
+        # init the log system
+        log_dir = os.path.join(corpus_path, 'logs')
+        if not os.path.isdir(log_dir):
+            os.mkdir(os.path.join(corpus_path, "logs"))
+        self.log_file = os.path.join(log_dir, "data_validation.log")
+        self.log = log2file.get_log(self.log_file, verbose)
+
+        # list of the corpus wavs directory (despite of its name, can
+        # contain any files or subdirs)
+        self.wavs = utils.list_directory(os.path.join(self.data_dir, 'wavs'))
 
 
-def get_duplicates(iterable):
-    """Return a list of duplicates elements in iterable"""
-    counts = collections.Counter(iterable)
-    duplicates = [e for e in counts if counts[e] > 1]
-    return duplicates
+    def validate(self):
+        '''Validate the whole corpus
+
+        Log information about the corpus. Raise on the first detected
+        error. If the function returns without raising, this means the
+        corpus is compatible with abkhazia.
+
+        '''
+        try:
+            meta = self.validate_wavs()
+            utt_ids = self.validate_segments(meta)
+            self.validate_speakers(utt_ids)
+            self.validate_transcription(utt_ids)
+            inventory = self.validate_phones()
+            self.validate_lexicon(inventory)
+        except IOError as err:
+            self.log.error(err)
+            raise err
+
+        self.log.info("Corpus ready for use with abkhazia")
 
 
-def strcounts2unicode(strcounts):
-    return u", ".join([u"'" + s + u"': " + unicode(c) for s, c in strcounts])
+    def validate_wavs(self):
+        """wav directory must contain mono 16KHz, 16 bit PCM wavs"""
+        self.log.info("checking 'wavs' folder...")
 
-
-def scann_wav(wav):
-    with contextlib.closing(wave.open(wav, 'r')) as fwav:
-        nbc, width, rate, nframes, comptype, compname = fwav.getparams()
-    return (nbc, width, rate, nframes, comptype, compname,
-            nframes/float(rate))
-
-def validate(corpus_path, verbose=False):
-    """Check corpus directory structure and set log files up"""
-    data_dir = os.path.join(corpus_path, 'data')
-    if not(os.path.isdir(data_dir)):
-        raise IOError("Corpus folder {0} should contain a 'data' subfolder".format(corpus_path))
-    log_dir = os.path.join(corpus_path, 'logs')
-    if not(os.path.isdir(log_dir)):
-        os.mkdir(os.path.join(corpus_path, "logs"))
-
-    # log file config
-    log_file = os.path.join(log_dir, "data_validation.log")
-    log = log2file.get_log(log_file, verbose)
-
-    try:
-        """
-        wav directory must contain only mono wavefiles in 16KHz, 16 bit PCM format
-        """
-        log.info("checking 'wavs' folder...")
-        wav_dir = os.path.join(data_dir, 'wavs')
-        wavefiles = [e for e in os.listdir(wav_dir) if e != '.DS_Store']
-
-        wrong_extensions = [f for f in wavefiles if f[-4:] != ".wav"]
+        wrong_extensions = [f for f in self.wavs if f[-4:] != ".wav"]
         if wrong_extensions:
             raise IOError(
-                (
                 "The following files in 'wavs' folder do "
-                "not have a '.wav' extension: {0}"
-                ).format(wrong_extensions)
-            )
+                "not have a '.wav' extension: {}"
+                .format(wrong_extensions))
 
-        # TODO parallelize this using scann_wav !
-        nb_channels = {}
-        width = {}
-        rate = {}
-        nframes = {}
-        comptype = {}
-        compname = {}
-        durations = {}
-        for f in progressbar.ProgressBar()(wavefiles):
-            try:
-                filepath = os.path.join(wav_dir, f)
-                with contextlib.closing(wave.open(filepath,'r')) as fh:
-                    (nb_channels[f], width[f], rate[f],
-                     nframes[f], comptype[f], compname[f]) = fh.getparams()
-                durations[f] = nframes[f]/float(rate[f])
-            except EOFError:
-                nframes[f] = 0
+        # get meta information on the corpus wav files
+        meta = utils.wav.scan([
+            os.path.join(self.data_dir, 'wavs', w) for w in self.wavs])
+        meta = {os.path.basename(k): meta[k] for k in meta.iterkeys()}
 
-        empty_files = [f for f in wavefiles if nframes[f] == 0]
+        empty_files = [w for w in self.wavs if meta[w].nframes == 0]
         if empty_files:
-            raise IOError("The following files are empty: {0}".format(empty_files))
+            raise IOError("The following files are empty: {}"
+                          .format(empty_files))
 
-        weird_rates = [f for f in wavefiles if rate[f] != 16000]
+        weird_rates = [w for w in self.wavs if meta[w].rate != 16000]
         if weird_rates:
             raise IOError(
-                (
                 "Currently only files sampled at 16,000 Hz "
                 "are supported. The following files are sampled "
-                "at other frequencies: {0}"
-                ).format(weird_rates)
-            )
-        non_mono = [f for f in wavefiles if nb_channels[f] != 1]
+                "at other frequencies: {0}".format(weird_rates))
+
+        non_mono = [w for w in self.wavs if meta[w].nbc != 1]
         if non_mono:
             raise IOError(
-                (
                 "Currently only mono files are supported. "
                 "The following files have more than "
-                "one channel: {0}"
-                ).format(non_mono)
-            )
-        non_16bit = [f for f in wavefiles if width[f] != 2]  # in bytes: 16 bit == 2 bytes
+                "one channel: {0}".format(non_mono))
+
+        # in bytes: 16 bit == 2 bytes
+        non_16bit = [w for w in self.wavs if meta[w].width != 2]
         if non_16bit:
             raise IOError(
-                (
                 "Currently only files encoded on 16 bits are "
                 "supported. The following files are not encoded "
                 "in this format: {0}"
-                ).format(non_16bit)
-            )
-        compressed = [f for f in wavefiles if comptype[f] != 'NONE']
+                .format(non_16bit))
+
+        compressed = [w for w in self.wavs if meta[w].comptype != 'NONE']
         if compressed:
-            raise IOError("The following files are compressed: {0}".format(compressed))
-        log.debug("'wavs' folder is OK")
-
-
-        """
-        checking utterances list
-        """
-        log.debug("Checking 'segments.txt' file")
-        log.debug("C++ sort file")
-        seg_file = os.path.join(data_dir, "segments.txt")
-        io.cpp_sort(seg_file)  # C++ sort file for convenience
-        utt_ids, wavs, starts, stops = io.read_segments(seg_file)
-        # unique utterance-ids
-        duplicates = get_duplicates(utt_ids)
-        if duplicates:
-            log.error("There is utterance-ids in "
-                      "'segments.txt' used several times: {0}"
-                      .format(duplicates))
             raise IOError(
-                (
-                    "There is {} utterance-ids in "
-                    "'segments.txt' used several times, see log for details"
-                ).format(len(duplicates))
-            )
+                "The following files are compressed: {0}"
+                .format(compressed))
+
+        self.log.debug("'wavs' folder is OK")
+        return meta
+
+
+    def validate_segments(self, meta):
+        '''Checking utterances list in segments.txt'''
+        self.log.debug("Checking 'segments.txt' file")
+        seg_file = os.path.join(self.data_dir, "segments.txt")
+
+        self.log.debug("C++ sort file")
+        io.cpp_sort(seg_file)  # C++ sort file for convenience
+        utt_ids, utt_wavs, starts, stops = io.read_segments(seg_file)
+
+        # unique utterance-ids
+        duplicates = utils.duplicates(utt_ids)
+        if duplicates:
+            self.log.debug(
+                "There is utterance-ids in "
+                "'segments.txt' used several times: {0}"
+                .format(duplicates))
+            raise IOError(
+                "There is {} utterance-ids in "
+                "'segments.txt' used several times, see log for details:\n{}"
+                .format(len(duplicates), self.log_file))
+
         # all referenced wavs are in wav folder
-        missing_wavefiles = set.difference(set(wavs), set(wavefiles))
+        missing_wavefiles = set.difference(set(utt_wavs), set(self.wavs))
         if missing_wavefiles:
             raise IOError(
-                (
                 "The following wavefiles are referenced "
                 "in 'segments.txt' but are not in wav folder: {0}"
-                ).format(missing_wavefiles)
-            )
-        if len(set(wavs)) == len(wavs) \
-        and all([e is None for e in starts]) \
-        and all([e is None for e in stops]):
-            # simple case, with one utterance per file and no explicit timestamps provided
-            # just get list of files that are very short (less than 15ms)
-            short_wavs = [utt_id for utt_id, wav in zip(utt_ids, wavs) if durations[wav] < .015]
+                .format(missing_wavefiles))
+
+        if(len(set(utt_wavs)) == len(utt_wavs)
+           and all([e is None for e in starts])
+           and all([e is None for e in stops])):
+            # simple case, with one utterance per file and no explicit
+            # timestamps provided just get list of files that are very
+            # short (less than 15ms)
+            short_wavs = [utt_id for utt_id, wav in zip(utt_ids, utt_wavs)
+                          if meta[wav].duration < .015]
         else:
-            # more complicated case
-            # find all utterances (plus timestamps) associated to each wavefile
-            # and for each wavefile, check consistency of the timestamps of
-            # all utterances inside it
-            # report progress as this can be a bit long
-            warning = True
-            short_wavs = []
-
-            log.info("checking timestamps consistency...")
-            for wav in progressbar.ProgressBar()(wavefiles):
-                duration = durations[wav]
-                utts = [(utt, with_default(sta, 0), with_default(sto, duration))
-                        for utt, w, sta, sto in zip(utt_ids, wavs, starts, stops) if w == wav]
-
-                # first check that start < stop and within file duration
-                for utt_id, start, stop in utts:
-                    assert stop >= start, \
-                        "Stop time for utterance {0} is lower than start time".format(utt_id)  # should it be >?
-                    assert 0 <= start <= duration, \
-                        "Start time for utterance {0} is not compatible with file duration".format(utt_id)
-                    assert 0 <= stop <= duration, \
-                        "Stop time for utterance {0} is not compatible with file duration".format(utt_id)
-                    if stop-start < .015:
-                        short_wavs.append(utt_id)
-
-                # then check if there is overlap in time between the different utterances
-                # and if there is, issue a warning (not an error)
-                # 1. check that no two utterances start or finish at the same time
-                wav_starts = [start for _, start, _ in utts]
-                counts = collections.Counter(wav_starts)
-                same_start = {}
-                for start in counts:
-                    if counts[start] > 1:
-                        same_start[start] = [utt for utt, sta, _ in utts if sta == start]
-                wav_stops = [stop for _, _, stop in utts]
-                counts = collections.Counter(wav_stops)
-
-                same_stop = {}
-                for stop in counts:
-                    if counts[stop] > 1:
-                        same_stop[stop] = [utt for utt, _, sto in utts if sto == stop]
-
-                if same_start:
-                    warning = True
-                    log.warning(
-                        (
-                        "The following utterances start at the same time "
-                        "in wavefile {0}: {1}"
-                        ).format(wav, same_start)
-                    )
-
-                if same_stop:
-                    warning = True
-                    log.warning(
-                        (
-                        "The following utterances stop at the same time "
-                        "in wavefile {0}: {1}"
-                        ).format(wav, same_stop)
-                    )
-
-                # 2. now it suffices to check the following:
-                timestamps = list(set(wav_starts)) + list(set(wav_stops))
-                timestamps.sort()
-                # TODO fix that... maybe > 1
-                index = timestamps.index
-                overlapped = [(utt, index(stop)-index(start))
-                              for utt, start, stop in utts
-                              if index(stop)-index(start) != 1]
-                if overlapped:
-                    warning = True
-                    log.warning(
-                        (
-                        "The following utterances from file {0} are "
-                        "overlapping in time: {1}"
-                        ).format(wav, overlapped)
-                    )
+            # more complicated case :find all utterances (plus
+            # timestamps) associated to each wavefile and for each
+            # wavefile, check consistency of the timestamps of all
+            # utterances inside it
+            warning, short_wavs = self._check_timestamps(
+                meta, utt_ids, starts, stops)
             if warning:
-                log.info(
-                    (
+                self.log.warning(
                     "Some utterances are overlapping in time, "
-                    "see details in log file {0}"
-                    ).format(log_file)
-                )
+                    "see details in log file:\n{}".format(self.log_file))
+
         if short_wavs:
-            log.warning(
-                (
+            self.log.debug(
                 "The following utterances are less than 15ms long and "
-                "won't be used in kaldi recipes: {0}"
-                ).format(short_wavs)
-            )
-        log.debug("'segments.txt' file is OK")
+                "won't be used in kaldi recipes: {}".format(short_wavs))
+
+        self.log.debug("'segments.txt' file is OK")
+        return utt_ids
 
 
-        """
-        checking speakers list
-        """
-        log.debug("Checking 'speakers' file")
-        log.debug("C++ sort file")
-        spk_file = os.path.join(data_dir, "utt2spk.txt")
+    def validate_speakers(self, utt_ids):
+        '''Checking speakers list in utt2spk.txt'''
+        self.log.debug("Checking 'speakers' file")
+        spk_file = os.path.join(self.data_dir, "utt2spk.txt")
+
+        self.log.debug("C++ sort file")
         io.cpp_sort(spk_file)  # C++ sort file for convenience
         utt_ids_spk, speakers = io.read_utt2spk(spk_file)
+
         # same utterance-ids in segments.txt and utt2spk.txt
-        if not(utt_ids_spk == utt_ids):
-            duplicates = get_duplicates(utt_ids_spk)
+        if utt_ids_spk != utt_ids:
+            duplicates = utils.duplicates(utt_ids_spk)
             if duplicates:
                 raise IOError(
-                    (
-                    "The following utterance-ids "
-                    "are used several times in 'utt2spk.txt': {0}"
-                    ).format(duplicates)
-                )
+                    "The following utterance-ids are used several times "
+                    "in 'utt2spk.txt': {}".format(duplicates))
             else:
                 e_spk = set(utt_ids_spk)
                 e_seg = set(utt_ids)
-                e = set.difference(e_spk, e_seg)
-                log.error("Utterances in utt2spk.txt that are not in segments.txt: {0}".format(e))
-                e = set.difference(e_seg, e_spk)
-                log.error("Utterances in segments.txt that are not in utt2spk.txt: {0}".format(e))
+
+                self.log.debug(
+                    "Utterances in utt2spk.txt that are not in "
+                    "segments.txt: {}".format(set.difference(e_spk, e_seg)))
+
+                self.log.debug(
+                    "Utterances in segments.txt that are not in "
+                    "utt2spk.txt: {}".format(set.difference(e_seg, e_spk)))
+
                 raise IOError(
-                    (
-                    "Utterance-ids in 'segments.txt' and 'utt2spk.txt' are not consistent, "
-                    "see details in log {0}"
-                    ).format(log_file)
-                )
+                    "Utterance-ids in 'segments.txt' and 'utt2spk.txt' are "
+                    "not consistent, see details in log:\n{}"
+                    .format(self.log_file))
+
         # speaker ids must have a fixed length
-        l = len(speakers[0])
-        if not(all([len(s) == l for s in speakers])):
-            spk_len = collections.Counter([len(s) for s in speakers])
-            log.error("Speaker-ids length observed in utt2spk.txt with associated frequencies: {0}".format(spk_len))
-            raise IOError("All speaker-ids must have the same length. See log for more details.")
+        default_len = len(speakers[0])
+        if not all([len(s) == default_len for s in speakers]):
+            self.log.debug(
+                "Speaker-ids length observed in utt2spk.txt with associated "
+                "frequencies: {0}".format(
+                    collections.Counter([len(s) for s in speakers])))
+
+            raise IOError(
+                "All speaker-ids must have the same length. "
+                "See log for more details:\n{}".format(self.log_file))
 
         # each speaker id must be prefix of corresponding utterance-id
         for utt, spk in zip(utt_ids, speakers):
-            assert utt[:l] == spk, "All utterance-ids must be prefixed by the corresponding speaker-id"
-        log.debug("'speakers' file is OK")
+            if not utt[:default_len] == spk:
+                raise IOError(
+                    "All utterance-ids must be prefixed by the "
+                    "corresponding speaker-id")
+
+        self.log.debug("'speakers' file is OK")
 
 
-        """
-        checking transcriptions
-        """
-        log.debug("Checking 'text.txt' file")
-        log.debug("C++ sort file")
-        txt_file = os.path.join(data_dir, "text.txt")
+    def validate_transcription(self, utt_ids):
+        '''Checking transcriptions in text.txt'''
+        self.log.debug("Checking 'text.txt' file")
+        txt_file = os.path.join(self.data_dir, "text.txt")
+
+        self.log.debug("C++ sort file")
         io.cpp_sort(txt_file)  # C++ sort file for convenience
-        utt_ids_txt, utt_words = io.read_text(txt_file)
+        utt_ids_txt, _ = io.read_text(txt_file)
+
         # we will check that the words are mostly in the lexicon later
         # same utterance-ids in segments.txt and text.txt
-        if not(utt_ids_txt == utt_ids):
-            duplicates = get_duplicates(utt_ids_txt)
+        if utt_ids_txt != utt_ids:
+            duplicates = utils.duplicates(utt_ids_txt)
             if duplicates:
-                log.error("There is several utterance-ids "
-                          "used several times in 'text.txt': {0}"
-                          .format(duplicates))
+                self.log.debug(
+                    "There is several utterance-ids used several times "
+                    "in 'text.txt': {}".format(len(duplicates)))
+
                 raise IOError(
-                    (
-                    "There is several utterance-ids "
-                    "used several times in 'text.txt': {0}"
-                    ).format(len(duplicates))
-                )
+                    "There is several utterance-ids used several times "
+                    "in 'text.txt': {}".format(duplicates))
             else:
                 e_txt = set(utt_ids_txt)
                 e_seg = set(utt_ids)
-                e = set.difference(e_txt, e_seg)
-                log.error("Utterances in text.txt that are not in segments.txt: {0}".format(e))
-                e = set.difference(e_seg, e_txt)
-                log.error("Utterances in segments.txt that are not in text.txt: {0}".format(e))
+
+                self.log.error(
+                    "Utterances in text.txt that are not in segments.txt: {}"
+                    .format(set.difference(e_txt, e_seg)))
+
+                self.log.error(
+                    "Utterances in segments.txt that are not in text.txt: {}"
+                    .format(set.difference(e_seg, e_txt)))
+
                 raise IOError(
-                    (
-                    "Utterance-ids in 'segments.txt' and 'text.txt' are not consistent, "
-                    "see details in log {0}"
-                    ).format(log_file)
-                )
-        log.debug("'text.txt' file is OK, checking for OOV items later")
+                    "Utterance-ids in 'segments.txt' and 'text.txt' are "
+                    "not consistent, see details in log:\n{}"
+                    .format(self.log_file))
+
+        self.log.debug("'text.txt' file is OK, checking for OOV items later")
 
 
-        """
-        checking phone inventory
-        """
-        log.debug(
-            (
-            "Checking phone inventory files 'phones.txt', 'silences.txt' and "
-            "'variants.txt'"
-            )
-        )
-        # phones TODO: check xsampa compatibility and/or compatibility
-        # with articulatory features databases of IPA or just basic
-        # IPA correctness
-        phon_file = os.path.join(data_dir, "phones.txt")
-        phones, ipas = io.read_phones(phon_file)
-        assert not(u"SIL" in phones), \
-            (
-            u"'SIL' symbol is reserved for indicating "
-            u"optional silence, it cannot be used "
-            u"in 'phones.txt'"
-            )
-        assert not(u"SPN" in phones), \
-            (
-            u"'SPN' symbol is reserved for indicating "
-            u"vocal noise, it cannot be used "
-            u"in 'phones.txt'"
-            )
-        duplicates = get_duplicates(phones)
-        assert not(duplicates), \
-            (
-            u"The following phone symbols are used several times "
-            u"in 'phones.txt': {0}"
-            ).format(duplicates)
-        duplicates = get_duplicates(ipas)
-        assert not(duplicates), \
-            (
-            u"The following IPA symbols are used several times "
-            u"in 'phones.txt': {0}"
-            ).format(duplicates)
-        # silences
-        sil_file = os.path.join(data_dir, "silences.txt")
-        if not(os.path.exists(sil_file)):
-            log.warning(u"No silences.txt file, creating default one with 'SIL' and 'SPN'")
-            with codecs.open(sil_file, mode='w', encoding="UTF-8") as out:
-                out.write(u"SIL\n")
-                out.write(u"SPN\n")
-            sils = [u"SIL", u"SPN"]
-        else:
-            sils = io.read_silences(sil_file)
-            duplicates = get_duplicates(sils)
-            assert not(duplicates), \
-                (
-                u"The following symbols are used several times "
-                u"in 'silences.txt': {0}"
-                ).format(duplicates)
-            if not u"SIL" in sils:
-                log.warning(u"Adding missing 'SIL' symbol to silences.txt")
-                with codecs.open(sil_file, mode='a', encoding="UTF-8") as out:
-                    out.write(u"SIL\n")
-                sils.append(u"SIL")
-            if not u"SPN" in sils:
-                log.warning(u"Adding missing 'SPN' symbol to silences.txt")
-                with codecs.open(sil_file, mode='a', encoding="UTF-8") as out:
-                    out.write(u"SPN\n")
-                sils.append(u"SPN")
-            inter = set.intersection(set(sils), set(phones))
-            assert not(inter), \
-                (
-                u"The following symbols are used in both 'phones.txt' "
-                u"and 'silences.txt': {0}"
-                ).format(inter)
+    def validate_phones(self):
+        '''Checks phones.txt, silences.txt and variants.txt
 
-        # variants
-        var_file = os.path.join(data_dir, "variants.txt")
-        if not(os.path.exists(var_file)):
-            log.warning(u"No variants.txt file, creating empty one")
-            with codecs.open(var_file, mode='w', encoding="UTF-8") as out:
-                pass
-            variants = []
-        else:
-            variants = io.read_variants(var_file)
-            all_symbols = [symbol for group in variants for symbol in group]
-            unknown_symbols = [symbol for symbol in all_symbols
-                               if not(symbol in phones) and not(symbol in sils)]
-            assert not(unknown_symbols), \
-                (
-                u"The following symbols are present "
-                u"in 'variants.txt', but are "
-                u"neither in 'phones.txt' nor in "
-                u"'silences.txt': {0}"
-                ).format(unknown_symbols)
-            duplicates = get_duplicates(all_symbols)
-            assert not(duplicates), \
-                (
-                u"The following symbols are used several times "
-                u"in 'variants.txt': {0}"
-                ).format(duplicates)
-        inventory = set.union(set(phones), set(sils))
-        log.debug("Phone inventory files are OK")
+        Return the corpus phones inventory
+
+        '''
+        phones = self._check_phones()
+        sils = self._check_silences(phones)
+        return self._check_variants(phones, sils)
 
 
-        """
-        checking phonetic dictionary
-        """
-        log.debug("Checking 'lexicon.txt' file")
-        dict_file = os.path.join(data_dir, "lexicon.txt")
+    def validate_lexicon(self, inventory):
+        '''Checks lexicon.txt'''
+        self.log.debug("Checking 'lexicon.txt' file")
+        dict_file = os.path.join(self.data_dir, "lexicon.txt")
         dict_words, transcriptions = io.read_dictionary(dict_file)
-        # unique word entries (alternative pronunciations are not currently supported)
-        duplicates = get_duplicates(dict_words)
-        assert not(duplicates), \
-            (
-            u"Alternative pronunciations are not currently supported. "
-            u"The following words have several transcriptions "
-            u"in 'lexicon.txt': {0}"
-            ).format(duplicates)
+
+        # unique word entries (alternative pronunciations are not
+        # currently supported)
+        duplicates = utils.duplicates(dict_words)
+        if duplicates:
+            raise IOError(
+                "Alternative pronunciations are not currently supported. "
+                "The following words have several transcriptions "
+                "in 'lexicon.txt': {0}".format(duplicates))
+
         # OOV item
-        if not(u"<unk>" in dict_words):
-            log.warning("No '<unk>' word in lexicon, adding one")
-            with codecs.open(dict_file, mode='a', encoding="UTF-8") as out:
+        if u"<unk>" not in dict_words:
+            self.log.debug("No '<unk>' word in lexicon, adding one")
+            with utils.open_utf8(dict_file, 'a') as out:
                 out.write(u"<unk> SPN\n")
             dict_words.append(u"<unk>")
             transcriptions.append([u"SPN"])
         else:
-            unk_transcript = transcriptions[dict_words.index(u"<unk>")]
-            assert unk_transcript == [u"SPN"], \
-                (
-                u"'<unk>' word is reserved for mapping "
-                u"OOV items and should always be transcribed "
-                u"as 'SPN' (vocal) noise'"
-                )
+            if transcriptions[dict_words.index(u"<unk>")] != [u"SPN"]:
+                raise IOError(
+                    "'<unk>' word is reserved for mapping "
+                    "OOV items and should always be transcribed "
+                    "as 'SPN' (vocal) noise'")
         # Should we log a warning for all words containing silence phones?
+
         # unused words
+        _, utt_words = io.read_text(os.path.join(self.data_dir, "text.txt"))
         dict_words_set = set(dict_words)
         used_words = [word for words in utt_words for word in words]
         used_word_types = set(used_words)
         used_word_counts = collections.Counter(used_words)
         used_dict_words = set.intersection(dict_words_set, used_word_types)
-        log.warning(u"{0} dictionary words used out of {1}".format(len(used_dict_words), len(dict_words_set)))
+        self.log.debug("{} dictionary words used out of {}"
+                       .format(len(used_dict_words), len(dict_words_set)))
+
         # oov words
         oov_word_types = set.difference(used_word_types, dict_words_set)
-        oov_word_counts = collections.Counter({oov : used_word_counts[oov] for oov in oov_word_types})
+        oov_word_counts = collections.Counter(
+            {oov : used_word_counts[oov] for oov in oov_word_types})
         nb_oov_tokens = sum(oov_word_counts.values())
         nb_oov_types = len(oov_word_types)
-        log.warning(u"{0} OOV word types in transcriptions out of {1} types in total".format(nb_oov_types, len(used_word_types)))
-        log.warning(u"{0} OOV word tokens in transcriptions out of {1} tokens in total".format(nb_oov_tokens, len(used_words)))
-        log.debug(
-            (
-            u"List of OOV word types with occurences counts: {0}"
-            ).format(strcounts2unicode(oov_word_counts.most_common()))
-        )
+
+        self.log.debug(
+            "{} OOV word types in transcriptions out of {} types in total"
+            .format(nb_oov_types, len(used_word_types)))
+
+        self.log.debug(
+            "{} OOV word tokens in transcriptions out of {} tokens in total"
+            .format(nb_oov_tokens, len(used_words)))
+
+        self.log.debug(
+            "List of OOV word types with occurences counts: {0}"
+            .format(self._strcounts2unicode(oov_word_counts.most_common())))
+
         # raise alarm if the proportion of oov words is too large
         # either in terms of types or tokens
         oov_proportion_types = nb_oov_types/float(len(used_word_types))
         oov_proportion_tokens = nb_oov_tokens/float(len(used_words))
-        log.debug(u"Proportion of oov word types: {0}".format(oov_proportion_types))
-        log.debug(u"Proportion of oov word tokens: {0}".format(oov_proportion_tokens))
-        if oov_proportion_types > 0.1:
-            log.info(u"More than 10 percent of word types used are Out-Of-Vocabulary items!")
-        if oov_proportion_tokens > 0.1:
-            log.info(u"More than 10 percent of word tokens used are Out-Of-Vocabulary items!")
-        # homophones (issue warnings only)
-        str_transcripts = [u" ".join(phone_trans) for phone_trans in transcriptions]
-        counts = collections.Counter(str_transcripts)
-        duplicate_transcripts = collections.Counter({trans: counts[trans] for trans in counts if counts[trans] > 1})
-        if duplicate_transcripts:
-            log.info("There are homophones in the pronunciation dictionary")
-            log.warning(
-                (
-                u"There are {0} phone sequences that correspond to several words "
-                u"in the pronunciation dictionary"
-                ).format(len(duplicate_transcripts))
-            )
-            log.warning(
-                (
-                u"There are {0} word types with homophones "
-                u"in the pronunciation dictionary"
-                ).format(sum(duplicate_transcripts.values()))
-            )
-            s = strcounts2unicode(duplicate_transcripts.most_common())
-            log.warning(
-                (
-                u"List of homophonic phone sequences in 'lexicon.txt' "
-                u"with number of corresponding word types: {0}"
-                ).format(s)
-            )
-            """
-            Commented because it takes a lot of times for certain corpora
-            Maybe put it as an option
-            # get word types:
-            #    - found in transcriptions
-            #    - with at least one homophonic word type also found in transcriptions
-            homophonic_sequences = duplicate_transcripts.keys()
-            homophony_groups = {}
-            for homo_transcript in homophonic_sequences:
-                homo_group = [word for word, transcript in zip(dict_words, str_transcripts) \
-                            if transcript == homo_transcript and word in used_word_types]
-                if len(homo_group) > 1:
-                    homophony_groups[homo_transcript] = homo_group
-            nb_homo_types = sum([len(homo_group) for homo_group in homophony_groups.values()])
-            log.warning(
-                (
-                u"{0} word types found in transcriptions with "
-                u"at least one homophone also found in transcriptions "
-                u"out of {1} word types in total"
-                ).format(nb_homo_types, len(used_word_types))
-            )
-            nb_homo_tokens = sum([sum([used_word_counts[word] for word in homo_group]) for homo_group in homophony_groups.values()])
-            log.warning((u"{0} corresponding word tokens out of {1} total").format(nb_homo_tokens, len(used_words)))
-            l = [", ".join([word + u": " + unicode(used_word_counts[word]) for word in group]) for group in homophony_groups.values()]
-            s = "\n".join(l)
-            log.warning(
-                (
-                u"List of groups of homophonic word types "
-                u"(including only types actually found in transcriptions) "
-                u"with number of occurences of each member of each group:\n{0}"
-                ).format(s)
-            )
-            """
-        # ooi phones
+        self.log.debug("Proportion of oov word types: {}"
+                       .format(oov_proportion_types))
 
-        used_phones = [phone for trans_phones in transcriptions for phone in trans_phones]
-        ooi_phones = [phone for phone in set(used_phones) if not(phone in inventory)]
+        self.log.debug("Proportion of oov word tokens: {}"
+                       .format(oov_proportion_tokens))
+
+        if oov_proportion_types > 0.1:
+            self.log.warning('More than 10 percent of word '
+                             'types used are Out-Of-Vocabulary items!')
+
+        if oov_proportion_tokens > 0.1:
+            self.log.warning('More than 10 percent of word '
+                             'tokens used are Out-Of-Vocabulary items!')
+
+        # homophones (issue warnings only)
+        counts = collections.Counter(
+            [u" ".join(phone_trans) for phone_trans in transcriptions])
+
+        duplicate_transcripts = collections.Counter(
+            {trans: counts[trans] for trans in counts if counts[trans] > 1})
+
+        if duplicate_transcripts:
+            self.log.warning(
+                "There are homophones in the pronunciation dictionary, "
+                "see log for details:\n{}".format(self.log_file))
+
+            self.log.debug(
+                'There are {} phone sequences that correspond to several '
+                'words in the pronunciation dictionary'
+                .format(len(duplicate_transcripts)))
+
+            self.log.debug(
+                'There are {} word types with homophones in the pronunciation '
+                'dictionary'.format(sum(duplicate_transcripts.values())))
+
+            self.log.debug(
+                "List of homophonic phone sequences in 'lexicon.txt' "
+                "with number of corresponding word types: {0}"
+                .format(self._strcounts2unicode(
+                    duplicate_transcripts.most_common())))
+
+
+            # Commented because it takes a lot of times for certain corpora
+            # Maybe put it as an option
+            # # get word types:
+            # #    - found in transcriptions
+            # #    - with at least one homophonic word type also found in transcriptions
+            # homophonic_sequences = duplicate_transcripts.keys()
+            # homophony_groups = {}
+            # for homo_transcript in homophonic_sequences:
+            #     homo_group = [word for word, transcript in zip(dict_words, str_transcripts) \
+            #                 if transcript == homo_transcript and word in used_word_types]
+            #     if len(homo_group) > 1:
+            #         homophony_groups[homo_transcript] = homo_group
+            # nb_homo_types = sum([len(homo_group) for homo_group in homophony_groups.values()])
+            # log.warning(
+            #     (
+            #     u"{0} word types found in transcriptions with "
+            #     u"at least one homophone also found in transcriptions "
+            #     u"out of {1} word types in total"
+            #     ).format(nb_homo_types, len(used_word_types))
+            # )
+            # nb_homo_tokens = sum([sum([used_word_counts[word] for word in homo_group]) for homo_group in homophony_groups.values()])
+            # log.warning((u"{0} corresponding word tokens out of {1} total").format(nb_homo_tokens, len(used_words)))
+            # l = [", ".join([word + u": " + unicode(used_word_counts[word]) for word in group]) for group in homophony_groups.values()]
+            # s = "\n".join(l)
+            # log.warning(
+            #     (
+            #     u"List of groups of homophonic word types "
+            #     u"(including only types actually found in transcriptions) "
+            #     u"with number of occurences of each member of each group:\n{0}"
+            #     ).format(s)
+            # )
+
+        # ooi phones
+        used_phones = [phone for trans_phones in transcriptions
+                       for phone in trans_phones]
+
+        ooi_phones = [phone for phone in set(used_phones)
+                      if phone not in inventory]
+
         if ooi_phones:
-            raise IOError(u"Phonetic dictionary uses out-of-inventory phones: {0}".format(ooi_phones))
+            raise IOError(
+                u"Phonetic dictionary uses out-of-inventory phones: {0}"
+                .format(ooi_phones))
+
         # warning for unused phones
         unused_phones = set.difference(inventory, used_phones)
         if unused_phones:
-            log.warning(
-                (
-                u"The following phones are never found "
-                u"in the transcriptions: {0}"
-                ).format(unused_phones)
-            )
-        log.debug(u"'lexicon.txt' file is OK")
+            self.log.debug(
+                "The following phones are never found "
+                "in the transcriptions: {}".format(unused_phones))
 
-        # wrap-up
-        log.info("Corpus ready for use with abkhazia!!!")
+        self.log.debug(u"'lexicon.txt' file is OK")
 
-    except (IOError, AssertionError) as err:
-        log.error(err)
-        raise err
+
+    def _check_timestamps(self, meta, utt_ids, starts, stops):
+        '''Check for utterances overlap and timestamps consistency'''
+        self.log.debug("checking timestamps consistency...")
+
+        short_wavs = []
+        warning = False
+        for wav in progressbar.ProgressBar()(self.wavs):
+            duration = meta[wav].duration
+            utts = [(utt,
+                     0 if sta is None else sta,
+                     duration if sto is None else sto)
+                    for utt, w, sta, sto
+                    in zip(utt_ids, self.wavs, starts, stops)
+                    if w == wav]
+
+            # first check that start < stop and within file duration
+            for utt_id, start, stop in utts:
+                if not stop >= start:  # should it be > ?
+                    raise IOError(
+                        "Stop time for utterance {0} is lower than "
+                        "start time".format(utt_id))
+
+                if not 0 <= start <= duration:
+                    raise IOError(
+                        "Start time for utterance {0} is not compatible "
+                        "with file duration".format(utt_id))
+
+                if not 0 <= stop <= duration:
+                    raise IOError(
+                        "Stop time for utterance {0} is not compatible "
+                        "with file duration".format(utt_id))
+
+                if stop-start < .015:
+                    short_wavs.append(utt_id)
+
+            # then check if there is overlap in time between the
+            # different utterances and if there is, issue a
+            # warning (not an error)
+
+            # 1. check that no two utterances start or finish at
+            # the same time
+            wav_starts = [start for _, start, _ in utts]
+            counts = collections.Counter(wav_starts)
+            same_start = {}
+            for start in counts:
+                if counts[start] > 1:
+                    same_start[start] = [utt for utt, sta, _ in utts
+                                         if sta == start]
+
+            wav_stops = [stop for _, _, stop in utts]
+            counts = collections.Counter(wav_stops)
+            same_stop = {}
+            for stop in counts:
+                if counts[stop] > 1:
+                    same_stop[stop] = [utt for utt, _, sto in utts
+                                       if sto == stop]
+
+            if same_start:
+                warning = True
+                self.log.warning(
+                    "The following utterances start at the same time "
+                    "in wavefile {}: {}".format(wav, same_start))
+
+            if same_stop:
+                warning = True
+                self.log.warning(
+                    "The following utterances stop at the same time "
+                    "in wavefile {0}: {1}".format(wav, same_stop))
+
+            # 2. now it suffices to check the following:
+            timestamps = list(set(wav_starts)) + list(set(wav_stops))
+            timestamps.sort()
+
+            # TODO fix that... maybe > 1
+            overlapped = [
+                (utt, timestamps.index(stop) - timestamps.index(start))
+                for utt, start, stop in utts
+                if timestamps.index(stop) - timestamps.index(start) != 1]
+
+            if overlapped:
+                warning = True
+                self.log.warning(
+                    "The following utterances from file {} are "
+                    "overlapping in time: {}".format(wav, overlapped))
+
+            return warning, short_wavs
+
+
+    def _check_phones(self):
+        '''Checks phones.txt'''
+        # TODO check xsampa compatibility and/or compatibility
+        # with articulatory features databases of IPA or just basic
+        # IPA correctness
+        self.log.debug('checking phones.txt')
+        phones, ipas = io.read_phones(os.path.join(self.data_dir, "phones.txt"))
+
+        if u'SIL' in phones:
+            raise IOError(
+                "'SIL' symbol is reserved for indicating "
+                "optional silence, it cannot be used "
+                "in 'phones.txt'")
+
+        if u'SPN' in phones:
+            raise IOError(
+                "'SPN' symbol is reserved for indicating "
+                "vocal noise, it cannot be used "
+                "in 'phones.txt'")
+
+        duplicates = utils.duplicates(phones)
+        if duplicates:
+            raise IOError(
+                "The following phone symbols are used several times "
+                "in 'phones.txt': {}".format(duplicates))
+
+        duplicates = utils.duplicates(ipas)
+        if duplicates:
+            raise IOError(
+                "The following IPA symbols are used several times "
+                "in 'phones.txt': {}".format(duplicates))
+
+        return phones
+
+
+    def _check_silences(self, phones):
+        '''Checks silences.txt'''
+        self.log.debug('checking silences.txt')
+
+        sil_file = os.path.join(self.data_dir, "silences.txt")
+        if not os.path.exists(sil_file):
+            self.log.warning(
+                "No silences.txt file, creating one with 'SIL' and 'SPN'")
+
+            with utils.open_utf8(sil_file, 'w') as out:
+                out.write(u"SIL\n")
+                out.write(u"SPN\n")
+            sils = [u"SIL", u"SPN"]
+        else:
+            sils = io.read_silences(sil_file)
+            duplicates = utils.duplicates(sils)
+            if duplicates:
+                raise IOError(
+                    "The following symbols are used several times "
+                    "in 'silences.txt': {}".format(duplicates))
+
+            if not u"SIL" in sils:
+                self.log.debug("Adding missing 'SIL' symbol to silences.txt")
+                with utils.open_utf8(sil_file, 'a') as out:
+                    out.write(u"SIL\n")
+                sils.append(u"SIL")
+
+            if not u"SPN" in sils:
+                self.log.debug("Adding missing 'SPN' symbol to silences.txt")
+                with utils.open_utf8(sil_file, 'a') as out:
+                    out.write(u"SPN\n")
+                sils.append(u"SPN")
+
+            inter = set.intersection(set(sils), set(phones))
+            if inter:
+                raise IOError(
+                    "The following symbols are used in both 'phones.txt' "
+                    "and 'silences.txt': {}".format(inter))
+
+            return sils
+
+
+    def _check_variants(self, phones, sils):
+        '''Checks variants.txt'''
+        self.log.debug('checking variants.txt')
+
+        var_file = os.path.join(self.data_dir, "variants.txt")
+        if not os.path.exists(var_file):
+            self.log.debug(u"No variants.txt file, creating empty one")
+            with utils.open_utf8(var_file, 'w'):
+                pass  # create an empty file
+            variants = []
+        else:
+            variants = io.read_variants(var_file)
+            all_symbols = [symbol for group in variants for symbol in group]
+            unknown_symbols = [symbol for symbol in all_symbols
+                               if symbol not in phones and symbol not in sils]
+            if unknown_symbols:
+                raise IOError(
+                    "The following symbols are present in 'variants.txt', "
+                    "but are neither in 'phones.txt' nor in 'silences.txt': "
+                    "{}".format(unknown_symbols))
+
+            duplicates = utils.duplicates(all_symbols)
+            if duplicates:
+                raise IOError(
+                    "The following symbols are used several times "
+                    "in 'variants.txt': {}".format(duplicates))
+
+        self.log.debug("Phone inventory files are OK")
+        inventory = set.union(set(phones), set(sils))
+        return inventory
+
+    @staticmethod
+    def _strcounts2unicode(strcounts):
+        """Return a str representing strcounts"""
+        return u", ".join([u"'" + s + u"': " + unicode(c) for s, c in strcounts])

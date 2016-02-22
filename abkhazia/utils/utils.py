@@ -15,9 +15,16 @@
 """Provides some misc functions usefull to abkahzia"""
 
 import codecs
+import collections
 import os
 import re
 import shutil
+
+
+def duplicates(iterable):
+    """Return a list of duplicated elements in an iterable"""
+    counts = collections.Counter(iterable)
+    return [e for e in counts if counts[e] > 1]
 
 
 def open_utf8(filename, mode='rb'):

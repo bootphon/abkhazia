@@ -134,7 +134,7 @@ class AbstractFactory(object):
             output_dir = (cls.preparator.default_output_dir()
                           if args.output_dir is None
                           else args.output_dir)
-            validation.validate(output_dir, args.verbose)
+            validation.Validation(output_dir, args.verbose).validate()
 
 
 class AbstractFactoryWithCMU(AbstractFactory):
@@ -300,8 +300,7 @@ class GlobalPhoneFactory(AbstractFactory):
                 output_dir = (prep.default_output_dir()
                               if args.output_dir is None
                               else args.output_dir)
-
-                validation.validate(output_dir, args.verbose)
+                validation.Validation(output_dir, args.verbose).validate()
 
 
 class AbkhaziaPrepare(object):

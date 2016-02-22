@@ -16,6 +16,11 @@
 
 * Misc
 
+- parallel processing
+  - [ ] have a utils.parallelize module -> qsub or joblib, use kaldi scripts ?
+  - [ ] // csj_preparator
+  - [ ] // wav.convert and wav.scan
+
 - have a Corpus class ?
 
 * Documentation

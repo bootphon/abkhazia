@@ -18,4 +18,4 @@
 from .utils import *
 from .log2file import get_log
 from .config import get_config
-from .convert2wav import convert
+from .wav import convert, scan

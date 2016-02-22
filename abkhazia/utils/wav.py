@@ -14,10 +14,13 @@
 # along with abkahzia. If not, see <http://www.gnu.org/licenses/>.
 """Provides functions to convert various audio formats to wav"""
 
-from joblib import Parallel, delayed
+import collections
+import joblib
 import os
+import progressbar
 import shlex
 import subprocess
+import wave
 
 from abkhazia.utils.config import get_config
 
@@ -128,5 +131,39 @@ def convert(inputs, outputs, fileformat, njobs=1, verbose=5):
             raise IOError('input file does not exist: {}'.format(i))
 
     # convert files in parallel
-    Parallel(n_jobs=njobs, verbose=verbose)(
-        delayed(fnc)(i, o) for i, o in zip(inputs, outputs))
+    joblib.Parallel(n_jobs=njobs, verbose=verbose)(
+        joblib.delayed(fnc)(i, o) for i, o in zip(inputs, outputs))
+
+def scan(wavs):
+    """Return meta information on the input `wavs` files
+
+    wavs : a list of absolute paths to wav files
+
+    The returned dict 'metainfo' have wavs for keys and the following
+    named tuple as value:
+
+        metainfo[wav].{nbc width rate nframes comptype compname duration}
+
+    For example access to the duration the 3rd wav in `wavs` with::
+
+        metainfo = scan(wavs)
+        d = metainfo[wavs[2]].duration
+
+    See the documentation of wave.getparams() for details.
+
+    """
+    metainfo = {}
+    metawav = collections.namedtuple(
+        'metawav', 'nbc width rate nframes comptype compname duration')
+
+    # TODO parallelize this
+    for wav in progressbar.ProgressBar()(wavs):
+        try:
+            param = wave.open(wav, 'r').getparams()
+            metainfo[wav] = metawav(
+                param[0], param[1], param[2],
+                param[3], param[4], param[5],
+                param[3]/float(param[2]))  # duration
+        except EOFError:
+            metainfo[wav].nframes = 0
+    return metainfo
