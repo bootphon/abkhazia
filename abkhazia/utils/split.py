@@ -39,6 +39,7 @@ class SplitCorpus(object):
 
     """
     default_test_prop = 0.5
+    """The default proportion for the test set"""
 
     def __init__(self, corpus_dir,
                  output_dir=None, random_seed=None, verbose=False):

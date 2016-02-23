@@ -12,286 +12,328 @@
 #
 # You should have received a copy of the GNU General Public License
 # along with abkahzia. If not, see <http://www.gnu.org/licenses/>.
+'''Provides the Abkhazia2Kaldi class'''
 
-import codecs
 import os
+import pkg_resources
 import shutil
-import subprocess
 
+import abkhazia.utils as utils
 import abkhazia.utils.basic_io as io
 
 
-def get_dict_path(recipe_path, name='dict'):
-    """Return `recipe_path`/data/local/`name`
+class Abkhazia2Kaldi(object):
+    '''Instanciate a kaldi recipe from an abkhazia corpus
 
-    Create the directory if it does not exist
+    corpus_dir : The root directory of the abkhazia corpus to
+      split. This directory must contain a validated abkahzia corpus.
 
-    """
-    dict_path = os.path.join(recipe_path, 'data', 'local', name)
-    if not os.path.isdir(dict_path):
-        os.makedirs(dict_path)
-    return dict_path
+    recipe_dir : The output dircetory where to write the created kaldi
+      recipe. A subdirectory hierarchy is created in here, as well as
+      a log file.
 
+    verbose : This argument serves as initialization of the log2file
+      module. See there for more documentation.
 
-def setup_lexicon(corpus_path, recipe_path,
-                  prune_lexicon=False, train_name=None,
-                  name='dict'):
-    dict_path = get_dict_path(recipe_path, name)
-    if prune_lexicon:
-        # get words appearing in train part
-        train_text = os.path.join(
-            corpus_path, 'data', 'split', train_name, 'text.txt')
+    '''
+    def __init__(self, corpus_dir, recipe_dir, verbose=False):
+        # init the corpus directory
+        if not os.path.isdir(corpus_dir):
+            raise OSError('{} is not a directory'.format(corpus_dir))
+        self.data_dir = os.path.join(corpus_dir, 'data')
+        if not os.path.isdir(self.data_dir):
+            raise OSError('{} is not a directory'.format(self.data_dir))
 
-        _, utt_words = io.read_text(train_text)
-        allowed_words = set([word for utt in utt_words for word in utt])
+        # init the recipe directory, create it if needed
+        self.recipe_dir = recipe_dir
+        if not os.path.isdir(self.recipe_dir):
+            os.makedirs(self.recipe_dir)
 
-        # add special OOV word <unk>
-        allowed_words.add(u'<unk>')
+        # init the log system
+        self.log = utils.log2file.get_log(
+            os.path.join(self.recipe_dir, 'abkhazia2kaldi.log'), verbose)
 
-        # remove other words from the lexicon
-        allowed_words = list(allowed_words)
-        io.copy_first_col_matches(
-            os.path.join(corpus_path, 'data', 'lexicon.txt'),
-            os.path.join(dict_path, 'lexicon.txt'),
-            allowed_words)
-    else:
-        shutil.copy(os.path.join(corpus_path, 'data', 'lexicon.txt'),
-                    os.path.join(dict_path, 'lexicon.txt'))
+        # init the path to kaldi
+        self.kaldi_root = utils.get_config().get('kaldi', 'kaldi-directory')
 
-
-def setup_phone_lexicon(corpus_path, recipe_path, name):
-    dict_path = get_dict_path(recipe_path, name)
-    # get list of phones (including silence and non-silence phones)
-    with codecs.open(os.path.join(dict_path, 'nonsilence_phones.txt'),\
-                     mode='r', encoding="UTF-8") as inp:
-        lines = inp.readlines()
-    phones = [line.strip() for line in lines]
-    with codecs.open(os.path.join(dict_path, 'silence_phones.txt'),\
-                     mode='r', encoding="UTF-8") as inp:
-        lines = inp.readlines()
-    phones = phones + [line.strip() for line in lines]
-    # create 'phone' lexicon
-    with codecs.open(os.path.join(dict_path, 'lexicon.txt'),\
-                     mode='w', encoding="UTF-8") as out:
-        for word in phones:
-            out.write(u'{0} {1}\n'.format(word, word))
-        # add <unk> word, in case one wants to use the phone loop
-        # lexicon for training it also is necessary if one doesn't
-        # want to modify the validating scripts too much
-        out.write(u'<unk> SPN\n')
+        # init the path to abkhazia/share
+        self.share_dir = pkg_resources.resource_filename(
+            pkg_resources.Requirement.parse('abkhazia'), 'abkhazia/share')
 
 
-def setup_phones(corpus_path, recipe_path, name='dict'):
-    dict_path = get_dict_path(recipe_path, name)
-    with codecs.open(os.path.join(corpus_path, 'data', 'phones.txt'),
-                     mode='r', encoding='UTF-8') as inp:
-        lines = inp.readlines()
-    with codecs.open(os.path.join(dict_path, 'nonsilence_phones.txt'),
-                     mode='w', encoding='UTF-8') as out:
-        for line in lines:
-            symbol = line.split(u' ')[0]
-            out.write(u"{0}\n".format(symbol))
+    def _dict_path(self, name='dict'):
+        """Return the directory data/local/`name`, create it if needed"""
+        dict_path = os.path.join(self.recipe_dir, 'data', 'local', name)
+        if not os.path.isdir(dict_path):
+            os.makedirs(dict_path)
+        return dict_path
 
 
-def setup_silences(corpus_path, recipe_path, name='dict'):
-    dict_path = get_dict_path(recipe_path, name)
-    shutil.copy(os.path.join(corpus_path, 'data', 'silences.txt'),
-                os.path.join(dict_path, 'silence_phones.txt'))
-    with codecs.open(os.path.join(dict_path, 'optional_silence.txt'),
-                     mode='w', encoding='UTF-8') as out:
-        out.write(u'SIL\n')
+    def _data_path(self, in_split=None, out_split=None):
+        """Return the input and output data directories
+
+        The returned value is a tuple (input, output) with
+
+        input : path to the input data directory. If `in_split` is
+          None, is self.data_dir. Else self.data_dir/split/`in_split`
+
+        output : path to the output data directory. If `out_split` is
+          None, is self.recipe_dir/data/main. Else
+          self.recipe_dir/data/`in_split`
+
+        """
+        if in_split is None:
+            inp = self.data_dir
+        else:
+            inp = os.path.join(self.data_dir, 'split', in_split)
+        assert os.path.isdir(inp), "Directory doesn't exist: {0}".format(inp)
+
+        if out_split is None:
+            out = os.path.join(self.recipe_dir, 'data', 'main')
+        else:
+            out = os.path.join(self.recipe_dir, 'data', out_split)
+        if not os.path.isdir(out):
+            os.makedirs(out)
+
+        return inp, out
 
 
-def setup_variants(corpus_path, recipe_path, name='dict'):
-    dict_path = get_dict_path(recipe_path, name)
-    shutil.copy(os.path.join(corpus_path, 'data', 'variants.txt'),
-                os.path.join(dict_path, 'extra_questions.txt'))
+    def _copy_template(self, filename, template):
+        """Copy `filename` to self.recipe_dir"""
+        path, name = os.path.split(filename)
+
+        if not os.path.exists(filename):
+            raise IOError(
+                "No {0} in {1}. You need to create one adapted to "
+                "your machine. You can get inspiration from {2}"
+                .format(name, path, template))
+
+        shutil.copy(filename, os.path.join(self.recipe_dir, name))
 
 
-def get_data_path(corpus_path, recipe_path, in_split=None, out_split=None):
-    if in_split is None:
-        inp = os.path.join(corpus_path, 'data')
-    else:
-        inp = os.path.join(corpus_path, 'data', 'split', in_split)
-    assert os.path.isdir(inp), "Directory doesn't exist: {0}".format(inp)
-    if out_split is None:
-        out = os.path.join(recipe_path, 'data', 'main')
-    else:
-        out = os.path.join(recipe_path, 'data', out_split)
-    if not(os.path.isdir(out)):
-        os.makedirs(out)
-    return inp, out
+    def setup_lexicon(self, prune_lexicon=False, train_name=None, name='dict'):
+        """Create data/local/`name`/lexicon.txt"""
+        dict_path = self._dict_path(name)
+        if prune_lexicon:
+            # get words appearing in train part
+            train_text = os.path.join(
+                self.data_dir, 'split', train_name, 'text.txt')
+
+            _, utt_words = io.read_text(train_text)
+            allowed_words = set([word for utt in utt_words for word in utt])
+
+            # add special OOV word <unk>
+            allowed_words.add(u'<unk>')
+
+            # remove other words from the lexicon
+            allowed_words = list(allowed_words)
+            io.copy_first_col_matches(
+                os.path.join(self.data_dir, 'lexicon.txt'),
+                os.path.join(dict_path, 'lexicon.txt'),
+                allowed_words)
+        else:
+            shutil.copy(
+                os.path.join(self.data_dir, 'lexicon.txt'),
+                os.path.join(dict_path, 'lexicon.txt'))
 
 
-def setup_text(corpus_path, recipe_path,
-               in_split=None, out_split=None, desired_utts=None):
-    i_path, o_path = get_data_path(
-        corpus_path, recipe_path, in_split, out_split)
+    def setup_phone_lexicon(self, name='dict'):
+        """Create data/local/`name`/lexicon.txt"""
+        dict_path = self._dict_path(name)
 
-    if desired_utts is None:
-        shutil.copy(os.path.join(i_path, 'text.txt'),
-                    os.path.join(o_path, 'text'))
-    else:
-        io.copy_first_col_matches(
-                os.path.join(i_path, 'text.txt'),
-                os.path.join(o_path, 'text'),
-                desired_utts)
+        # get list of phones (including silence and non-silence phones)
+        phones = []
+        for origin in (
+                os.path.join(dict_path, 'silence_phones.txt'),
+                os.path.join(dict_path, 'nonsilence_phones.txt')):
+            phones += [line.strip()
+                       for line in utils.open_utf8(origin, 'r').xreadlines()]
 
-
-def setup_phone_text(corpus_path, recipe_path, in_split=None, out_split=None, desired_utts=None):
-    i_path, o_path = get_data_path(corpus_path, recipe_path, in_split, out_split)
-    if desired_utts is None:
-        shutil.copy(os.path.join(i_path, 'text.txt'), p.join(o_path, 'text'))
-    else:
-        io.copy_first_col_matches(os.path.join(i_path, 'text.txt'),
-                                    os.path.join(o_path, 'text'),
-                                    desired_utts)
+        # create 'phone' lexicon
+        target = os.path.join(dict_path, 'lexicon.txt')
+        with utils.open_utf8(target, 'w') as out:
+            for word in phones:
+                out.write(u'{0} {0}\n'.format(word))
+            # add <unk> word, in case one wants to use the phone loop
+            # lexicon for training it also is necessary if one doesn't
+            # want to modify the validating scripts too much
+            out.write(u'<unk> SPN\n')
 
 
-def setup_utt2spk(corpus_path, recipe_path, in_split=None, out_split=None, desired_utts=None):
-    i_path, o_path = get_data_path(corpus_path, recipe_path, in_split, out_split)
-    if desired_utts is None:
-        shutil.copy(os.path.join(i_path, 'utt2spk.txt'), os.path.join(o_path, 'utt2spk'))
-    else:
-        io.copy_first_col_matches(os.path.join(i_path, 'utt2spk.txt'),
-                                  os.path.join(o_path, 'utt2spk'),
-                                    desired_utts)
+    def setup_phones(self, name='dict'):
+        """Create data/local/`name`/nonsilence_phones.txt"""
+        origin = os.path.join(self.data_dir, 'phones.txt')
+        target = os.path.join(self._dict_path(name), 'nonsilence_phones.txt')
+
+        with utils.open_utf8(target, 'w') as out:
+            for line in utils.open_utf8(origin, 'r').xreadlines():
+                symbol = line.split(u' ')[0]
+                out.write(u"{0}\n".format(symbol))
 
 
-def setup_segments(corpus_path, recipe_path, in_split=None, out_split=None, desired_utts=None):
-    i_path, o_path = get_data_path(corpus_path, recipe_path, in_split, out_split)
-    with codecs.open(os.path.join(i_path, 'segments.txt'),
-                     mode='r', encoding='UTF-8') as inp:
-        lines = inp.readlines()
-    # write only if starts and stops are specified in segments.txt
-    if len(lines[0].strip().split(u" ")) == 4:
-        if not(desired_utts is None):
+    def setup_silences(self, name='dict'):
+        """Create data/local/`name`/{silences, optional_silence}.txt"""
+        dict_path = self._dict_path(name)
+
+        shutil.copy(os.path.join(self.data_dir, 'silences.txt'),
+                    os.path.join(dict_path, 'silence_phones.txt'))
+
+        target = os.path.join(dict_path, 'optional_silence.txt')
+        with utils.open_utf8(target, 'w') as out:
+            out.write(u'SIL\n')
+
+
+    def setup_variants(self, name='dict'):
+        """Create data/local/`name`/extra_questions.txt"""
+        shutil.copy(
+            os.path.join(self.data_dir, 'variants.txt'),
+            os.path.join(self._dict_path(name), 'extra_questions.txt'))
+
+
+    def setup_text(self, in_split=None, out_split=None, desired_utts=None):
+        """Create text in data directory"""
+        i_path, o_path = self._data_path(in_split, out_split)
+        origin = os.path.join(i_path, 'text.txt')
+        target = os.path.join(o_path, 'text')
+
+        if desired_utts is None:
+            shutil.copy(origin, target)
+        else:
+            io.copy_first_col_matches(origin, target, desired_utts)
+
+
+    def setup_phone_text(self, in_split=None, out_split=None, desired_utts=None):
+        raise NotImplementedError('use setup_text instead !')
+
+
+    def setup_utt2spk(self, in_split=None, out_split=None, desired_utts=None):
+        """Create utt2spk in data directory"""
+        i_path, o_path = self._data_path(in_split, out_split)
+        origin = os.path.join(i_path, 'utt2spk.txt')
+        target = os.path.join(o_path, 'utt2spk')
+
+        if desired_utts is None:
+            shutil.copy(origin, target)
+        else:
+            io.copy_first_col_matches(origin, target, desired_utts)
+
+
+    def setup_segments(self, in_split=None, out_split=None, desired_utts=None):
+        """Create segments in data directory"""
+        i_path, o_path = self._data_path(in_split, out_split)
+        origin = os.path.join(i_path, 'segments.txt')
+        target = os.path.join(o_path, 'segments')
+
+        # write only if starts and stops are specified in segments.txt
+        lines = utils.open_utf8(origin, 'r').readlines()
+        if len(lines[0].strip().split(u" ")) == 4:
+            if desired_utts is not None:
+                # select utterances that are long enough (>= 15 ms)
+                lines = io.match_on_first_col(lines, desired_utts)
+
+            with utils.open_utf8(target, 'w') as out:
+                for line in lines:
+                    elements = line.strip().split(u" ")
+                    utt_id, wav_id = elements[:2]
+                    record_id = os.path.splitext(wav_id)[0]
+                    out.write(u" ".join(
+                        [utt_id, record_id] + elements[2:]) + u"\n")
+
+
+    def setup_wav(self, in_split=None, out_split=None, desired_utts=None):
+        """Create wav.scp in data directory"""
+        i_path, o_path = self._data_path(in_split, out_split)
+        origin = os.path.join(i_path, 'segments.txt')
+        target = os.path.join(o_path, 'wav.scp')
+
+        # get list of wavs from segments.txt
+        lines = utils.open_utf8(origin, 'r').readlines()
+        if desired_utts is not None:
             # select utterances that are long enough (>= 15 ms)
             lines = io.match_on_first_col(lines, desired_utts)
-        with codecs.open(os.path.join(o_path, 'segments'),
-                         mode='w', encoding='UTF-8') as out:
-            for line in lines:
-                elements = line.strip().split(u" ")
-                utt_id, wav_id = elements[:2]
+
+        # write wav.scp
+        wavs = set(line.strip().split(u" ")[1] for line in lines)
+        with utils.open_utf8(target, 'w') as out:
+            for wav_id in wavs:
                 record_id = os.path.splitext(wav_id)[0]
-                out.write(u" ".join([utt_id, record_id] + elements[2:]) + u"\n")
+                path = os.path.join(
+                    os.path.abspath(self.recipe_dir), 'wavs', wav_id)
+                out.write(u"{0} {1}\n".format(record_id, path))
 
 
-def setup_wav(corpus_path, recipe_path,
-              in_split=None, out_split=None, desired_utts=None):
-    i_path, o_path = get_data_path(
-        corpus_path, recipe_path, in_split, out_split)
-
-    # get list of wavs from segments.txt
-    with codecs.open(os.path.join(i_path, 'segments.txt'),
-                     mode='r', encoding='UTF-8') as inp:
-        lines = inp.readlines()
-
-    if desired_utts is not None:
-        # select utterances that are long enough (>= 15 ms)
-        lines = io.match_on_first_col(lines, desired_utts)
-    wavs = set()
-    for line in lines:
-        elements = line.strip().split(u" ")
-        wav_id = elements[1]
-        wavs.add(wav_id)
-    # write wav.scp
-    with codecs.open(os.path.join(o_path, 'wav.scp'),
-                     mode='w', encoding='UTF-8') as out:
-        for wav_id in wavs:
-            record_id = os.path.splitext(wav_id)[0]
-            wav_full_path = os.path.join(os.path.abspath(recipe_path), 'wavs', wav_id)
-            out.write(u"{0} {1}\n".format(record_id, wav_full_path))
+    def setup_wav_folder(self):
+        # using a symbolic link to avoid copying voluminous data
+        origin = os.path.join(self.data_dir, 'wavs')
+        target = os.path.join(self.recipe_dir, 'wavs')
+        if os.path.exists(target):
+            # could log this...
+            os.remove(target)
+        os.symlink(origin, target)
 
 
-def setup_wav_folder(corpus_path, recipe_path):
-    # using a symbolic link to avoid copying
-    # voluminous data
-    link_name = os.path.join(recipe_path, 'wavs')
-    target = os.path.join(corpus_path, 'data', 'wavs')
-    if os.path.exists(link_name):
-        # could log this...
-        os.remove(link_name)
-    os.symlink(target, link_name)
+    def setup_kaldi_folders(self):
+        """Create steps, utils and conf subdirectories in self.recipe_dir"""
+        for target in ('steps', 'utils'):
+            origin = os.path.join(self.kaldi_root, 'egs', 'wsj', 's5', target)
+            target = os.path.join(self.recipe_dir, target)
+            if os.path.exists(target):
+                os.remove(target)
+            os.symlink(origin, target)
+
+        conf_dir = os.path.join(self.recipe_dir, 'conf')
+        if os.path.exists(conf_dir):
+            shutil.rmtree(conf_dir)
+        os.mkdir(conf_dir)
+
+        # create mfcc.conf file (following what seems to be commonly
+        # used in other kaldi recipes)
+        with open(os.path.join(conf_dir, 'mfcc.conf'), mode='w') as out:
+            out.write("--use-energy=false   # only non-default option.\n")
+
+        # create empty pitch.conf file (required when using mfcc +
+        # pitch features)
+        with open(os.path.join(conf_dir, 'pitch.conf'), mode='w') as out:
+            pass
 
 
-def setup_kaldi_folders(kaldi_root, recipe_path):
-    steps_dir = os.path.abspath(os.path.join(kaldi_root, 'egs', 'wsj', 's5', 'steps'))
-    steps_link = os.path.abspath(os.path.join(recipe_path, 'steps'))
-    if os.path.exists(steps_link):
-        os.remove(steps_link)
-    utils_dir = os.path.abspath(os.path.join(kaldi_root, 'egs', 'wsj', 's5', 'utils'))
-    utils_link = os.path.abspath(os.path.join(recipe_path, 'utils'))
-    if os.path.exists(utils_link):
-        os.remove(utils_link)
-    subprocess.call("ln -s {0} {1}".format(steps_dir, steps_link), shell=True)
-    subprocess.call("ln -s {0} {1}".format(utils_dir, utils_link), shell=True)
-    conf_dir = os.path.join(recipe_path, 'conf')
-    if os.path.exists(conf_dir):
-        shutil.rmtree(conf_dir)
-    os.mkdir(conf_dir)
-    # create mfcc.conf file (following what seems to be commonly used in other kaldi recipes)
-    with open(os.path.join(conf_dir, 'mfcc.conf'), mode='w') as out:
-        out.write("--use-energy=false   # only non-default option.\n")
-    # create empty pitch.conf file (required when using mfcc + pitch features)
-    with open(os.path.join(conf_dir, 'pitch.conf'), mode='w') as out:
-        pass
+    # TODO create cmd.sh and path.sh in share during configuration
+    def setup_machine_specific_scripts(self):
+        """Copy cmd.sh and path.sh to self.recipe_dir"""
+        for target in ('cmd', 'path'):
+            script = os.path.join(self.share_dir, target + '.sh')
+            template = os.path.join(
+                self.share_dir, 'kaldi_templates', target + '_template.sh')
+            self._copy_template(script, template)
 
 
-def copy_template(filename, template, recipe_path):
-    d, f = os.path.split(filename)
-    if not(os.path.exists(filename)):
-        raise IOError(
-            (
-            "No {0} in {1} "
-            "You need to create one adapted to "
-            "your machine. You can get inspiration "
-            "from {2}"
-            ).format(f, d, template)
-        )
-    shutil.copy(filename, os.path.join(recipe_path, f))
+    def setup_main_scripts(self, run_script):
+        """Copy score.sh and run.sh to self.recipe_dir"""
+        # score.sh
+        local_dir = os.path.join(self.recipe_dir, 'local')
+        if not os.path.isdir(local_dir):
+            os.mkdir(local_dir)
+
+        score_file = os.path.join(
+            self.share_dir, 'kaldi_templates', 'standard_score.sh')
+        shutil.copy(score_file, os.path.join(local_dir, 'score.sh'))
+
+        # run.sh
+        run_file = os.path.join(self.share_dir, 'kaldi_templates', run_script)
+        shutil.copy(run_file, os.path.join(self.recipe_dir, 'run.sh'))
 
 
-def setup_machine_specific_scripts(recipe_path):
-    kaldi_bin_dir = os.path.dirname(os.path.realpath(__file__))
-    kaldi_dir = os.path.join(kaldi_bin_dir, '..', '..', 'kaldi')
-    cmd_file = os.path.join(kaldi_dir, 'cmd.sh')
-    cmd_template = os.path.join(kaldi_bin_dir, 'kaldi_templates', 'cmd_template.sh')
-    copy_template(cmd_file, cmd_template, recipe_path)
-    path_file = os.path.join(kaldi_dir, 'path.sh')
-    path_template = os.path.join(kaldi_bin_dir, 'kaldi_templates', 'path_template.sh')
-    copy_template(path_file, path_template, recipe_path)
+    def setup_lm_scripts(self):
+        """copy kaldi template 'prepare_lm.sh' in 'self.recipe_dir/local'
 
+        Also copy custom prepare_lang.sh and validate_lang.sh scripts
+        to 'local' folder. These scripts are used for models trained
+        with word_position_dependent phone variants.
 
-def setup_main_scripts(recipe_path, run_script):
-    kaldi_bin_dir = os.path.dirname(os.path.realpath(__file__))
-    # score.sh
-    score_file = os.path.join(kaldi_bin_dir, 'kaldi_templates', 'standard_score.sh')
-    local_dir = os.path.join(recipe_path, 'local')
-    if not os.path.isdir(local_dir):
-        os.mkdir(local_dir)
-    shutil.copy(score_file, os.path.join(local_dir, 'score.sh'))
-    # run.sh
-    run_file = os.path.join(kaldi_bin_dir, 'kaldi_templates', run_script)
-    shutil.copy(run_file, os.path.join(recipe_path, 'run.sh'))
-
-
-def setup_lm_scripts(recipe_path):
-    # copy kaldi template'prepare_lm.sh' in 'recipe_path/local'
-    kaldi_bin_dir = os.path.dirname(os.path.realpath(__file__))
-
-    shutil.copy(
-        os.path.join(kaldi_bin_dir, 'kaldi_templates', 'prepare_lm.sh'),
-        os.path.join(recipe_path, 'local', 'prepare_lm.sh'))
-
-    # copy custom prepare_lang.sh and validate_lang.sh scripts to
-    # 'local' folder. These scripts are used for models trained with
-    # word_position_dependent phone variants
-    shutil.copy(
-        os.path.join(kaldi_bin_dir, 'kaldi_templates', 'prepare_lang_wpdpl.sh'),
-        os.path.join(recipe_path, 'local', 'prepare_lang_wpdpl.sh'))
-
-    shutil.copy(
-        os.path.join(
-            kaldi_bin_dir, 'kaldi_templates', 'validate_lang_wpdpl.pl'),
-        os.path.join(recipe_path, 'local', 'validate_lang_wpdpl.pl'))
+        """
+        for target in ('prepare_lm.sh',
+                       'prepare_lang_wpdpl.sh',
+                       'validate_lang_wpdpl.pl'):
+            shutil.copy(
+                os.path.join(self.share_dir, 'kaldi_templates', target),
+                os.path.join(self.recipe_dir, 'local', target))

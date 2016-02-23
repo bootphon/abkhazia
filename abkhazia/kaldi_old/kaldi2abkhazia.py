@@ -16,11 +16,15 @@
 """Exporting forced alignments from a kaldi recipe to abkhazia alignment format.
 """
 
-from abkhazia.utils import open_utf8
+import codecs
+import os
+
 
 def read_kaldi_phonemap(phones_file, word_position_dependent=True):
+    with codecs.open(phones_file, mode='r', encoding='UTF-8') as inp:
+        lines = inp.readlines()
     phonemap = {}
-    for line in open_utf8(phones_file, 'r').xreadlines():
+    for line in lines:
         phone, code = line.strip().split(u" ")
         # remove word position markers
         if word_position_dependent:
@@ -31,35 +35,33 @@ def read_kaldi_phonemap(phones_file, word_position_dependent=True):
 
 
 def read_kaldi_alignment(phonemap,  tra_file):
-    # tra_file using the format on each line: utt_id [phone_code
-    # n_frames]+ this is a generator (it yields in the loop)
-    for line in open_utf8(tra_file, 'r').xreadlines():
+    # tra_file using the format on each line: utt_id [phone_code n_frames]+
+    # this is a generator (it yields in the loop)
+    with codecs.open(tra_file, mode='r', encoding='UTF-8') as inp:
+        lines = inp.readlines()
+    for line in lines:
         sequence = line.strip().split(u" ; ")
         utt_id, code, nframes = sequence[0].split(u" ")
         sequence = [u" ".join([code, nframes])] + sequence[1:]
-         # this seems good enough, but I (Thomas) didn't check in the
-         # make_mfcc code of kaldi to be sure
-        start = 0.0125
-
-        for elem in sequence:
-            code, nframes = elem.split(u" ")
+        start = 0.0125  # this seems good enough, but I didn't check in the make_mfcc code of kaldi to be sure
+        for e in sequence:
+            code, nframes = e.split(u" ")
             stop = start + 0.01*int(nframes)
             yield utt_id, start, stop, phonemap[code]
             start = stop
 
 
-def export_phone_alignment(phones_file, tra_file, out_file,
-                           word_position_dependent=True):
+def export_phone_alignment(phones_file, tra_file, out_file, word_position_dependent=True):
     # phone file: phones.txt in lang_dir, tra_file: in export
     phonemap = read_kaldi_phonemap(phones_file, word_position_dependent)
-    with open_utf8(out_file, 'w') as out:
+    with codecs.open(out_file, mode='w', encoding='UTF-8') as out:
         for utt_id, start, stop, phone in read_kaldi_alignment(phonemap, tra_file):
             out.write(u"{0} {1} {2} {3}\n".format(utt_id, start, stop, phone))
 
 
-#TODO check alignment: which utt have been transcribed, have silence
-# been inserted, otherwise no difference? (maybe some did not reach
-# final state), chronological order, grouping by utt_id etc.
+# #TODO check alignment: which utt have been transcribed, have silence
+# # been inserted, otherwise no difference? (maybe some did not reach
+# # final state), chronological order, grouping by utt_id etc.
 
 # root = "/Users/Thomas/Documents/PhD/Recherche/test"
 # phones_file = os.path.join(root, 'phones_BUC.txt')
