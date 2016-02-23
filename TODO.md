@@ -24,6 +24,11 @@
 
   - have a Corpus class ?
 
+  - split
+
+    The current immplementation of 'abkahzia split' does't allow to
+    specify speakers by name (but the inner code can do it).
+
 * Documentation
 
   Import wiki in docs/ and update it!

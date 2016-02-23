@@ -427,6 +427,7 @@ class CSJPreparator(AbstractPreparator):
         outputs = [os.path.join(data + '.wav') for data in self.data_files]
         return inputs, outputs
 
+
     def make_segment(self):
         with open_utf8(self.segments_file, 'w') as out:
             for utt_id in self.all_utts:

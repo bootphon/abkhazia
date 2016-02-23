@@ -12,6 +12,7 @@
 #
 # You should have received a copy of the GNU General Public License
 # along with abkahzia. If not, see <http://www.gnu.org/licenses/>.
+"""Implementation of the 'abkhazia align' command"""
 
 class AbkhaziaAlign(object):
     name = 'align'

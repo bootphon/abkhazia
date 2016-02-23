@@ -285,7 +285,7 @@ def setup_lm_scripts(recipe_path):
         os.path.join(recipe_path, 'local', 'prepare_lm.sh'))
 
     # copy custom prepare_lang.sh and validate_lang.sh scripts to
-    # 'local' folder these scripts are used for models trained with
+    # 'local' folder. These scripts are used for models trained with
     # word_position_dependent phone variants
     shutil.copy(
         os.path.join(kaldi_bin_dir, 'kaldi_templates', 'prepare_lang_wpdpl.sh'),
