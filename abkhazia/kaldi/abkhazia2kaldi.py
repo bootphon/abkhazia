@@ -113,7 +113,10 @@ class Abkhazia2Kaldi(object):
 
     def setup_lexicon(self, prune_lexicon=False, train_name=None, name='dict'):
         """Create data/local/`name`/lexicon.txt"""
-        dict_path = self._dict_path(name)
+        origin = os.path.join(self.data_dir, 'lexicon.txt')
+        target = os.path.join(self._dict_path(name), 'lexicon.txt')
+        self.log.debug('creating {}'.format(target))
+
         if prune_lexicon:
             # get words appearing in train part
             train_text = os.path.join(
@@ -127,19 +130,16 @@ class Abkhazia2Kaldi(object):
 
             # remove other words from the lexicon
             allowed_words = list(allowed_words)
-            io.copy_first_col_matches(
-                os.path.join(self.data_dir, 'lexicon.txt'),
-                os.path.join(dict_path, 'lexicon.txt'),
-                allowed_words)
+            io.copy_first_col_matches(origin, target, allowed_words)
         else:
-            shutil.copy(
-                os.path.join(self.data_dir, 'lexicon.txt'),
-                os.path.join(dict_path, 'lexicon.txt'))
+            shutil.copy(origin, target)
 
 
     def setup_phone_lexicon(self, name='dict'):
         """Create data/local/`name`/lexicon.txt"""
         dict_path = self._dict_path(name)
+        target = os.path.join(dict_path, 'lexicon.txt')
+        self.log.debug('creating {}'.format(target))
 
         # get list of phones (including silence and non-silence phones)
         phones = []
@@ -150,7 +150,6 @@ class Abkhazia2Kaldi(object):
                        for line in utils.open_utf8(origin, 'r').xreadlines()]
 
         # create 'phone' lexicon
-        target = os.path.join(dict_path, 'lexicon.txt')
         with utils.open_utf8(target, 'w') as out:
             for word in phones:
                 out.write(u'{0} {0}\n'.format(word))
@@ -164,9 +163,10 @@ class Abkhazia2Kaldi(object):
         """Create data/local/`name`/nonsilence_phones.txt"""
         origin = os.path.join(self.data_dir, 'phones.txt')
         target = os.path.join(self._dict_path(name), 'nonsilence_phones.txt')
+        self.log.debug('creating {}'.format(target))
 
         with utils.open_utf8(target, 'w') as out:
-            for line in utils.open_utf8(origin, 'r').xreadlines():
+            for line in utils.open_utf8(origin, 'r').readlines():
                 symbol = line.split(u' ')[0]
                 out.write(u"{0}\n".format(symbol))
 
@@ -174,6 +174,7 @@ class Abkhazia2Kaldi(object):
     def setup_silences(self, name='dict'):
         """Create data/local/`name`/{silences, optional_silence}.txt"""
         dict_path = self._dict_path(name)
+        self.log.debug('creating silences in {}'.format(dict_path))
 
         shutil.copy(os.path.join(self.data_dir, 'silences.txt'),
                     os.path.join(dict_path, 'silence_phones.txt'))
@@ -185,9 +186,10 @@ class Abkhazia2Kaldi(object):
 
     def setup_variants(self, name='dict'):
         """Create data/local/`name`/extra_questions.txt"""
-        shutil.copy(
-            os.path.join(self.data_dir, 'variants.txt'),
-            os.path.join(self._dict_path(name), 'extra_questions.txt'))
+        target = os.path.join(self._dict_path(name), 'extra_questions.txt')
+        self.log.debug('creating {}'.format(target))
+
+        shutil.copy(os.path.join(self.data_dir, 'variants.txt'), target)
 
 
     def setup_text(self, in_split=None, out_split=None, desired_utts=None):
@@ -195,6 +197,7 @@ class Abkhazia2Kaldi(object):
         i_path, o_path = self._data_path(in_split, out_split)
         origin = os.path.join(i_path, 'text.txt')
         target = os.path.join(o_path, 'text')
+        self.log.debug('creating {}'.format(target))
 
         if desired_utts is None:
             shutil.copy(origin, target)
@@ -202,15 +205,12 @@ class Abkhazia2Kaldi(object):
             io.copy_first_col_matches(origin, target, desired_utts)
 
 
-    def setup_phone_text(self, in_split=None, out_split=None, desired_utts=None):
-        raise NotImplementedError('use setup_text instead !')
-
-
     def setup_utt2spk(self, in_split=None, out_split=None, desired_utts=None):
         """Create utt2spk in data directory"""
         i_path, o_path = self._data_path(in_split, out_split)
         origin = os.path.join(i_path, 'utt2spk.txt')
         target = os.path.join(o_path, 'utt2spk')
+        self.log.debug('creating {}'.format(target))
 
         if desired_utts is None:
             shutil.copy(origin, target)
@@ -223,6 +223,7 @@ class Abkhazia2Kaldi(object):
         i_path, o_path = self._data_path(in_split, out_split)
         origin = os.path.join(i_path, 'segments.txt')
         target = os.path.join(o_path, 'segments')
+        self.log.debug('creating {}'.format(target))
 
         # write only if starts and stops are specified in segments.txt
         lines = utils.open_utf8(origin, 'r').readlines()
@@ -245,6 +246,7 @@ class Abkhazia2Kaldi(object):
         i_path, o_path = self._data_path(in_split, out_split)
         origin = os.path.join(i_path, 'segments.txt')
         target = os.path.join(o_path, 'wav.scp')
+        self.log.debug('creating {}'.format(target))
 
         # get list of wavs from segments.txt
         lines = utils.open_utf8(origin, 'r').readlines()
@@ -266,6 +268,8 @@ class Abkhazia2Kaldi(object):
         # using a symbolic link to avoid copying voluminous data
         origin = os.path.join(self.data_dir, 'wavs')
         target = os.path.join(self.recipe_dir, 'wavs')
+        self.log.debug('creating {}'.format(target))
+
         if os.path.exists(target):
             # could log this...
             os.remove(target)
@@ -277,6 +281,8 @@ class Abkhazia2Kaldi(object):
         for target in ('steps', 'utils'):
             origin = os.path.join(self.kaldi_root, 'egs', 'wsj', 's5', target)
             target = os.path.join(self.recipe_dir, target)
+            self.log.debug('creating {}'.format(target))
+
             if os.path.exists(target):
                 os.remove(target)
             os.symlink(origin, target)

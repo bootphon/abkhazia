@@ -1,9 +1,10 @@
-# This contains the locations of the tools and data required for running
-# the GlobalPhone experiments.
+# This contains the locations of kaldi tools and data required for
+# running the abkhazia recipes
 
 export LC_ALL=C  # For expected sorting and joining behaviour
 
-KALDI_ROOT=/cm/shared/apps/kaldi
+# This value is setup during abkhazia configuration
+KALDI_ROOT=@kaldi-directory@
 
 KALDISRC=$KALDI_ROOT/src
 KALDIBIN=$KALDISRC/bin:$KALDISRC/featbin:$KALDISRC/fgmmbin:$KALDISRC/fstbin

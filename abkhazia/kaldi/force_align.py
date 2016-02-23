@@ -74,6 +74,3 @@ class ForceAlign(abstract_recipe.AbstractRecipe):
         self.a2k.setup_machine_specific_scripts()
         # score.sh, run.sh
         self.a2k.setup_main_scripts('force_align.sh')
-
-    def run(self):
-        pass

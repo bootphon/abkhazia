@@ -20,9 +20,12 @@ import pkg_resources
 import sys
 import textwrap
 
-from abkhazia.commands import (AbkhaziaPrepare, AbkhaziaSplit,
-                               AbkhaziaTrain, AbkhaziaDecode,
-                               AbkhaziaAlign)
+from abkhazia.commands import (
+    AbkhaziaPrepare,
+    AbkhaziaSplit,
+    AbkhaziaTrain,
+    AbkhaziaDecode,
+    AbkhaziaAlign)
 
 
 class Abkhazia(object):

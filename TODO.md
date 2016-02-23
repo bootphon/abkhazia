@@ -24,6 +24,11 @@
 
   - have a Corpus class ?
 
+    homogoneous interface in prepare and recipes, export a corpus to h5
+
+  - have a --force option on all commands to force overwrite of
+    existing dir
+
   - split
 
     The current immplementation of 'abkahzia split' does't allow to

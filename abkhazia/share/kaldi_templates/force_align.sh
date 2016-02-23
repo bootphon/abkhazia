@@ -1,4 +1,4 @@
-#!/usr/bin/env bash -u
+#!/bin/bash -u
 # Copyright 2015, 2016  Thomas Schatz
 #
 # Licensed under the Apache License, Version 2.0 (the "License");

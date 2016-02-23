@@ -6,6 +6,8 @@
 # Ignore files generated during configuration
 /abkhazia/share/abkhazia.cfg
 /abkhazia/share/cmudict.0.7a
+/abkhazia/share/cmd.sh
+/abkhazia/share/path.sh
 
 # ignore builded documentation
 /docs/build/*

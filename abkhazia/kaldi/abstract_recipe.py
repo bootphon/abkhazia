@@ -36,7 +36,7 @@ class AbstractRecipe(object):
         """
         return os.path.join(
             utils.config.get_config().get('abkhazia', 'data-directory'),
-            'kaldi', cls.name)
+            'kaldi', cls.name, 's5')
 
     def __init__(self, corpus_dir, recipe_dir=None, verbose=False):
         # check corpus_dir
@@ -45,11 +45,9 @@ class AbstractRecipe(object):
         self.corpus_dir = corpus_dir
 
         # check recipe_dir
-        recipe_dir = (os.path.join(self.default_output_dir(), self.name, 's5')
+        recipe_dir = (self.default_output_dir()
                       if recipe_dir is None else recipe_dir)
-        if os.path.isdir(recipe_dir):
-            raise IOError("Directory already exists: {0}".format(recipe_dir))
-        else:
+        if not os.path.isdir(recipe_dir):
             os.makedirs(recipe_dir)
         self.recipe_dir = recipe_dir
 
@@ -68,4 +66,4 @@ class AbstractRecipe(object):
 
     def run(self):
         """Run the created recipe by executing 'run.sh'"""
-        subprocess.call(os.path.join(self.recipe_dir, 'run.sh'))
+        subprocess.call('./run.sh', cwd=self.recipe_dir)
