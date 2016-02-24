@@ -96,10 +96,10 @@ shorten_failure="shorten not found on your system, please install it from
 http://etree.org/shnutils/shorten/dist/src/shorten-3.6.1.tar.gz"
 [ ! -z $shorten ] && echo "Found shorten as $shorten" || failure "$shorten_failure"
 
-# check flac is installed
-flac=`which flac`
-flac_failure="flac not found on your system, please install it (see https://xiph.org/flac/)"
-[ ! -z $flac ] && echo "Found flac as $flac" || failure "$flac_failure"
+# # check flac is installed
+# flac=`which flac`
+# flac_failure="flac not found on your system, please install it (see https://xiph.org/flac/)"
+# [ ! -z $flac ] && echo "Found flac as $flac" || failure "$flac_failure"
 
 # configure and copy path.sh
 if [ -e $share/path.sh ]
