@@ -62,6 +62,8 @@ class Validation(object):
         self.log_file = os.path.join(log_dir, "data_validation.log")
         self.log = log2file.get_log(self.log_file, verbose)
 
+        self.log.info('validating abkhazia corpus in {}'.format(corpus_path))
+
         # list of the corpus wavs directory (despite of its name, can
         # contain any files or subdirs)
         self.wavs = utils.list_directory(os.path.join(self.data_dir, 'wavs'))
@@ -356,15 +358,15 @@ class Validation(object):
         nb_oov_types = len(oov_word_types)
 
         self.log.debug(
-            "{} OOV word types in transcriptions out of {} types in total"
+            u"{} OOV word types in transcriptions out of {} types in total"
             .format(nb_oov_types, len(used_word_types)))
 
         self.log.debug(
-            "{} OOV word tokens in transcriptions out of {} tokens in total"
+            u"{} OOV word tokens in transcriptions out of {} tokens in total"
             .format(nb_oov_tokens, len(used_words)))
 
         self.log.debug(
-            "List of OOV word types with occurences counts: {0}"
+            u"List of OOV word types with occurences counts: {0}"
             .format(self._strcounts2unicode(oov_word_counts.most_common())))
 
         # raise alarm if the proportion of oov words is too large
@@ -394,21 +396,21 @@ class Validation(object):
 
         if duplicate_transcripts:
             self.log.warning(
-                "There are homophones in the pronunciation dictionary, "
-                "see log for details:\n{}".format(self.log_file))
+                u"There are homophones in the pronunciation dictionary, "
+                u"see log for details:\n{}".format(self.log_file))
 
             self.log.debug(
-                'There are {} phone sequences that correspond to several '
-                'words in the pronunciation dictionary'
+                u'There are {} phone sequences that correspond to several '
+                u'words in the pronunciation dictionary'
                 .format(len(duplicate_transcripts)))
 
             self.log.debug(
-                'There are {} word types with homophones in the pronunciation '
-                'dictionary'.format(sum(duplicate_transcripts.values())))
+                u'There are {} word types with homophones in the pronunciation '
+                u'dictionary'.format(sum(duplicate_transcripts.values())))
 
             self.log.debug(
-                "List of homophonic phone sequences in 'lexicon.txt' "
-                "with number of corresponding word types: {0}"
+                u"List of homophonic phone sequences in 'lexicon.txt' "
+                u"with number of corresponding word types: {0}"
                 .format(self._strcounts2unicode(
                     duplicate_transcripts.most_common())))
 
@@ -666,4 +668,5 @@ class Validation(object):
     @staticmethod
     def _strcounts2unicode(strcounts):
         """Return a str representing strcounts"""
-        return u", ".join([u"'" + s + u"': " + unicode(c) for s, c in strcounts])
+        return u", ".join(
+            [u"'" + s + u"': " + unicode(c) for s, c in strcounts])

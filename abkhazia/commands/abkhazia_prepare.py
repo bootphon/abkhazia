@@ -256,6 +256,18 @@ class WallStreetJournalFactory(AbstractFactoryWithCMU):
             args.input_dir, args.cmu_dict,
             args.output_dir, args.verbose, args.njobs)
 
+    @classmethod
+    def run(cls):
+        args = cls.parser().parse_args(sys.argv[3:])
+        prep = cls.init_preparator(args)
+
+        if not args.only_validation:
+            prep.prepare()
+
+        if not args.no_validation:
+            validation.Validation(prep.output_dir, args.verbose).validate()
+
+
 class GlobalPhoneFactory(AbstractFactory):
     preparator = AbstractGlobalPhonePreparator
 
@@ -297,10 +309,10 @@ class GlobalPhoneFactory(AbstractFactory):
                 prep.prepare()
 
             if not args.no_validation:
-                output_dir = (prep.default_output_dir()
-                              if args.output_dir is None
-                              else args.output_dir)
-                validation.Validation(output_dir, args.verbose).validate()
+                # output_dir = (prep.output_dir
+                #               if args.output_dir is None
+                #               else args.output_dir)
+                validation.Validation(prep.output_dir, args.verbose).validate()
 
 
 class AbkhaziaPrepare(object):
