@@ -48,7 +48,7 @@ class Validation(object):
     specialized validate_SOMETHING() methods.
 
     '''
-    def __init__(self, corpus_path, verbose=False):
+    def __init__(self, corpus_path, njobs=4, verbose=False):
         # init the corpus data directory
         self.data_dir = os.path.join(corpus_path, 'data')
         if not os.path.isdir(self.data_dir):
@@ -67,6 +67,9 @@ class Validation(object):
         # list of the corpus wavs directory (despite of its name, can
         # contain any files or subdirs)
         self.wavs = utils.list_directory(os.path.join(self.data_dir, 'wavs'))
+
+        # init the number of jobs for parallel computations
+        self.njobs = njobs
 
 
     def validate(self):
@@ -104,7 +107,8 @@ class Validation(object):
 
         # get meta information on the corpus wav files
         meta = utils.wav.scan([
-            os.path.join(self.data_dir, 'wavs', w) for w in self.wavs])
+            os.path.join(self.data_dir, 'wavs', w) for w in self.wavs],
+                              njobs=self.njobs)
         meta = {os.path.basename(k): meta[k] for k in meta.iterkeys()}
 
         empty_files = [w for w in self.wavs if meta[w].nframes == 0]

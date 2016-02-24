@@ -3,13 +3,17 @@
 * Corpora preparation
 
   - WSJ
+
     - entire corpus, -s 1, -s 2, -s 3
       There is several utterance-ids used several times in 'text.txt' 5608
       - [X] no duplicates in trs input files (all have different abspath)
       - [ ] check for duplicates in different subfolders
+
   - Buckeye
+
     - XN fixing new directory structure
     - Some utterances are overlapping in time
+
   - CSJ
 
     Some utterances are overlapping in time, some overlaps are 2, only
@@ -17,22 +21,8 @@
 
 * Misc
 
-  - parallel processing
-    - [ ] have a utils.parallelize module -> qsub or joblib, use kaldi scripts ?
-    - [ ] // csj_preparator
-    - [ ] // wav.convert and wav.scan
-
-  - have a Corpus class ?
-
-    homogoneous interface in prepare and recipes, export a corpus to h5
-
   - have a --force option on all commands to force overwrite of
     existing dir
-
-  - split
-
-    The current immplementation of 'abkahzia split' does't allow to
-    specify speakers by name (but the inner code can do it).
 
 * Documentation
 

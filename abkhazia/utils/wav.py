@@ -17,7 +17,6 @@
 import collections
 import joblib
 import os
-import progressbar
 import shlex
 import subprocess
 import wave
@@ -134,10 +133,26 @@ def convert(inputs, outputs, fileformat, njobs=1, verbose=5):
     joblib.Parallel(n_jobs=njobs, verbose=verbose)(
         joblib.delayed(fnc)(i, o) for i, o in zip(inputs, outputs))
 
-def scan(wavs):
+
+_metawav = collections.namedtuple(
+    '_metawav', 'nbc width rate nframes comptype compname duration')
+
+def _scan_one(wav):
+    """scan a single wav file and return a metawav tuple"""
+    try:
+        param = wave.open(wav, 'r').getparams()
+        return _metawav(
+            param[0], param[1], param[2],
+            param[3], param[4], param[5],
+            param[3]/float(param[2]))  # duration
+    except EOFError:
+        return _metawav(nframes=0)
+
+def scan(wavs, njobs=1, verbose=5):
     """Return meta information on the input `wavs` files
 
     wavs : a list of absolute paths to wav files
+    njobs : the number of parallel scans
 
     The returned dict 'metainfo' have wavs for keys and the following
     named tuple as value:
@@ -152,18 +167,7 @@ def scan(wavs):
     See the documentation of wave.getparams() for details.
 
     """
-    metainfo = {}
-    metawav = collections.namedtuple(
-        'metawav', 'nbc width rate nframes comptype compname duration')
+    res = joblib.Parallel(n_jobs=njobs, verbose=verbose)(
+        joblib.delayed(_scan_one)(wav) for wav in wavs)
 
-    # TODO parallelize this
-    for wav in progressbar.ProgressBar()(wavs):
-        try:
-            param = wave.open(wav, 'r').getparams()
-            metainfo[wav] = metawav(
-                param[0], param[1], param[2],
-                param[3], param[4], param[5],
-                param[3]/float(param[2]))  # duration
-        except EOFError:
-            metainfo[wav].nframes = 0
-    return metainfo
+    return dict(zip(wavs, res))
