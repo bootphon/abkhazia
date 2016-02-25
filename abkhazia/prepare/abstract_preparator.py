@@ -15,11 +15,13 @@
 
 """Provides a base class for corpus preparation in the abkhazia format"""
 
+import ConfigParser
 import os
 import pkg_resources
 import shutil
 
 from abkhazia import utils
+
 
 class AbstractPreparator(object):
     """This class is a common wrapper to all the corpus preparators
@@ -68,14 +70,24 @@ class AbstractPreparator(object):
     def default_output_dir(cls):
         """Return the default output directory for corpus preparation
 
-        This dircetory is 'data-directory'/corpora/'name', where
+        This directory is 'data-directory'/'name', where
         'data-directory' is read from the abkhazia configuration file
         and 'name' is self.name
 
         """
         return os.path.join(
             utils.config.get_config().get('abkhazia', 'data-directory'),
-            'corpora', cls.name)
+            cls.name)
+
+    @classmethod
+    def default_input_dir(cls):
+        """Return the input directory specified the conf file, or None"""
+        try:
+            name = cls.name.split('-')[0] + '-directory'
+            res = utils.config.get_config().get('corpus', name)
+            return None if res == '' else res
+        except ConfigParser.NoOptionError:
+            return None
 
     def __init__(self, input_dir, output_dir=None, verbose=False, njobs=1):
         # init njobs for parallelized preparation steps
@@ -110,7 +122,7 @@ class AbstractPreparator(object):
         self.wavs_dir = os.path.join(self.data_dir, 'wavs')
 
         # init output files that will be populated by prepare()
-        fname = lambda name: os.path.join(self.data_dir, name + '.txt')
+        def fname(name): return os.path.join(self.data_dir, name + '.txt')
         self.segments_file = fname('segments')
         self.speaker_file = fname('utt2spk')
         self.transcription_file = fname('text')
@@ -191,7 +203,6 @@ class AbstractPreparator(object):
         # return the updated inputs and outputs
         return target.values(), target.keys()
 
-
     def make_wavs(self):
         """Convert to wav and copy the corpus audio files
 
@@ -225,9 +236,10 @@ class AbstractPreparator(object):
             # the job is done if all the files are already here, else
             # we continue the preparation
             if len(inputs) == 0:
-                self.log.debug('all wav files already present in the directory')
+                self.log.debug(
+                    'all wav files already present in the directory')
                 return
-        else: # self.wavs_dir does not exist
+        else:  # self.wavs_dir does not exist
             os.makedirs(self.wavs_dir)
 
         # append path to the directory in outputs
@@ -248,7 +260,6 @@ class AbstractPreparator(object):
                           .format(len(inputs), self.audio_format))
             utils.wav.convert(inputs, outputs, self.audio_format, self.njobs)
             self.log.debug('finished converting wavs')
-
 
     def make_phones(self):
         """Create phones, silences and variants list files
@@ -287,7 +298,6 @@ class AbstractPreparator(object):
                 for var in self.variants:
                     out.write(u" ".join(var) + u"\n")
             self.log.debug('writed {}'.format(self.variants_file))
-
 
     ############################################
     #

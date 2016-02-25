@@ -1,4 +1,6 @@
 #!/usr/bin/env python
+# PYTHON_ARGCOMPLETE_OK
+#
 # Copyright 2016 Thomas Schatz, Xuan Nga Cao, Mathieu Bernard
 #
 # This file is part of abkhazia: you can redistribute it and/or modify
@@ -15,7 +17,7 @@
 # along with abkahzia. If not, see <http://www.gnu.org/licenses/>.
 """The abkhazia entry point from command line"""
 
-import argparse
+import argcomplete, argparse
 import pkg_resources
 import sys
 import textwrap
@@ -57,8 +59,11 @@ class Abkhazia(object):
             description=textwrap.dedent(self.description),
             usage='abkhazia <command> [--help] [<args>]')
 
-        parser.add_argument('command', help='Subcommand to run')
+        parser.add_argument('command', help='Subcommand to run',
+                            metavar='command',
+                            choices=[n for n, _ in self.commands])
 
+        argcomplete.autocomplete(parser)
         try:
             # parse only the first argument, must be a valid command
             command_name = parser.parse_args([sys.argv[1]]).command

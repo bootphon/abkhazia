@@ -26,8 +26,21 @@ from abkhazia.prepare import AbstractPreparatorWithCMU
 class WallStreetJournalPreparator(AbstractPreparatorWithCMU):
     """Convert the WSJ corpus to the abkhazia format"""
 
-    name = 'WallStreetJournal'
+    name = 'wsj'
     description = 'Wall Street Journal ASR Corpus'
+
+    long_description = '''
+    The first two CSR Corpora consist primarily of read speech with
+    texts drawn from a machine-readable corpus of Wall Street Journal
+    news text and are thus often known as WSJ0 and WSJ1.
+
+    The texts to be read were selected to fall within either a
+    5,000-word or a 20,000-word subset of the WSJ text corpus. (See
+    the documentation for details). Some spontaneous dictation is
+    included in addition to the read speech. The dictation portion was
+    collected using journalists who dictated hypothetical news
+    articles.'''
+
     url = ['WSJ0 - https://catalog.ldc.upenn.edu/LDC93S6A',
            'WSJ1 - https://catalog.ldc.upenn.edu/LDC94S13A']
     audio_format = 'sph'

@@ -23,21 +23,40 @@ from abkhazia.prepare import AbstractPreparator
 
 
 class AbstractGlobalPhonePreparator(AbstractPreparator):
-    """Convert the GlobalPhone corpus to the abkhazia format
+    """Convert the GlobalPhone corpus to the abkhazia format"""
 
-    For a new language xxx, you will need to write your own
-    'specifics_xxx.py' and 'phoneset_xxx.py' modules in
-    abkhazia.corpora.globalphones and add the language to the
-    'supported_languages' list below
-
-    """
-    name = 'GlobalPhone'
+    name = 'globalphone'
     description = 'GlobalPhone multilingual read speech corpus'
+
+    long_description = '''
+
+    The GlobalPhone corpus developed in collaboration with the
+    Karlsruhe Institute of Technology (KIT) was designed to provide
+    read speech data for the development and evaluation of large
+    continuous speech recognition systems in the most widespread
+    languages of the world, and to provide a uniform, multilingual
+    speech and text database for language independent and language
+    adaptive speech recognition as well as for language identification
+    tasks.
+
+    In each language about 100 sentences were read from each of the
+    100 speakers. The read texts were selected from national
+    newspapers available via Internet to provide a large
+    vocabulary. The read articles cover national and international
+    political news as well as economic news. The speech is available
+    in 16bit, 16kHz mono quality, recorded with a close-speaking
+    microphone (Sennheiser 440-6). The transcriptions are internally
+    validated and supplemented by special markers for spontaneous
+    effects like stuttering, false starts, and non-verbal effects like
+    laughing and hesitations. Speaker information like age, gender,
+    occupation, etc. as well as information about the recording setup
+    complement the database.'''
+
     url = [
         'Mandarin - '
-        'http://catalog.elra.info/product_info.php?products_id=817',
+        'http://catalog.elra.info/product_info.php?products_id=817&language=en',
         'Vietnamese - '
-        'http://catalog.elra.info/product_info.php?products_id=1144']
+        'http://catalog.elra.info/product_info.php?products_id=1144&language=en']
 
     audio_format = 'shn'
 

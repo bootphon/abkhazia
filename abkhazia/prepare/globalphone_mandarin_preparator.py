@@ -140,7 +140,7 @@ from abkhazia.prepare.globalphone_abstract_preparator import (
 
 class MandarinPreparator(AbstractGlobalPhonePreparator):
     """Mandarin specific preprocessing for the GlobalPhone corpus"""
-    language = 'Mandarin'
+    language = 'mandarin'
 
     name = '-'.join([AbstractGlobalPhonePreparator.name, language])
 
