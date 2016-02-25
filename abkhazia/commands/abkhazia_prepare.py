@@ -64,33 +64,49 @@ class AbstractFactory(object):
 
     @classmethod
     def long_description(cls):
+        """Return a multiline description of the corpus being prepared"""
         return (
-            'abkhazia corpus preparation for the ' + cls.preparator.description
-            + '\n\ncorpus description:\n'
-            + '  ' + cls.format_url(cls.preparator.url, '\n  ')
-            + '\n\n'
-            + cls.preparator.long_description.replace('    ', '  '))
+            'abkhazia corpus preparation for the ' +
+            cls.preparator.description +
+            '\n\ncorpus description:\n' +
+            '  ' + cls.format_url(cls.preparator.url, '\n  ') +
+            '\n\n' +
+            cls.preparator.long_description.replace('    ', '  '))
 
     @classmethod
     def parser(cls):
         """Return a default argument parser for corpus preparation"""
-        prog = 'abkhazia prepare {}'.format(cls.preparator.name.lower())
+        default_input_dir = cls.preparator.default_input_dir()
+
+        prog = 'abkhazia prepare {}'.format(cls.preparator.name)
 
         parser = argparse.ArgumentParser(
             formatter_class=argparse.RawDescriptionHelpFormatter,
             prog=prog,
-            usage=('%(prog)s <input-dir> [--output-dir OUTPUT_DIR]\n'
-                   + ' '*(len(prog)+8)
-                   + ('\n' + ' '*(len(prog)+8)).join([
+            usage=('%(prog)s <input-dir> [--output-dir OUTPUT_DIR]\n' +
+                   ' '*(len(prog)+8) +
+                   ('\n' + ' '*(len(prog)+8)).join([
                        '[--help] [--verbose] [--njobs NJOBS]',
                        '[--no-validation|--only-validation]'])),
             description=textwrap.dedent(cls.long_description()))
 
         group = parser.add_argument_group('directories')
 
-        group.add_argument(
-            'input_dir', metavar='input-dir',
-            help='root directory of the raw corpus distribution')
+        if default_input_dir is not None:
+            parser.usage = parser.usage.replace(
+                '<input-dir>',
+                '[--input-dir INPUT_DIR]')
+
+            group.add_argument(
+                '-i', '--input_dir', metavar='INPUT_DIR',
+                default=default_input_dir,
+                help='root directory of the raw corpus distribution, '
+                '(default readed from configuration file is %(default)s)')
+
+        else:
+            group.add_argument(
+                'input_dir', metavar='input-dir',
+                help='root directory of the raw corpus distribution')
 
         group.add_argument(
             '-o', '--output-dir',
@@ -160,8 +176,8 @@ class AbstractFactoryWithCMU(AbstractFactory):
     @classmethod
     def parser(cls):
         parser = super(AbstractFactoryWithCMU, cls).parser()
-        parser.usage += ('\n' + ' '*(len(parser.prog)+8)
-                         + '[--cmu-dict CMU_DICT]')
+        parser.usage += ('\n' + ' '*(len(parser.prog)+8) +
+                         '[--cmu-dict CMU_DICT]')
 
         parser.add_argument(
             '--cmu-dict', default=None,
@@ -180,14 +196,18 @@ class AbstractFactoryWithCMU(AbstractFactory):
 class BuckeyeFactory(AbstractFactory):
     preparator = BuckeyePreparator
 
+
 class XitsongaFactory(AbstractFactory):
     preparator = XitsongaPreparator
+
 
 class CSJFactory(AbstractFactory):
     preparator = CSJPreparator
 
+
 class AICFactory(AbstractFactoryWithCMU):
     preparator = AICPreparator
+
 
 class LibriSpeechFactory(AbstractFactoryWithCMU):
     preparator = LibriSpeechPreparator
@@ -206,9 +226,9 @@ class LibriSpeechFactory(AbstractFactoryWithCMU):
              for i in range(len(cls.selection))])
 
         parser = super(LibriSpeechFactory, cls).parser()
-        parser.usage += (' [--librispeech-dict LIBRISPEECH_DICT]\n'
-                         + ' '*(len(parser.prog)+8)
-                         + '[--selection SELECTION]')
+        parser.usage += (' [--librispeech-dict LIBRISPEECH_DICT]\n' +
+                         ' '*(len(parser.prog)+8) +
+                         '[--selection SELECTION]')
 
         parser.add_argument(
             '-s', '--selection', default=None,
@@ -234,6 +254,7 @@ class LibriSpeechFactory(AbstractFactoryWithCMU):
             args.input_dir, selection,
             args.cmu_dict, args.librispeech_dict,
             args.output_dir, args.verbose, args.njobs)
+
 
 class WallStreetJournalFactory(AbstractFactoryWithCMU):
     """Instanciate and run one of the WSJ preparators from input arguments"""
@@ -287,7 +308,8 @@ class WallStreetJournalFactory(AbstractFactoryWithCMU):
             prep.prepare()
 
         if not args.no_validation:
-            validation.Validation(prep.output_dir, args.njobs, args.verbose).validate()
+            validation.Validation(
+                prep.output_dir, args.njobs, args.verbose).validate()
 
 
 class GlobalPhoneFactory(AbstractFactory):
@@ -312,8 +334,8 @@ class GlobalPhoneFactory(AbstractFactory):
             choices=cls.preparators.keys(),
             help='specify the languages to prepare in {}, '
             'if this option is not specified prepare all the '
-            'supported languages. '.format(cls.preparators.keys())
-            + 'Actually only Vietnamese and Mandarin are supported '
+            'supported languages. '.format(cls.preparators.keys()) +
+            'Actually only Vietnamese and Mandarin are supported '
             'by abkhazia.')
 
         return parser
@@ -360,22 +382,14 @@ class AbkhaziaPrepare(object):
             value.preparator.description)
                 for key, value in sorted(self.supported_corpora.iteritems())]
 
-        # return ['{} - {}{}'.format(
-        #     # librispeech is the longest corpus name so the desired
-        #     # key length is len('librispeech ') == 12
-        #     key + ' '*(12 - len(key)),
-        #     value.preparator.description,
-        #     self.format_url(value.preparator.url, '\n\t\t   '))
-        #         for key, value in sorted(self.supported_corpora.iteritems())]
-
     def corpus_parser(self):
         """Return a parser dedicated to the corpus parameter"""
         long_description = (
-            self.description + '\n'
-            + "type 'abkhazia prepare <corpus> --help' for help "
-            + 'on a specific corpus\n\n'
-            + 'supported <corpus> are:\n    '
-            + '\n    '.join(self.describe_corpora()))
+            self.description + '\n' +
+            "type 'abkhazia prepare <corpus> --help' for help " +
+            'on a specific corpus\n\n' +
+            'supported <corpus> are:\n    ' +
+            '\n    '.join(self.describe_corpora()))
 
         parser = argparse.ArgumentParser(
             formatter_class=argparse.RawDescriptionHelpFormatter,

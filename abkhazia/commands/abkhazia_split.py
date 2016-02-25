@@ -19,6 +19,7 @@ import sys
 
 import abkhazia.utils.split as split
 
+
 class AbkhaziaSplit(object):
     '''This class implemnts the 'abkahzia split' command
 
@@ -51,8 +52,8 @@ class AbkhaziaSplit(object):
         """Return a parser for the split command"""
         parser = argparse.ArgumentParser(
             prog='abkhazia split',
-            usage='%(prog)s <input-dir> [--output-dir OUTPUT_DIR]\n'
-            + ' '*23 + ('\n' + ' '*23).join([
+            usage='%(prog)s <input-dir> [--output-dir OUTPUT_DIR]\n' +
+            ' '*23 + ('\n' + ' '*23).join([
                 '[--help] [--verbose] [--by-speakers] [--random-seed SEED]',
                 '[--test-prop TEST|--train-prop TRAIN']),
             description=cls.description)

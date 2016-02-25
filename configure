@@ -52,6 +52,19 @@ data-directory: $setupdir/data
 # YOU MUST SPECIFY THIS PATH MANUALLY. For exemple:
 # kaldi-directory: /home/me/kaldi-trunk
 kaldi-directory:
+
+[corpus]
+# In this section you can specify the default input directory where to
+# read raw data for each supported corpus. By doing so, the
+# <input-dir> argument of 'abkhazia prepare <corpus>' becomes optional
+# for the corpus you have specified directories here.
+aic-directory:
+buckeye-directory:
+csj-directory:
+globalphone-directory:
+librispeech-directory:
+wsj-directory:
+xitsonga-directory:
 EOF
     failure "Please specify the path to the kaldi root directory in $conf"
 else
