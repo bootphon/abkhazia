@@ -34,23 +34,14 @@ class AbstractGlobalPhonePreparator(AbstractPreparator):
     Karlsruhe Institute of Technology (KIT) was designed to provide
     read speech data for the development and evaluation of large
     continuous speech recognition systems in the most widespread
-    languages of the world, and to provide a uniform, multilingual
-    speech and text database for language independent and language
-    adaptive speech recognition as well as for language identification
-    tasks.
+    languages of the world.
 
     In each language about 100 sentences were read from each of the
-    100 speakers. The read texts were selected from national
-    newspapers available via Internet to provide a large
-    vocabulary. The read articles cover national and international
+    100 speakers. The read articles cover national and international
     political news as well as economic news. The speech is available
-    in 16bit, 16kHz mono quality, recorded with a close-speaking
-    microphone (Sennheiser 440-6). The transcriptions are internally
-    validated and supplemented by special markers for spontaneous
-    effects like stuttering, false starts, and non-verbal effects like
-    laughing and hesitations. Speaker information like age, gender,
-    occupation, etc. as well as information about the recording setup
-    complement the database.'''
+    in 16bit, 16kHz mono quality. Speaker information like age,
+    gender, occupation, etc. as well as information about the
+    recording setup complement the database.'''
 
     url = [
         'Mandarin - '
@@ -122,7 +113,7 @@ class AbstractGlobalPhonePreparator(AbstractPreparator):
     def list_audio_files(self):
         # for some languages, there are corrupted wavefiles that we
         # need to exclude from preparation
-        self.log.info('{} audio files excluded'.format(len(self.exclude_wavs)))
+        self.log.debug('{} audio files excluded'.format(len(self.exclude_wavs)))
 
         # src_dir is the 'adc' directory from the GlobalPhone
         # distribution of the language considered

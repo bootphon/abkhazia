@@ -37,20 +37,11 @@ class AICPreparator(AbstractPreparatorWithCMU):
     description = 'Articulation Index Corpus LSCP'
 
     long_description='''
-    Articulation Index LSCP was developed by researchers at
-    Laboratoire de Sciences Cognitives et Psycholinguistique (LSCP),
-    Ecole Normale Supérieure. It revises and enhances a subset of
-    Articulation Index (AIC) (LDC2005S22), a corpus of persons
-    speaking English syllables. Changes include the addition of forced
-    alignment to sound files, time alignment of syllable utterances
-    and format conversions.
-
-    AIC consists of 20 American English speakers (12 males, 8 females)
-    pronouncing syllables, some of which form actual words, but most
-    of which are nonsense syllables. All possible Consonant-Vowel (CV)
-    and Vowel-Consonant (VC) combinations were recorded for each
-    speaker twice, once in isolation and once within a
-    carrier-sentence, for a total of 25768 recorded syllables.'''
+    Articulation Index LSCP consists of 20 American English speakers
+    (12 males, 8 females) pronouncing syllables. All possible
+    Consonant-Vowel (CV) and Vowel-Consonant (VC) combinations were
+    recorded for each speaker twice, once in isolation and once within
+    a carrier-sentence, for a total of 25768 recorded syllables.'''
 
     url = 'https://catalog.ldc.upenn.edu/LDC2015S12'
 

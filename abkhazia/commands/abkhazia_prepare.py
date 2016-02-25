@@ -58,9 +58,9 @@ class AbstractFactory(object):
     def format_url(url, sep='\n'):
         """Return a string from the string (or list of strings) 'url'"""
         if isinstance(url, str):
-            return sep + url
+            return url
         else:
-            return sep + sep.join(url)
+            return sep.join(url)
 
     @classmethod
     def long_description(cls):
