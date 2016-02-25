@@ -22,7 +22,7 @@ import shlex
 import subprocess
 import wave
 
-from abkhazia.utils.config import get_config
+from abkhazia.utils.config import config
 
 def flac2wav(flac, wav):
     audiotools.open(flac).convert(wav, audiotools.WaveAudio)
@@ -59,7 +59,7 @@ def sph2wav(sph, wav):
     at it in the abkahzia configuration file.
 
     """
-    sph2pipe = os.path.join(get_config().get('kaldi', 'kaldi-directory'),
+    sph2pipe = os.path.join(config.get('kaldi', 'kaldi-directory'),
                             'tools/sph2pipe_v2.5/sph2pipe')
     if not os.path.isfile(sph2pipe):
         raise OSError('sph2pipe not found on your system')

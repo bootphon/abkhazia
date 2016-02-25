@@ -17,5 +17,5 @@
 
 from .utils import *
 from .log2file import get_log
-from .config import get_config
+from .config import config
 from .wav import convert, scan

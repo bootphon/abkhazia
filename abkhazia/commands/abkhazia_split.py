@@ -88,12 +88,13 @@ class AbkhaziaSplit(object):
 
         prop = group.add_mutually_exclusive_group()
         prop.add_argument(
-            '-t', '--test-prop', default=None, type=float, metavar='TEST',
+            '-t', '--test-prop', type=float, metavar='TEST',
+            default=split.SplitCorpus.default_test_prop(),
             help='''a float between 0.0 and 1.0, represent the proportion of the
             dataset to include in the test set. If not specfied, the
             value is automatically set to the complement of the train
             size. If train size is not specified, test size is set to
-            0.5.''')
+            %(default)s.''')
 
         prop.add_argument(
             '-T', '--train-prop', default=None, type=float, metavar='TRAIN',

@@ -14,6 +14,7 @@
 # along with abkahzia. If not, see <http://www.gnu.org/licenses/>.
 """Provides a class to split an abkahzia corpus in train and test subsets"""
 
+import ConfigParser
 import os
 import random
 import shutil
@@ -27,9 +28,10 @@ class SplitCorpus(object):
     corpus_dir : The root directory of the abkhazia corpus to
       split. This directory must contain a validated abkahzia corpus.
 
-    output_dir : The output directory where to write the splits. Two
-      subdirectories are created (test and train) as well as a log
-      file. This output directory must not be an existing one.
+    output_dir : The output directory where to write the splits. The
+      directory 'output_dir'/split is created, with two subdirs (test
+      and train). The log file goes in
+      'output_dir'/logs/split_corpus.log. By default use 'corpus_dir'
 
     random_seed : Seed for pseudo-random numbers generation
       (default is None and current system time is used)
@@ -38,8 +40,17 @@ class SplitCorpus(object):
       module. See there for more documentation.
 
     """
-    default_test_prop = 0.5
-    """The default proportion for the test set"""
+    @staticmethod
+    def default_test_prop():
+        """Return the default proportion for the test set
+
+        Try to read from configuration file, else return 0.5"""
+        try:
+            return float(utils.config.get(
+                'split', 'default-test-proportion'))
+        except ConfigParser.NoOptionError:
+            return 0.5
+
 
     def __init__(self, corpus_dir,
                  output_dir=None, random_seed=None, verbose=False):
@@ -57,11 +68,16 @@ class SplitCorpus(object):
 
         # init the output directory
         if output_dir is None:
-            output_dir = os.path.join(corpus_dir, 'split')
+            output_dir = corpus_dir
+        split_dir = os.path.join(output_dir, 'split')
+        if os.path.exists(split_dir):
+            raise OSError(
+                'output split directory alreary existing: {}\n'
+                'use the --force option to overwrite it'.format(split_dir))
 
         # init output_dir/{test, train}
-        self.test_dir = os.path.join(output_dir, 'test')
-        self.train_dir = os.path.join(output_dir, 'train')
+        self.test_dir = os.path.join(output_dir, 'split', 'test')
+        self.train_dir = os.path.join(output_dir, 'split', 'train')
         for path in (self.test_dir, self.train_dir):
             if not os.path.exists(path):
                 os.makedirs(path)
@@ -93,8 +109,8 @@ class SplitCorpus(object):
 
         """
         self.log.info('splitting proportions are {} for train and {} for test'
-                       .format(round(float(len(train_utt_ids))/self.size, 3),
-                               round(float(len(test_utt_ids))/self.size, 3)))
+                      .format(round(float(len(train_utt_ids))/self.size, 3),
+                              round(float(len(test_utt_ids))/self.size, 3)))
 
         self.log.info('writing to {}'.format(
             os.path.abspath(os.path.join(self.test_dir, '..'))))
