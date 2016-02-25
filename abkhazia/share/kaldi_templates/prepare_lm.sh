@@ -24,29 +24,36 @@
 
 
 ###### Parameters ######
+
 # Name of the LM, must correspond to an existing folder in data/
 # (typically created by the python script generating the recipe)
 name=$1
-# Should be set to true or false depending on whether the
-# language model produced is destined to be used with an
-# acoustic model trained with or without word position
-# dependent variants of the phones
-# I only test when it is true
+
+# Should be set to true or false depending on whether the language
+# model produced is destined to be used with an acoustic model trained
+# with or without word position dependent variants of the phones.
+# Only tested when it is true
 word_position_dependent=true
-# n in n-gram, only used if a LM is to be estimated from some text (see below)
-# I only tested with n=2
+
+# n in n-gram, only used if a LM is to be estimated from some text
+# (see below). Only tested with n=2
 model_order=2
 
 
 ###### Recipe ######
+
 # directory containing all the info about the desired lm
 in_dir=data/local/$name
+
 # output directory
 out_dir=data/$name
+
 # tmp directory
 tmp_dir=data/local/"$name"_tmp
+
 # log file
 log=data/prepare_"$name".log
+
 
 [ -f cmd.sh ] && source ./cmd.sh \
   || echo "cmd.sh not found. Jobs may not execute properly."
@@ -55,8 +62,8 @@ log=data/prepare_"$name".log
 
 # First need to do a prepare_lang in the desired folder to get to use
 # the right "phone" or "word" lexicon irrespective of what was used as
-# a lexicon in training.  If word_position_dependent is true and the
-# lm is at the phone leve use prepare_lang_wpdpl.sh in the local
+# a lexicon in training. If word_position_dependent is true and the
+# lm is at the phone level, use prepare_lang_wpdpl.sh in the local
 # folder, otherwise we fall back to the original utils/prepare_lang.sh
 # (some slight customizations of the script are necessary to decode
 # with a phone loop language model when word position dependent phone
@@ -91,8 +98,8 @@ $prepare_lang_exe --position-dependent-phones $word_position_dependent \
 
 if [ -f "$in_dir"/G.txt ]
 then
-    # 1 -
-    # compile the text format FST to binary format used by kaldi in utils/mkgraph.sh
+    # 1 - compile the text format FST to binary format used by kaldi
+    # in utils/mkgraph.sh
     fstcompile --isymbols=$out_dir/words.txt \
                --osymbols=$out_dir/words.txt \
                --keep_isymbols=false \
@@ -124,9 +131,8 @@ then
     rm -Rf $out_dir  # erases the previous content that is redundant anyway
     mv $tmp_out_dir $out_dir
 else
-    # 3 - generate ARPA/MIT n-gram with IRSTLM, then as in 2.
-    # train (use IRSTLM) need to remove utt-id on first column of
-    # text file
+    # 3 - generate ARPA/MIT n-gram with IRSTLM, then as in 2. train
+    # (use IRSTLM) need to remove utt-id on first column of text file
     set -eu  # stop on error
     cut -d' ' -f2- < "$in_dir"/lm_text.txt > "$in_dir"/text_ready.txt
     add-start-end.sh < "$in_dir"/text_ready.txt > "$in_dir"/text_se.txt

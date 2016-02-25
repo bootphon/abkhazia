@@ -21,6 +21,8 @@
 
 * Misc
 
+  - change structure of data dir to have data/corpus/{data, force-align, split,...}
+
   - have a --force option on all commands to force overwrite of
     existing dir
 
