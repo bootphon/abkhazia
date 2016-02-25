@@ -68,7 +68,6 @@ Word = namedtuple('Word', 'phonemes start end')
 Utt = namedtuple('Utt', 'words start end channel')
 
 
-
 # TODO group allophonic variants according to phonetics, is there really
 # non-allophonic ones? Not if we consider 'y' as a phone
 #
@@ -76,12 +75,22 @@ Utt = namedtuple('Utt', 'words start end channel')
 # other q's -> glottal stops ?
 # NH -> N
 # other H -> long vowels
-
-
 class CSJPreparator(AbstractPreparator):
     """convert the CSJ corpus to the abkhazia format"""
-    name = 'CSJ'
+    name = 'csj'
     description = 'Corpus of Spontaneous Japanese'
+
+    long_description = '''
+    The Corpus of Spontaneous Japanese (CSJ) is a database of spoken
+    Japanese. It contains 658 hours of speech consisting of
+    approximately 7.5 million words. The speech materials were
+    provided by more than 1,400 speakers of ages ranging from twenties
+    to eighties.
+
+    The CSJ has been publicly available since the spring of 2004. For
+    more information, please visit the English web page of the
+    Institute at: /corpus_center/csj/misc/preliminary/index_e.html'''
+
     url = 'http://www.ninjal.ac.jp/english/products/csj'
     audio_format = 'wav'
 
@@ -184,7 +193,6 @@ class CSJPreparator(AbstractPreparator):
         # TODO was present in Thomas's script but not used
         # all_phones = set([phone for transcript in self.lexicon.values()
         #                   for phone in transcript])
-
 
     def parse_core_xml(self, xml_file):
         """Parse raw transcript"""

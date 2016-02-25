@@ -42,8 +42,13 @@ from abkhazia.prepare import AbstractPreparator
 class XitsongaPreparator(AbstractPreparator):
     """Convert the Xitsonga corpus to the abkhazia format"""
 
-    name = 'NCHLT_Xitsonga'
+    name = 'xitsonga'
     description = 'NCHLT Xitsonga Speech Corpus'
+
+    long_description = '''
+    Orthographically transcribed broadband speech corpus of
+    approximately 56 hours, including a test suite of 8 speakers.'''
+
     url = 'http://rma.nwu.ac.za/index.php/nchlt-speech-corpus-ts.html'
     audio_format = 'wav'
 

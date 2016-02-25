@@ -32,8 +32,16 @@ from abkhazia.prepare import AbstractPreparatorWithCMU
 
 class LibriSpeechPreparator(AbstractPreparatorWithCMU):
     """Convert the LibriSpeech corpus to the abkhazia format"""
-    name = 'LibriSpeech'
+    name = 'librispeech'
     description = 'LibriSpeech ASR Corpus'
+
+    long_description = '''
+    LibriSpeech is a corpus of approximately 1000 hours of 16kHz read
+    English speech, prepared by Vassil Panayotov with the assistance
+    of Daniel Povey. The data is derived from read audiobooks from the
+    LibriVox project, and has been carefully segmented and
+    aligned.'''
+
     url = ['corpus - http://www.openslr.org/12',
            'dictionary - http://www.openslr.org/11']
     audio_format = 'flac'

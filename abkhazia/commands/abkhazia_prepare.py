@@ -54,19 +54,37 @@ class AbstractFactory(object):
     preparator = NotImplemented
     """The corpus preparator attached to the factory"""
 
+    @staticmethod
+    def format_url(url, sep='\n'):
+        """Return a string from the string (or list of strings) 'url'"""
+        if isinstance(url, str):
+            return sep + url
+        else:
+            return sep + sep.join(url)
+
+    @classmethod
+    def long_description(cls):
+        return (
+            'abkhazia corpus preparation for the ' + cls.preparator.description
+            + '\n\ncorpus description:\n'
+            + '  ' + cls.format_url(cls.preparator.url, '\n  ')
+            + '\n\n'
+            + cls.preparator.long_description.replace('    ', '  '))
+
     @classmethod
     def parser(cls):
         """Return a default argument parser for corpus preparation"""
         prog = 'abkhazia prepare {}'.format(cls.preparator.name.lower())
 
         parser = argparse.ArgumentParser(
+            formatter_class=argparse.RawDescriptionHelpFormatter,
             prog=prog,
             usage=('%(prog)s <input-dir> [--output-dir OUTPUT_DIR]\n'
                    + ' '*(len(prog)+8)
                    + ('\n' + ' '*(len(prog)+8)).join([
                        '[--help] [--verbose] [--njobs NJOBS]',
                        '[--no-validation|--only-validation]'])),
-            description=cls.preparator.description)
+            description=textwrap.dedent(cls.long_description()))
 
         group = parser.add_argument_group('directories')
 
@@ -242,8 +260,11 @@ class WallStreetJournalFactory(AbstractFactoryWithCMU):
             metavar='SELECTION', type=int,
             choices=range(1, len(cls.selection)+1),
             help='the subpart of WSJ to prepare. If not specified, '
-            'prepare the entire corpus. Choose SELECTION in {}. ('
-            .format(range(1, len(cls.selection)+1)) + selection_descr + ')')
+            'prepare the entire corpus. Choose SELECTION in {} ('
+            .format(range(1, len(cls.selection)+1)) + selection_descr + '). '
+            'If SELECTION is specified but not OUTPUT_DIR, the selection name '
+            'will be appended to the default output directory (e.g. for -s 1 '
+            'it will be .../wsj-journalist-read instead of .../wsj).')
 
         return parser
 
@@ -274,8 +295,8 @@ class GlobalPhoneFactory(AbstractFactory):
 
     # all the supported languages mapped to their preparators
     preparators = {
-        'Mandarin': MandarinPreparator,
-        'Vietnamese': VietnamesePreparator
+        'mandarin': MandarinPreparator,
+        'vietnamese': VietnamesePreparator
     }
 
     @classmethod
@@ -283,7 +304,7 @@ class GlobalPhoneFactory(AbstractFactory):
         """Overload of the AbstractPreparator.parser for GlobalPhone"""
         # add a language selection option to the arguments parser
         parser = super(GlobalPhoneFactory, cls).parser()
-        parser.usage += '\n' + ' '*36 + '[--language {Mandarin,Vietnamese}]'
+        parser.usage += '\n' + ' '*36 + '[--language {mandarin,vietnamese}]'
 
         parser.add_argument(
             '-l', '--language', nargs='+', metavar='LANGUAGE',
@@ -291,7 +312,9 @@ class GlobalPhoneFactory(AbstractFactory):
             choices=cls.preparators.keys(),
             help='specify the languages to prepare in {}, '
             'if this option is not specified prepare all the '
-            'supported languages'.format(cls.preparators.keys()))
+            'supported languages. '.format(cls.preparators.keys())
+            + 'Actually only Vietnamese and Mandarin are supported '
+            'by abkhazia.')
 
         return parser
 
@@ -310,42 +333,40 @@ class GlobalPhoneFactory(AbstractFactory):
                 prep.prepare()
 
             if not args.no_validation:
-                # output_dir = (prep.output_dir
-                #               if args.output_dir is None
-                #               else args.output_dir)
-                validation.Validation(prep.output_dir, args.njobs, args.verbose).validate()
+                validation.Validation(
+                    prep.output_dir, args.njobs, args.verbose).validate()
 
 
 class AbkhaziaPrepare(object):
     name = 'prepare'
     description = 'Prepare a corpus for use with abkhazia'
 
-    supported_corpora = dict((n, c) for n, c in (
-        ('aic', AICFactory),
-        ('buckeye', BuckeyeFactory),
-        ('csj', CSJFactory),
-        ('globalphone', GlobalPhoneFactory),
-        ('librispeech', LibriSpeechFactory),
-        ('wsj', WallStreetJournalFactory),
-        ('xitsonga', XitsongaFactory)
+    supported_corpora = dict((c.preparator.name, c) for c in (
+        AICFactory,
+        BuckeyeFactory,
+        CSJFactory,
+        GlobalPhoneFactory,
+        LibriSpeechFactory,
+        WallStreetJournalFactory,
+        XitsongaFactory
     ))
-
-    @staticmethod
-    def format_url(url, sep='\n'):
-        """Return a string from the string (or list of strings) 'url'"""
-        if isinstance(url, str):
-            return sep + url
-        else:
-            return sep + sep.join(url)
 
     def describe_corpora(self):
         """Return a list of strings describing the supported corpora"""
-        return ['{} - {}{}'.format(
-            # desired key length is len('librispeech ') == 12
+        return ['{} - {}'.format(
+            # librispeech is the longest corpus name so the desired
+            # key length is len('librispeech ') == 12
             key + ' '*(12 - len(key)),
-            value.preparator.description,
-            self.format_url(value.preparator.url, '\n\t\t   '))
+            value.preparator.description)
                 for key, value in sorted(self.supported_corpora.iteritems())]
+
+        # return ['{} - {}{}'.format(
+        #     # librispeech is the longest corpus name so the desired
+        #     # key length is len('librispeech ') == 12
+        #     key + ' '*(12 - len(key)),
+        #     value.preparator.description,
+        #     self.format_url(value.preparator.url, '\n\t\t   '))
+        #         for key, value in sorted(self.supported_corpora.iteritems())]
 
     def corpus_parser(self):
         """Return a parser dedicated to the corpus parameter"""
@@ -353,7 +374,7 @@ class AbkhaziaPrepare(object):
             self.description + '\n'
             + "type 'abkhazia prepare <corpus> --help' for help "
             + 'on a specific corpus\n\n'
-            + 'supported corpora are:\n    '
+            + 'supported <corpus> are:\n    '
             + '\n    '.join(self.describe_corpora()))
 
         parser = argparse.ArgumentParser(
@@ -362,7 +383,7 @@ class AbkhaziaPrepare(object):
             description=textwrap.dedent(long_description))
 
         parser.add_argument(
-            'corpus', metavar='corpus', help='the speech corpus to prepare')
+            'corpus', metavar='corpus', help=argparse.SUPPRESS)
 
         return parser
 

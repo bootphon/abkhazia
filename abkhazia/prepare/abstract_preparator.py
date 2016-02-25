@@ -75,7 +75,7 @@ class AbstractPreparator(object):
         """
         return os.path.join(
             utils.config.get_config().get('abkhazia', 'data-directory'),
-            'corpora', cls.name)
+            cls.name)
 
     def __init__(self, input_dir, output_dir=None, verbose=False, njobs=1):
         # init njobs for parallelized preparation steps

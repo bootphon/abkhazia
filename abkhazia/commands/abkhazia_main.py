@@ -60,6 +60,7 @@ class Abkhazia(object):
             usage='abkhazia <command> [--help] [<args>]')
 
         parser.add_argument('command', help='Subcommand to run',
+                            metavar='command',
                             choices=[n for n, _ in self.commands])
 
         argcomplete.autocomplete(parser)

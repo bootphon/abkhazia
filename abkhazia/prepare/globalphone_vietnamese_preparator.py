@@ -132,7 +132,7 @@ from abkhazia.prepare.globalphone_abstract_preparator import (
 
 class VietnamesePreparator(AbstractGlobalPhonePreparator):
     """Vietnamese specific preprocessing for the GlobalPhone corpus"""
-    language = 'Vietnamese'
+    language = 'vietnamese'
 
     name = '-'.join([AbstractGlobalPhonePreparator.name, language])
 

@@ -25,8 +25,23 @@ from abkhazia.prepare import AbstractPreparator
 class BuckeyePreparator(AbstractPreparator):
     """Convert the Buckeye corpus to the abkhazia format"""
 
-    name = 'Buckeye'
+    name = 'buckeye'
     description = 'Buckeye Corpus of conversational speech'
+
+    long_description = '''
+    The Buckeye Corpus of conversational speech contains high-quality
+    recordings from 40 speakers in Columbus OH conversing freely with
+    an interviewer. The speech has been orthographically transcribed
+    and phonetically labeled. The audio and text files, together with
+    time-aligned phonetic labels, are stored in a format for use with
+    speech analysis software (Xwaves and Wavesurfer). Software for
+    searching the transcription files is currently being written. The
+    corpus is FREE for noncommercial uses.
+
+    This project is funded by the National Institute on Deafness and
+    other Communication Disorders and the Office of Research at Ohio
+    State University.'''
+
     url = 'http://buckeyecorpus.osu.edu'
     audio_format = 'wav'
 
