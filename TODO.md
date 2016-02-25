@@ -2,20 +2,7 @@
 
 * Structure and usage
 
-  - [ ] Have a --force option on all commands to safely overwrite
-    existing directory
-
-  - [ ] Have the following hierarchy:
-
-    <abkhazia-data-dir>/<corpus>/
-      logs            -> abkhazia log files
-      data            -> corpus in abkhazia format
-      split           -> test and train subdirs
-      lang            -> language model kaldi recipe
-      force_align     -> forced alignment kaldi recipe
-      acoustic_model  -> kaldi recipe
-      decode          -> kaldi recipe, results directory
-
+  - [ ] fix log file in abstractrecipe to go in <corpus>/logs
   - [ ] Generate a README during each abkhazia operation
 
 * Corpora preparation

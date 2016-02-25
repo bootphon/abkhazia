@@ -17,26 +17,12 @@
 import os
 import subprocess
 
-import abkhazia.utils as utils
 import abkhazia.kaldi.abkhazia2kaldi as abkhazia2kaldi
 
 class AbstractRecipe(object):
     """A base class for creating kaldi recipes from an abkahzia corpus"""
     name = NotImplemented
     """The recipe's name"""
-
-    @classmethod
-    def default_output_dir(cls):
-        """Return the default output directory for kaldi recipes generation
-
-        This dircetory is 'data-directory'/corpora/'name', where
-        'data-directory' is read from the abkhazia configuration file
-        and 'name' is self.name
-
-        """
-        return os.path.join(
-            utils.config.get_config().get('abkhazia', 'data-directory'),
-            'kaldi', cls.name, 's5')
 
     def __init__(self, corpus_dir, recipe_dir=None, verbose=False):
         # check corpus_dir
@@ -45,9 +31,15 @@ class AbstractRecipe(object):
         self.corpus_dir = corpus_dir
 
         # check recipe_dir
-        recipe_dir = (self.default_output_dir()
-                      if recipe_dir is None else recipe_dir)
-        if not os.path.isdir(recipe_dir):
+        recipe_dir = self.corpus_dir if recipe_dir is None else recipe_dir
+        recipe_dir = os.path.join(recipe_dir, self.name, 's5')
+
+
+        if os.path.isdir(recipe_dir):
+            raise OSError('output directory already existing: {}\n'
+                          'use the --force option to overwrite it'
+                          .format(recipe_dir))
+        else:
             os.makedirs(recipe_dir)
         self.recipe_dir = recipe_dir
 

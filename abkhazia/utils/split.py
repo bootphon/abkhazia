@@ -51,9 +51,8 @@ class SplitCorpus(object):
         except ConfigParser.NoOptionError:
             return 0.5
 
-
-    def __init__(self, corpus_dir,
-                 output_dir=None, random_seed=None, verbose=False):
+    def __init__(self, corpus_dir, output_dir=None,
+                 random_seed=None, verbose=False):
         # init the corpus directory
         if not os.path.isdir(corpus_dir):
             raise OSError('{} is not a directory'.format(corpus_dir))
@@ -72,8 +71,8 @@ class SplitCorpus(object):
         split_dir = os.path.join(output_dir, 'split')
         if os.path.exists(split_dir):
             raise OSError(
-                'output split directory alreary existing: {}\n'
-                'use the --force option to overwrite it'.format(split_dir))
+                'output split directory alreary existing: {}'
+                .format(split_dir))
 
         # init output_dir/{test, train}
         self.test_dir = os.path.join(output_dir, 'split', 'test')
@@ -84,7 +83,7 @@ class SplitCorpus(object):
 
         # init the log system
         self.log = utils.log2file.get_log(
-            os.path.join(output_dir, 'split_corpus.log'), verbose)
+            os.path.join(output_dir, 'logs', 'split_corpus.log'), verbose)
 
         # seed the random generator
         if random_seed is not None:

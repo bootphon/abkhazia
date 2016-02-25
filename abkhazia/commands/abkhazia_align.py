@@ -15,11 +15,23 @@
 """Implementation of the 'abkhazia align' command"""
 
 import argparse
+import os
+import shutil
 import sys
 
+import abkhazia.utils as utils
 import abkhazia.kaldi.force_align as force_align
 
+
 class AbkhaziaAlign(object):
+    '''This class implemnts the 'abkahzia align' command
+
+    Basically this class defines an argument parser, parses the
+    arguments and instanciates a kaldi recipe. The recipe is run as
+    needed.
+
+    '''
+
     name = 'align'
     description = 'Compute forced-aligment'
 
@@ -28,41 +40,79 @@ class AbkhaziaAlign(object):
         # 'abkahzia align')
         args = self.parser().parse_args(sys.argv[2:])
 
-        # instanciate the kaldi recipe
-        recipe = force_align.ForceAlign(
-            args.input_dir, args.output_dir, args.verbose)
+        # retrieve the corpus input directory
+        if args.corpus.startswith(('/', './')):
+            corpus = args.corpus
+        else:
+            corpus = os.path.join(
+                utils.config.get('abkhazia', 'data-directory'),
+                args.corpus)
 
-        # create and/or run the recipe
+        # retrieve the output directory
+        output_dir = corpus if args.output_dir is None else args.output_dir
+
+        # if --force, remove any existing output_dir/split
+        if args.force:
+            recipe_dir = os.path.join(output_dir, 'force_align')
+            if os.path.exists(recipe_dir):
+                print 'removing {}'.format(recipe_dir)
+                shutil.rmtree(recipe_dir)
+
+        # instanciate the kaldi recipe creator
+        recipe = force_align.ForceAlign(corpus, output_dir, args.verbose)
+
+        # finally create and/or run the recipe
         if not args.only_run:
             recipe.create()
         if not args.no_run:
             recipe.run()
 
     @classmethod
+    def long_description(cls):
+        # TODO
+        return cls.description
+
+    @classmethod
     def parser(cls):
         """Return a parser for the align command"""
+        prog='abkhazia align'
+        spaces = ' '*(len(prog) + len(' <corpus>') + 8)
+
         parser = argparse.ArgumentParser(
-            prog='abkhazia align',
-            usage='%(prog)s <input-dir [--output-dir OUTPUT_DIR]\n'
-            + ' '*23 + ('\n' + ' '*23).join([
-                '[--help] [--verbose] [--no-run|--only-run]']),
-            description=cls.description)
+            formatter_class=argparse.RawDescriptionHelpFormatter,
+            prog=prog,
+            usage='%(prog)s <corpus> [--output-dir <output-dir>]\n'
+            + spaces + ('\n' + spaces).join([
+                '[--help] [--verbose] [--force]','[--no-run|--only-run]']),
+            description=cls.long_description())
 
         group = parser.add_argument_group('directories')
 
         group.add_argument(
-            'input_dir', metavar='input-dir',
-            help='root directory of the abkhazia corpus to split')
+            'corpus', metavar='<corpus>',
+            help="""
+            the input abkhazia corpus to split. Must be a directory
+            either relative to the abkhazia data directory ({0}) or
+            relative/absolute on the filesystem. The following rule
+            applies: if <corpus> starts with './' or '/', path is
+            guessed directly, else <corpus> is guessed as a subdir in
+            {0}""".format(utils.config.get('abkhazia', 'data-directory')))
 
         group.add_argument(
-            '-o', '--output-dir', default=None,
-            help='output directory of the splited corpus, '
-            'if not specified use {}'.format(
-                force_align.ForceAlign.default_output_dir()))
+            '-o', '--output-dir', default=None, metavar='<output-dir>',
+            help='output directory, the forced alignment recipe is '
+            'created in <output-dir>/force_align/s5. '
+            'If not specified use <output-dir> = <corpus>.')
 
         parser.add_argument(
             '-v', '--verbose', action='store_true',
             help='display more messages to stdout')
+
+        parser.add_argument(
+            '-f', '--force', action='store_true',
+            help='if specified, overwrite the result directory '
+            '<output-dir>/force_align. If not specified but the '
+            'directory exists, the program fails.')
 
         prop = group.add_mutually_exclusive_group()
         prop.add_argument(

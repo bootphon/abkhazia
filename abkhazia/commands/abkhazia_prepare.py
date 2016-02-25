@@ -79,14 +79,14 @@ class AbstractFactory(object):
         default_input_dir = cls.preparator.default_input_dir()
 
         prog = 'abkhazia prepare {}'.format(cls.preparator.name)
+        spaces = ' '*(len(prog)+8)
 
         parser = argparse.ArgumentParser(
             formatter_class=argparse.RawDescriptionHelpFormatter,
             prog=prog,
-            usage=('%(prog)s <input-dir> [--output-dir OUTPUT_DIR]\n' +
-                   ' '*(len(prog)+8) +
-                   ('\n' + ' '*(len(prog)+8)).join([
-                       '[--help] [--verbose] [--njobs NJOBS]',
+            usage=('%(prog)s <input-dir> [--output-dir <output-dir>]\n' +
+                   spaces + ('\n' + spaces).join([
+                       '[--help] [--verbose] [--njobs <njobs>]',
                        '[--no-validation|--only-validation]'])),
             description=textwrap.dedent(cls.long_description()))
 
@@ -95,32 +95,38 @@ class AbstractFactory(object):
         if default_input_dir is not None:
             parser.usage = parser.usage.replace(
                 '<input-dir>',
-                '[--input-dir INPUT_DIR]')
+                '[--input-dir <input-dir>]')
 
             group.add_argument(
-                '-i', '--input_dir', metavar='INPUT_DIR',
+                '-i', '--input_dir', metavar='<input-dir>',
                 default=default_input_dir,
                 help='root directory of the raw corpus distribution, '
                 '(default readed from configuration file is %(default)s)')
 
         else:
             group.add_argument(
-                'input_dir', metavar='input-dir',
+                'input_dir', metavar='<input-dir>',
                 help='root directory of the raw corpus distribution')
 
         group.add_argument(
-            '-o', '--output-dir',
-            default=None,
-            help='output directory of the prepared corpus, '
-            'if not specified use {}'
-            .format(cls.preparator.default_output_dir()))
+            '-o', '--output-dir', metavar='<output-dir>',
+            default=cls.preparator.default_output_dir(),
+            help='output directory, the prepared corpus is created in '
+            '<output-dir>/data. If not specified use %(default)s.')
 
         parser.add_argument(
             '-v', '--verbose', action='store_true',
             help='display more messages to stdout')
 
+        # parser.add_argument(
+        #     '-f', '--force', action='store_true',
+        #     help='if specified, overwrite the output directory '
+        #     '<output-dir>/data. If not specified but the directory exists, '
+        #     'the program fails.')
+
+
         parser.add_argument(
-            '-j', '--njobs', type=int, default=4,
+            '-j', '--njobs', type=int, default=4, metavar='<njobs>',
             help='number of jobs to launch when doing parallel '
             'computations (mainly for wav conversion). '
             'Default is to launch %(default)s jobs.')
@@ -177,10 +183,10 @@ class AbstractFactoryWithCMU(AbstractFactory):
     def parser(cls):
         parser = super(AbstractFactoryWithCMU, cls).parser()
         parser.usage += ('\n' + ' '*(len(parser.prog)+8) +
-                         '[--cmu-dict CMU_DICT]')
+                         '[--cmu-dict <cmu-dict>]')
 
         parser.add_argument(
-            '--cmu-dict', default=None,
+            '--cmu-dict', default=None, metavar='<cmu-dict>',
             help='the CMU dictionary file to use for lexicon generation. '
             'If not specified use {}'.format(cls.preparator.default_cmu_dict))
 

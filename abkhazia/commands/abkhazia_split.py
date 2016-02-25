@@ -15,8 +15,11 @@
 """Implementation of the 'abkazia split' command"""
 
 import argparse
+import os
+import shutil
 import sys
 
+import abkhazia.utils as utils
 import abkhazia.utils.split as split
 
 
@@ -36,9 +39,27 @@ class AbkhaziaSplit(object):
         # 'abkahzia split')
         args = self.parser().parse_args(sys.argv[2:])
 
+        # retrieve the corpus input directory
+        if args.corpus.startswith(('/', './')):
+            corpus = args.corpus
+        else:
+            corpus = os.path.join(
+                utils.config.get('abkhazia', 'data-directory'),
+                args.corpus)
+
+        # retrieve the output directory
+        output_dir = corpus if args.output_dir is None else args.output_dir
+
+        # if --force, remove any existing output_dir/split
+        if args.force:
+            split_dir = os.path.join(output_dir, 'split')
+            if os.path.exists(split_dir):
+                print 'removing {}'.format(split_dir)
+                shutil.rmtree(split_dir)
+
         # instanciate a SplitCorpus instance
         spliter = split.SplitCorpus(
-            args.input_dir, args.output_dir, args.random_seed, args.verbose)
+            corpus, output_dir, args.random_seed, args.verbose)
 
         # choose the split function according to --by-speakers
         split_fun = (spliter.split_by_speakers if args.by_speakers
@@ -50,57 +71,74 @@ class AbkhaziaSplit(object):
     @classmethod
     def parser(cls):
         """Return a parser for the split command"""
+        prog = 'abkhazia split'
+        spaces = ' '*(len(prog) + 8)
+
         parser = argparse.ArgumentParser(
-            prog='abkhazia split',
-            usage='%(prog)s <input-dir> [--output-dir OUTPUT_DIR]\n' +
-            ' '*23 + ('\n' + ' '*23).join([
-                '[--help] [--verbose] [--by-speakers] [--random-seed SEED]',
-                '[--test-prop TEST|--train-prop TRAIN']),
+            prog=prog,
+            usage='%(prog)s <corpus> [--output-dir <output-dir>]\n' +
+            spaces + ('\n' + spaces).join([
+                '[--help] [--verbose] [--force]',
+                '[--test-prop <test>|--train-prop <train>]',
+                '[--by-speakers] [--random-seed <seed>]']),
             description=cls.description)
 
         group = parser.add_argument_group('directories')
 
         group.add_argument(
-            'input_dir', metavar='input-dir',
-            help='root directory of the abkhazia corpus to split')
+            'corpus', metavar='<corpus>',
+            help="""
+            the input abkhazia corpus to split. Must be a directory
+            either relative to the abkhazia data directory ({0}) or
+            relative/absolute on the filesystem. The following rule
+            applies: if <corpus> starts with './' or '/', path is
+            guessed directly, else <corpus> is guessed as a subdir in
+            {0}""".format(utils.config.get('abkhazia', 'data-directory')))
 
         group.add_argument(
-            '-o', '--output-dir', default=None,
-            help='output directory of the splited corpus, '
-            'if not specified use input-dir/split')
+            '-o', '--output-dir', default=None, metavar='<output-dir>',
+            help='output directory, the splited corpus is created in '
+            '<output-dir>/split. '
+            'If not specified use <output-dir> = <corpus>.')
 
         parser.add_argument(
             '-v', '--verbose', action='store_true',
             help='display more messages to stdout')
 
+        parser.add_argument(
+            '-f', '--force', action='store_true',
+            help='if specified, overwrite the result directory '
+            '<output-dir>/split. If not specified but the directory exists, '
+            'the program fails.')
+
         group = parser.add_argument_group('split arguments')
+
+        prop = group.add_mutually_exclusive_group()
+        prop.add_argument(
+            '-t', '--test-prop', type=float, metavar='<test>',
+            default=split.SplitCorpus.default_test_prop(),
+            help='''a float between 0.0 and 1.0, represent the proportion of the
+            dataset to include in the test set. If not specfied, the
+            value is automatically set to the complement of the
+            <train>.  If <train> is not specified, <test> is set to
+            %(default)s.''')
+
+        prop.add_argument(
+            '-T', '--train-prop', default=None, type=float, metavar='<train>',
+            help='''a float between 0.0 and 1.0, represent the proportion of the
+            dataset to include in the train set. If not specified, the
+            value is automatically set to the complement of <test>.''')
 
         group.add_argument(
             '-b', '--by-speakers', action='store_true',
             help='if specified, the data for each speaker is attributed '
             'either to the test or train subset as a whole. If not specified, '
-            'data from a same speaker is randomly splitted in the two subsets')
+            'data from a same speaker is randomly splited in the two subsets')
 
         group.add_argument(
-            '-r', '--random-seed', default=None, metavar='SEED',
+            '-r', '--random-seed', default=None, metavar='<seed>',
             help='seed for pseudo-random numbers generation (default is to '
-            'use the current system time)')
-
-        prop = group.add_mutually_exclusive_group()
-        prop.add_argument(
-            '-t', '--test-prop', type=float, metavar='TEST',
-            default=split.SplitCorpus.default_test_prop(),
-            help='''a float between 0.0 and 1.0, represent the proportion of the
-            dataset to include in the test set. If not specfied, the
-            value is automatically set to the complement of the train
-            size. If train size is not specified, test size is set to
-            %(default)s.''')
-
-        prop.add_argument(
-            '-T', '--train-prop', default=None, type=float, metavar='TRAIN',
-            help='''a float between 0.0 and 1.0, represent the proportion of the
-            dataset to include in the train set. If not specified, the
-            value is automatically set to the complement of the test
-            size.''')
+            'use the current system time). Use this option to compute a '
+            'reproducible split.')
 
         return parser

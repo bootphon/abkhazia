@@ -76,7 +76,7 @@ class AbstractPreparator(object):
 
         """
         return os.path.join(
-            utils.config.get_config().get('abkhazia', 'data-directory'),
+            utils.config.get('abkhazia', 'data-directory'),
             cls.name)
 
     @classmethod
@@ -84,7 +84,7 @@ class AbstractPreparator(object):
         """Return the input directory specified the conf file, or None"""
         try:
             name = cls.name.split('-')[0] + '-directory'
-            res = utils.config.get_config().get('corpus', name)
+            res = utils.config.get('corpus', name)
             return None if res == '' else res
         except ConfigParser.NoOptionError:
             return None
@@ -122,7 +122,9 @@ class AbstractPreparator(object):
         self.wavs_dir = os.path.join(self.data_dir, 'wavs')
 
         # init output files that will be populated by prepare()
-        def fname(name): return os.path.join(self.data_dir, name + '.txt')
+        def fname(name):
+            """return complete filename"""
+            return os.path.join(self.data_dir, name + '.txt')
         self.segments_file = fname('segments')
         self.speaker_file = fname('utt2spk')
         self.transcription_file = fname('text')
@@ -258,7 +260,8 @@ class AbstractPreparator(object):
         else:  # if original files are not wav, convert them
             self.log.info('converting {} {} files to wav...'
                           .format(len(inputs), self.audio_format))
-            utils.wav.convert(inputs, outputs, self.audio_format, self.njobs)
+            utils.wav.convert(inputs, outputs, self.audio_format, self.njobs,
+                              verbose=5 if self.verbose else 1)
             self.log.debug('finished converting wavs')
 
     def make_phones(self):

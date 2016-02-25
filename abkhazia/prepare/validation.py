@@ -49,6 +49,8 @@ class Validation(object):
 
     '''
     def __init__(self, corpus_path, njobs=4, verbose=False):
+        self.verbose = verbose
+
         # init the corpus data directory
         self.data_dir = os.path.join(corpus_path, 'data')
         if not os.path.isdir(self.data_dir):
@@ -106,9 +108,10 @@ class Validation(object):
                 .format(wrong_extensions))
 
         # get meta information on the corpus wav files
+        scanv = 5 if self.verbose else 1
         meta = utils.wav.scan([
             os.path.join(self.data_dir, 'wavs', w) for w in self.wavs],
-                              njobs=self.njobs)
+                              njobs=self.njobs, verbose=scanv)
         meta = {os.path.basename(k): meta[k] for k in meta.iterkeys()}
 
         empty_files = [w for w in self.wavs if meta[w].nframes == 0]

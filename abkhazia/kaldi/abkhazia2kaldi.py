@@ -54,7 +54,7 @@ class Abkhazia2Kaldi(object):
             os.path.join(self.recipe_dir, 'abkhazia2kaldi.log'), verbose)
 
         # init the path to kaldi
-        self.kaldi_root = utils.get_config().get('kaldi', 'kaldi-directory')
+        self.kaldi_root = utils.config.get('kaldi', 'kaldi-directory')
 
         # init the path to abkhazia/share
         self.share_dir = pkg_resources.resource_filename(
