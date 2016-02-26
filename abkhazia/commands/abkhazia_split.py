@@ -40,7 +40,7 @@ class AbkhaziaSplit(object):
         args = self.parser().parse_args(sys.argv[2:])
 
         # retrieve the corpus input directory
-        if args.corpus.startswith(('/', './')):
+        if args.corpus.startswith(('/', './', '../')):
             corpus = args.corpus
         else:
             corpus = os.path.join(
@@ -91,7 +91,7 @@ class AbkhaziaSplit(object):
             the input abkhazia corpus to split. Must be a directory
             either relative to the abkhazia data directory ({0}) or
             relative/absolute on the filesystem. The following rule
-            applies: if <corpus> starts with './' or '/', path is
+            applies: if <corpus> starts with './' , '../' or '/', path is
             guessed directly, else <corpus> is guessed as a subdir in
             {0}""".format(utils.config.get('abkhazia', 'data-directory')))
 
