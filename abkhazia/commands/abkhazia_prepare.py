@@ -232,22 +232,22 @@ class LibriSpeechFactory(AbstractFactoryWithCMU):
              for i in range(len(cls.selection))])
 
         parser = super(LibriSpeechFactory, cls).parser()
-        parser.usage += (' [--librispeech-dict LIBRISPEECH_DICT]\n' +
+        parser.usage += (' [--librispeech-dict <librispeech-dict>]\n' +
                          ' '*(len(parser.prog)+8) +
-                         '[--selection SELECTION]')
+                         '[--selection <selection>]')
 
         parser.add_argument(
             '-s', '--selection', default=None,
-            metavar='SELECTION', type=int,
+            metavar='<selection>', type=int,
             help='the subpart of LibriSpeech to prepare. If not specified, '
-            'prepare the entire corpus. Choose SELECTION in {}. ('
+            'prepare the entire corpus. Choose <selection> in {}. ('
             .format(range(1, len(cls.selection)+1)) + selection_descr + ')')
 
         parser.add_argument(
             '-l', '--librispeech-dict', default=None,
             help='the librispeech-lexicon.txt file at the root '
             'of the LibriSpeech distribution. '
-            'If not specified, guess it from INPUT_DIR')
+            'If not specified, guess it from <input-dir>')
 
         return parser
 
@@ -260,6 +260,18 @@ class LibriSpeechFactory(AbstractFactoryWithCMU):
             args.input_dir, selection,
             args.cmu_dict, args.librispeech_dict,
             args.output_dir, args.verbose, args.njobs)
+
+    @classmethod
+    def run(cls):
+        args = cls.parser().parse_args(sys.argv[3:])
+        prep = cls.init_preparator(args)
+
+        if not args.only_validation:
+            prep.prepare()
+
+        if not args.no_validation:
+            validation.Validation(
+                prep.output_dir, args.njobs, args.verbose).validate()
 
 
 class WallStreetJournalFactory(AbstractFactoryWithCMU):
@@ -280,18 +292,18 @@ class WallStreetJournalFactory(AbstractFactoryWithCMU):
             for i in range(len(cls.selection))])
 
         parser = super(WallStreetJournalFactory, cls).parser()
-        parser.usage += ' [--selection SELECTION]'
+        parser.usage += ' [--selection <selection>]'
 
         parser.add_argument(
             '-s', '--selection', default=None,
-            metavar='SELECTION', type=int,
+            metavar='<selection>', type=int,
             choices=range(1, len(cls.selection)+1),
             help='the subpart of WSJ to prepare. If not specified, '
-            'prepare the entire corpus. Choose SELECTION in {} ('
+            'prepare the entire corpus. Choose <selection> in {} ('
             .format(range(1, len(cls.selection)+1)) + selection_descr + '). '
-            'If SELECTION is specified but not OUTPUT_DIR, the selection name '
-            'will be appended to the default output directory (e.g. for -s 1 '
-            'it will be .../wsj-journalist-read instead of .../wsj).')
+            'If <selection> is specified but not <output-dir>, the selection '
+            'name will be appended to the default output directory (e.g. for '
+            '-s 1 it will be .../wsj-journalist-read instead of .../wsj).')
 
         return parser
 
@@ -335,7 +347,7 @@ class GlobalPhoneFactory(AbstractFactory):
         parser.usage += '\n' + ' '*36 + '[--language {mandarin,vietnamese}]'
 
         parser.add_argument(
-            '-l', '--language', nargs='+', metavar='LANGUAGE',
+            '-l', '--language', nargs='+', metavar='<language>',
             default=cls.preparators.keys(),
             choices=cls.preparators.keys(),
             help='specify the languages to prepare in {}, '

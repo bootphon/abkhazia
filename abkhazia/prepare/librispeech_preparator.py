@@ -109,14 +109,16 @@ class LibriSpeechPreparator(AbstractPreparatorWithCMU):
                 .format(librispeech_dict))
         self.librispeech_dict = librispeech_dict
 
+        # init output dir
+        self.output_dir = (self.default_output_dir() if output_dir is None
+                           else output_dir)
+
         # update name, input and output directories if a subpart
         # selection is specified
         if selection is not None:
             self.name += '-' + selection
             input_dir = os.path.join(input_dir, selection)
-            # if output_dir is None:
-            #     output_dir = os.path.join(DEFAULT_OUTPUT_DIR, self.name)
-            # output_dir += '-' + selection
+            output_dir += '-' + selection
 
         # call the AbstractPreparatorWithCMU __init__
         super(LibriSpeechPreparator, self).__init__(
