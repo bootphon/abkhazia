@@ -17,6 +17,7 @@
 import os
 import subprocess
 
+import abkhazia.utils as utils
 import abkhazia.kaldi.abkhazia2kaldi as abkhazia2kaldi
 
 
@@ -24,6 +25,9 @@ class AbstractRecipe(object):
     """A base class for creating kaldi recipes from an abkahzia corpus"""
     name = NotImplemented
     """The recipe's name"""
+
+    params = NotImplemented
+    """A named tuple defining the recipe parameters"""
 
     def __init__(self, corpus_dir, recipe_dir=None, verbose=False):
         # check corpus_dir
@@ -36,19 +40,39 @@ class AbstractRecipe(object):
         recipe_dir = os.path.join(recipe_dir, self.name, 's5')
         self.recipe_dir = recipe_dir
 
+        # init the log
+        log_file = os.path.join(self.recipe_dir, 'logs', self.name + '.log')
+        log_dir = os.path.dirname(log_file)
+        if not os.path.isdir(log_dir):
+            os.makedirs(log_dir)
+        self.log = utils.log2file.get_log(log_file, verbose)
+
         # init the abkhazia2kaldi converter
         self.a2k = abkhazia2kaldi.Abkhazia2Kaldi(
-            corpus_dir, recipe_dir, verbose)
+            corpus_dir, recipe_dir, verbose, self.log)
 
-    def create(self):
+    def create(self, args):
         """Create the recipe in `self.recipe_dir`
 
         This method is abstract and must be implemented in child
         classes.
 
+        args : an instance of self.params
+
         """
         raise NotImplementedError
 
+    def _setup_parameters(self, args):
+        """Configure the recipe parameters in the 'run.sh' script
+
+        args : an instance of self.params
+
+
+        """
+        pass
+
     def run(self):
         """Run the created recipe by executing 'run.sh'"""
+        # TODO catch failures
+        self.log.info("running 'run.sh' from {}".format(self.recipe_dir))
         subprocess.call('./run.sh', cwd=self.recipe_dir)

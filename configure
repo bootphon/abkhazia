@@ -49,8 +49,7 @@ data-directory: $setupdir/data
 
 [kaldi]
 # The absolute path to the kaldi distribution directory
-# YOU MUST SPECIFY THIS PATH MANUALLY. For exemple:
-# kaldi-directory: /home/me/kaldi-trunk
+# YOU MUST SPECIFY THIS PATH MANUALLY.
 kaldi-directory:
 
 [corpus]
@@ -69,6 +68,21 @@ xitsonga-directory:
 [split]
 # Defines the default proportion of data for the test set
 default-test-proportion: 0.5
+
+[align]
+# Do all computations if true, else focu on the main ones
+optional-silence: true
+
+# Feature parameters
+use-pitch: true
+
+# Speaker-independent triphone models parameters
+speaker-independent-states: 2500
+speaker-independent-gauss: 15000
+
+# Speaker-adaptive triphone models parameters
+speaker-adaptive-states: 2500
+speaker-adaptive-gauss: 15000
 EOF
     failure "Please specify the path to the kaldi root directory in $conf"
 else

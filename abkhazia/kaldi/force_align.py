@@ -14,11 +14,13 @@
 # along with abkahzia. If not, see <http://www.gnu.org/licenses/>.
 """Provides the ForceAlign class"""
 
+import collections
 import os
 
 import abkhazia.utils.basic_io as io
 import abkhazia.kaldi.abstract_recipe as abstract_recipe
 import abkhazia.kaldi.kaldi2abkhazia as k2a
+
 
 class ForceAlign(abstract_recipe.AbstractRecipe):
     """Compute forced alignment of an abkhazia corpus
@@ -34,11 +36,21 @@ class ForceAlign(abstract_recipe.AbstractRecipe):
     """
     name = 'force_align'
 
-    def create(self):
+    params = collections.namedtuple(
+        'params',
+        'optional_silence '
+        'use_pitch '
+        'speaker_independent_states '
+        'speaker_independent_gauss '
+        'speaker_adaptive_states '
+        'speaker_adaptive_gauss')
+
+    def create(self, args=None):
         if os.path.isdir(self.recipe_dir):
-            raise OSError('output directory already existing: {}\n'
-                          'use the --force option to overwrite it'
-                          .format(self.recipe_dir))
+            raise OSError(
+                'output directory already existing: {}\n'
+                'use the --force option to overwrite it'
+                .format(self.recipe_dir))
         else:
             os.makedirs(self.recipe_dir)
 
@@ -82,6 +94,9 @@ class ForceAlign(abstract_recipe.AbstractRecipe):
         self.a2k.setup_machine_specific_scripts()
         # score.sh, run.sh
         self.a2k.setup_main_scripts('force_align.sh')
+
+        # Finally configure run.sh with the recipe parameters
+        self._setup_parameters(args)
 
     def export(self):
         """Export the kaldi tra alignment file in abkhazia format

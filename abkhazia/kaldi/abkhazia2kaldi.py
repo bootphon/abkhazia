@@ -35,8 +35,11 @@ class Abkhazia2Kaldi(object):
     verbose : This argument serves as initialization of the log2file
       module. See there for more documentation.
 
+    log : the logger to write in. default is to write in
+    'self.recipe_dir'/abkhazia2kaldi.log
+
     '''
-    def __init__(self, corpus_dir, recipe_dir, verbose=False):
+    def __init__(self, corpus_dir, recipe_dir, verbose=False, log=None):
         # init the corpus directory
         if not os.path.isdir(corpus_dir):
             raise OSError('{} is not a directory'.format(corpus_dir))
@@ -50,8 +53,9 @@ class Abkhazia2Kaldi(object):
             os.makedirs(self.recipe_dir)
 
         # init the log system
-        self.log = utils.log2file.get_log(
+        self.log = (utils.log2file.get_log(
             os.path.join(self.recipe_dir, 'abkhazia2kaldi.log'), verbose)
+                    if log is None else log)
 
         # init the path to kaldi
         self.kaldi_root = utils.config.get('kaldi', 'kaldi-directory')
@@ -265,7 +269,7 @@ class Abkhazia2Kaldi(object):
 
 
     def setup_wav_folder(self):
-        # using a symbolic link to avoid copying voluminous data
+        """using a symbolic link to avoid copying voluminous data"""
         origin = os.path.join(self.data_dir, 'wavs')
         target = os.path.join(self.recipe_dir, 'wavs')
         self.log.debug('creating {}'.format(target))
@@ -303,7 +307,6 @@ class Abkhazia2Kaldi(object):
             pass
 
 
-    # TODO create cmd.sh and path.sh in share during configuration
     def setup_machine_specific_scripts(self):
         """Copy cmd.sh and path.sh to self.recipe_dir"""
         for target in ('cmd', 'path'):

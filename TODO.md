@@ -3,7 +3,7 @@
 * Structure and usage
 
   - [ ] fix log file in abstractrecipe to go in <corpus>/logs
-  - [ ] Generate a README during each abkhazia operation
+  - [ ] Optional kaldi_root argument for configure
 
 * Corpora preparation
 
@@ -26,6 +26,10 @@
 
 * Functions
 
+ - Refactor a bit the commands package
+   - Have a AbkhaziaCommand base class
+   - Factorize the parsers and options
+
  - [X] split
 
    Why not a more general split (e.g. for dev/test/train or set1/set2/.../setN)
@@ -37,7 +41,7 @@
    - [X] test/debug at least on xitsonga, wsj
    - [X] integrate the kaldi2abkhazia conversion script as the final
      step of ForceAlign.run()
-   - [ ] add supprot for template options from command-line
+   - [ ] add support for template options from command-line
    - [ ] remove the language model part from the recipe (this will be
      the 'abkhazia lang' command)
 
@@ -68,6 +72,11 @@
    output = {posteriorgrams, transcription}
    speaker_adapt
    output: results (repertoire)
+
+ - [ ] status
+
+   - As an alternative of the README files
+   - Display basic info on what is in <abkahzia-data-directory>
 
 * Documentation
 

@@ -84,12 +84,25 @@ class AbkhaziaAlign(object):
         parser = argparse.ArgumentParser(
             formatter_class=argparse.RawDescriptionHelpFormatter,
             prog=prog,
+            # TODO add triphones params here
             usage='%(prog)s <corpus> [--output-dir <output-dir>]\n'
             + spaces + ('\n' + spaces).join([
-                '[--help] [--verbose] [--force]', '[--no-run|--only-run']),
+                '[--help] [--verbose] [--force]',
+                '[--no-optional-silence] [--no-pitch]',
+                '[--no-run|--only-run']),
             description=cls.long_description())
 
         group = parser.add_argument_group('directories')
+
+        parser.add_argument(
+            '-v', '--verbose', action='store_true',
+            help='display more messages to stdout')
+
+        parser.add_argument(
+            '-f', '--force', action='store_true',
+            help='if specified, overwrite the result directory '
+            '<output-dir>/force_align. If not specified but the '
+            'directory exists, the program fails.')
 
         group.add_argument(
             'corpus', metavar='<corpus>',
@@ -107,15 +120,6 @@ class AbkhaziaAlign(object):
             'created in <output-dir>/force_align/s5. '
             'If not specified use <output-dir> = <corpus>.')
 
-        parser.add_argument(
-            '-v', '--verbose', action='store_true',
-            help='display more messages to stdout')
-
-        parser.add_argument(
-            '-f', '--force', action='store_true',
-            help='if specified, overwrite the result directory '
-            '<output-dir>/force_align. If not specified but the '
-            'directory exists, the program fails.')
 
         prop = group.add_mutually_exclusive_group()
         prop.add_argument(
@@ -124,7 +128,6 @@ class AbkhaziaAlign(object):
 
         prop.add_argument(
             '--only-run', action='store_true',
-            help='if specified, dont create the recipe but run it, '
-            "'input_dir' must contain a top-level run.sh")
+            help='if specified, dont create the recipe but run it')
 
         return parser

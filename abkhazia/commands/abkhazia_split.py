@@ -24,7 +24,7 @@ import abkhazia.utils.split as split
 
 
 class AbkhaziaSplit(object):
-    '''This class implemnts the 'abkahzia split' command
+    '''This class implements the 'abkahzia split' command
 
     Basically this class defines an argument parser, parses the
     arguments and split a corpus in train and test subsets. The
