@@ -19,6 +19,7 @@ import subprocess
 
 import abkhazia.kaldi.abkhazia2kaldi as abkhazia2kaldi
 
+
 class AbstractRecipe(object):
     """A base class for creating kaldi recipes from an abkahzia corpus"""
     name = NotImplemented
@@ -27,20 +28,12 @@ class AbstractRecipe(object):
     def __init__(self, corpus_dir, recipe_dir=None, verbose=False):
         # check corpus_dir
         if not os.path.isdir(corpus_dir):
-            raise IOError("Directory doesn't exist: {}".format(corpus_dir))
+            raise IOError("directory doesn't exist: {}".format(corpus_dir))
         self.corpus_dir = corpus_dir
 
         # check recipe_dir
         recipe_dir = self.corpus_dir if recipe_dir is None else recipe_dir
         recipe_dir = os.path.join(recipe_dir, self.name, 's5')
-
-
-        if os.path.isdir(recipe_dir):
-            raise OSError('output directory already existing: {}\n'
-                          'use the --force option to overwrite it'
-                          .format(recipe_dir))
-        else:
-            os.makedirs(recipe_dir)
         self.recipe_dir = recipe_dir
 
         # init the abkhazia2kaldi converter

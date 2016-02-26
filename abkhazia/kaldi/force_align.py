@@ -18,6 +18,7 @@ import os
 
 import abkhazia.utils.basic_io as io
 import abkhazia.kaldi.abstract_recipe as abstract_recipe
+import abkhazia.kaldi.kaldi2abkhazia as k2a
 
 class ForceAlign(abstract_recipe.AbstractRecipe):
     """Compute forced alignment of an abkhazia corpus
@@ -34,6 +35,13 @@ class ForceAlign(abstract_recipe.AbstractRecipe):
     name = 'force_align'
 
     def create(self):
+        if os.path.isdir(self.recipe_dir):
+            raise OSError('output directory already existing: {}\n'
+                          'use the --force option to overwrite it'
+                          .format(self.recipe_dir))
+        else:
+            os.makedirs(self.recipe_dir)
+
         # DICT folder
         self.a2k.setup_lexicon()
         self.a2k.setup_phones()
@@ -74,3 +82,16 @@ class ForceAlign(abstract_recipe.AbstractRecipe):
         self.a2k.setup_machine_specific_scripts()
         # score.sh, run.sh
         self.a2k.setup_main_scripts('force_align.sh')
+
+    def export(self):
+        """Export the kaldi tra alignment file in abkhazia format
+
+        This method reads data/lang/phones.txt and
+        export/forced_aligment.tra and write
+        export/forced_aligment.txt
+
+        """
+        tra = os.path.join(self.recipe_dir, 'export', 'forced_alignment.tra')
+        k2a.export_phone_alignment(
+            os.path.join(self.recipe_dir, 'data', 'lang', 'phones.txt'),
+            tra, tra.replace('.tra', '.txt'))

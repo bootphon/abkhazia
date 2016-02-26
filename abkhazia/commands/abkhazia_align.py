@@ -52,7 +52,7 @@ class AbkhaziaAlign(object):
         output_dir = corpus if args.output_dir is None else args.output_dir
 
         # if --force, remove any existing output_dir/split
-        if args.force:
+        if args.force and not args.only_run:
             recipe_dir = os.path.join(output_dir, 'force_align')
             if os.path.exists(recipe_dir):
                 print 'removing {}'.format(recipe_dir)
@@ -66,16 +66,19 @@ class AbkhaziaAlign(object):
             recipe.create()
         if not args.no_run:
             recipe.run()
+            recipe.export()
 
-    @classmethod
-    def long_description(cls):
-        # TODO
-        return cls.description
+
+    @staticmethod
+    def long_description():
+        """Return the docstring of the ForceAlign class"""
+        return force_align.ForceAlign.__doc__.replace(' '*4, ' '*2).strip()
+
 
     @classmethod
     def parser(cls):
         """Return a parser for the align command"""
-        prog='abkhazia align'
+        prog = 'abkhazia align'
         spaces = ' '*(len(prog) + len(' <corpus>') + 8)
 
         parser = argparse.ArgumentParser(
@@ -83,7 +86,7 @@ class AbkhaziaAlign(object):
             prog=prog,
             usage='%(prog)s <corpus> [--output-dir <output-dir>]\n'
             + spaces + ('\n' + spaces).join([
-                '[--help] [--verbose] [--force]','[--no-run|--only-run]']),
+                '[--help] [--verbose] [--force]', '[--no-run|--only-run']),
             description=cls.long_description())
 
         group = parser.add_argument_group('directories')

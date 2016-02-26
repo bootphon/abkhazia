@@ -26,33 +26,24 @@
 
 * Functions
 
- - [X] split(abkhazia_corpus, train_proportion)
+ - [X] split
 
-   split corpus in test and train sets
+   Why not a more general split (e.g. for dev/test/train or set1/set2/.../setN)
 
-   options: split randomly vs split while respecting speakers?
-   output: abkhazia_corpus_train, abkhazia_corpus_test
-   note:
-    pourquoi pas un split plus général, eg, pour faire dev/train/test ?
-    this would be split_corpus(abkhazia_corpus,name1,prop1,name2,prop2 …
-    nameN,propN
-
- - [ ] lang(abkhazia_corpus):
-
-   Train a language model
-
-   options: unigram, bigram
-   output: language_model(repertoire), readmefile, kaldi format
-
- - [ ] align(abkhazia_corpus)
+ - [-] align
 
    Forced alignment
 
-   - [ ] test/debug at least on xitsonga, wsj
+   - [X] test/debug at least on xitsonga, wsj
+   - [X] integrate the kaldi2abkhazia conversion script as the final
+     step of ForceAlign.run()
+   - [ ] add supprot for template options from command-line
    - [ ] remove the language model part from the recipe (this will be
      the 'abkhazia lang' command)
-   - [ ] integrate the kaldi2abkhazia conversion script as the final
-     step of ForceAlign.run()
+
+ - [ ] lang
+
+   Train a language model. Options: unigram, bigram
 
  - [ ] train(train_set):
 
@@ -69,14 +60,14 @@
 
  - [ ] decode(test_set, acoustic_model, (language_model)):
 
-  Compute phone posteriograms or transcription. If no language_model
+   Compute phone posteriograms or transcription. If no language_model
    provided, a default flat unigram one is constructed
 
-  options:
-  evaluate(transcription, gold)
-  output = {posteriorgrams, transcription}
-  speaker_adapt
-  output: results (repertoire)
+   options:
+   evaluate(transcription, gold)
+   output = {posteriorgrams, transcription}
+   speaker_adapt
+   output: results (repertoire)
 
 * Documentation
 

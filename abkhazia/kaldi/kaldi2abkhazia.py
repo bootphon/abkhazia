@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 # Copyright 2015, 2016 Thomas Schatz
 #
 # This file is part of abkhazia: you can redistribute it and/or modify
@@ -13,8 +12,7 @@
 #
 # You should have received a copy of the GNU General Public License
 # along with abkahzia. If not, see <http://www.gnu.org/licenses/>.
-"""Exporting forced alignments from a kaldi recipe to abkhazia alignment format.
-"""
+"""Exporting forced alignments from kaldi to abkhazia"""
 
 from abkhazia.utils import open_utf8
 
@@ -48,6 +46,9 @@ def read_kaldi_alignment(phonemap,  tra_file):
             start = stop
 
 
+# TODO check alignment: which utt have been transcribed, have silence
+# been inserted, otherwise no difference? (maybe some did not reach
+# final state), chronological order, grouping by utt_id etc.
 def export_phone_alignment(phones_file, tra_file, out_file,
                            word_position_dependent=True):
     # phone file: phones.txt in lang_dir, tra_file: in export
@@ -55,14 +56,3 @@ def export_phone_alignment(phones_file, tra_file, out_file,
     with open_utf8(out_file, 'w') as out:
         for utt_id, start, stop, phone in read_kaldi_alignment(phonemap, tra_file):
             out.write(u"{0} {1} {2} {3}\n".format(utt_id, start, stop, phone))
-
-
-#TODO check alignment: which utt have been transcribed, have silence
-# been inserted, otherwise no difference? (maybe some did not reach
-# final state), chronological order, grouping by utt_id etc.
-
-# root = "/Users/Thomas/Documents/PhD/Recherche/test"
-# phones_file = os.path.join(root, 'phones_BUC.txt')
-# tra_file = os.path.join(root, 'BUC_forced_alignment.tra')
-# out_file = os.path.join(root, 'BUC_forced_alignment.txt')
-# export_phone_alignment(phones_file, tra_file, out_file)
