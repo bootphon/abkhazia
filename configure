@@ -16,6 +16,23 @@
 # along with abkahzia. If not, see <http://www.gnu.org/licenses/>.
 
 
+# This script configures abkhazia before installation. It does the
+# following:
+#
+# - check if dependancies are installed (sox, shorten and CMU dict)
+#
+# - ask for the path to kaldi
+#
+# - init a default configuration file for abkhazia in abkhazia/share
+#
+# - init path.sh and cmd.sh in abkhazia/share
+#
+# Until all is correctly configured, the script fails with an error
+# message advising you how to fix the issue. Fix it and rerun the
+# script until it succeed.
+
+
+
 function failure {
     echo "Configuration failed !
 
@@ -31,6 +48,32 @@ setupdir=`readlink -f .`
 
 # path to the share directory in abkhazia
 share=$setupdir/abkhazia/share
+
+
+
+# Download the CMU pronouncing dictionary if not present
+cmu_url="http://svn.code.sf.net/p/cmusphinx/code/trunk/cmudict/cmudict.0.7a"
+cmu_dic=$share/`basename $cmu_url`
+if [ -e $cmu_dic ]
+then
+    echo "Found CMU dictionary as $cmu_dic"
+else
+    echo "Downloading CMU dictionary from $cmu_url..."
+    wget --quiet $cmu_url -O $cmu_dic || failure "Fail to download $cmu_url"
+fi
+
+
+# check sox is installed
+sox=`which sox`
+sox_failure="sox not found on your system, please install it (see http://sox.sourceforge.net)"
+[ ! -z $sox ] && echo "Found sox as $sox" || failure "$sox_failure"
+
+# check shorten is installed
+shorten=`which shorten`
+shorten_failure="shorten not found on your system, please install it from
+http://etree.org/shnutils/shorten/dist/src/shorten-3.6.1.tar.gz"
+[ ! -z $shorten ] && echo "Found shorten as $shorten" || failure "$shorten_failure"
+
 
 
 # Configuring abkhazia/share/abkhazia.cfg
@@ -102,30 +145,6 @@ $kaldi is not an existing directory"
     [ -e $sph2pipe ] && echo "Found sph2pipe as $sph2pipe" ||
             failure "$sph2pipe not found in the kaldi distribution"
 fi
-
-
-# Download the CMU pronouncing dictionary if not present
-cmu_url="http://svn.code.sf.net/p/cmusphinx/code/trunk/cmudict/cmudict.0.7a"
-cmu_dic=$share/`basename $cmu_url`
-if [ -e $cmu_dic ]
-then
-    echo "Found CMU dictionary as $cmu_dic"
-else
-    echo "Downloading CMU dictionary from $cmu_url..."
-    wget --quiet $cmu_url -O $cmu_dic || failure "Fail to download $cmu_url"
-fi
-
-
-# check sox is installed
-sox=`which sox`
-sox_failure="sox not found on your system, please install it (see http://sox.sourceforge.net)"
-[ ! -z $sox ] && echo "Found sox as $sox" || failure "$sox_failure"
-
-# check shorten is installed
-shorten=`which shorten`
-shorten_failure="shorten not found on your system, please install it from
-http://etree.org/shnutils/shorten/dist/src/shorten-3.6.1.tar.gz"
-[ ! -z $shorten ] && echo "Found shorten as $shorten" || failure "$shorten_failure"
 
 
 # configure and copy path.sh

@@ -18,6 +18,10 @@ import argparse
 import sys
 import textwrap
 
+from abkhazia.commands.abstract_command import AbstractCommand
+from abkhazia.prepare import validation
+
+# TODO clean up those imports
 from abkhazia.prepare.aic_preparator import AICPreparator
 from abkhazia.prepare.buckeye_preparator import BuckeyePreparator
 from abkhazia.prepare.csj_preparator import CSJPreparator
@@ -37,16 +41,14 @@ from abkhazia.prepare.wsj_preparator import (
     JournalistSpontaneousPreparator,
     MainReadPreparator)
 
-from abkhazia.prepare import validation
-
 
 class AbstractFactory(object):
     """The Factory class runs a corpus preparator from command-line arguments
 
     A Factory class is dedicated to a single corpus preparator. It
-    does the following things:
+    does the following things: TODO update
 
-    * parser(): define and return an argument parser for the preparator
+    * add_parser(): define and return an argument parser for the preparator
     * init_preparator(): instanciates the preparator and return it
     * run(): wrap the 2 previous functions, called from AbkhaziaPrepare
 
@@ -74,31 +76,18 @@ class AbstractFactory(object):
             cls.preparator.long_description.replace('    ', '  '))
 
     @classmethod
-    def parser(cls):
+    def add_parser(cls, subparsers):
         """Return a default argument parser for corpus preparation"""
-        default_input_dir = cls.preparator.default_input_dir()
-
-        prog = 'abkhazia prepare {}'.format(cls.preparator.name)
-        spaces = ' '*(len(prog)+8)
-
-        parser = argparse.ArgumentParser(
-            formatter_class=argparse.RawDescriptionHelpFormatter,
-            prog=prog,
-            usage=('%(prog)s <input-dir> [--output-dir <output-dir>]\n' +
-                   spaces + ('\n' + spaces).join([
-                       '[--help] [--verbose] [--njobs <njobs>]',
-                       '[--no-validation|--only-validation]'])),
-            description=textwrap.dedent(cls.long_description()))
+        parser = subparsers.add_parser(cls.preparator.name)
+        parser.formatter_class = argparse.RawDescriptionHelpFormatter
+        parser.description = textwrap.dedent(cls.long_description())
 
         group = parser.add_argument_group('directories')
 
+        default_input_dir = cls.preparator.default_input_dir()
         if default_input_dir is not None:
-            parser.usage = parser.usage.replace(
-                '<input-dir>',
-                '[--input-dir <input-dir>]')
-
             group.add_argument(
-                '-i', '--input_dir', metavar='<input-dir>',
+                '-i', '--input-dir', metavar='<input-dir>',
                 default=default_input_dir,
                 help='root directory of the raw corpus distribution, '
                 '(default readed from configuration file is %(default)s)')
@@ -109,10 +98,10 @@ class AbstractFactory(object):
                 help='root directory of the raw corpus distribution')
 
         group.add_argument(
-            '-o', '--output-dir', metavar='<output-dir>',
-            default=cls.preparator.default_output_dir(),
+            '-o', '--output-dir', metavar='<output-dir>', default=None,
             help='output directory, the prepared corpus is created in '
-            '<output-dir>/data. If not specified use %(default)s.')
+            '<output-dir>/data. If not specified use {}.'
+            .format(cls.preparator.default_output_dir()))
 
         parser.add_argument(
             '-v', '--verbose', action='store_true',
@@ -147,26 +136,27 @@ class AbstractFactory(object):
                 'By default abkhazia will import them as symbolic links, '
                 'use this option to force copy')
 
-            parser.usage += ' [--copy-wavs]'
-
         return parser
 
     @classmethod
     def init_preparator(cls, args):
         """Return an initialized preparator from parsed arguments"""
+        output_dir = (cls.preparator.default_output_dir()
+                      if args.output_dir is None
+                      else args.output_dir)
+
         if cls.preparator.audio_format == 'wav':
-            prep = cls.preparator(args.input_dir, args.output_dir,
-                                  args.verbose, args.njobs, args.copy_wavs)
+            prep = cls.preparator(
+                args.input_dir, output_dir,
+                args.verbose, args.njobs, args.copy_wavs)
         else:
-            prep = cls.preparator(args.input_dir, args.output_dir,
-                                  args.verbose, args.njobs)
+            prep = cls.preparator(
+                args.input_dir, output_dir, args.verbose, args.njobs)
         return prep
 
     @classmethod
-    def run(cls):
+    def run(cls, args):
         """Initialize and run a preparator from command line arguments"""
-        args = cls.parser().parse_args(sys.argv[3:])
-
         if not args.only_validation:
             cls.init_preparator(args).prepare()
 
@@ -179,11 +169,10 @@ class AbstractFactory(object):
 
 
 class AbstractFactoryWithCMU(AbstractFactory):
+    """Preparation for corpora relying of the CMU dictionary"""
     @classmethod
-    def parser(cls):
-        parser = super(AbstractFactoryWithCMU, cls).parser()
-        parser.usage += ('\n' + ' '*(len(parser.prog)+8) +
-                         '[--cmu-dict <cmu-dict>]')
+    def add_parser(cls, subparsers):
+        parser = super(AbstractFactoryWithCMU, cls).add_parser(subparsers)
 
         parser.add_argument(
             '--cmu-dict', default=None, metavar='<cmu-dict>',
@@ -194,9 +183,13 @@ class AbstractFactoryWithCMU(AbstractFactory):
 
     @classmethod
     def init_preparator(cls, args):
+        output_dir = (cls.preparator.default_output_dir()
+                      if args.output_dir is None
+                      else args.output_dir)
+
         return cls.preparator(
             args.input_dir, args.cmu_dict,
-            args.output_dir, args.verbose, args.njobs)
+            output_dir, args.verbose, args.njobs)
 
 
 class BuckeyeFactory(AbstractFactory):
@@ -226,15 +219,16 @@ class LibriSpeechFactory(AbstractFactoryWithCMU):
                  'train-clean-100', 'train-clean-360']
 
     @classmethod
-    def parser(cls):
+    def add_parser(cls, subparsers):
         selection_descr = ', '.join(
             [str(i+1) + ' is ' + cls.selection[i]
              for i in range(len(cls.selection))])
 
-        parser = super(LibriSpeechFactory, cls).parser()
-        parser.usage += (' [--librispeech-dict <librispeech-dict>]\n' +
-                         ' '*(len(parser.prog)+8) +
-                         '[--selection <selection>]')
+        parser = super(LibriSpeechFactory, cls).add_parser(subparsers)
+
+        # parser.usage += (' [--librispeech-dict <librispeech-dict>]\n' +
+        #                  ' '*(len(parser.prog)+8) +
+        #                  '[--selection <selection>]')
 
         parser.add_argument(
             '-s', '--selection', default=None,
@@ -256,14 +250,17 @@ class LibriSpeechFactory(AbstractFactoryWithCMU):
         selection = (None if args.selection is None
                      else cls.selection[args.selection-1])
 
+        output_dir = (cls.preparator.default_output_dir()
+                      if args.output_dir is None
+                      else args.output_dir)
+
         return cls.preparator(
             args.input_dir, selection,
             args.cmu_dict, args.librispeech_dict,
-            args.output_dir, args.verbose, args.njobs)
+            output_dir, args.verbose, args.njobs)
 
     @classmethod
-    def run(cls):
-        args = cls.parser().parse_args(sys.argv[3:])
+    def run(cls, args):
         prep = cls.init_preparator(args)
 
         if not args.only_validation:
@@ -286,13 +283,13 @@ class WallStreetJournalFactory(AbstractFactoryWithCMU):
     ]
 
     @classmethod
-    def parser(cls):
+    def add_parser(cls, subparsers):
         selection_descr = ', '.join([
             str(i+1) + ' is ' + cls.selection[i][0]
             for i in range(len(cls.selection))])
 
-        parser = super(WallStreetJournalFactory, cls).parser()
-        parser.usage += ' [--selection <selection>]'
+        parser = super(WallStreetJournalFactory, cls).add_parser(subparsers)
+        #parser.usage += ' [--selection <selection>]'
 
         parser.add_argument(
             '-s', '--selection', default=None,
@@ -313,15 +310,17 @@ class WallStreetJournalFactory(AbstractFactoryWithCMU):
         preparator = (cls.preparator if args.selection is None
                       else cls.selection[args.selection-1][1])
 
+        output_dir = (preparator.default_output_dir()
+                      if args.output_dir is None
+                      else args.output_dir)
+
         return preparator(
             args.input_dir, args.cmu_dict,
-            args.output_dir, args.verbose, args.njobs)
+            output_dir, args.verbose, args.njobs)
 
     @classmethod
-    def run(cls):
-        args = cls.parser().parse_args(sys.argv[3:])
+    def run(cls, args):
         prep = cls.init_preparator(args)
-
         if not args.only_validation:
             prep.prepare()
 
@@ -340,11 +339,12 @@ class GlobalPhoneFactory(AbstractFactory):
     }
 
     @classmethod
-    def parser(cls):
+    def add_parser(cls, subparsers):
         """Overload of the AbstractPreparator.parser for GlobalPhone"""
         # add a language selection option to the arguments parser
-        parser = super(GlobalPhoneFactory, cls).parser()
-        parser.usage += '\n' + ' '*36 + '[--language {mandarin,vietnamese}]'
+        parser = super(GlobalPhoneFactory, cls).add_parser(subparsers)
+
+        #parser.usage += '\n' + ' '*36 + '[--language {mandarin,vietnamese}]'
 
         parser.add_argument(
             '-l', '--language', nargs='+', metavar='<language>',
@@ -365,9 +365,7 @@ class GlobalPhoneFactory(AbstractFactory):
                 for language in args.language)
 
     @classmethod
-    def run(cls):
-        args = cls.parser().parse_args(sys.argv[3:])
-
+    def run(cls, args):
         for prep in cls.init_preparator(args):
             if not args.only_validation:
                 prep.prepare()
@@ -377,9 +375,9 @@ class GlobalPhoneFactory(AbstractFactory):
                     prep.output_dir, args.njobs, args.verbose).validate()
 
 
-class AbkhaziaPrepare(object):
+class AbkhaziaPrepare(AbstractCommand):
     name = 'prepare'
-    description = 'Prepare a corpus for use with abkhazia'
+    description = 'prepare a speech corpus for use with abkhazia'
 
     supported_corpora = dict((c.preparator.name, c) for c in (
         AICFactory,
@@ -391,53 +389,35 @@ class AbkhaziaPrepare(object):
         XitsongaFactory
     ))
 
-    def describe_corpora(self):
+    @classmethod
+    def describe_corpora(cls):
         """Return a list of strings describing the supported corpora"""
         return ['{} - {}'.format(
             # librispeech is the longest corpus name so the desired
             # key length is len('librispeech ') == 12
             key + ' '*(12 - len(key)),
             value.preparator.description)
-                for key, value in sorted(self.supported_corpora.iteritems())]
+                for key, value in sorted(cls.supported_corpora.iteritems())]
 
-    def corpus_parser(self):
-        """Return a parser dedicated to the corpus parameter"""
-        long_description = (
-            self.description + '\n' +
+    @classmethod
+    def add_parser(cls, subparsers):
+        # get basic parser init from AbstractCommand
+        parser = super(AbkhaziaPrepare, cls).add_parser(subparsers)
+        parser.formatter_class = argparse.RawTextHelpFormatter #  Formatter
+        parser.description = textwrap.dedent(
+            cls.description + '\n' +
             "type 'abkhazia prepare <corpus> --help' for help " +
-            'on a specific corpus\n\n' +
-            'supported <corpus> are:\n    ' +
-            '\n    '.join(self.describe_corpora()))
+            'on a specific corpus\n\n')
 
-        parser = argparse.ArgumentParser(
-            formatter_class=argparse.RawDescriptionHelpFormatter,
-            usage='abkhazia prepare <corpus> [--help] [<args>]',
-            description=textwrap.dedent(long_description))
+        subparsers = parser.add_subparsers(
+            metavar='<corpus>', dest='corpus',
+            help=textwrap.dedent('supported corpora are:\n' +
+                                 '\n'.join(cls.describe_corpora())))
 
-        parser.add_argument(
-            'corpus', metavar='corpus', help=argparse.SUPPRESS)
 
-        return parser
+        for factory in cls.supported_corpora.itervalues():
+            factory.add_parser(subparsers)
 
-    def __init__(self):
-        # init the corpus parser
-        parser = self.corpus_parser()
-
-        # parse the corpus name from the 3rd command line argument
-        try:
-            corpus = parser.parse_args([sys.argv[2]]).corpus
-        except IndexError:
-            print 'You must specify a corpus'
-            parser.print_help()
-            sys.exit(1)
-
-        # retrieve the requested factory from the corpus name
-        try:
-            factory = self.supported_corpora[corpus]
-        except KeyError:
-            print "The corpus '{}' is not supported".format(corpus)
-            parser.print_help()
-            sys.exit(1)
-
-        # init the preparator from arguments and run it
-        factory.run()
+    @classmethod
+    def run(cls, args):
+        cls.supported_corpora[args.corpus].run(args)

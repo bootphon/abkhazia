@@ -1,10 +1,5 @@
 <!-- -*-org-*- this comment force org-mode in emacs -->
 
-* Structure and usage
-
-  - [ ] fix log file in abstractrecipe to go in <corpus>/logs
-  - [ ] Optional kaldi_root argument for configure
-
 * Corpora preparation
 
   - WSJ
@@ -25,10 +20,6 @@
     one is 3. Is it a problem ?
 
 * Functions
-
- - Refactor a bit the commands package
-   - Have a AbkhaziaCommand base class
-   - Factorize the parsers and options
 
  - [X] split
 
@@ -73,7 +64,7 @@
    speaker_adapt
    output: results (repertoire)
 
- - [ ] status
+ - status ???
 
    - As an alternative of the README files
    - Display basic info on what is in <abkahzia-data-directory>

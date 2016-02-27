@@ -40,6 +40,15 @@ class AbstractRecipe(object):
         recipe_dir = os.path.join(recipe_dir, self.name, 's5')
         self.recipe_dir = recipe_dir
 
+        if os.path.isdir(self.recipe_dir):
+            raise OSError(
+                'output directory already existing: {}\n'
+                'use the --force option to overwrite it'
+                .format(self.recipe_dir))
+        else:
+            os.makedirs(self.recipe_dir)
+
+
         # init the log
         log_file = os.path.join(self.recipe_dir, 'logs', self.name + '.log')
         log_dir = os.path.dirname(log_file)

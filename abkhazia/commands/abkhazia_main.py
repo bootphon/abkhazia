@@ -31,57 +31,44 @@ from abkhazia.commands import (
 
 
 class Abkhazia(object):
-    """Parse the first input argument and call the requested subcommand"""
+    """Parse the input arguments and call the requested subcommand"""
     # the possible subcommand classes
     _command_classes = [
         AbkhaziaPrepare,
         AbkhaziaSplit,
-        AbkhaziaTrain,
-        AbkhaziaDecode,
+        # AbkhaziaTrain,
+        # AbkhaziaDecode,
         AbkhaziaAlign
     ]
-
-    # a dict mapping each command name to class
-    commands = [(c.name, c) for c in _command_classes]
 
     # a string describing abkhazia and its subcommands
     description = (
         'ABX and kaldi experiments on speech corpora made easy,\n'
-        "type 'abkahzia <command> --help' for help on a specific command"
-        + '\n\n'
-        + 'possible commands are:\n    '
-        + '\n    '.join(('{}\t{}'.format(n, c.description)
-                         for n, c in commands)))
+        "type 'abkhazia <command> --help' for help on a specific command")
 
     def __init__(self):
+        # create the top-level parser
         parser = argparse.ArgumentParser(
-            formatter_class=argparse.RawDescriptionHelpFormatter,
-            description=textwrap.dedent(self.description),
-            usage='abkhazia <command> [--help] [<args>]')
+            prog='abkhazia',
+            formatter_class=argparse.RawTextHelpFormatter,
+            description=textwrap.dedent(self.description))
 
-        parser.add_argument('command', help='Subcommand to run',
-                            metavar='command',
-                            choices=[n for n, _ in self.commands])
+        # register the subcommands parsers
+        subparsers = parser.add_subparsers(
+            metavar='<command>',
+            help='possible commands are:\n'
+            + '\n'.join(('{}\t{}'.format(c.name, c.description)
+                         for c in self._command_classes)))
 
+        for command in self._command_classes:
+            command.add_parser(subparsers)
+
+        # enable autocompletion and parse arguments
         argcomplete.autocomplete(parser)
-        try:
-            # parse only the first argument, must be a valid command
-            command_name = parser.parse_args([sys.argv[1]]).command
-        except IndexError:
-            print 'You must provide a subcommand'
-            parser.print_help()
-            sys.exit(1)
+        args = parser.parse_args()
 
-        try:
-            # get the command class from its name
-            command = dict(self.commands)[command_name]
-        except KeyError:
-            print 'Unrecognized command: {}'.format(command_name)
-            parser.print_help()
-            sys.exit(1)
-
-        # execute the command (ie. instanciates the command class)
-        command()
+        # call the run() method of the parsed subcommand
+        args.command(args)
 
 
 class CatchExceptions(object):
@@ -120,6 +107,7 @@ class CatchExceptions(object):
 def main():
     """abkhazia main entry point in command line"""
     Abkhazia()
+
 
 if __name__ == '__main__':
     main()

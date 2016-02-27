@@ -46,14 +46,6 @@ class ForceAlign(abstract_recipe.AbstractRecipe):
         'speaker_adaptive_gauss')
 
     def create(self, args=None):
-        if os.path.isdir(self.recipe_dir):
-            raise OSError(
-                'output directory already existing: {}\n'
-                'use the --force option to overwrite it'
-                .format(self.recipe_dir))
-        else:
-            os.makedirs(self.recipe_dir)
-
         # DICT folder
         self.a2k.setup_lexicon()
         self.a2k.setup_phones()

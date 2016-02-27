@@ -30,16 +30,11 @@ class WallStreetJournalPreparator(AbstractPreparatorWithCMU):
     description = 'Wall Street Journal ASR Corpus'
 
     long_description = '''
-    The first two CSR Corpora consist primarily of read speech with
-    texts drawn from a machine-readable corpus of Wall Street Journal
-    news text and are thus often known as WSJ0 and WSJ1.
-
-    The texts to be read were selected to fall within either a
-    5,000-word or a 20,000-word subset of the WSJ text corpus. (See
-    the documentation for details). Some spontaneous dictation is
-    included in addition to the read speech. The dictation portion was
-    collected using journalists who dictated hypothetical news
-    articles.'''
+    The first two CSR Wall Street Journal Corpora (WSJ0 and WSJ1)
+    consist primarily of read speech with texts drawn from a
+    machine-readable corpus of news text. The texts to be read were
+    selected to fall within either a 5,000-word or a 20,000-word
+    subset of the WSJ text corpus.'''
 
     url = ['WSJ0 - https://catalog.ldc.upenn.edu/LDC93S6A',
            'WSJ1 - https://catalog.ldc.upenn.edu/LDC94S13A']
@@ -179,6 +174,7 @@ class WallStreetJournalPreparator(AbstractPreparatorWithCMU):
         # if we reached this point without returning, return w as is
         return word
 
+
     def __init__(self, input_dir, cmu_dict=None,
                  output_dir=None, verbose=False, njobs=1):
 
@@ -213,9 +209,9 @@ class WallStreetJournalPreparator(AbstractPreparatorWithCMU):
         self.input_recordings = self.filter_files(dir_filter, filter_wv1)
         self.input_transcriptions = self.filter_files(dir_filter, filter_dot)
 
-        self.log.info('selected {} speech files and {} transcription files'
-                      .format(len(self.input_recordings),
-                              len(self.input_transcriptions)))
+        self.log.debug('selected {} speech files and {} transcription files'
+                       .format(len(self.input_recordings),
+                               len(self.input_transcriptions)))
 
         # filter out the corrupted utterances from input files. The
         # tag '[bad_recording]' in a transcript indicates a problem
@@ -228,7 +224,7 @@ class WallStreetJournalPreparator(AbstractPreparatorWithCMU):
                     self.bad_utts.append(utt_id)
 
         self.log.info('found {} corrupted utterances'
-                       .format(len(self.bad_utts)))
+                      .format(len(self.bad_utts)))
 
     def filter_files(self, dir_filter, file_filter):
         """Return a list of abspaths to relevant WSJ files"""
@@ -335,8 +331,8 @@ class WallStreetJournalPreparator(AbstractPreparatorWithCMU):
 # TODO check if that's correct (in particular no sd_tr_s or l in WSJ1
 # and no si_tr_l in WSJ0 ??)
 
-class EntireCorpusPreparator(WallStreetJournalPreparator):
-    pass
+# class EntireCorpusPreparator(WallStreetJournalPreparator):
+#     pass
 
 class JournalistReadPreparator(WallStreetJournalPreparator):
     """Prepare only the journalist read speech from WSJ

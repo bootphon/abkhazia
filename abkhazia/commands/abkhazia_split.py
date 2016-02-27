@@ -14,33 +14,23 @@
 # along with abkahzia. If not, see <http://www.gnu.org/licenses/>.
 """Implementation of the 'abkazia split' command"""
 
-import argparse
 import os
 import shutil
-import sys
 
+from abkhazia.commands.abstract_command import AbstractCommand
 import abkhazia.utils as utils
 import abkhazia.utils.split as split
 
 
-class AbkhaziaSplit(object):
-    '''This class implements the 'abkahzia split' command
-
-    Basically this class defines an argument parser, parses the
-    arguments and split a corpus in train and test subsets. The
-    spliting operation is delegated to the split.SplitCorpus class.
-
-    '''
+class AbkhaziaSplit(AbstractCommand):
+    '''This class implements the 'abkahzia split' command'''
     name = 'split'
-    description = 'Split a corpus in train and test subsets'
+    description = 'split a corpus in train and test subsets'
 
-    def __init__(self):
-        # parse the arguments (ignore the first and second which are
-        # 'abkahzia split')
-        args = self.parser().parse_args(sys.argv[2:])
-
+    @classmethod
+    def run(cls, args):
         # retrieve the corpus input directory
-        if args.corpus.startswith(('/', './', '../')):
+        if args.corpus.startswith(('/', './', '../', '~/')):
             corpus = args.corpus
         else:
             corpus = os.path.join(
@@ -68,20 +58,21 @@ class AbkhaziaSplit(object):
         # split the corpus and write it to the output directory
         split_fun(args.test_prop, args.train_prop)
 
-    @classmethod
-    def parser(cls):
-        """Return a parser for the split command"""
-        prog = 'abkhazia split'
-        spaces = ' '*(len(prog) + 8)
 
-        parser = argparse.ArgumentParser(
-            prog=prog,
-            usage='%(prog)s <corpus> [--output-dir <output-dir>]\n' +
-            spaces + ('\n' + spaces).join([
-                '[--help] [--verbose] [--force]',
-                '[--test-prop <test>|--train-prop <train>]',
-                '[--by-speakers] [--random-seed <seed>]']),
-            description=cls.description)
+    @classmethod
+    def add_parser(cls, subparsers):
+        # get basic parser init from AbstractCommand
+        parser = super(AbkhaziaSplit, cls).add_parser(subparsers)
+
+        parser.add_argument(
+            '-v', '--verbose', action='store_true',
+            help='display more messages to stdout')
+
+        parser.add_argument(
+            '-f', '--force', action='store_true',
+            help='if specified, overwrite the result directory '
+            '<output-dir>/split. If not specified but the directory exists, '
+            'the program fails.')
 
         group = parser.add_argument_group('directories')
 
@@ -100,16 +91,6 @@ class AbkhaziaSplit(object):
             help='output directory, the splited corpus is created in '
             '<output-dir>/split. '
             'If not specified use <output-dir> = <corpus>.')
-
-        parser.add_argument(
-            '-v', '--verbose', action='store_true',
-            help='display more messages to stdout')
-
-        parser.add_argument(
-            '-f', '--force', action='store_true',
-            help='if specified, overwrite the result directory '
-            '<output-dir>/split. If not specified but the directory exists, '
-            'the program fails.')
 
         group = parser.add_argument_group('split arguments')
 

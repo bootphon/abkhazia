@@ -22,6 +22,7 @@ the processing to modules in abkhazia.prepare or abkahzia.kaldi
 
 """
 
+from abkhazia.commands.abstract_command import AbstractCommand
 from abkhazia.commands.abkhazia_align import AbkhaziaAlign
 from abkhazia.commands.abkhazia_decode import AbkhaziaDecode
 from abkhazia.commands.abkhazia_prepare import AbkhaziaPrepare

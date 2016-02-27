@@ -14,34 +14,23 @@
 # along with abkahzia. If not, see <http://www.gnu.org/licenses/>.
 """Implementation of the 'abkhazia align' command"""
 
-import argparse
 import os
 import shutil
-import sys
 
+from abkhazia.commands.abstract_command import AbstractCommand
 import abkhazia.utils as utils
 import abkhazia.kaldi.force_align as force_align
 
 
-class AbkhaziaAlign(object):
-    '''This class implemnts the 'abkahzia align' command
-
-    Basically this class defines an argument parser, parses the
-    arguments and instanciates a kaldi recipe. The recipe is run as
-    needed.
-
-    '''
-
+class AbkhaziaAlign(AbstractCommand):
+    '''This class implements the 'abkahzia align' command'''
     name = 'align'
-    description = 'Compute forced-aligment'
+    description = 'compute forced-aligment'
 
-    def __init__(self):
-        # parse the arguments (ignore the first and second which are
-        # 'abkahzia align')
-        args = self.parser().parse_args(sys.argv[2:])
-
+    @classmethod
+    def run(cls, args):
         # retrieve the corpus input directory
-        if args.corpus.startswith(('/', './', '../')):
+        if args.corpus.startswith(('/', './', '../', '~/')):
             corpus = args.corpus
         else:
             corpus = os.path.join(
@@ -51,8 +40,8 @@ class AbkhaziaAlign(object):
         # retrieve the output directory
         output_dir = corpus if args.output_dir is None else args.output_dir
 
-        # if --force, remove any existing output_dir/split
-        if args.force and not args.only_run:
+        # if --force, remove any existing output_dir/force_align
+        if args.force:
             recipe_dir = os.path.join(output_dir, 'force_align')
             if os.path.exists(recipe_dir):
                 print 'removing {}'.format(recipe_dir)
@@ -76,23 +65,10 @@ class AbkhaziaAlign(object):
 
 
     @classmethod
-    def parser(cls):
+    def add_parser(cls, subparsers):
         """Return a parser for the align command"""
-        prog = 'abkhazia align'
-        spaces = ' '*(len(prog) + len(' <corpus>') + 8)
-
-        parser = argparse.ArgumentParser(
-            formatter_class=argparse.RawDescriptionHelpFormatter,
-            prog=prog,
-            # TODO add triphones params here
-            usage='%(prog)s <corpus> [--output-dir <output-dir>]\n'
-            + spaces + ('\n' + spaces).join([
-                '[--help] [--verbose] [--force]',
-                '[--no-optional-silence] [--no-pitch]',
-                '[--no-run|--only-run']),
-            description=cls.long_description())
-
-        group = parser.add_argument_group('directories')
+        # get basic parser init from AbstractCommand
+        parser = super(AbkhaziaAlign, cls).add_parser(subparsers)
 
         parser.add_argument(
             '-v', '--verbose', action='store_true',
@@ -103,6 +79,8 @@ class AbkhaziaAlign(object):
             help='if specified, overwrite the result directory '
             '<output-dir>/force_align. If not specified but the '
             'directory exists, the program fails.')
+
+        group = parser.add_argument_group('directories')
 
         group.add_argument(
             'corpus', metavar='<corpus>',
@@ -119,7 +97,6 @@ class AbkhaziaAlign(object):
             help='output directory, the forced alignment recipe is '
             'created in <output-dir>/force_align/s5. '
             'If not specified use <output-dir> = <corpus>.')
-
 
         prop = group.add_mutually_exclusive_group()
         prop.add_argument(

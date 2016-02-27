@@ -83,13 +83,9 @@ class CSJPreparator(AbstractPreparator):
     long_description = '''
     The Corpus of Spontaneous Japanese (CSJ) is a database of spoken
     Japanese. It contains 658 hours of speech consisting of
-    approximately 7.5 million words. The speech materials were
-    provided by more than 1,400 speakers of ages ranging from twenties
-    to eighties.
-
-    The CSJ has been publicly available since the spring of 2004. For
-    more information, please visit the English web page of the
-    Institute at: /corpus_center/csj/misc/preliminary/index_e.html'''
+    approximately 7.5 million words from more than 1,400 speakers.
+    It is publicly available at /corpus_center/csj/misc/preliminary/index_e.html
+    '''
 
     url = 'http://www.ninjal.ac.jp/english/products/csj'
     audio_format = 'wav'

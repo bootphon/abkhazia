@@ -35,7 +35,8 @@ REQUIREMENTS = [] if ON_RTD else [
     #'yaafelib',
     'progressbar',
     'joblib',
-    'fmoo-audiotools'
+    'fmoo-audiotools',
+    'argcomplete'
 ]
 
 setup(
