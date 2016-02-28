@@ -15,7 +15,7 @@
 # limitations under the License.
 
 
-###
+### TODO
 #
 #  Not yet tested on n-grams with n!=2 or on
 #  non-word-position-dependent acoustic models
@@ -32,12 +32,12 @@ name=$1
 # Should be set to true or false depending on whether the language
 # model produced is destined to be used with an acoustic model trained
 # with or without word position dependent variants of the phones.
-# Only tested when it is true
-word_position_dependent=true
+# TODO Only tested when it is true
+word_position_dependent=@@@@
 
 # n in n-gram, only used if a LM is to be estimated from some text
 # (see below). Only tested with n=2
-model_order=2
+model_order=@@@@
 
 
 ###### Recipe ######
@@ -149,9 +149,10 @@ else
 
     # As in 2., generate FST
     tmp_out_dir="$out_dir"_tmp
+    # TODO bug here !
     utils/format_lm_sri.sh --srilm_opts "-subset -prune-lowprobs -unk" \
-			   $out_dir "$in_dir"/G.arpa.gz \
-			   "in_dir"/lexicon.txt $tmp_out_dir
+        		   $out_dir "$in_dir"/G.arpa.gz \
+        		   "in_dir"/lexicon.txt $tmp_out_dir
     rm -Rf $out_dir  # erases the previous content that is redundant anyway
     mv $tmp_out_dir $out_dir
 fi

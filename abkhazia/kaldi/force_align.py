@@ -14,7 +14,6 @@
 # along with abkahzia. If not, see <http://www.gnu.org/licenses/>.
 """Provides the ForceAlign class"""
 
-import collections
 import os
 
 import abkhazia.utils.basic_io as io
@@ -49,6 +48,8 @@ class ForceAlign(abstract_recipe.AbstractRecipe):
         # text, utt2spk, segments and wav.scp files
         wav_dir = os.path.join(self.corpus_dir, 'data', 'wavs')
         seg_file = os.path.join(self.corpus_dir, 'data', 'segments.txt')
+
+        self.log.debug('filtering out utterances shorther than 15ms')
         utt_durations = io.get_utt_durations(wav_dir, seg_file)
         desired_utts = [utt for utt in utt_durations
                         if utt_durations[utt] >= .015]

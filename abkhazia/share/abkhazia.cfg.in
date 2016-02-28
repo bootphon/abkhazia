@@ -28,6 +28,15 @@ xitsonga-directory:
 # Defines the default proportion of data for the test set
 default-test-proportion: 0.5
 
+[language]
+# Should be set to true or false depending on whether the language
+# model produced is destined to be used with an acoustic model trained
+# with or without word position dependent variants of the phones
+word-position-dependent: true
+
+# n in n-gram, only used if a LM is to be estimated from some text
+model-order: 2
+
 [align]
 # Do all computations if true, else focu on the main ones
 optional-silence: true

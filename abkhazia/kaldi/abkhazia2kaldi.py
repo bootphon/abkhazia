@@ -289,11 +289,12 @@ class Abkhazia2Kaldi(object):
         """using a symbolic link to avoid copying voluminous data"""
         origin = os.path.join(self.data_dir, 'wavs')
         target = os.path.join(self.recipe_dir, 'wavs')
-        self.log.debug('creating {}'.format(target))
 
         if os.path.exists(target):
-            # could log this...
+            self.log.debug('overwriting {}'.format(target))
             os.remove(target)
+        else:
+            self.log.debug('creating {}'.format(target))
         os.symlink(origin, target)
 
 
@@ -324,17 +325,29 @@ class Abkhazia2Kaldi(object):
             pass
 
 
-    def setup_lm_scripts(self):
-        """copy kaldi template 'prepare_lm.sh' in 'self.recipe_dir/local'
+    def setup_lm_scripts(self, args):
+        """configure template 'prepare_lm.sh.in' in 'self.recipe_dir/local'
 
         Also copy custom prepare_lang.sh and validate_lang.sh scripts
         to 'local' folder. These scripts are used for models trained
         with word_position_dependent phone variants.
 
         """
-        for target in ('prepare_lm.sh',
-                       'prepare_lang_wpdpl.sh',
-                       'validate_lang_wpdpl.pl'):
+        local = os.path.join(self.recipe_dir, 'local')
+        if not os.path.isdir(local):
+            os.makedirs(local)
+
+        target = os.path.join(self.recipe_dir, 'local', 'prepare_lm.sh')
+        self.configure(
+            os.path.join(self.share_dir, 'kaldi_templates', 'prepare_lm.sh.in'),
+            target, args)
+
+        # chmod +x run.sh
+        os.chmod(target, os.stat(target).st_mode | 0o111)
+
+        for target in (#'prepare_lm.sh',
+                'prepare_lang_wpdpl.sh',
+                'validate_lang_wpdpl.pl'):
             shutil.copy(
                 os.path.join(self.share_dir, 'kaldi_templates', target),
                 os.path.join(self.recipe_dir, 'local', target))
@@ -382,6 +395,7 @@ class Abkhazia2Kaldi(object):
 
         with utils.open_utf8(target, 'w') as out:
             for line in utils.open_utf8(origin, 'r').readlines():
+#                print line
                 matched = re.match('.*=' + expr, line)
                 if matched and not line.startswith('#'):
                     # parameter name from the file
