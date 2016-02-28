@@ -25,9 +25,15 @@ import textwrap
 from abkhazia.commands import (
     AbkhaziaPrepare,
     AbkhaziaSplit,
+    AbkhaziaLanguage,
     AbkhaziaTrain,
     AbkhaziaDecode,
     AbkhaziaAlign)
+
+import abkhazia.utils as utils
+from abkhazia.utils.config import AbkhaziaConfig
+
+__version__ = '0.2'
 
 
 class Abkhazia(object):
@@ -36,8 +42,9 @@ class Abkhazia(object):
     _command_classes = [
         AbkhaziaPrepare,
         AbkhaziaSplit,
-        # AbkhaziaTrain,
-        # AbkhaziaDecode,
+        AbkhaziaLanguage,
+        AbkhaziaTrain,
+        AbkhaziaDecode,
         AbkhaziaAlign
     ]
 
@@ -52,6 +59,10 @@ class Abkhazia(object):
             prog='abkhazia',
             formatter_class=argparse.RawTextHelpFormatter,
             description=textwrap.dedent(self.description))
+
+        # add a version description argument
+        parser.add_argument('--version', action='version',
+                            version='%(prog)s-' + __version__)
 
         # register the subcommands parsers
         subparsers = parser.add_subparsers(

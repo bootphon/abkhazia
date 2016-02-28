@@ -13,9 +13,9 @@
 # You should have received a copy of the GNU General Public License
 # along with abkahzia. If not, see <http://www.gnu.org/licenses/>.
 
-class AbkhaziaTrain(object):
-    name = 'train'
-    description = 'Train (or retrain) an acoustic model and test it'
+from abkhazia.commands.abstract_command import AbstractCommand
 
-    def __init__(self):
-        raise NotImplementedError
+class AbkhaziaTrain(AbstractCommand):
+    """This class implements the 'abkahzia train' command"""
+    name = 'train'
+    description = 'train (or retrain) an acoustic model and test it'

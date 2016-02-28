@@ -15,6 +15,6 @@
 
 from abkhazia.commands.abstract_command import AbstractCommand
 
-class AbkhaziaDecode(AbstractCommand):
-    name = 'decode'
-    description = 'compute phone posteriograms or transcription'
+class AbkhaziaLanguage(AbstractCommand):
+    name = 'language'
+    description = 'compute a language model'
