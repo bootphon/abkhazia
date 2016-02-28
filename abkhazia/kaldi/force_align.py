@@ -36,16 +36,7 @@ class ForceAlign(abstract_recipe.AbstractRecipe):
     """
     name = 'force_align'
 
-    params = collections.namedtuple(
-        'params',
-        'optional_silence '
-        'use_pitch '
-        'speaker_independent_states '
-        'speaker_independent_gauss '
-        'speaker_adaptive_states '
-        'speaker_adaptive_gauss')
-
-    def create(self, args=None):
+    def create(self, args):
         # DICT folder
         self.a2k.setup_lexicon()
         self.a2k.setup_phones()
@@ -85,10 +76,8 @@ class ForceAlign(abstract_recipe.AbstractRecipe):
         # path.sh, cmd.sh
         self.a2k.setup_machine_specific_scripts()
         # score.sh, run.sh
-        self.a2k.setup_main_scripts('force_align.sh')
+        self.a2k.setup_main_scripts('force_align.sh.in', args)
 
-        # Finally configure run.sh with the recipe parameters
-        self._setup_parameters(args)
 
     def export(self):
         """Export the kaldi tra alignment file in abkhazia format

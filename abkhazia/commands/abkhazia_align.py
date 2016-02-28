@@ -14,12 +14,13 @@
 # along with abkahzia. If not, see <http://www.gnu.org/licenses/>.
 """Implementation of the 'abkhazia align' command"""
 
+import argparse
 import os
 import shutil
 
-from abkhazia.commands.abstract_command import AbstractCommand
 import abkhazia.utils as utils
 import abkhazia.kaldi.force_align as force_align
+from abkhazia.commands.abstract_command import AbstractCommand
 
 
 class AbkhaziaAlign(AbstractCommand):
@@ -52,7 +53,7 @@ class AbkhaziaAlign(AbstractCommand):
 
         # finally create and/or run the recipe
         if not args.only_run:
-            recipe.create()
+            recipe.create(args)
         if not args.no_run:
             recipe.run()
             recipe.export()
@@ -69,6 +70,8 @@ class AbkhaziaAlign(AbstractCommand):
         """Return a parser for the align command"""
         # get basic parser init from AbstractCommand
         parser = super(AbkhaziaAlign, cls).add_parser(subparsers)
+        parser.formatter_class = argparse.RawDescriptionHelpFormatter
+        parser.description = cls.long_description()
 
         parser.add_argument(
             '-v', '--verbose', action='store_true',
@@ -98,6 +101,8 @@ class AbkhaziaAlign(AbstractCommand):
             'created in <output-dir>/force_align/s5. '
             'If not specified use <output-dir> = <corpus>.')
 
+        group = parser.add_argument_group('command options')
+
         prop = group.add_mutually_exclusive_group()
         prop.add_argument(
             '--no-run', action='store_true',
@@ -106,5 +111,32 @@ class AbkhaziaAlign(AbstractCommand):
         prop.add_argument(
             '--only-run', action='store_true',
             help='if specified, dont create the recipe but run it')
+
+
+        group = parser.add_argument_group(
+            'alignment parameters', 'those parameters can also be specified '
+            'in the [align] section of the configuration file')
+
+
+        from abkhazia.kaldi.abkhazia2kaldi import add_argument
+        def add_arg(name, type, help):
+            add_argument(group, cls.name, name, type, help)
+
+        add_arg(
+            'optional-silence', bool,
+            'do all computations if true, else focus on the main ones')
+
+        add_arg('use-pitch', bool, 'MFCC features parameter')
+
+        add_arg('num-states-si', int,
+                'number of states in the speaker-independent triphone model')
+        add_arg('num-gauss-si', int,
+                'number of Gaussians in the speaker-independent triphone model')
+
+        add_arg('num-states-sa', int,
+                'number of states in the speaker-adaptive triphone model')
+        add_arg('num-gauss-sa', int,
+                'number of Gaussians in the speaker-adaptive triphone model')
+
 
         return parser

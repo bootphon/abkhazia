@@ -16,10 +16,27 @@
 
 import os
 import pkg_resources
+import re
 import shutil
 
 import abkhazia.utils as utils
 import abkhazia.utils.basic_io as io
+
+
+def add_argument(parser, recipe, name, type, help):
+    try:
+        metavar = {
+            bool: '<true|false>',
+            int: '<int>',
+            float: '<float>'
+        }[type]
+    except KeyError:
+        metavar = '<' + name + '>'
+
+    parser.add_argument(
+        '--'+name, type=type, metavar=metavar,
+        default=utils.config.get(recipe, name),
+        help=help + ' (default is %(default)s)')
 
 
 class Abkhazia2Kaldi(object):
@@ -36,7 +53,7 @@ class Abkhazia2Kaldi(object):
       module. See there for more documentation.
 
     log : the logger to write in. default is to write in
-    'self.recipe_dir'/abkhazia2kaldi.log
+      'self.recipe_dir'/abkhazia2kaldi.log
 
     '''
     def __init__(self, corpus_dir, recipe_dir, verbose=False, log=None):
@@ -307,31 +324,6 @@ class Abkhazia2Kaldi(object):
             pass
 
 
-    def setup_machine_specific_scripts(self):
-        """Copy cmd.sh and path.sh to self.recipe_dir"""
-        for target in ('cmd', 'path'):
-            script = os.path.join(self.share_dir, target + '.sh')
-            template = os.path.join(
-                self.share_dir, 'kaldi_templates', target + '_template.sh')
-            self._copy_template(script, template)
-
-
-    def setup_main_scripts(self, run_script):
-        """Copy score.sh and run.sh to self.recipe_dir"""
-        # score.sh
-        local_dir = os.path.join(self.recipe_dir, 'local')
-        if not os.path.isdir(local_dir):
-            os.mkdir(local_dir)
-
-        score_file = os.path.join(
-            self.share_dir, 'kaldi_templates', 'standard_score.sh')
-        shutil.copy(score_file, os.path.join(local_dir, 'score.sh'))
-
-        # run.sh
-        run_file = os.path.join(self.share_dir, 'kaldi_templates', run_script)
-        shutil.copy(run_file, os.path.join(self.recipe_dir, 'run.sh'))
-
-
     def setup_lm_scripts(self):
         """copy kaldi template 'prepare_lm.sh' in 'self.recipe_dir/local'
 
@@ -346,3 +338,64 @@ class Abkhazia2Kaldi(object):
             shutil.copy(
                 os.path.join(self.share_dir, 'kaldi_templates', target),
                 os.path.join(self.recipe_dir, 'local', target))
+
+
+    def setup_machine_specific_scripts(self):
+        """Copy cmd.sh and path.sh to self.recipe_dir"""
+        for target in ('cmd', 'path'):
+            script = os.path.join(self.share_dir, target + '.sh')
+            template = os.path.join(
+                self.share_dir, 'kaldi_templates', target + '_template.sh')
+            self._copy_template(script, template)
+
+
+    # TODO split in 2, run.sh possibly configured
+    def setup_main_scripts(self, run_script, args):
+        """Copy score.sh and run.sh to self.recipe_dir"""
+        # score.sh
+        local_dir = os.path.join(self.recipe_dir, 'local')
+        if not os.path.isdir(local_dir):
+            os.mkdir(local_dir)
+
+        score_file = os.path.join(
+            self.share_dir, 'kaldi_templates', 'standard_score.sh')
+        shutil.copy(score_file, os.path.join(local_dir, 'score.sh'))
+
+        # run.sh
+        target = os.path.join(self.recipe_dir, 'run.sh')
+        origin = os.path.join(self.share_dir, 'kaldi_templates', run_script)
+        self.configure(origin, target, args)
+
+        # chmod +x run.sh
+        os.chmod(target, os.stat(target).st_mode | 0o111)
+
+    def configure(self, origin, target, args, expr='@@@@'):
+        """Configure the file 'target' from 'origin' and 'args'
+
+        Replace the lines starting with param='expr' in 'origin' by
+        param=args.param, pass on the unmatched lines and copy the whole
+        in 'target'. Raises IOError if args.param does not exist.
+
+        """
+        self.log.debug('configuring {} to {}'
+                       .format(os.path.basename(origin), target))
+
+        with utils.open_utf8(target, 'w') as out:
+            for line in utils.open_utf8(origin, 'r').readlines():
+                matched = re.match('.*=' + expr, line)
+                if matched and not line.startswith('#'):
+                    # parameter name from the file
+                    param = matched.group().split('=')[0].strip()
+                    try:
+                        # parameter value from args
+                        value = vars(args)[param]
+                    except KeyError:
+                        out.close()
+                        utils.remove(out.name)
+                        raise IOError(
+                            "'{}' parameter is requested but not defined"
+                            .format(param))
+
+                    line = param + '=' + str(value).lower() + '\n'
+                    self.log.debug('configured ' + line[:-1])
+                out.write(line)

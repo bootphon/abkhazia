@@ -21,18 +21,11 @@
 
 * Functions
 
- - [X] split
-
-   Why not a more general split (e.g. for dev/test/train or set1/set2/.../setN)
-
  - [-] align
-
-   Forced alignment
-
    - [X] test/debug at least on xitsonga, wsj
    - [X] integrate the kaldi2abkhazia conversion script as the final
      step of ForceAlign.run()
-   - [ ] add support for template options from command-line
+   - [X] add support for template options from command-line
    - [ ] remove the language model part from the recipe (this will be
      the 'abkhazia lang' command)
 

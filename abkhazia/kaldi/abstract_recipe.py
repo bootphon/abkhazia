@@ -21,6 +21,7 @@ import abkhazia.utils as utils
 import abkhazia.kaldi.abkhazia2kaldi as abkhazia2kaldi
 
 
+
 class AbstractRecipe(object):
     """A base class for creating kaldi recipes from an abkahzia corpus"""
     name = NotImplemented
@@ -71,14 +72,6 @@ class AbstractRecipe(object):
         """
         raise NotImplementedError
 
-    def _setup_parameters(self, args):
-        """Configure the recipe parameters in the 'run.sh' script
-
-        args : an instance of self.params
-
-
-        """
-        pass
 
     def run(self):
         """Run the created recipe by executing 'run.sh'"""

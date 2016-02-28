@@ -1,0 +1,44 @@
+# This is the abkhazia configuration file. This file is automatically
+# generated during installation. Change the values in here to overload
+# the default configuration.
+
+[abkhazia]
+# The absolute path to the output data directory of abkhazia.
+data-directory:
+
+[kaldi]
+# The absolute path to the kaldi distribution directory
+# YOU MUST SPECIFY THIS PATH MANUALLY.
+kaldi-directory:
+
+[corpus]
+# In this section you can specify the default input directory where to
+# read raw data for each supported corpus. By doing so, the
+# <input-dir> argument of 'abkhazia prepare <corpus>' becomes optional
+# for the corpus you have specified directories here.
+aic-directory:
+buckeye-directory:
+csj-directory:
+globalphone-directory:
+librispeech-directory:
+wsj-directory:
+xitsonga-directory:
+
+[split]
+# Defines the default proportion of data for the test set
+default-test-proportion: 0.5
+
+[align]
+# Do all computations if true, else focu on the main ones
+optional-silence: true
+
+# Feature parameters
+use-pitch: true
+
+# Speaker-independent triphone models parameters
+num-states-si: 2500
+num-gauss-si: 15000
+
+# Speaker-adaptive triphone models parameters
+num-states-sa: 2500
+num-gauss-sa: 15000
