@@ -25,22 +25,36 @@ class AbkhaziaConfig(object):
     The function raises OSError if the configuration is not found
 
     """
-    def __init__(self, config_file=None):
-        # if file not specified, try to get the installed one
-        if config_file is None:
-            try:
-                config_file = pkg.resource_filename(
-                    pkg.Requirement.parse('abkhazia'), 'share/abkhazia.cfg')
-            except pkg.DistributionNotFound:
-                pass
+    @staticmethod
+    def default_config_file():
+        """Return the default abkhazia configuation file
 
-        # if not found, try to get it relatively to this file
-        if config_file is None or not os.path.isfile(config_file):
+        Look for 'share/abkhazia.cfg' from pkg_resources, if not
+        found, look for __file__/../share/abkhazia.cfg, else raise
+        OSError not found.
+
+        """
+        try:
+            return pkg.resource_filename(
+                pkg.Requirement.parse('abkhazia'), 'abkhazia/share/abkhazia.cfg')
+        except pkg.DistributionNotFound:
             config_file = os.path.join(
                 os.path.dirname(os.path.abspath(__file__)),
                 '..', 'share/abkhazia.cfg')
 
-        if config_file is None or not os.path.isfile(config_file):
+            if not os.path.isfile(config_file):
+                raise OSError('abkhazia configuration file not found {}'
+                              .format(config_file))
+
+            return config_file
+
+
+    def __init__(self, config_file=None):
+        # if file not specified, try to get the installed one
+        if config_file is None:
+            config_file = self.default_config_file()
+
+        if not os.path.isfile(config_file):
             raise OSError('abkhazia configuration file not found {}'
                           .format(config_file))
 
