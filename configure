@@ -95,6 +95,27 @@ $kaldi is not an existing directory"
     sph2pipe="$kaldi/tools/sph2pipe_v2.5/sph2pipe"
     [ -e $sph2pipe ] && echo "Found sph2pipe as $sph2pipe" ||
             failure "$sph2pipe not found in the kaldi distribution"
+
+    # check irstlm is installed
+    irstlm=$kaldi/tools/irstlm
+    [ -d $irstlm ] && echo "Found irstlm root directory as $irstlm" ||
+            failure "Please install irstlm in kaldi tools:
+    cd $kaldi/tools
+    ./extras/install_irstlm.sh
+
+Please do not source the tools/env.sh as indicated by that
+script, this is already done for you."
+
+    # check irstlm is installed
+    srilm=$kaldi/tools/srilm
+    [ -d $srilm ] && echo "Found srilm root directory as $srilm" ||
+            failure "Please install srilm in kaldi tools:
+    cd $kaldi/tools
+    ./extras/install_irstlm.sh
+
+Please do not source the tools/env.sh as indicated by that
+script, this is already done for you."
+
 fi
 
 

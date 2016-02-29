@@ -149,7 +149,9 @@ else
 
     # As in 2., generate FST
     tmp_out_dir="$out_dir"_tmp
-    # TODO bug here !
+    # TODO bug here, and then in
+    # change-lm-vocab -vocab $tmpdir/voc -lm $tmpdir/lm.gz -write-lm $tmpdir/out_lm \
+    # $srilm_opts || exit 1;
     utils/format_lm_sri.sh --srilm_opts "-subset -prune-lowprobs -unk" \
         		   $out_dir "$in_dir"/G.arpa.gz \
         		   "in_dir"/lexicon.txt $tmp_out_dir
