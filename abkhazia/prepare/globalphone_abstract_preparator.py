@@ -87,11 +87,19 @@ class AbstractGlobalPhonePreparator(AbstractPreparator):
         self._erase_trs = self.correct_transcription()
 
     def correct_transcription(self):
-        """TODO"""
+        """Optionally correct corpus transcription in self.transcription_dir
+
+        return True if corrceted
+
+        """
         return False
 
     def correct_dictionary(self):
-        """TODO"""
+        """Optionally correct corpus dictionary in self.dictionary
+
+        return True if corrceted
+
+        """
         return False
 
     def __del__(self):
@@ -99,13 +107,13 @@ class AbstractGlobalPhonePreparator(AbstractPreparator):
             # the corpus correction possibly create temporary files that
             # we delete here
             if self._erase_dict:
-                self.log.debug('removing corrected dictionay: {}'
-                               .format(self.dictionary))
+                self.log.debug('removing corrected dictionay: %s',
+                               self.dictionary)
                 os.remove(self.dictionary)
 
             if self._erase_trs:
-                self.log.debug('removing corrected transcriptions: {}'
-                               .format(self.transcription_dir))
+                self.log.debug('removing corrected transcriptions: %s',
+                               self.transcription_dir)
                 shutil.rmtree(self.transcription_dir)
         except AttributeError:
             pass
@@ -113,7 +121,7 @@ class AbstractGlobalPhonePreparator(AbstractPreparator):
     def list_audio_files(self):
         # for some languages, there are corrupted wavefiles that we
         # need to exclude from preparation
-        self.log.debug('{} audio files excluded'.format(len(self.exclude_wavs)))
+        self.log.debug('%i audio files excluded', len(self.exclude_wavs))
 
         # src_dir is the 'adc' directory from the GlobalPhone
         # distribution of the language considered

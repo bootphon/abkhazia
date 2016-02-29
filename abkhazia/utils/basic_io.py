@@ -16,24 +16,30 @@
 """Functions for reading and sorting the various Abkhazia file formats"""
 
 import codecs
-import contextlib
 import os
-import numpy as np
+import shlex
 import subprocess
-import wave
 
-from abkhazia.utils import open_utf8
+import numpy as np
+import abkhazia.utils as utils
+
 
 def cpp_sort(filename):
-    """In place sort of `filename` through the sort command"""
+    """In place sort of `filename` through the sort command
+
+    May raise OSError and ValueError
+
+    """
     # there is redundancy here but I didn't check which export can be
     # safely removed, so better safe than sorry
     os.environ["LC_ALL"] = "C"
-    subprocess.call("export LC_ALL=C; sort {0} -o {0}".format(filename),
-                    shell=True, env=os.environ)
+    subprocess.call(
+        "export LC_ALL=C; sort {0} -o {0}".format(filename),
+        shell=True, env=os.environ)
 
 
 def basic_parse(line, filename):
+    """Safely split a line from filename"""
     # check line break
     assert not('\r' in line), \
         "'{0}' contains non Unix-style linebreaks".format(filename)
@@ -50,9 +56,10 @@ def basic_parse(line, filename):
 
 
 def read_utt2spk(filename):
+    """Return a tuple (utt_ids, speakers) from the utt2spk file"""
     utt_ids, speakers = [], []
 
-    for line in open_utf8(filename, 'r').readlines():
+    for line in utils.open_utf8(filename, 'r').readlines():
         line = basic_parse(line, filename)
         assert(len(line) == 2), \
             "'utt2spk.txt' should contain only lines with two columns"
@@ -64,8 +71,9 @@ def read_utt2spk(filename):
 
 
 def read_segments(filename):
+    """Return a tuple (utt_ids, wavs, start, stop) from the segments file"""
     utt_ids, wavs, starts, stops = [], [], [], []
-    with open_utf8(filename, 'r') as inp:
+    with utils.open_utf8(filename, 'r') as inp:
         lines = inp.readlines()
 
     for line in lines:
@@ -88,11 +96,13 @@ def read_text(filename):
     with codecs.open(filename, mode='r', encoding="UTF-8") as inp:
         lines = inp.readlines()
     for line in lines:
-        l = basic_parse(line, filename)
-        assert(len(l) >= 2), "'text.txt' should contain only lines with two or more columns"
-        utt_ids.append(l[0])
-        utt_words.append(l[1:])
-        if u"" in l[1:]:
+        pline = basic_parse(line, filename)
+        assert(len(pline) >= 2), \
+            "'text.txt' should contain only lines with two or more columns"
+
+        utt_ids.append(pline[0])
+        utt_words.append(pline[1:])
+        if u"" in pline[1:]:
             print line
     return utt_ids, utt_words
 
@@ -103,7 +113,8 @@ def read_phones(filename):
         lines = inp.readlines()
     for line in lines:
         l = basic_parse(line, filename)
-        assert(len(l) == 2), "'phones.txt' should contain only lines with two columns"
+        assert(len(l) == 2), \
+            "'phones.txt' should contain only lines with two columns"
         phones.append(l[0])
         ipas.append(l[1])
     return phones, ipas
@@ -115,7 +126,8 @@ def read_silences(filename):
         lines = inp.readlines()
     for line in lines:
         l = basic_parse(line, filename)
-        assert(len(l) == 1), "'silences.txt' should contain only lines with one column"
+        assert(len(l) == 1), \
+            "'silences.txt' should contain only lines with one column"
         silences.append(l[0])
     return silences
 
@@ -138,7 +150,8 @@ def read_dictionary(filename):
         lines = inp.readlines()
     for line in lines:
         l = basic_parse(line, filename)
-        assert(len(l) >= 2), "'lexicon.txt' should contain only lines with two or more columns"
+        assert(len(l) >= 2), \
+            "'lexicon.txt' should contain only lines with two or more columns"
         dict_words.append(l[0])
         transcriptions.append(l[1:])
     return dict_words, transcriptions
@@ -146,13 +159,10 @@ def read_dictionary(filename):
 
 def get_utt_durations(wav_dir, seg_file):
     # get wavefiles durations
-    wavefiles = [e for e in os.listdir(wav_dir) if e != '.DS_Store']
-    wav_durations = {}
-    for f in wavefiles:
-        filepath = os.path.join(wav_dir, f)
-        with contextlib.closing(wave.open(filepath,'r')) as fh:
-            _, _, rate, nframes, _, _ = fh.getparams()
-            wav_durations[f] = nframes/float(rate)
+    metainfo = utils.wav.scan(
+        utils.list_files_with_extension(wav_dir, '.wav', abspath=True))
+    wav_durations = {(k, v.duration) for k, v in metainfo.iteritems()}
+
     # get utterance durations
     utt_ids, wavs, starts, stops = read_segments(seg_file)
     utt_durations = {}
@@ -160,59 +170,63 @@ def get_utt_durations(wav_dir, seg_file):
         start = 0 if start is None else start
         stop = wav_durations[wav] if stop is None else stop
         utt_durations[utt_id] = stop-start
+
     return utt_durations
 
 
 def match_on_first_col(lines, desired_first_col):
-    """ desired_first_col is a list of possible values for the first column
-    of each line in lines """
+    """desired_first_col is a list of possible values for the first column
+    of each line in lines"""
     first_col = [line.strip().split(u" ")[0] for line in lines]
+
     # need numpy here to get something fast easily, could also have
     # something faster with pandas see
     # http://stackoverflow.com/questions/15939748
-    indices = np.where(np.in1d(np.array(first_col), np.array(desired_first_col)))[0]
-    lines = list(np.array(lines)[indices])
-    return lines
+    indices = np.where(np.in1d(
+        np.array(first_col), np.array(desired_first_col)))[0]
+
+    return list(np.array(lines)[indices])
 
 
 def copy_match(file_in, file_out, get_matches):
-      """
-      Utility function to copy only certain lines of a file
-      as decided by the get_matches function provided as argument
-      """
-      with codecs.open(file_in, mode='r', encoding='UTF-8') as inp:
-            lines = inp.readlines()
-      lines = get_matches(lines)
-      with codecs.open(file_out, mode='w', encoding='UTF-8') as out:
-            for line in lines:
-                out.write(line)
+    """
+    Utility function to copy only certain lines of a file
+    as decided by the get_matches function provided as argument
+    """
+    with codecs.open(file_in, mode='r', encoding='UTF-8') as inp:
+        lines = inp.readlines()
+    lines = get_matches(lines)
+    with codecs.open(file_out, mode='w', encoding='UTF-8') as out:
+        for line in lines:
+            out.write(line)
 
 
 def copy_first_col_matches(file_in, file_out, desired_first_col):
-    get_matches = lambda lines: match_on_first_col(lines, desired_first_col)
-    copy_match(file_in, file_out, get_matches)
+    copy_match(file_in, file_out,
+               lambda lines: match_on_first_col(lines, desired_first_col))
 
 
 def word2phone(lexicon, text_file, out_file):
-    """
-    Create 'phone' version of text file (transcription of text directly into phones, without
-    any word boundary marker). This is used to estimate phone-level n-gram language models
-    for use with kaldi recipes.
-    For OOVs: just drop the whole sentence for now.
+    """Create 'phone' version of text file
+
+    Transcription of text directly into phones, without any word
+    boundary marker. This is used to estimate phone-level n-gram
+    language models for use with kaldi recipes.  For OOVs: just drop
+    the whole sentence for now.
+
     """
     # set up dict
-    words, transcriptions = read_dictionary(lexicon)
-    dictionary = {}
-    for word, transcript in zip(words, transcriptions):
-        dictionary[word] = transcript
-    # transcribe
+    words, trss = read_dictionary(lexicon)
+    dictionary = dict((w, t) for w, t in zip(words, trss))
     utt_ids, utt_words = read_text(text_file)
     with codecs.open(out_file, mode='w', encoding='UTF-8') as out:
         for utt_id, utt in zip(utt_ids, utt_words):
             try:
                 hierarchical_transcript = [dictionary[word] for word in utt]
             except KeyError:
-                continue  # OOV: for now we just drop the sentence silently in this case (could add a warning)
+                # OOV: for now we just drop the sentence silently in
+                # this case (could add a warning)
+                continue
             flat_transcript = [e for l in hierarchical_transcript for e in l]
             out.write(u" ".join([utt_id] + flat_transcript))
             out.write(u"\n")

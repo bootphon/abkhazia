@@ -307,6 +307,6 @@ class MandarinPreparator(AbstractGlobalPhonePreparator):
             for line in correct_lines:
                 out.write(line)
 
-        self.log.info('Dictionary corrected, writed in {}'.format(filename))
+        self.log.info('Dictionary corrected, writed in %s', filename)
         self.dictionary = filename
         return True

@@ -15,7 +15,8 @@
 # along with abkahzia. If not, see <http://www.gnu.org/licenses/>.
 """This package provides various utilities to abkhazia"""
 
-from .utils import *
+from .utils import (duplicates, open_utf8, list_directory,
+                    list_files_with_extension, remove, is_empty_file)
 from .log2file import get_log
 from .config import config
 from .wav import convert, scan

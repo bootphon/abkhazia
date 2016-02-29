@@ -87,18 +87,17 @@ class SplitCorpus(object):
 
         # seed the random generator
         if random_seed is not None:
-            self.log.debug('random seed is {}'.format(random_seed))
+            self.log.debug('random seed is %i', random_seed)
         random.seed(random_seed)
 
         # read the utt2spk file from the input corpus
-        self.log.info('reading from {}'.format(utt2spk_file))
+        self.log.info('reading from %s', utt2spk_file)
         utt_ids, utt_speakers = io.read_utt2spk(utt2spk_file)
         self.utts = zip(utt_ids, utt_speakers)
         self.size = len(utt_ids)
         self.speakers = set(utt_speakers)
-        self.log.debug('loaded {} utterances from {} speakers'
-                       .format(self.size, len(self.speakers)))
-
+        self.log.debug('loaded %i utterances from %i speakers',
+                       self.size, len(self.speakers))
 
     def _write(self, train_utt_ids, test_utt_ids):
         """Write the train and test split corpus to the output directory
@@ -107,12 +106,14 @@ class SplitCorpus(object):
         respect to the first comulmn)
 
         """
-        self.log.info('splitting proportions are {} for train and {} for test'
-                      .format(round(float(len(train_utt_ids))/self.size, 3),
-                              round(float(len(test_utt_ids))/self.size, 3)))
+        self.log.info(
+            'splitting proportions are %f for train and %f for test',
+            round(float(len(train_utt_ids))/self.size, 3),
+            round(float(len(test_utt_ids))/self.size, 3))
 
-        self.log.info('writing to {}'.format(
-            os.path.abspath(os.path.join(self.test_dir, '..'))))
+        self.log.info(
+            'writing to %s',
+            os.path.abspath(os.path.join(self.test_dir, '..')))
 
         # for train and test subsets
         for target_dir, utts in [(self.train_dir, train_utt_ids),
@@ -121,16 +122,16 @@ class SplitCorpus(object):
             for filein in (['utt2spk.txt', 'text.txt', 'segments.txt']):
                 target = os.path.join(target_dir, filein)
                 try:
-                    self.log.debug('writing {}'.format(target))
+                    self.log.debug('writing %s', target)
                     io.copy_first_col_matches(
                         os.path.join(self.data_dir, filein),
                         target, utts)
                     io.cpp_sort(target)
-                except:  # TODO a bit paranoid, no ?
+                except (OSError, ValueError):
                     try:
                         utils.remove(target)
                     except shutil.Error:
-                        self.log.error("can't delete {}".format(self.train_dir))
+                        self.log.error("can't delete %s", self.train_dir)
                     finally:
                         raise OSError('cannot writing to {}'.format(target))
 
@@ -153,15 +154,14 @@ class SplitCorpus(object):
         if train_prop < 0 or train_prop > 1:
             raise RuntimeError('train proportion must be in [0, 1]')
 
-        self.log.debug('proportion for train is {}'.format(train_prop))
-        self.log.debug('proportion for test is {}'.format(test_prop))
+        self.log.debug('proportion for train is %f', train_prop)
+        self.log.debug('proportion for test is %f', test_prop)
 
-        if 1 != test_prop + train_prop:
+        if test_prop + train_prop != 1:
             raise RuntimeError(
                 'sum of test and train proportion is not 1')
 
         return test_prop, train_prop
-
 
     def split(self, test_prop=None, train_prop=None):
         """Split the corpus by utterances regardless of the speakers
@@ -197,10 +197,10 @@ class SplitCorpus(object):
 
             n_train = int(round(len(spk_utts) * train_prop))
 
-            self.log.debug('spliting {} utterances from speaker {} -> '
-                           '{} for train, {} for test'
-                           .format(len(spk_utts), speaker,
-                                   n_train, len(spk_utts) - n_train))
+            self.log.debug(
+                'spliting %i utterances from speaker %s -> '
+                '%i for train, %i for test',
+                len(spk_utts), speaker, n_train, len(spk_utts) - n_train)
 
             # sample train and test utterances at random for this speaker
             train_utts = random.sample(spk_utts, n_train)
@@ -211,7 +211,6 @@ class SplitCorpus(object):
             test_utt_ids += test_utts
 
         self._write(train_utt_ids, test_utt_ids)
-
 
     def split_by_speakers(self, test_prop=None, train_prop=None):
         """Split the corpus by speakers
@@ -247,7 +246,6 @@ class SplitCorpus(object):
         n_train_speakers = int(round(train_prop * len(self.speakers)))
         self.split_from_speakers_list(speakers[:n_train_speakers])
 
-
     def split_from_speakers_list(self, train_speakers):
         """Split the corpus from a list of speakers in the train set"""
 
@@ -269,7 +267,8 @@ class SplitCorpus(object):
             else:
                 test_utt_ids += spk_utts
                 msg = 'test'
-            self.log.debug('{} utterances from speaker {} -> {}'
-                           .format(len(spk_utts), speaker, msg))
+            self.log.debug(
+                '%i utterances from speaker %s -> %s',
+                len(spk_utts), speaker, msg)
 
         self._write(train_utt_ids, test_utt_ids)

@@ -124,9 +124,9 @@ class LibriSpeechPreparator(AbstractPreparatorWithCMU):
         super(LibriSpeechPreparator, self).__init__(
             input_dir, cmu_dict, output_dir, verbose, njobs)
 
-
     def list_audio_files(self):
-        flacs = list_files_with_extension(self.input_dir, '.flac', abspath=True)
+        flacs = list_files_with_extension(
+            self.input_dir, '.flac', abspath=True)
 
         wavs = []
         for flac in flacs:

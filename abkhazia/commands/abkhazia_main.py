@@ -17,10 +17,10 @@
 # along with abkahzia. If not, see <http://www.gnu.org/licenses/>.
 """The abkhazia entry point from command line"""
 
-import argcomplete, argparse
-import pkg_resources
 import sys
 import textwrap
+import pkg_resources
+import argcomplete, argparse
 
 from abkhazia.commands import (
     AbkhaziaPrepare,
@@ -29,9 +29,6 @@ from abkhazia.commands import (
     AbkhaziaTrain,
     AbkhaziaDecode,
     AbkhaziaAlign)
-
-import abkhazia.utils as utils
-from abkhazia.utils.config import AbkhaziaConfig
 
 __version__ = '0.2'
 
@@ -67,9 +64,9 @@ class Abkhazia(object):
         # register the subcommands parsers
         subparsers = parser.add_subparsers(
             metavar='<command>',
-            help='possible commands are:\n'
-            + '\n'.join(('{}\t{}'.format(c.name, c.description)
-                         for c in self._command_classes)))
+            help='possible commands are:\n' +
+            '\n'.join(('{}\t{}'.format(c.name, c.description)
+                       for c in self._command_classes)))
 
         for command in self._command_classes:
             command.add_parser(subparsers)

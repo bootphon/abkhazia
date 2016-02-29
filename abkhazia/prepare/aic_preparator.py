@@ -36,7 +36,7 @@ class AICPreparator(AbstractPreparatorWithCMU):
     name = 'aic'
     description = 'Articulation Index Corpus LSCP'
 
-    long_description='''
+    long_description = '''
     Articulation Index LSCP consists of 20 American English speakers
     (12 males, 8 females) pronouncing syllables. All possible
     Consonant-Vowel (CV) and Vowel-Consonant (VC) combinations were
@@ -100,7 +100,8 @@ class AICPreparator(AbstractPreparatorWithCMU):
             input_dir, cmu_dict, output_dir, verbose, njobs)
 
     def list_audio_files(self):
-        flacs = list_files_with_extension(self.input_dir, '.flac', abspath=True)
+        flacs = list_files_with_extension(
+            self.input_dir, '.flac', abspath=True)
         wavs = [os.path.basename(flac).replace('.flac', '.wav')
                 for flac in flacs]
         return flacs, wavs
@@ -143,17 +144,19 @@ class AICPreparator(AbstractPreparatorWithCMU):
         self.temp_cmu_lexicon(temp_lex, oov)
         self.make_lexicon_aux(temp_lex, oov)
 
-        #remove the temp files
+        # remove the temp files
         os.remove(temp_lex)
         os.remove(oov)
 
-    # Create temp lexicon file and temp OOVs. No transcription for the
-    # words, we will use the CMU but will need to convert to the
-    # symbols used in the AIC
     def temp_cmu_lexicon(self, out_temp_lex, out_oov):
+        """Create temp lexicon file and temp OOVs.
+
+        No transcription for the words, we will use the CMU but will
+        need to convert to the symbols used in the AIC
+
+        """
         dict_word = {}
         cmu_dict = {}
-        #open CMU dict
         for line in open(self.cmu_dict, "r"):
             dictionary = re.match(r"(.*)\s\s(.*)", line)
             if dictionary:
@@ -188,6 +191,7 @@ class AICPreparator(AbstractPreparatorWithCMU):
         self.log.debug('finished creating temp lexicon file')
 
     def make_lexicon_aux(self, temp_lex, oov):
+        """Create the lexicon file, convert from CMU to AC symbols"""
         outfile = open(self.lexicon_file, "w")
 
         array_phn = []
@@ -200,45 +204,48 @@ class AICPreparator(AbstractPreparatorWithCMU):
 
                 phn_trs = matched.group(2)
                 # convert the CMU symbols to AIC symbols
-                phn_trs = phn_trs.replace('AA', 'a')
-                phn_trs = phn_trs.replace('AE', 'xq')
-                phn_trs = phn_trs.replace('AH', 'xa')
-                phn_trs = phn_trs.replace('AO', 'c')
-                phn_trs = phn_trs.replace('AW', 'xw')
-                phn_trs = phn_trs.replace('AY', 'xy')
-                phn_trs = phn_trs.replace('DH', 'xd')
-                phn_trs = phn_trs.replace('EH', 'xe')
-                phn_trs = phn_trs.replace('ER', 'xr')
-                phn_trs = phn_trs.replace('EY', 'e')
-                phn_trs = phn_trs.replace('CH', 'xc')
-                phn_trs = phn_trs.replace('HH', 'h')
-                phn_trs = phn_trs.replace('IH', 'xi')
-                phn_trs = phn_trs.replace('IY', 'i')
-                phn_trs = phn_trs.replace('JH', 'xj')
-                phn_trs = phn_trs.replace('NG', 'xg')
-                phn_trs = phn_trs.replace('OW', 'o')
-                phn_trs = phn_trs.replace('OY', 'xo')
-                phn_trs = phn_trs.replace('SH', 'xs')
-                phn_trs = phn_trs.replace('TH', 'xt')
-                phn_trs = phn_trs.replace('UH', 'xu')
-                phn_trs = phn_trs.replace('UW', 'u')
-                phn_trs = phn_trs.replace('ZH', 'xz')
-                phn_trs = phn_trs.replace('D', 'd')
-                phn_trs = phn_trs.replace('B', 'b')
-                phn_trs = phn_trs.replace('F', 'f')
-                phn_trs = phn_trs.replace('G', 'g')
-                phn_trs = phn_trs.replace('K', 'k')
-                phn_trs = phn_trs.replace('L', 'l')
-                phn_trs = phn_trs.replace('M', 'm')
-                phn_trs = phn_trs.replace('N', 'n')
-                phn_trs = phn_trs.replace('P', 'p')
-                phn_trs = phn_trs.replace('R', 'r')
-                phn_trs = phn_trs.replace('S', 's')
-                phn_trs = phn_trs.replace('T', 't')
-                phn_trs = phn_trs.replace('V', 'v')
-                phn_trs = phn_trs.replace('W', 'w')
-                phn_trs = phn_trs.replace('Y', 'y')
-                phn_trs = phn_trs.replace('Z', 'z')
+                for cmu, aic in (
+                        ('AA', 'a'),
+                        ('AE', 'xq'),
+                        ('AH', 'xa'),
+                        ('AO', 'c'),
+                        ('AW', 'xw'),
+                        ('AY', 'xy'),
+                        ('DH', 'xd'),
+                        ('EH', 'xe'),
+                        ('ER', 'xr'),
+                        ('EY', 'e'),
+                        ('CH', 'xc'),
+                        ('HH', 'h'),
+                        ('IH', 'xi'),
+                        ('IY', 'i'),
+                        ('JH', 'xj'),
+                        ('NG', 'xg'),
+                        ('OW', 'o'),
+                        ('OY', 'xo'),
+                        ('SH', 'xs'),
+                        ('TH', 'xt'),
+                        ('UH', 'xu'),
+                        ('UW', 'u'),
+                        ('ZH', 'xz'),
+                        ('D', 'd'),
+                        ('B', 'b'),
+                        ('F', 'f'),
+                        ('G', 'g'),
+                        ('K', 'k'),
+                        ('L', 'l'),
+                        ('M', 'm'),
+                        ('N', 'n'),
+                        ('P', 'p'),
+                        ('R', 'r'),
+                        ('S', 's'),
+                        ('T', 't'),
+                        ('V', 'v'),
+                        ('W', 'w'),
+                        ('Y', 'y'),
+                        ('Z', 'z')):
+                    phn_trs = phn_trs.replace(cmu, aic)
+
                 outfile.write(word + ' ' + phn_trs + '\n')
 
         # for the sounds

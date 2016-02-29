@@ -35,6 +35,7 @@ The log file is UTF-8 encoded.
 import logging
 import sys
 
+
 class LevelFilter(logging.Filter):
     """A utility class to filter out undesirated levels from log output"""
     def __init__(self, passlevels):
@@ -43,6 +44,7 @@ class LevelFilter(logging.Filter):
 
     def filter(self, record):
         return record.levelno in self.passlevels
+
 
 def get_log(log_file, verbose=False):
     """Configure and return a logger instance"""
@@ -53,22 +55,22 @@ def get_log(log_file, verbose=False):
     log.handlers = []
 
     # log to dedicated file
-    log_handler = logging.FileHandler(log_file, mode='w', encoding="UTF-8")
+    file_handler = logging.FileHandler(log_file, mode='w', encoding="UTF-8")
     formatter = logging.Formatter('%(asctime)s - %(levelname)s - %(message)s')
-    log_handler.setFormatter(formatter)
-    log_handler.setLevel(logging.DEBUG)
+    file_handler.setFormatter(formatter)
+    file_handler.setLevel(logging.DEBUG)
 
     log_filter = LevelFilter(
         [logging.DEBUG, logging.INFO,
          logging.WARNING, logging.ERROR, logging.CRITICAL])
-    log_handler.addFilter(log_filter)
-    log.addHandler(log_handler)
+    file_handler.addFilter(log_filter)
+    log.addHandler(file_handler)
 
     # log to standard output
-    log_handler = logging.StreamHandler(sys.stdout)
+    std_handler = logging.StreamHandler(sys.stdout)
     formatter = logging.Formatter('%(message)s')
-    log_handler.setFormatter(formatter)
-    log_handler.setLevel(logging.DEBUG)
+    std_handler.setFormatter(formatter)
+    std_handler.setLevel(logging.DEBUG)
 
     if verbose:
         log_filter = LevelFilter(
@@ -78,7 +80,7 @@ def get_log(log_file, verbose=False):
         log_filter = LevelFilter(
             [logging.INFO, logging.WARNING,
              logging.ERROR, logging.CRITICAL])
-    log_handler.addFilter(log_filter)
-    log.addHandler(log_handler)
+    std_handler.addFilter(log_filter)
+    log.addHandler(std_handler)
 
     return log

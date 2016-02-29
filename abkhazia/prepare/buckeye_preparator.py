@@ -13,7 +13,6 @@
 #
 # You should have received a copy of the GNU General Public License
 # along with abkahzia. If not, see <http://www.gnu.org/licenses/>.
-
 """Data preparation for the revised Buckeye corpus"""
 
 import os
@@ -147,72 +146,52 @@ class BuckeyePreparator(AbstractPreparator):
         wavs = list_files_with_extension(self.input_dir, '.wav', abspath=True)
         return wavs, [os.path.basename(w) for w in wavs]
 
-    # TODO function too big, refactor
     def make_segment(self):
-        utt_dir = os.path.join(self.input_dir, 'txt')
-        wrd_dir = os.path.join(self.input_dir, 'words_fold')
-
         outfile = open(self.segments_file, "w")
-        for utts in list_files_with_extension(utt_dir, '.txt'):
+        for utts in list_files_with_extension(
+                os.path.join(self.input_dir, 'txt'), '.txt'):
             length_utt = []
             with open(utts) as infile_txt:
                 current_index = 0
                 last_offset = 0
-                lines = infile_txt.readlines()
                 bname = os.path.basename(utts)
-                bname_word = bname.replace('txt', 'words')
-                bname_wav = bname.replace('txt', 'wav')
-                utt = bname.replace('.txt', '')
-                length_utt = [len(line.strip().split()) for line in lines]
-                wrd = os.path.join(wrd_dir, bname_word)
+                length_utt = [len(line.strip().split())
+                              for line in infile_txt.readlines()]
+
+                wrd = os.path.join(self.input_dir, 'words_fold',
+                                   bname.replace('txt', 'words'))
                 with open(wrd) as infile_wrd:
                     lines_2 = infile_wrd.readlines()
-                    #print (wrd)
+
                     del lines_2[:9]
                     assert len(lines_2) == sum(length_utt),\
                         '{} {}'.format(len(lines_2), sum(length_utt))
-                    for n in range(len(length_utt)):
-                        if n == 0:
+                    for i, utt in enumerate(len(length_utt)):
+                        if i == 0:
                             onset = '0.000'
-                            outfile.write(utt + '-sent' +
-                                          str(n+1) + ' ' +
-                                          bname_wav + ' ' +
-                                          onset + ' ')
-
-                            index_offset = length_utt[n]
-                            offset_line = lines_2[index_offset-1]
-
-                            match_offset = re.match(
-                                r'\s\s+(.*)\s+(121|122)\s(.*)', offset_line)
-                            if not match_offset:
-                                raise IOError('offset line unmatched: {}'
-                                              .format(offset_line))
-
-                            offset = match_offset.group(1)
-                            outfile.write(str(offset))
-                            current_index = index_offset
-                            last_offset = offset
-                            outfile.write('\n')
+                            index_offset = utt
                         else:
-                            onset = last_offset
-                            outfile.write(utt + '-sent' +
-                                          str(n+1) + ' ' +
-                                          bname_wav + ' ' +
-                                          str(onset) + ' ')
+                            onset = str(last_offset)
+                            index_offset = utt + current_index
 
-                            index_offset = length_utt[n]+current_index
-                            offset_line = lines_2[index_offset-1]
-                            match_offset = re.match(
-                                r'\s\s+(.*)\s+(121|122)\s(.*)', offset_line)
-                            if not match_offset:
-                                raise IOError(
-                                    'offset not matched {}'.format(offset_line))
+                        outfile.write(bname.replace('.txt', '') + '-sent' +
+                                      str(i+1) + ' ' +
+                                      bname.replace('txt', 'wav') + ' ' +
+                                      onset + ' ')
 
-                            offset = match_offset.group(1)
-                            outfile.write(str(offset))
-                            current_index = index_offset
-                            last_offset = offset
-                            outfile.write('\n')
+                        offset_line = lines_2[index_offset-1]
+                        match_offset = re.match(
+                            r'\s\s+(.*)\s+(121|122)\s(.*)', offset_line)
+                        if not match_offset:
+                            raise IOError('offset not matched {}'
+                                          .format(offset_line))
+
+                        offset = match_offset.group(1)
+                        outfile.write(str(offset))
+                        current_index = index_offset
+                        last_offset = offset
+                        outfile.write('\n')
+
         self.log.debug('finished creating segments file')
 
     def make_speaker(self):
@@ -226,8 +205,8 @@ class BuckeyePreparator(AbstractPreparator):
                 utt = bname.replace('.txt', '')
                 speaker_id = re.sub(r"[0-9][0-9](a|b)\.txt", "", bname)
                 for idx, _ in enumerate(lines, start=1):
-                    outfile.write(utt + '-sent' + str(idx)
-                                  + ' ' + speaker_id + '\n')
+                    outfile.write(
+                        utt + '-sent' + str(idx) + ' ' + speaker_id + '\n')
 
         self.log.debug('finished creating utt2spk file')
 

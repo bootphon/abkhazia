@@ -14,39 +14,26 @@
 # along with abkahzia. If not, see <http://www.gnu.org/licenses/>.
 """Provides functions to convert various audio formats to wav"""
 
-import audiotools
 import collections
-import joblib
 import os
 import shlex
 import subprocess
+import tempfile
 import wave
 
-from abkhazia.utils.config import config
+import audiotools
+import joblib
+import utils
+
 
 def flac2wav(flac, wav):
+    """Convert a flac file to the wav format
+
+    'flac' must be an existing flac file
+    'wav' is the filename of the created file
+
+    """
     audiotools.open(flac).convert(wav, audiotools.WaveAudio)
-
-# def shn2wav(shn, wav):
-#     audiotools.open(shn).convert(wav, audiotools.WavAudio)
-
-# def flac2wav(flac, wav):
-#     """Convert a flac file to the wav format
-
-#     'flac' must be an existing flac file
-#     'wav' is the filename of the created file
-
-#     This method lies on the 'flac --decode' system command. Raises an
-#     OSError if the command 'flac' is not found on the system.
-
-#     """
-#     try:
-#         subprocess.check_output(shlex.split('which flac'))
-#     except:
-#         raise OSError('flac is not installed on your system')
-
-#     command = 'flac --decode -s -f {} -o {}'.format(flac, wav)
-#     subprocess.call(shlex.split(command))
 
 
 def sph2wav(sph, wav):
@@ -59,8 +46,10 @@ def sph2wav(sph, wav):
     at it in the abkahzia configuration file.
 
     """
-    sph2pipe = os.path.join(config.get('kaldi', 'kaldi-directory'),
-                            'tools/sph2pipe_v2.5/sph2pipe')
+    sph2pipe = os.path.join(
+        utils.config.get('kaldi', 'kaldi-directory'),
+        'tools/sph2pipe_v2.5/sph2pipe')
+
     if not os.path.isfile(sph2pipe):
         raise OSError('sph2pipe not found on your system')
 
@@ -89,17 +78,16 @@ def shn2wav(shn, wav):
         except:
             raise OSError('{} is not installed on your system'.format(cmd))
 
-    # TODO use mkstemp instead
-    tmp = wav + '.tmp'
-    command1 = 'shorten -x {} {}'.format(shn, tmp)
+    tmp_fd, tmp_name = tempfile.mkstemp()
+    command1 = 'shorten -x {} {}'.format(shn, tmp_name)
     command2 = ('sox -t raw -r 16000 -e signed-integer -b 16 {} -t wav {}'
-                .format(tmp, wav))
+                .format(tmp_name, wav))
 
     for cmd in [command1, command2]:
         subprocess.call(shlex.split(cmd))
 
     try:
-        os.remove(tmp)
+        os.remove(tmp_fd)
     except os.error:
         pass
 
@@ -137,12 +125,14 @@ def convert(inputs, outputs, fileformat, njobs=1, verbose=5):
             raise IOError('input file does not exist: {}'.format(i))
 
     # convert files in parallel
-    joblib.Parallel(n_jobs=njobs, verbose=verbose)(
-        joblib.delayed(fnc)(i, o) for i, o in zip(inputs, outputs))
+    joblib.Parallel(
+        n_jobs=njobs, verbose=verbose, backend="threading")(
+            joblib.delayed(fnc)(i, o) for i, o in zip(inputs, outputs))
 
 
 _metawav = collections.namedtuple(
     '_metawav', 'nbc width rate nframes comptype compname duration')
+
 
 def _scan_one(wav):
     """scan a single wav file and return a metawav tuple"""
@@ -154,6 +144,7 @@ def _scan_one(wav):
             param[3]/float(param[2]))  # duration
     except EOFError:
         return _metawav(nframes=0)
+
 
 def scan(wavs, njobs=1, verbose=5):
     """Return meta information on the input `wavs` files
@@ -174,7 +165,8 @@ def scan(wavs, njobs=1, verbose=5):
     See the documentation of wave.getparams() for details.
 
     """
-    res = joblib.Parallel(n_jobs=njobs, verbose=verbose)(
-        joblib.delayed(_scan_one)(wav) for wav in wavs)
+    res = joblib.Parallel(
+        n_jobs=njobs, verbose=verbose, backend="threading")(
+            joblib.delayed(_scan_one)(wav) for wav in wavs)
 
     return dict(zip(wavs, res))

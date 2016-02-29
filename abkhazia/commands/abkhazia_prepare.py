@@ -15,7 +15,6 @@
 """Implementation of the 'abkhazia prepare' command"""
 
 import argparse
-import sys
 import textwrap
 
 from abkhazia.commands.abstract_command import AbstractCommand
