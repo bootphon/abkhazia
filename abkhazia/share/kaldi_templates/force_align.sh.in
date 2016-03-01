@@ -49,11 +49,14 @@ num_gauss_sa=@@@@
 
 # First finish preparing data
 utils/utt2spk_to_spk2utt.pl data/main/utt2spk > data/main/spk2utt
+
 if [ "$optional_silence" = true ] ; then
   sil_prob=0.5
 else
   sil_prob=0.0
 fi
+
+echo "running utils/prepare_lang.sh"
 utils/prepare_lang.sh \
   --position-dependent-phones true \
   --sil_prob $sil_prob \
@@ -62,11 +65,14 @@ utils/prepare_lang.sh \
 
 # Features
 mfccdir=mfcc
-if [ "$use_pitch" = true ] ; then
+if [ "$use_pitch" = true ]
+then
     make_feats="steps/make_mfcc_pitch.sh"
 else
     make_feats="steps/make_mfcc.sh"
 fi
+
+echo "running $make_feats"
 for x in main; do
 (
     $make_feats \
@@ -79,14 +85,14 @@ done
 wait;
 
 
-# Monophone model training
+echo "training of the monophone model"
 mkdir -p exp/mono;
 steps/train_mono.sh \
     --nj 8 --cmd "$train_cmd" \
     data/main data/lang exp/mono \
     > exp/mono/train.log
 
-# Triphone model training
+echo "training of the triphone model"
 
 # first: forced alignment of train set with monophone model
 mkdir -p exp/mono_ali
@@ -103,7 +109,7 @@ steps/train_deltas.sh \
     data/main data/lang exp/mono_ali exp/tri1 \
     > exp/tri1/train.log
 
-# Speaker adaptive triphone model training
+echo "training the speaker adaptive triphone model"
 
 # first: forced alignment with fmllr based on speaker independent
 # triphone model
@@ -128,7 +134,10 @@ steps/align_fmllr.sh \
     data/main data/lang exp/tri2a exp/tri2a_ali_fmllr \
     >& exp/tri2a_ali_fmllr/align.log
 
+
 ##### Exporting results #####
+
+echo "exporting results to export/forced_alignment.tra"
 mkdir -p export
 ali-to-phones \
     --write_lengths=true exp/tri2a/final.mdl \

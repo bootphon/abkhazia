@@ -161,7 +161,8 @@ def get_utt_durations(wav_dir, seg_file):
     # get wavefiles durations
     metainfo = utils.wav.scan(
         utils.list_files_with_extension(wav_dir, '.wav', abspath=True))
-    wav_durations = {(k, v.duration) for k, v in metainfo.iteritems()}
+    wav_durations = dict((os.path.basename(k), v.duration)
+                         for k, v in metainfo.iteritems())
 
     # get utterance durations
     utt_ids, wavs, starts, stops = read_segments(seg_file)

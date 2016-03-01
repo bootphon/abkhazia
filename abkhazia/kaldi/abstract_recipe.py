@@ -71,9 +71,11 @@ class AbstractRecipe(object):
         """
         raise NotImplementedError
 
-
     def run(self):
         """Run the created recipe by executing 'run.sh'"""
         # TODO catch failures
         self.log.info("running 'run.sh' from {}".format(self.recipe_dir))
-        subprocess.call('./run.sh', cwd=self.recipe_dir)
+        try:
+            subprocess.check_call('./run.sh', cwd=self.recipe_dir)
+        except subprocess.CalledProcessError:
+            raise IOError('{} recipe failed'.format(self.name))
