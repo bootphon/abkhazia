@@ -57,14 +57,16 @@
    speaker_adapt
    output: results (repertoire)
 
- - status ???
+ - status command ?
 
    - As an alternative of the README files
    - Display basic info on what is in <abkahzia-data-directory>
 
 * Documentation
 
-  Import wiki in docs/ and update it!
+  - make a install page, deeper than in readme
+  - make a 'command-line' page
+  - improve the 'format' page
 
 * NOTES (DPX)
 

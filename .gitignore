@@ -72,3 +72,4 @@ target/
 *~
 # local python virtual env
 .pyenv/
+/docs/html
