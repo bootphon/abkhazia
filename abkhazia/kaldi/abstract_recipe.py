@@ -36,8 +36,15 @@ class AbstractRecipe(object):
             raise IOError("directory doesn't exist: {}".format(corpus_dir))
         self.corpus_dir = corpus_dir
 
-        # check recipe_dir
+        # init the log
         recipe_dir = self.corpus_dir if recipe_dir is None else recipe_dir
+        log_file = os.path.join(recipe_dir, 'logs', self.name + '.log')
+        log_dir = os.path.dirname(log_file)
+        if not os.path.isdir(log_dir):
+            os.makedirs(log_dir)
+        self.log = utils.log2file.get_log(log_file, verbose)
+
+        # check recipe_dir
         recipe_dir = os.path.join(recipe_dir, self.name, 's5')
         self.recipe_dir = recipe_dir
 
@@ -48,14 +55,6 @@ class AbstractRecipe(object):
                 .format(self.recipe_dir))
         else:
             os.makedirs(self.recipe_dir)
-
-
-        # init the log
-        log_file = os.path.join(self.recipe_dir, 'logs', self.name + '.log')
-        log_dir = os.path.dirname(log_file)
-        if not os.path.isdir(log_dir):
-            os.makedirs(log_dir)
-        self.log = utils.log2file.get_log(log_file, verbose)
 
         # init the abkhazia2kaldi converter
         self.a2k = abkhazia2kaldi.Abkhazia2Kaldi(

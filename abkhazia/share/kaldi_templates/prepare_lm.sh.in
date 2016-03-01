@@ -1,18 +1,18 @@
 #!/bin/bash -u
-# Copyright 2015, 2016  Thomas Schatz
+# Copyright 2016 Thomas Schatz, Xuan Nga Cao, Mathieu Bernard
 #
-# Licensed under the Apache License, Version 2.0 (the "License");
-# you may not use this file except in compliance with the License.
-# You may obtain a copy of the License at
+# This file is part of abkhazia: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
 #
-#  http://www.apache.org/licenses/LICENSE-2.0
+# Abkhazia is distributed in the hope that it will be useful, but
+# WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+# General Public License for more details.
 #
-# THIS CODE IS PROVIDED *AS IS* BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
-# KIND, EITHER EXPRESS OR IMPLIED, INCLUDING WITHOUT LIMITATION ANY IMPLIED
-# WARRANTIES OR CONDITIONS OF TITLE, FITNESS FOR A PARTICULAR PURPOSE,
-# MERCHANTABLITY OR NON-INFRINGEMENT.
-# See the Apache 2 License for the specific language governing permissions and
-# limitations under the License.
+# You should have received a copy of the GNU General Public License
+# along with abkahzia. If not, see <http://www.gnu.org/licenses/>.
 
 
 ### TODO
@@ -68,22 +68,19 @@ log=data/prepare_"$name".log
 # (some slight customizations of the script are necessary to decode
 # with a phone loop language model when word position dependent phone
 # variants have been trained).
-if [ "$word_position_dependent" = true ]
+if [ "$word_position_dependent" = true -a  -f "$in_dir"/phone ]
 then
     # empty phone file is used to signal if the LM is not at the word
     # but at the phone level
-    if [ -f "in_dir"/phone ]
-    then
-	prepare_lang_exe=local/prepare_lang_wpdpl.sh
-    else
-	prepare_lang_exe=utils/prepare_lang.sh
-    fi
+    prepare_lang_exe=local/prepare_lang_wpdpl.sh
 else
     prepare_lang_exe=utils/prepare_lang.sh
 fi
 
+echo "running $prepare_lang_exe..."
 $prepare_lang_exe --position-dependent-phones $word_position_dependent \
                   $in_dir "<unk>" $tmp_dir $out_dir > $log
+
 
 # here we could use a different silence_prob. I think however that
 # --position-dependent-phones has to be the same as what was used for
@@ -98,6 +95,7 @@ $prepare_lang_exe --position-dependent-phones $word_position_dependent \
 
 if [ -f "$in_dir"/G.txt ]
 then
+    echo "compiling $in_dir/G.txt to $out_dir/G.fst"
     # 1 - compile the text format FST to binary format used by kaldi
     # in utils/mkgraph.sh
     fstcompile --isymbols=$out_dir/words.txt \
@@ -111,9 +109,30 @@ then
                $out_dir/G.fst > $out_dir/G2.fst
 
     mv $out_dir/G2.fst $out_dir/G.fst
+else
+    if [ ! -f "$in_dir"/G.arpa.gz ]
+    then
+        echo "creating $in_dir/G.arpa.gz"
 
-elif [ -f "$in_dir"/G.arpa.gz ]
-then
+        # generate ARPA/MIT n-gram with IRSTLM, then as in 2. train
+        # (use IRSTLM) need to remove utt-id on first column of text file
+        set -eu  # stop on error
+        cut -d' ' -f2- < "$in_dir"/lm_text.txt > "$in_dir"/text_ready.txt
+        add-start-end.sh < "$in_dir"/text_ready.txt > "$in_dir"/text_se.txt
+
+        # k option is number of split, useful for huge text files
+        build-lm.sh -i "$in_dir"/text_se.txt -n $model_order \
+                    -o "$in_dir"/text.ilm.gz -k 1 -s kneser-ney
+        compile-lm "$in_dir"/text.ilm.gz --text=yes /dev/stdout | gzip -c > "$in_dir"/G.arpa.gz
+
+        # # clean intermediate files
+        # rm "$in_dir"/text_ready.txt
+        # rm "$in_dir"/text_se.txt
+        # rm "$in_dir"/text.ilm.gz
+    fi
+
+    echo "running utils/format_lm_sri.sh"
+
     # 2 - generate FST (use SRILM)
     # includes adapting the vocabulary to lexicon in out_dir
     # srilm_opts: do not use -tolower by default, since we do not
@@ -125,36 +144,13 @@ then
     # another folder and then clean up (or we could do a custom
     # format_lm_sri.sh with $1 and $4 == $1 and no cp)
     tmp_out_dir="$out_dir"_tmp
-    utils/format_lm_sri.sh --srilm_opts "-subset -prune-lowprobs -unk" \
-			   $out_dir "$in_dir"/G.arpa.gz \
-			   "in_dir"/lexicon.txt $tmp_out_dir
-    rm -Rf $out_dir  # erases the previous content that is redundant anyway
-    mv $tmp_out_dir $out_dir
-else
-    # 3 - generate ARPA/MIT n-gram with IRSTLM, then as in 2. train
-    # (use IRSTLM) need to remove utt-id on first column of text file
-    set -eu  # stop on error
-    cut -d' ' -f2- < "$in_dir"/lm_text.txt > "$in_dir"/text_ready.txt
-    add-start-end.sh < "$in_dir"/text_ready.txt > "$in_dir"/text_se.txt
 
-    # k option is number of split, useful for huge text files
-    build-lm.sh -i "$in_dir"/text_se.txt -n $model_order \
-                -o "$in_dir"/text.ilm.gz -k 1 -s kneser-ney
-    compile-lm "$in_dir"/text.ilm.gz --text=yes /dev/stdout | gzip -c > "$in_dir"/G.arpa.gz
-
-    # clean intermediate files
-    rm "$in_dir"/text_ready.txt
-    rm "$in_dir"/text_se.txt
-    rm "$in_dir"/text.ilm.gz
-
-    # As in 2., generate FST
-    tmp_out_dir="$out_dir"_tmp
     # TODO bug here, and then in
     # change-lm-vocab -vocab $tmpdir/voc -lm $tmpdir/lm.gz -write-lm $tmpdir/out_lm \
     # $srilm_opts || exit 1;
     utils/format_lm_sri.sh --srilm_opts "-subset -prune-lowprobs -unk" \
-        		   $out_dir "$in_dir"/G.arpa.gz \
-        		   "in_dir"/lexicon.txt $tmp_out_dir
+			   $out_dir "$in_dir"/G.arpa.gz \
+			   "in_dir"/lexicon.txt $tmp_out_dir
     rm -Rf $out_dir  # erases the previous content that is redundant anyway
     mv $tmp_out_dir $out_dir
 fi

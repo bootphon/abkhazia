@@ -33,10 +33,16 @@ def add_argument(parser, recipe, name, type, help):
     except KeyError:
         metavar = '<' + name + '>'
 
-    parser.add_argument(
-        '--'+name, type=type, metavar=metavar,
-        default=utils.config.get(recipe, name),
-        help=help + ' (default is %(default)s)')
+    if type is bool:
+        parser.add_argument(
+            '--'+name, choices=['true', 'false'], metavar=metavar,
+            default=utils.config.get(recipe, name),
+            help=help + ' (default is %(default)s)')
+    else:
+        parser.add_argument(
+            '--'+name, type=type, metavar=metavar,
+            default=utils.config.get(recipe, name),
+            help=help + ' (default is %(default)s)')
 
 
 class Abkhazia2Kaldi(object):
@@ -80,7 +86,6 @@ class Abkhazia2Kaldi(object):
         # init the path to abkhazia/share
         self.share_dir = pkg_resources.resource_filename(
             pkg_resources.Requirement.parse('abkhazia'), 'abkhazia/share')
-
 
     def _dict_path(self, name='dict'):
         """Return the directory data/local/`name`, create it if needed"""
