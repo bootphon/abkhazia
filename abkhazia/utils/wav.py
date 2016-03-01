@@ -18,10 +18,8 @@ import collections
 import os
 import shlex
 import subprocess
-import tempfile
 import wave
 
-import audiotools
 import joblib
 import utils
 
@@ -33,7 +31,15 @@ def flac2wav(flac, wav):
     'wav' is the filename of the created file
 
     """
-    audiotools.open(flac).convert(wav, audiotools.WaveAudio)
+    try:
+        subprocess.check_output(shlex.split('which sox'))
+    except:
+        raise OSError('sox is not installed on your system')
+
+    command = ('sox -b 16 {} -t wav {} rate 16k'
+               .format(flac, wav))
+
+    subprocess.call(shlex.split(command))
 
 
 def sph2wav(sph, wav):
@@ -72,24 +78,20 @@ def shn2wav(shn, wav):
     of most Linux distribution (sudo apt-get install sox)
 
     """
+    # check shorten and sox commands are available
     for cmd in ['shorten', 'sox']:
         try:
             subprocess.check_output(shlex.split('which {}'.format(cmd)))
         except:
             raise OSError('{} is not installed on your system'.format(cmd))
 
-    tmp_fd, tmp_name = tempfile.mkstemp()
-    command1 = 'shorten -x {} {}'.format(shn, tmp_name)
-    command2 = ('sox -t raw -r 16000 -e signed-integer -b 16 {} -t wav {}'
-                .format(tmp_name, wav))
+    command1 = 'shorten -x {} -'.format(shn)
+    command2 = ('sox -t raw -r 16000 -e signed-integer -b 16 - -t wav {}'
+                .format(wav))
 
-    for cmd in [command1, command2]:
-        subprocess.call(shlex.split(cmd))
-
-    try:
-        os.remove(tmp_fd)
-    except os.error:
-        pass
+    ps = subprocess.Popen(shlex.split(command1), stdout=subprocess.PIPE)
+    subprocess.check_output(shlex.split(command2), stdin=ps.stdout)
+    ps.wait()
 
 
 def convert(inputs, outputs, fileformat, njobs=1, verbose=5):

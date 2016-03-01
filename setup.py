@@ -25,17 +25,16 @@ VERSION = '0.2'
 # On Reads The Docs we don't install any package
 ON_RTD = os.environ.get('READTHEDOCS', None) == 'True'
 REQUIREMENTS = [] if ON_RTD else [
-    #'abnet',
-    #'ABXpy',
-    #'cpickle',
-    #'h5features',
-    #'matplotlib',
-    'numpy >= 1.8.0',
-    #'pandas',
-    #'yaafelib',
+    # 'abnet',
+    # 'ABXpy',
+    # 'cpickle',
+    # 'h5features',
+    # 'matplotlib',
+    # 'pandas',
+    # 'yaafelib',
+    'numpy',
     'progressbar',
     'joblib',
-    'fmoo-audiotools',
     'argcomplete'
 ]
 
