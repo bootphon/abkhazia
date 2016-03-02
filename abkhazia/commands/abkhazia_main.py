@@ -22,6 +22,8 @@ import textwrap
 import pkg_resources
 import argcomplete, argparse
 
+import abkhazia.utils as utils
+
 from abkhazia.commands import (
     AbkhaziaPrepare,
     AbkhaziaSplit,
@@ -50,7 +52,28 @@ class Abkhazia(object):
         'ABX and kaldi experiments on speech corpora made easy,\n'
         "type 'abkhazia <command> --help' for help on a specific command")
 
-    def __init__(self):
+    def load_config(self):
+        """Load the config file optionally given by --config argument
+
+        Return the splited argument strins taken from sys.argv, with
+        '--config <config-file>' removed
+
+        """
+        parser = argparse.ArgumentParser(add_help=False)
+
+        class _ConfigAction(argparse.Action):
+            def __call__(self, parser, namespace, values, option_string=None):
+                print 'loading configuration from {}'.format(values)
+                utils.config.read(values)
+
+        # add a configuration argument
+        parser.add_argument(
+            '-c', '--config', metavar='<config-file>', action=_ConfigAction)
+
+        return parser.parse_known_args()[1]
+
+    def init_parser(self):
+        """Return an argument parser initialized form abkhazia subcommands"""
         # create the top-level parser
         parser = argparse.ArgumentParser(
             prog='abkhazia',
@@ -58,22 +81,42 @@ class Abkhazia(object):
             description=textwrap.dedent(self.description))
 
         # add a version description argument
-        parser.add_argument('--version', action='version',
-                            version='%(prog)s-' + __version__)
+        parser.add_argument(
+            '--version', action='version', version='%(prog)s-' + __version__)
+
+        # this is a fake argument, as --config has been parsed in
+        # self.load_config(). But we need it to have the option
+        # documented on 'abkhazia --help'
+        parser.add_argument(
+            '-c', '--config', metavar='<config-file>', default=None,
+            help='overload default abkhazia configuration with parameters\n'
+            'defined in <config-file>, default configuration is read from\n{}'
+            .format(utils.AbkhaziaConfig.default_config_file()))
 
         # register the subcommands parsers
         subparsers = parser.add_subparsers(
             metavar='<command>',
             help='possible commands are:\n' +
-            '\n'.join(('{}\t{}'.format(c.name, c.description)
+            '\n'.join((' {}\t{}'.format(c.name, c.description)
                        for c in self._command_classes)))
 
         for command in self._command_classes:
             command.add_parser(subparsers)
 
+        return parser
+
+    def __init__(self):
+        # at first, we load optional config file (--config
+        # option). Values read from configuration can now be displayed
+        # as default values in --help messages
+        argv = self.load_config()
+
+        # init the parser and subparsers for abkhazia
+        parser = self.init_parser()
+
         # enable autocompletion and parse arguments
         argcomplete.autocomplete(parser)
-        args = parser.parse_args()
+        args = parser.parse_args(argv)
 
         # call the run() method of the parsed subcommand
         args.command(args)

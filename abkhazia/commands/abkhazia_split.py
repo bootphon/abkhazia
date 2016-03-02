@@ -17,35 +17,19 @@
 import os
 import shutil
 
-from abkhazia.commands.abstract_command import AbstractCommand
+from abkhazia.commands.abstract_command import AbstractPreparedCommand
 import abkhazia.utils as utils
 import abkhazia.utils.split as split
 
 
-class AbkhaziaSplit(AbstractCommand):
+class AbkhaziaSplit(AbstractPreparedCommand):
     '''This class implements the 'abkahzia split' command'''
     name = 'split'
     description = 'split a corpus in train and test subsets'
 
     @classmethod
     def run(cls, args):
-        # retrieve the corpus input directory
-        if args.corpus.startswith(('/', './', '../', '~/')):
-            corpus = args.corpus
-        else:
-            corpus = os.path.join(
-                utils.config.get('abkhazia', 'data-directory'),
-                args.corpus)
-
-        # retrieve the output directory
-        output_dir = corpus if args.output_dir is None else args.output_dir
-
-        # if --force, remove any existing output_dir/split
-        if args.force:
-            split_dir = os.path.join(output_dir, 'split')
-            if os.path.exists(split_dir):
-                print 'removing {}'.format(split_dir)
-                shutil.rmtree(split_dir)
+        corpus, output_dir = cls.prepare_for_run(args)
 
         # instanciate a SplitCorpus instance
         spliter = split.SplitCorpus(
@@ -55,49 +39,24 @@ class AbkhaziaSplit(AbstractCommand):
         split_fun = (spliter.split_by_speakers if args.by_speakers
                      else spliter.split)
 
-        # split the corpus and write it to the output directory
-        split_fun(args.test_prop, args.train_prop)
+        # retrieve the test proportion
+        testprop = (float(utils.config.get('split', 'default-test-proportion'))
+                    if args.test_prop is None else args.test_prop)
 
+        # split the corpus and write it to the output directory
+        split_fun(testprop, args.train_prop)
 
     @classmethod
     def add_parser(cls, subparsers):
         # get basic parser init from AbstractCommand
         parser = super(AbkhaziaSplit, cls).add_parser(subparsers)
 
-        parser.add_argument(
-            '-v', '--verbose', action='store_true',
-            help='display more messages to stdout')
-
-        parser.add_argument(
-            '-f', '--force', action='store_true',
-            help='if specified, overwrite the result directory '
-            '<output-dir>/split. If not specified but the directory exists, '
-            'the program fails.')
-
-        group = parser.add_argument_group('directories')
-
-        group.add_argument(
-            'corpus', metavar='<corpus>',
-            help="""
-            the input abkhazia corpus to split. Must be a directory
-            either relative to the abkhazia data directory ({0}) or
-            relative/absolute on the filesystem. The following rule
-            applies: if <corpus> starts with './' , '../' or '/', path is
-            guessed directly, else <corpus> is guessed as a subdir in
-            {0}""".format(utils.config.get('abkhazia', 'data-directory')))
-
-        group.add_argument(
-            '-o', '--output-dir', default=None, metavar='<output-dir>',
-            help='output directory, the splited corpus is created in '
-            '<output-dir>/split. '
-            'If not specified use <output-dir> = <corpus>.')
-
         group = parser.add_argument_group('split arguments')
 
         prop = group.add_mutually_exclusive_group()
         prop.add_argument(
             '-t', '--test-prop', type=float, metavar='<test>',
-            default=split.SplitCorpus.default_test_prop(),
+            default=utils.config.get('split', 'default-test-proportion'),
             help='''a float between 0.0 and 1.0, represent the proportion of the
             dataset to include in the test set. If not specfied, the
             value is automatically set to the complement of the

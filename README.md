@@ -21,14 +21,14 @@ abkhazia configuration script will fail.
     [here](http://kaldi-asr.org/doc/install.html). You will have to
     provide the Kaldi directory to abkhazia during configuration.
 
-* [sox](http://sox.sourceforge.net), [lame](http://lame.sourceforge.net/) and
+* [sox](http://sox.sourceforge.net) with flac support and
   [shorten](http://etree.org/shnutils/shorten) for wav conversion from
   various audio formats.
 
 	sox and flac should be in repositories of every standard Unix
     distribution, for exemple in Debian/Ubuntu:
 
-    	sudo apt-get install sox lame
+    	sudo apt-get install flac sox
 
    	shorten must be installed manually, follow these steps to
     download, compile and install it:

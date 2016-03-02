@@ -20,7 +20,7 @@ import pkg_resources as pkg
 
 
 class AbkhaziaConfig(object):
-    """Return a ConfigParser with the abkhazia configuration loaded
+    """Return a ConfigParser with the default abkhazia configuration
 
     The function raises OSError if the configuration is not found
 
@@ -31,12 +31,13 @@ class AbkhaziaConfig(object):
 
         Look for 'share/abkhazia.cfg' from pkg_resources, if not
         found, look for __file__/../share/abkhazia.cfg, else raise
-        OSError not found.
+        OSError.
 
         """
         try:
             return pkg.resource_filename(
-                pkg.Requirement.parse('abkhazia'), 'abkhazia/share/abkhazia.cfg')
+                pkg.Requirement.parse('abkhazia'),
+                'abkhazia/share/abkhazia.cfg')
         except pkg.DistributionNotFound:
             config_file = os.path.join(
                 os.path.dirname(os.path.abspath(__file__)),
@@ -48,18 +49,9 @@ class AbkhaziaConfig(object):
 
             return config_file
 
-
-    def __init__(self, config_file=None):
-        # if file not specified, try to get the installed one
-        if config_file is None:
-            config_file = self.default_config_file()
-
-        if not os.path.isfile(config_file):
-            raise OSError('abkhazia configuration file not found {}'
-                          .format(config_file))
-
+    def __init__(self):
         self.conf = ConfigParser.ConfigParser()
-        self.conf.read(config_file)
+        self.conf.readfp(open(self.default_config_file(), 'r'))
 
 # by defining config at module level, we ensure the configuration file
 # is load only once, the first this module is imported

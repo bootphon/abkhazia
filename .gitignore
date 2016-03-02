@@ -11,6 +11,7 @@
 
 # ignore builded documentation
 /docs/build/*
+/docs/html
 /docs/Makefile
 
 # MacOS .DS_Store
@@ -70,6 +71,3 @@ target/
 # emacs
 \#*
 *~
-# local python virtual env
-.pyenv/
-/docs/html

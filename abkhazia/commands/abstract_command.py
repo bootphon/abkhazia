@@ -14,6 +14,7 @@
 # along with abkahzia. If not, see <http://www.gnu.org/licenses/>.
 """Provides the AbstractCommand class"""
 
+import abkhazia.utils as utils
 
 class AbstractCommand(object):
     """The base class of all abkhazia commands
@@ -55,3 +56,83 @@ class AbstractCommand(object):
     def run(cls, args):
         """Run the command according to the parsed argumetns in `args`"""
         raise NotImplementedError
+
+
+class AbstractPreparedCommand(AbstractCommand):
+    """Base class for abkhazia commands other than 'prepare'"""
+    @classmethod
+    def add_parser(cls, subparsers):
+        # get basic parser init from AbstractCommand
+        parser = super(AbstractPreparedCommand, cls).add_parser(subparsers)
+
+        parser.add_argument(
+            '-v', '--verbose', action='store_true',
+            help='display more messages to stdout')
+
+        parser.add_argument(
+            '-f', '--force', action='store_true',
+            help='if specified, overwrite the result directory '
+            '<output-dir>/split. If not specified but the directory exists, '
+            'the program fails.')
+
+        group = parser.add_argument_group('directories')
+
+        group.add_argument(
+            'corpus', metavar='<corpus>',
+            help="""
+            the input abkhazia corpus to split. Must be a directory
+            either relative to the abkhazia data directory ({0}) or
+            relative/absolute on the filesystem. The following rule
+            applies: if <corpus> starts with './' , '../' or '/', path is
+            guessed directly, else <corpus> is guessed as a subdir in
+            {0}""".format(utils.config.get('abkhazia', 'data-directory')))
+
+        group.add_argument(
+            '-o', '--output-dir', default=None, metavar='<output-dir>',
+            help='output directory, the splited corpus is created in '
+            '<output-dir>/split. '
+            'If not specified use <output-dir> = <corpus>.')
+
+        return parser
+
+    @classmethod
+    def prepare_for_run(cls, args):
+        # retrieve the corpus input directory
+        if args.corpus.startswith(('/', './', '../', '~/')):
+            corpus = args.corpus
+        else:
+            corpus = os.path.join(
+                utils.config.get('abkhazia', 'data-directory'),
+                args.corpus)
+
+        # retrieve the output directory
+        output_dir = corpus if args.output_dir is None else args.output_dir
+
+        # if --force, remove any existing output_dir/cls.name
+        if args.force:
+            _dir = os.path.join(output_dir, cls.name)
+            if os.path.exists(_dir):
+                print 'removing {}'.format(_dir)
+                shutil.rmtree(_dir)
+
+        return corpus, output_dir
+
+class AbstractRecipeCommand(AbstractPreparedCommand):
+    """Base class for all commands relying on kaldi"""
+    @classmethod
+    def add_parser(cls, subparsers):
+        # get basic parser init from AbstractCommand
+        parser = super(AbstractRecipeCommand, cls).add_parser(subparsers)
+
+        group = parser.add_argument_group('command options')
+
+        prop = group.add_mutually_exclusive_group()
+        prop.add_argument(
+            '--no-run', action='store_true',
+            help='if specified create the recipe but dont run it')
+
+        prop.add_argument(
+            '--only-run', action='store_true',
+            help='if specified, dont create the recipe but run it')
+
+        return parser

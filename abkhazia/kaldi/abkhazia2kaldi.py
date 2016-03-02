@@ -94,7 +94,6 @@ class Abkhazia2Kaldi(object):
             os.makedirs(dict_path)
         return dict_path
 
-
     def _data_path(self, in_split=None, out_split=None):
         """Return the input and output data directories
 
@@ -123,7 +122,6 @@ class Abkhazia2Kaldi(object):
 
         return inp, out
 
-
     def _copy_template(self, filename, template):
         """Copy `filename` to self.recipe_dir"""
         path, name = os.path.split(filename)
@@ -135,7 +133,6 @@ class Abkhazia2Kaldi(object):
                 .format(name, path, template))
 
         shutil.copy(filename, os.path.join(self.recipe_dir, name))
-
 
     def setup_lexicon(self, prune_lexicon=False, train_name=None, name='dict'):
         """Create data/local/`name`/lexicon.txt"""
@@ -160,7 +157,6 @@ class Abkhazia2Kaldi(object):
         else:
             shutil.copy(origin, target)
 
-
     def setup_phone_lexicon(self, name='dict'):
         """Create data/local/`name`/lexicon.txt"""
         dict_path = self._dict_path(name)
@@ -184,7 +180,6 @@ class Abkhazia2Kaldi(object):
             # want to modify the validating scripts too much
             out.write(u'<unk> SPN\n')
 
-
     def setup_phones(self, name='dict'):
         """Create data/local/`name`/nonsilence_phones.txt"""
         origin = os.path.join(self.data_dir, 'phones.txt')
@@ -195,7 +190,6 @@ class Abkhazia2Kaldi(object):
             for line in utils.open_utf8(origin, 'r').readlines():
                 symbol = line.split(u' ')[0]
                 out.write(u"{0}\n".format(symbol))
-
 
     def setup_silences(self, name='dict'):
         """Create data/local/`name`/{silences, optional_silence}.txt"""
@@ -209,14 +203,12 @@ class Abkhazia2Kaldi(object):
         with utils.open_utf8(target, 'w') as out:
             out.write(u'SIL\n')
 
-
     def setup_variants(self, name='dict'):
         """Create data/local/`name`/extra_questions.txt"""
         target = os.path.join(self._dict_path(name), 'extra_questions.txt')
         self.log.debug('creating {}'.format(target))
 
         shutil.copy(os.path.join(self.data_dir, 'variants.txt'), target)
-
 
     def setup_text(self, in_split=None, out_split=None, desired_utts=None):
         """Create text in data directory"""
@@ -230,7 +222,6 @@ class Abkhazia2Kaldi(object):
         else:
             io.copy_first_col_matches(origin, target, desired_utts)
 
-
     def setup_utt2spk(self, in_split=None, out_split=None, desired_utts=None):
         """Create utt2spk in data directory"""
         i_path, o_path = self._data_path(in_split, out_split)
@@ -242,7 +233,6 @@ class Abkhazia2Kaldi(object):
             shutil.copy(origin, target)
         else:
             io.copy_first_col_matches(origin, target, desired_utts)
-
 
     def setup_segments(self, in_split=None, out_split=None, desired_utts=None):
         """Create segments in data directory"""
@@ -266,7 +256,6 @@ class Abkhazia2Kaldi(object):
                     out.write(u" ".join(
                         [utt_id, record_id] + elements[2:]) + u"\n")
 
-
     def setup_wav(self, in_split=None, out_split=None, desired_utts=None):
         """Create wav.scp in data directory"""
         i_path, o_path = self._data_path(in_split, out_split)
@@ -289,7 +278,6 @@ class Abkhazia2Kaldi(object):
                     os.path.abspath(self.recipe_dir), 'wavs', wav_id)
                 out.write(u"{0} {1}\n".format(record_id, path))
 
-
     def setup_wav_folder(self):
         """using a symbolic link to avoid copying voluminous data"""
         origin = os.path.join(self.data_dir, 'wavs')
@@ -301,7 +289,6 @@ class Abkhazia2Kaldi(object):
         else:
             self.log.debug('creating {}'.format(target))
         os.symlink(origin, target)
-
 
     def setup_kaldi_folders(self):
         """Create steps, utils and conf subdirectories in self.recipe_dir"""
@@ -328,7 +315,6 @@ class Abkhazia2Kaldi(object):
         # pitch features)
         with open(os.path.join(conf_dir, 'pitch.conf'), mode='w') as out:
             pass
-
 
     def setup_lm_scripts(self, args):
         """configure template 'prepare_lm.sh.in' in 'self.recipe_dir/local'
@@ -357,7 +343,6 @@ class Abkhazia2Kaldi(object):
                 os.path.join(self.share_dir, 'kaldi_templates', target),
                 os.path.join(self.recipe_dir, 'local', target))
 
-
     def setup_machine_specific_scripts(self):
         """Copy cmd.sh and path.sh to self.recipe_dir"""
         for target in ('cmd', 'path'):
@@ -365,7 +350,6 @@ class Abkhazia2Kaldi(object):
             template = os.path.join(
                 self.share_dir, 'kaldi_templates', target + '_template.sh')
             self._copy_template(script, template)
-
 
     # TODO split in 2, run.sh possibly configured
     def setup_main_scripts(self, run_script, args):
@@ -400,7 +384,6 @@ class Abkhazia2Kaldi(object):
 
         with utils.open_utf8(target, 'w') as out:
             for line in utils.open_utf8(origin, 'r').readlines():
-#                print line
                 matched = re.match('.*=' + expr, line)
                 if matched and not line.startswith('#'):
                     # parameter name from the file
