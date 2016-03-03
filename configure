@@ -106,12 +106,12 @@ $kaldi is not an existing directory"
 Please do not source the tools/env.sh as indicated by that
 script, this is already done for you."
 
-    # check irstlm is installed
+    # check srilm is installed
     srilm=$kaldi/tools/srilm
     [ -d $srilm ] && echo "Found srilm root directory as $srilm" ||
             failure "Please install srilm in kaldi tools:
     cd $kaldi/tools
-    ./extras/install_irstlm.sh
+    ./extras/install_srilm.sh
 
 Please do not source the tools/env.sh as indicated by that
 script, this is already done for you."
