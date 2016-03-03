@@ -63,6 +63,7 @@ class Abkhazia(object):
 
         class _ConfigAction(argparse.Action):
             def __call__(self, parser, namespace, values, option_string=None):
+                # TODO list config files later (log it in command __init__)
                 print 'loading configuration from {}'.format(values)
                 utils.config.read(values)
 
@@ -93,11 +94,13 @@ class Abkhazia(object):
             'defined in <config-file>, default configuration is read from\n{}'
             .format(utils.AbkhaziaConfig.default_config_file()))
 
-        # register the subcommands parsers
+        # register the subcommands parsers, and list their name and
+        # descripion on --help
         subparsers = parser.add_subparsers(
             metavar='<command>',
             help='possible commands are:\n' +
-            '\n'.join((' {}\t{}'.format(c.name, c.description)
+            '\n'.join((' {} - {}'
+                       .format(c.name + ' '*(8-len(c.name)), c.description)
                        for c in self._command_classes)))
 
         for command in self._command_classes:

@@ -71,3 +71,4 @@ target/
 # emacs
 \#*
 *~
+test/*
