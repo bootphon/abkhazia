@@ -21,7 +21,6 @@ import abkhazia.utils as utils
 import abkhazia.kaldi.abkhazia2kaldi as abkhazia2kaldi
 
 
-
 class AbstractRecipe(object):
     """A base class for creating kaldi recipes from an abkahzia corpus"""
     name = NotImplemented
@@ -50,8 +49,7 @@ class AbstractRecipe(object):
 
         if os.path.isdir(self.recipe_dir):
             raise OSError(
-                'output directory already existing: {}\n'
-                'use the --force option to overwrite it'
+                'output directory already existing: {}'
                 .format(self.recipe_dir))
         else:
             os.makedirs(self.recipe_dir)

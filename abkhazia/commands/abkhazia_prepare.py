@@ -112,7 +112,6 @@ class AbstractFactory(object):
         #     '<output-dir>/data. If not specified but the directory exists, '
         #     'the program fails.')
 
-
         parser.add_argument(
             '-j', '--njobs', type=int, default=4, metavar='<njobs>',
             help='number of jobs to launch when doing parallel '

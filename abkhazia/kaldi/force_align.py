@@ -33,7 +33,7 @@ class ForceAlign(abstract_recipe.AbstractRecipe):
     their default values.
 
     """
-    name = 'force_align'
+    name = 'align'
 
     def create(self, args):
         # DICT folder
@@ -50,7 +50,7 @@ class ForceAlign(abstract_recipe.AbstractRecipe):
         seg_file = os.path.join(self.corpus_dir, 'data', 'segments.txt')
 
         self.log.debug('filtering out utterances shorther than 15ms')
-        utt_durations = io.get_utt_durations(wav_dir, seg_file)
+        utt_durations = io.get_utt_durations(wav_dir, seg_file, args.njobs)
         desired_utts = [utt for utt in utt_durations
                         if utt_durations[utt] >= .015]
 
@@ -78,7 +78,6 @@ class ForceAlign(abstract_recipe.AbstractRecipe):
         self.a2k.setup_machine_specific_scripts()
         # score.sh, run.sh
         self.a2k.setup_main_scripts('force_align.sh.in', args)
-
 
     def export(self):
         """Export the kaldi tra alignment file in abkhazia format

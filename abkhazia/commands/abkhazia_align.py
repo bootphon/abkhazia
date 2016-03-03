@@ -15,10 +15,7 @@
 """Implementation of the 'abkhazia align' command"""
 
 import argparse
-import os
-import shutil
 
-import abkhazia.utils as utils
 import abkhazia.kaldi.force_align as force_align
 from abkhazia.commands.abstract_command import AbstractRecipeCommand
 
@@ -60,6 +57,7 @@ class AbkhaziaAlign(AbstractRecipeCommand):
             'in the [align] section of the configuration file')
 
         from abkhazia.kaldi.abkhazia2kaldi import add_argument
+
         def add_arg(name, type, help):
             add_argument(group, cls.name, name, type, help)
 

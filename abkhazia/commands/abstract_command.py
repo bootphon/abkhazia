@@ -14,7 +14,11 @@
 # along with abkahzia. If not, see <http://www.gnu.org/licenses/>.
 """Provides the AbstractCommand class"""
 
+import os
+import shutil
+
 import abkhazia.utils as utils
+
 
 class AbstractCommand(object):
     """The base class of all abkhazia commands
@@ -117,12 +121,19 @@ class AbstractPreparedCommand(AbstractCommand):
 
         return corpus, output_dir
 
+
 class AbstractRecipeCommand(AbstractPreparedCommand):
     """Base class for all commands relying on kaldi"""
     @classmethod
     def add_parser(cls, subparsers):
         # get basic parser init from AbstractCommand
         parser = super(AbstractRecipeCommand, cls).add_parser(subparsers)
+
+        parser.add_argument(
+            '-j', '--njobs', type=int, default=4, metavar='<njobs>',
+            help='number of jobs to launch when doing no-clustered '
+            'parallel computations (mainly for wav analysis). '
+            'Default is to launch %(default)s jobs.')
 
         group = parser.add_argument_group('command options')
 

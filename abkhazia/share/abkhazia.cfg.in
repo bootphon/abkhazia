@@ -34,7 +34,7 @@ default-test-proportion: 0.5
 # with or without word position dependent variants of the phones
 word-position-dependent: true
 
-# n in n-gram, only used if a LM is to be estimated from some text
+# n in n-gram
 model-order: 2
 
 [align]

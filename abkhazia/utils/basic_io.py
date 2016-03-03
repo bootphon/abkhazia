@@ -157,10 +157,11 @@ def read_dictionary(filename):
     return dict_words, transcriptions
 
 
-def get_utt_durations(wav_dir, seg_file):
+def get_utt_durations(wav_dir, seg_file, njobs=4):
     # get wavefiles durations
     metainfo = utils.wav.scan(
-        utils.list_files_with_extension(wav_dir, '.wav', abspath=True))
+        utils.list_files_with_extension(wav_dir, '.wav', abspath=True),
+        njobs=njobs)
     wav_durations = dict((os.path.basename(k), v.duration)
                          for k, v in metainfo.iteritems())
 
