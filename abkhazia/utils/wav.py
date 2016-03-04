@@ -21,7 +21,7 @@ import subprocess
 import wave
 
 import joblib
-import utils
+import config  # this is abkhazia.utils.config
 
 
 def flac2wav(flac, wav):
@@ -53,7 +53,7 @@ def sph2wav(sph, wav):
 
     """
     sph2pipe = os.path.join(
-        utils.config.get('kaldi', 'kaldi-directory'),
+        config.config.get('kaldi', 'kaldi-directory'),
         'tools/sph2pipe_v2.5/sph2pipe')
 
     if not os.path.isfile(sph2pipe):
