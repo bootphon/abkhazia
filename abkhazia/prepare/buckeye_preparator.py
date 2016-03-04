@@ -148,96 +148,111 @@ class BuckeyePreparator(AbstractPreparator):
 
     def make_segment(self):
         outfile = open(self.segments_file, "w")
-        for utts in list_files_with_extension(
-                os.path.join(self.input_dir, 'txt'), '.txt'):
+        for utts in list_files_with_extension(self.input_dir, '.txt'):
             length_utt = []
-            with open(utts) as infile_txt:
-                current_index = 0
-                last_offset = 0
-                bname = os.path.basename(utts)
-                length_utt = [len(line.strip().split())
-                              for line in infile_txt.readlines()]
-
-                wrd = os.path.join(self.input_dir, 'words_fold',
-                                   bname.replace('txt', 'words'))
-                with open(wrd) as infile_wrd:
-                    lines_2 = infile_wrd.readlines()
-
-                    del lines_2[:9]
-                    assert len(lines_2) == sum(length_utt),\
-                        '{} {}'.format(len(lines_2), sum(length_utt))
-                    for i, utt in enumerate(len(length_utt)):
-                        if i == 0:
-                            onset = '0.000'
-                            index_offset = utt
-                        else:
-                            onset = str(last_offset)
-                            index_offset = utt + current_index
-
-                        outfile.write(bname.replace('.txt', '') + '-sent' +
-                                      str(i+1) + ' ' +
-                                      bname.replace('txt', 'wav') + ' ' +
-                                      onset + ' ')
-
-                        offset_line = lines_2[index_offset-1]
-                        match_offset = re.match(
-                            r'\s\s+(.*)\s+(121|122)\s(.*)', offset_line)
-                        if not match_offset:
-                            raise IOError('offset not matched {}'
-                                          .format(offset_line))
-
-                        offset = match_offset.group(1)
-                        outfile.write(str(offset))
-                        current_index = index_offset
-                        last_offset = offset
-                        outfile.write('\n')
+            bname = os.path.basename(utts)
+            dir_file = os.path.dirname(utts)
+            if not bname.startswith("readme"):
+                with open(utts) as infile_txt:
+                    current_index = 0
+                    last_offset = 0
+                    bname_new = bname.replace('txt', 'words_fold')
+                    bname_wav = bname.replace('txt', 'wav')
+                    utt = bname.replace('.txt', '')
+                    length_utt = [len(line.strip().split())
+                                  for line in infile_txt.readlines()]
+                    wrd = os.path.join(dir_file, bname_new)
+                    with open(wrd) as infile_wrd:
+                        lines_2 = infile_wrd.readlines()
+                        del lines_2[:9]
+                        assert len(lines_2) == sum(length_utt),\
+                            '{} {}'.format(len(lines_2), sum(length_utt))
+                        for n in range(len(length_utt)):
+                            if n == 0:
+                                onset = '0.000'
+                                outfile.write(utt + '-sent' +
+                                              str(n+1) + ' ' +
+                                              bname_wav + ' ' +
+                                              onset + ' ')
+    
+                                index_offset = length_utt[n]
+                                offset_line = lines_2[index_offset-1]
+    
+                                match_offset = re.match(
+                                    r'\s\s+(.*)\s+(121|122)\s(.*)', offset_line)
+                                if not match_offset:
+                                    raise IOError('offset line unmatched: {}'
+                                                  .format(offset_line))
+    
+                                offset = match_offset.group(1)
+                                outfile.write(str(offset))
+                                current_index = index_offset
+                                last_offset = offset
+                                outfile.write('\n')
+                            else:
+                                onset = last_offset
+                                outfile.write(utt + '-sent' +
+                                              str(n+1) + ' ' +
+                                              bname_wav + ' ' +
+                                              str(onset) + ' ')
+    
+                                index_offset = length_utt[n]+current_index
+                                offset_line = lines_2[index_offset-1]
+                                match_offset = re.match(
+                                    r'\s\s+(.*)\s+(121|122)\s(.*)', offset_line)
+                                if not match_offset:
+                                    raise IOError(
+                                        'offset not matched {}'.format(offset_line))
+    
+                                offset = match_offset.group(1)
+                                outfile.write(str(offset))
+                                current_index = index_offset
+                                last_offset = offset
+                                outfile.write('\n')
 
         self.log.debug('finished creating segments file')
 
     def make_speaker(self):
-        utt_dir = os.path.join(self.input_dir, 'txt')
-
         outfile = open(self.speaker_file, "w")
-        for utts in list_files_with_extension(utt_dir, '.txt'):
-            with open(utts) as infile_txt:
-                lines = infile_txt.readlines()
-                bname = os.path.basename(utts)
-                utt = bname.replace('.txt', '')
-                speaker_id = re.sub(r"[0-9][0-9](a|b)\.txt", "", bname)
-                for idx, _ in enumerate(lines, start=1):
-                    outfile.write(
-                        utt + '-sent' + str(idx) + ' ' + speaker_id + '\n')
-
+        for utts in list_files_with_extension(self.input_dir, '.txt'):
+            bname = os.path.basename(utts)
+            if not bname.startswith("readme"):
+                with open(utts) as infile_txt:
+                    lines = infile_txt.readlines()
+                    bname = os.path.basename(utts)
+                    utt = bname.replace('.txt', '')
+                    speaker_id = re.sub(r"[0-9][0-9](a|b)\.txt", "", bname)
+                    for idx, _ in enumerate(lines, start=1):
+                        outfile.write(
+                            utt + '-sent' + str(idx) + ' ' + speaker_id + '\n')
         self.log.debug('finished creating utt2spk file')
 
     def make_transcription(self):
-        utt_dir = os.path.join(self.input_dir, 'txt')
-
         outfile = open(self.transcription_file, "w")
-        for utts in list_files_with_extension(utt_dir, '.txt'):
-            with open(utts) as infile_txt:
-                lines = infile_txt.readlines()
-                bname = os.path.basename(utts)
-                utt = bname.replace('.txt', '')
-                for idx, val in enumerate(lines, start=1):
-                    outfile.write(utt + '-sent' + str(idx) + ' ')
-                    words = val.split()
-                    if len(words) > 1:
-                        for word in words[:-1]:
-                            outfile.write(word + ' ')
-                        outfile.write(str(words[-1]) + '\n')
-                    else:
-                        for word in words:
-                            outfile.write(word)
-                        outfile.write('\n')
+        for utts in list_files_with_extension(self.input_dir, '.txt'):
+            bname = os.path.basename(utts)
+            if not bname.startswith("readme"):
+                with open(utts) as infile_txt:
+                    lines = infile_txt.readlines()
+                    bname = os.path.basename(utts)
+                    utt = bname.replace('.txt', '')
+                    for idx, val in enumerate(lines, start=1):
+                        outfile.write(utt + '-sent' + str(idx) + ' ')
+                        words = val.split()
+                        if len(words) > 1:
+                            for word in words[:-1]:
+                                outfile.write(word + ' ')
+                            outfile.write(str(words[-1]) + '\n')
+                        else:
+                            for word in words:
+                                outfile.write(word)
+                            outfile.write('\n')
         self.log.debug('finished creating text file')
 
     def make_lexicon(self):
-        wrd_dir = os.path.join(self.input_dir, 'words_fold')
-
         dict_word = {}
         outfile = open(self.lexicon_file, "w")
-        for utts in list_files_with_extension(wrd_dir, '.words'):
+        for utts in list_files_with_extension(self.input_dir, '.words_fold'):
             with open(utts) as infile_txt:
                 # for each line of transcription, store the words in a
                 # dictionary and increase frequency
