@@ -23,7 +23,7 @@ from abkhazia.kaldi.language_model import LanguageModel
 
 
 class AbkhaziaLanguage(AbstractRecipeCommand):
-    name = 'language'
+    name = LanguageModel.name
     description = 'compute a language model'
 
     @classmethod
@@ -38,6 +38,7 @@ class AbkhaziaLanguage(AbstractRecipeCommand):
             'specified in the [language] section of the configuration file')
 
         from abkhazia.kaldi.abkhazia2kaldi import add_argument
+
         def add_arg(name, type, help):
             add_argument(group, cls.name, name, type, help)
 

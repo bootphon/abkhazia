@@ -125,10 +125,10 @@ else
                     -o "$in_dir"/text.ilm.gz -k 1 -s kneser-ney
         compile-lm "$in_dir"/text.ilm.gz --text=yes /dev/stdout | gzip -c > "$in_dir"/G.arpa.gz
 
-        # # clean intermediate files
-        # rm "$in_dir"/text_ready.txt
-        # rm "$in_dir"/text_se.txt
-        # rm "$in_dir"/text.ilm.gz
+        # clean intermediate files
+        rm "$in_dir"/text_ready.txt
+        rm "$in_dir"/text_se.txt
+        rm "$in_dir"/text.ilm.gz
     fi
 
     echo "running utils/format_lm_sri.sh"

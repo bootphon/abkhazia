@@ -22,6 +22,7 @@ import shutil
 import abkhazia.utils as utils
 import abkhazia.utils.basic_io as io
 
+
 class SplitCorpus(object):
     """A class for spliting an abkahzia corpus into train and test subsets
 

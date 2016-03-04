@@ -15,31 +15,71 @@
 """Provides the LanguageModel class"""
 
 import os
-import shutil
 
 import abkhazia.utils.basic_io as io
 import abkhazia.kaldi.abstract_recipe as abstract_recipe
 
+
+# [--prune_lexicon <true|false>]: (default: false) Could be useful
+# when using a lexicon that is tailored to the corpus to the point of
+# overfitting (i.e. only words occuring in the corpus were included
+# and many other common words weren't), which could lead to
+# overestimated performance on words from the lexicon appearing in the
+# test only.  Removes from the lexicon all words that are not present
+# at least once in the training set.
+#
+# [--level <word|phone>] compute a phone-level or word-level n-gram
 class LanguageModel(abstract_recipe.AbstractRecipe):
     """Compute a language model from an abkhazia corpus"""
-    name = 'language_model'
+    name = 'language'
 
     def create(self, args):
-        # DICT folder
-        self.a2k.setup_lexicon()
+        # check we have either word or phone level
+        level_choices = ['word', 'phone']
+        if args.level not in level_choices:
+            raise RuntimeError(
+                'language model level must be in {}, it is {}'
+                .format(level_choices, args.level))
+
+        self.log.debug('filtering out utterances shorther than 15ms')
+        wav_dir = os.path.join(self.corpus_dir, 'data', 'wavs')
+        seg_file = os.path.join(self.corpus_dir, 'data', 'segments.txt')
+        utt_durations = io.get_utt_durations(wav_dir, seg_file, args.njobs)
+        desired_utts = [utt for utt in utt_durations
+                        if utt_durations[utt] >= .015]
+
+        # setup data files common to both levels
+        self.a2k.setup_text(desired_utts=desired_utts)
+        text = 'that text file'  # TODO
+        io.cpp_sort(text)
+
         self.a2k.setup_phones()
         self.a2k.setup_silences()
         self.a2k.setup_variants()
 
-        lexicon = os.path.join(self.corpus_dir, 'data', 'lexicon.txt')
-        text = os.path.join(self.corpus_dir, 'data', 'text.txt')
-        out_dir = os.path.join(self.a2k._dict_path(), 'lm_text.txt')
-        io.word2phone(lexicon, text, out_dir)
+        if args.level == 'word':
+            self.a2k.setup_lexicon(prune_lexicon=args.prune_lexicon)
+
+            # copy train text to word_bigram for LM estimation
+            train_text = p.join(self.recipe_dir, 'data', 'train', 'text')
+            out_dir = self.a2k._dict_path(self.recipe_dir, name='word_bigram')
+            shutil.copy(train_text, p.join(out_dir, 'lm_text.txt'))
+
+        else:  # phone level
+            # TODO retrieve this from thomas's version
+            self.a2k.setup_phone_lexicon()
+
+            lexicon = os.path.join(self.corpus_dir, 'data', 'lexicon.txt')
+            text = os.path.join(self.corpus_dir, 'data', 'text.txt')
+            out_file = os.path.join(self.a2k._dict_path(), 'lm_text.txt')
+            io.word2phone(lexicon, text, out_file)
+
+
 
         self.a2k.setup_kaldi_folders()
         self.a2k.setup_machine_specific_scripts()
-
         self.a2k.setup_lm_scripts(args)
+
         run = os.path.join(self.recipe_dir, 'run.sh')
         with open(run, 'w') as out:
             out.write("""#!/bin/bash -u

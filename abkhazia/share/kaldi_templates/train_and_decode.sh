@@ -41,6 +41,7 @@ num_gauss_si=15000
 # speaker-adaptive triphone models parameters
 num_states_sa=2500
 num_gauss_sa=15000
+
 # location of the language model to be used:
 lm_name=word_bigram  # phone_bigram
 lm=data/"$lm_name"

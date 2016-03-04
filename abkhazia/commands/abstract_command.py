@@ -25,9 +25,9 @@ class AbstractCommand(object):
 
     All the abkhazia commands must implement this interface.
 
-    Basically this class defines an argument parser, parses the
-    arguments and split a corpus in train and test subsets. The
-    spliting operation is delegated to the split.SplitCorpus class.
+    Basically this class defines the methods add_parser() and run(),
+    respectively defining the command parser and how to run it from
+    the parsed arguments.
 
     """
     name = NotImplemented
@@ -54,6 +54,11 @@ class AbstractCommand(object):
         # add a brief description of the command
         parser.description = cls.description
 
+        # add a --verbose option to all commands
+        parser.add_argument(
+            '-v', '--verbose', action='store_true',
+            help='display more messages to stdout')
+
         return parser
 
     @classmethod
@@ -63,21 +68,23 @@ class AbstractCommand(object):
 
 
 class AbstractPreparedCommand(AbstractCommand):
-    """Base class for abkhazia commands other than 'prepare'"""
+    """Base class for abkhazia commands other than 'prepare'
+
+    Overloads the add_parser() method with a --force option, as well
+    as input and output directories arguments. This class also define
+    a prepare_for_run() method which implement the behavior of these
+    parameters.
+
+    """
     @classmethod
     def add_parser(cls, subparsers):
         # get basic parser init from AbstractCommand
         parser = super(AbstractPreparedCommand, cls).add_parser(subparsers)
 
         parser.add_argument(
-            '-v', '--verbose', action='store_true',
-            help='display more messages to stdout')
-
-        parser.add_argument(
             '-f', '--force', action='store_true',
-            help='if specified, overwrite the result directory '
-            '<output-dir>/split. If not specified but the directory exists, '
-            'the program fails.')
+            help='if specified, overwrite the output directory '
+            '. If not specified but the directory exists, the program fails.')
 
         group = parser.add_argument_group('directories')
 
@@ -115,6 +122,7 @@ class AbstractPreparedCommand(AbstractCommand):
         # if --force, remove any existing output_dir/cls.name
         if args.force:
             _dir = os.path.join(output_dir, cls.name)
+            print 'forcing ' + _dir
             if os.path.exists(_dir):
                 print 'removing {}'.format(_dir)
                 shutil.rmtree(_dir)
