@@ -1,5 +1,22 @@
 <!-- -*-org-*- this comment force org-mode in emacs -->
 
+- [ ] fix the zip_safe stuff in setup.py... is it an issue ?
+
+- language model
+
+  - [ ] fix TODOs in prepare_lm.sh.in
+
+  - [ ] make it run.sh in the language recipe
+
+  - [X] fix a2k.setup_phones_lexicon()
+
+  - [ ] finish language_model.py
+
+  - [ ] a2k need a bit of refactoring -> more high-level functions,
+    auto io.cpp_sort()
+
+  - [ ] what excatly is the relation between split / language ??
+
 * Corpora preparation
 
   - WSJ
@@ -9,15 +26,12 @@
       - [X] no duplicates in trs input files (all have different abspath)
       - [ ] check for duplicates in different subfolders
 
-  - Buckeye
+  - Buckeye and CSJ
 
-    - XN fixing new directory structure
-    - Some utterances are overlapping in time
+    Some utterances are overlapping in time. For CSJ some overlaps
+    are 2, only one is 3. Is it a problem ?
 
-  - CSJ
-
-    Some utterances are overlapping in time, some overlaps are 2, only
-    one is 3. Is it a problem ?
+  - add a --force option
 
 * Functions
 
@@ -29,9 +43,7 @@
    - [ ] remove the language model part from the recipe (this will be
      the 'abkhazia lang' command)
 
- - [ ] lang
-
-   Train a language model. Options: unigram, bigram
+ - [ ] language. Train a language model. Options: unigram, bigram
 
  - [ ] train(train_set):
 

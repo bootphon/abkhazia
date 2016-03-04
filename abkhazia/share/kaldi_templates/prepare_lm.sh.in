@@ -79,7 +79,7 @@ fi
 
 echo "running $prepare_lang_exe..."
 $prepare_lang_exe --position-dependent-phones $word_position_dependent \
-                  $in_dir "<unk>" $tmp_dir $out_dir > $log
+                  $in_dir "<unk>" $tmp_dir $out_dir >& $log
 
 
 # here we could use a different silence_prob. I think however that
@@ -122,13 +122,15 @@ else
 
         # k option is number of split, useful for huge text files
         build-lm.sh -i "$in_dir"/text_se.txt -n $model_order \
-                    -o "$in_dir"/text.ilm.gz -k 1 -s kneser-ney
-        compile-lm "$in_dir"/text.ilm.gz --text=yes /dev/stdout | gzip -c > "$in_dir"/G.arpa.gz
+                    -o "$in_dir"/text.ilm.gz -k 1 -s kneser-ney >> $log
+
+        compile-lm "$in_dir"/text.ilm.gz --text=yes /dev/stdout 2>> $log | \
+            gzip -c > "$in_dir"/G.arpa.gz
 
         # clean intermediate files
-        rm "$in_dir"/text_ready.txt
-        rm "$in_dir"/text_se.txt
-        rm "$in_dir"/text.ilm.gz
+        rm -f "$in_dir"/text_ready.txt
+        rm -f "$in_dir"/text_se.txt
+        rm -f "$in_dir"/text.ilm.gz
     fi
 
     echo "running utils/format_lm_sri.sh"
@@ -143,14 +145,12 @@ else
     # format_lm_sri.sh copies stuff so we need to instantiate
     # another folder and then clean up (or we could do a custom
     # format_lm_sri.sh with $1 and $4 == $1 and no cp)
-    tmp_out_dir="$out_dir"_tmp
+    tmpdir=$(mktemp -d /tmp/kaldi.XXXX);
+    trap 'rm -rf "$tmpdir"' EXIT
 
-    # TODO bug here, and then in
-    # change-lm-vocab -vocab $tmpdir/voc -lm $tmpdir/lm.gz -write-lm $tmpdir/out_lm \
-    # $srilm_opts || exit 1;
     utils/format_lm_sri.sh --srilm_opts "-subset -prune-lowprobs -unk" \
 			   $out_dir "$in_dir"/G.arpa.gz \
-			   "in_dir"/lexicon.txt $tmp_out_dir
+			   "in_dir"/lexicon.txt $tmpdir &>> $log
     rm -Rf $out_dir  # erases the previous content that is redundant anyway
-    mv $tmp_out_dir $out_dir
+    mv $tmpdir $out_dir
 fi

@@ -15,20 +15,12 @@
 """Provides the LanguageModel class"""
 
 import os
+import shutil
 
 import abkhazia.utils.basic_io as io
 import abkhazia.kaldi.abstract_recipe as abstract_recipe
 
 
-# [--prune_lexicon <true|false>]: (default: false) Could be useful
-# when using a lexicon that is tailored to the corpus to the point of
-# overfitting (i.e. only words occuring in the corpus were included
-# and many other common words weren't), which could lead to
-# overestimated performance on words from the lexicon appearing in the
-# test only.  Removes from the lexicon all words that are not present
-# at least once in the training set.
-#
-# [--level <word|phone>] compute a phone-level or word-level n-gram
 class LanguageModel(abstract_recipe.AbstractRecipe):
     """Compute a language model from an abkhazia corpus"""
     name = 'language'
@@ -36,7 +28,7 @@ class LanguageModel(abstract_recipe.AbstractRecipe):
     def create(self, args):
         # check we have either word or phone level
         level_choices = ['word', 'phone']
-        if args.level not in level_choices:
+        if args.model_level not in level_choices:
             raise RuntimeError(
                 'language model level must be in {}, it is {}'
                 .format(level_choices, args.level))
@@ -49,32 +41,23 @@ class LanguageModel(abstract_recipe.AbstractRecipe):
                         if utt_durations[utt] >= .015]
 
         # setup data files common to both levels
-        self.a2k.setup_text(desired_utts=desired_utts)
-        text = 'that text file'  # TODO
+        text = self.a2k.setup_text(desired_utts=desired_utts)
         io.cpp_sort(text)
 
         self.a2k.setup_phones()
         self.a2k.setup_silences()
         self.a2k.setup_variants()
 
-        if args.level == 'word':
-            self.a2k.setup_lexicon(prune_lexicon=args.prune_lexicon)
+        prune_lexicon = True if args.prune_lexicon == 'true' else False
+        lm_text = os.path.join(self.a2k._dict_path(), 'lm_text.txt')
+        if args.model_level == 'word':
+            self.a2k.setup_lexicon(prune_lexicon=prune_lexicon)
 
             # copy train text to word_bigram for LM estimation
-            train_text = p.join(self.recipe_dir, 'data', 'train', 'text')
-            out_dir = self.a2k._dict_path(self.recipe_dir, name='word_bigram')
-            shutil.copy(train_text, p.join(out_dir, 'lm_text.txt'))
-
+            shutil.copy(text, lm_text)
         else:  # phone level
-            # TODO retrieve this from thomas's version
-            self.a2k.setup_phone_lexicon()
-
-            lexicon = os.path.join(self.corpus_dir, 'data', 'lexicon.txt')
-            text = os.path.join(self.corpus_dir, 'data', 'text.txt')
-            out_file = os.path.join(self.a2k._dict_path(), 'lm_text.txt')
-            io.word2phone(lexicon, text, out_file)
-
-
+            lexicon = self.a2k.setup_phone_lexicon()
+            io.word2phone(lexicon, text, lm_text)
 
         self.a2k.setup_kaldi_folders()
         self.a2k.setup_machine_specific_scripts()

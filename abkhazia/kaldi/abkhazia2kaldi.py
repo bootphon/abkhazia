@@ -23,24 +23,31 @@ import abkhazia.utils as utils
 import abkhazia.utils.basic_io as io
 
 
-def add_argument(parser, recipe, name, type, help):
-    try:
-        metavar = {
-            bool: '<true|false>',
-            int: '<int>',
-            float: '<float>'
-        }[type]
-    except KeyError:
-        metavar = '<' + name + '>'
+def add_argument(parser, recipe, name, type, help,
+                 metavar=None, choices=None):
+    if metavar is None:
+        try:
+            metavar = {
+                bool: '<true|false>',
+                float: '<float>',
+                int: '<int>'
+            }[type]
+        except KeyError:
+            metavar = '<' + name + '>'
 
     if type is bool:
         parser.add_argument(
             '--'+name, choices=['true', 'false'], metavar=metavar,
             default=utils.config.get(recipe, name),
             help=help + ' (default is %(default)s)')
-    else:
+    elif choices is None:
         parser.add_argument(
             '--'+name, type=type, metavar=metavar,
+            default=utils.config.get(recipe, name),
+            help=help + ' (default is %(default)s)')
+    else:
+        parser.add_argument(
+            '--'+name, type=type, choices=choices, metavar=metavar,
             default=utils.config.get(recipe, name),
             help=help + ' (default is %(default)s)')
 
@@ -87,6 +94,7 @@ class Abkhazia2Kaldi(object):
         self.share_dir = pkg_resources.resource_filename(
             pkg_resources.Requirement.parse('abkhazia'), 'abkhazia/share')
 
+    # TODO rename _local_path
     def _dict_path(self, name='dict'):
         """Return the directory data/local/`name`, create it if needed"""
         dict_path = os.path.join(self.recipe_dir, 'data', 'local', name)
@@ -141,19 +149,20 @@ class Abkhazia2Kaldi(object):
         self.log.debug('creating {}'.format(target))
 
         if prune_lexicon:
-            # get words appearing in train part
-            train_text = os.path.join(
-                self.data_dir, 'split', train_name, 'text.txt')
+            raise NotImplementedError('prune lexicon still not implemented!')
+            # # get words appearing in train part
+            # train_text = os.path.join(
+            #     self.data_dir, 'split', train_name, 'text.txt')
 
-            _, utt_words = io.read_text(train_text)
-            allowed_words = set([word for utt in utt_words for word in utt])
+            # _, utt_words = io.read_text(train_text)
+            # allowed_words = set([word for utt in utt_words for word in utt])
 
-            # add special OOV word <unk>
-            allowed_words.add(u'<unk>')
+            # # add special OOV word <unk>
+            # allowed_words.add(u'<unk>')
 
-            # remove other words from the lexicon
-            allowed_words = list(allowed_words)
-            io.copy_first_col_matches(origin, target, allowed_words)
+            # # remove other words from the lexicon
+            # allowed_words = list(allowed_words)
+            # io.copy_first_col_matches(origin, target, allowed_words)
         else:
             shutil.copy(origin, target)
 
@@ -179,6 +188,8 @@ class Abkhazia2Kaldi(object):
             # lexicon for training it also is necessary if one doesn't
             # want to modify the validating scripts too much
             out.write(u'<unk> SPN\n')
+
+        return target
 
     def setup_phones(self, name='dict'):
         """Create data/local/`name`/nonsilence_phones.txt"""
@@ -221,6 +232,7 @@ class Abkhazia2Kaldi(object):
             shutil.copy(origin, target)
         else:
             io.copy_first_col_matches(origin, target, desired_utts)
+        return target
 
     def setup_utt2spk(self, in_split=None, out_split=None, desired_utts=None):
         """Create utt2spk in data directory"""

@@ -39,8 +39,8 @@ class AbkhaziaLanguage(AbstractRecipeCommand):
 
         from abkhazia.kaldi.abkhazia2kaldi import add_argument
 
-        def add_arg(name, type, help):
-            add_argument(group, cls.name, name, type, help)
+        def add_arg(name, type, help, metavar=None, choices=None):
+            add_argument(group, cls.name, name, type, help, metavar, choices)
 
         add_arg(
             'word-position-dependent', bool,
@@ -50,9 +50,19 @@ class AbkhaziaLanguage(AbstractRecipeCommand):
             variants of the phones''')
 
         add_arg(
-            'model-order', int, 'n in n-gram, only used if a LM is to be '
-            'estimated from some text, see '
-            'share/kaldi_templates/prepare_lm.sh.in')
+            'model-order', int,
+            'n in n-gram, only used if a LM is to be estimated from some '
+            'text, see share/kaldi_templates/prepare_lm.sh.in')
+
+        add_arg(
+            'model-level', str,
+            "compute either a phone-level or a word-level language model",
+            metavar='<phone|word>', choices=['phone', 'word'])
+
+        add_arg(
+            'prune-lexicon', bool, 'Removes from the lexicon all words that '
+            'are not present at least once in the training set. This have '
+            'effect only on word-level, not on phone-level')
 
     @classmethod
     def run(cls, args):
