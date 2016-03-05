@@ -287,7 +287,7 @@ class MandarinPreparator(AbstractGlobalPhonePreparator):
         a temporary file
 
         """
-        self.log.info('Correcting dictionary')
+        self.log.debug('Correcting dictionary')
 
         # the following words are in the dictionary but are not used
         # in the transcriptions they will be dropped
@@ -307,6 +307,6 @@ class MandarinPreparator(AbstractGlobalPhonePreparator):
             for line in correct_lines:
                 out.write(line)
 
-        self.log.info('Dictionary corrected, writed in %s', filename)
+        self.log.debug('Dictionary corrected, writed in %s', filename)
         self.dictionary = filename
         return True

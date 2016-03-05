@@ -81,10 +81,11 @@ class AbstractPreparedCommand(AbstractCommand):
         # get basic parser init from AbstractCommand
         parser = super(AbstractPreparedCommand, cls).add_parser(subparsers)
 
+        # add a --force option to all commands
         parser.add_argument(
             '-f', '--force', action='store_true',
-            help='if specified, overwrite the output directory '
-            '. If not specified but the directory exists, the program fails.')
+            help='if specified, overwrite the output directory. '
+            'If not specified but the directory exists, the program fails.')
 
         group = parser.add_argument_group('directories')
 
@@ -122,7 +123,6 @@ class AbstractPreparedCommand(AbstractCommand):
         # if --force, remove any existing output_dir/cls.name
         if args.force:
             _dir = os.path.join(output_dir, cls.name)
-            print 'forcing ' + _dir
             if os.path.exists(_dir):
                 print 'removing {}'.format(_dir)
                 shutil.rmtree(_dir)

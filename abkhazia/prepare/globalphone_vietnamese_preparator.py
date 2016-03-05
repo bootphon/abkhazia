@@ -138,7 +138,6 @@ class VietnamesePreparator(AbstractGlobalPhonePreparator):
 
     transcription_key = 'trl'
 
-
     # Which vowels are observed with which tones? The only unobserved
     # combinations are uou_5 and eu_1
     #
@@ -220,7 +219,7 @@ class VietnamesePreparator(AbstractGlobalPhonePreparator):
 
     consonants = {
         'b': u'ɓ',
-        'ch': u'tɕ', # possibly not affricate?
+        'ch': u'tɕ',  # possibly not affricate?
         'd1': u'ɟ',
         # this phoneme is not reported in wikipedia vietnamese
         # phonology although it is said to occur in north-central
@@ -251,18 +250,18 @@ class VietnamesePreparator(AbstractGlobalPhonePreparator):
     # https://en.wikipedia.org/wiki/Vietnamese_phonology#Six-tone_analysis
     # (northern part)
     tones = [
-        ('_1', u'˧'), # mid-level (neutral)
+        ('_1', u'˧'),  # mid-level (neutral)
         ('_2', u'˨˩'),
         ('_3', u'˧˥'),
         ('_4', u'˧˩˧'),
         # apparently no ipa symbol for 'ˀ' (glottalized), so use
         # u'˧\u0330˥\u0330' instead of u'˧ˀ˥' (using the creaky voice
         # diacritic)
-        ('_5', u'˧\u0330˥\u0330'), # + creaky voice
+        ('_5', u'˧\u0330˥\u0330'),  # + creaky voice
         # apparently no ipa symbol for 'ˀ' (glottalized), so used
         # u'˨\u0330˩\u0330ʔ' instead of u'˨ˀ˩ʔ' (using the creaky
         # voice diacritic)
-        ('_6', u'˨\u0330˩\u0330ʔ') # + creaky voice
+        ('_6', u'˨\u0330˩\u0330ʔ')  # + creaky voice
     ]
 
     # generate dict associating phones with ipa and tonal variants
@@ -283,7 +282,7 @@ class VietnamesePreparator(AbstractGlobalPhonePreparator):
         a temporary file
 
         """
-        self.log.info('Correcting dictionary')
+        self.log.debug('Correcting dictionary')
 
         # the following words are in the dictionary but are not used
         # in the transcriptions they will be dropped
@@ -299,7 +298,7 @@ class VietnamesePreparator(AbstractGlobalPhonePreparator):
 
         # correct content
         with utils.open_utf8(corrected_dictionary, 'w') as out:
-            for line in lines:  #open_utf8(self.dictionary, 'r').readlines():
+            for line in lines:
                 # skip secondary pronunciations
                 if u'(2)' not in line:
                     # skip some words
@@ -318,11 +317,10 @@ class VietnamesePreparator(AbstractGlobalPhonePreparator):
                                       u'{\\1_\\2 WB}', line)
                         out.write(line)
 
-        self.log.info('Dictionary corrected, writed in {}'
-                      .format(corrected_dictionary))
+        self.log.debug('Dictionary corrected, writed in {}'
+                       .format(corrected_dictionary))
         self.dictionary = corrected_dictionary
         return True
-
 
     def correct_transcription(self):
         """Correct problems with the GlobalPhone Vietnamese transcripts
@@ -348,8 +346,9 @@ class VietnamesePreparator(AbstractGlobalPhonePreparator):
             lines = utils.open_utf8(trs, 'r').readlines()
 
             # correct odd lines
-            lines[2::2] = [line.replace(u'_', u' ').replace(u'  ', u' ').strip()
-                           + u'\n' for line in lines[2::2]]
+            lines[2::2] = [line.replace(u'_', u' ').replace(
+                u'  ', u' ').strip() +
+                           u'\n' for line in lines[2::2]]
 
             # # write corrected version to temp
             output_file = os.path.join(
@@ -359,8 +358,8 @@ class VietnamesePreparator(AbstractGlobalPhonePreparator):
                 for line in lines:
                     out.write(line)
 
-        self.log.info('corrected {} transcription files in {}'
-                      .format(len(trss), corrected_transcription_dir))
+        self.log.debug('corrected {} transcription files in {}'
+                       .format(len(trss), corrected_transcription_dir))
 
         self.transcription_dir = corrected_transcription_dir
         return True
