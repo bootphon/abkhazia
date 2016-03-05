@@ -21,8 +21,7 @@ import subprocess
 import wave
 
 import joblib
-
-import config
+import config  # this is abkhazia.utils.config
 
 
 def flac2wav(flac, wav):
