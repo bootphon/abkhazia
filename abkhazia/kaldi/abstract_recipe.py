@@ -27,7 +27,7 @@ class AbstractRecipe(object):
     """The recipe's name"""
 
     params = NotImplemented
-    """A named tuple defining the recipe parameters"""
+    """A namespace (or a named tuple) defining the recipe parameters"""
 
     def __init__(self, corpus_dir, recipe_dir=None, verbose=False):
         # check corpus_dir
@@ -70,10 +70,10 @@ class AbstractRecipe(object):
         raise NotImplementedError
 
     def run(self):
-        """Run the created recipe by executing 'run.sh'"""
-        # TODO catch failures
+        """Run the created recipe by executing 'run.sh' as a subprocess"""
         self.log.info("running 'run.sh' from {}".format(self.recipe_dir))
         try:
             subprocess.check_call('./run.sh', cwd=self.recipe_dir)
+            self.log.info('%s recipe succeeded', self.name)
         except subprocess.CalledProcessError:
             raise IOError('{} recipe failed'.format(self.name))

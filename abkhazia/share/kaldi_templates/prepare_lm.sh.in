@@ -121,6 +121,7 @@ else
         add-start-end.sh < "$in_dir"/text_ready.txt > "$in_dir"/text_se.txt
 
         # k option is number of split, useful for huge text files
+        # build-lm.sh in kaldi/tools/irstlm/bin
         build-lm.sh -i "$in_dir"/text_se.txt -n $model_order \
                     -o "$in_dir"/text.ilm.gz -k 1 -s kneser-ney >> $log
 
@@ -133,7 +134,7 @@ else
         rm -f "$in_dir"/text.ilm.gz
     fi
 
-    echo "running utils/format_lm_sri.sh"
+    echo "creating language model in $out_dir/G.fst"
 
     # 2 - generate FST (use SRILM)
     # includes adapting the vocabulary to lexicon in out_dir

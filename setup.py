@@ -33,7 +33,7 @@ REQUIREMENTS = [] if ON_RTD else [
     # 'pandas',
     # 'yaafelib',
     'numpy',
-    'progressbar',
+    'progressbar2',
     'joblib',
     'argcomplete'
 ]

@@ -22,7 +22,7 @@ import shutil
 import abkhazia.utils as utils
 import abkhazia.utils.basic_io as io
 
-
+# TODO comment !
 def add_argument(parser, recipe, name, type, help,
                  metavar=None, choices=None):
     if metavar is None:
@@ -68,11 +68,17 @@ class Abkhazia2Kaldi(object):
     log : the logger to write in. default is to write in
       'self.recipe_dir'/abkhazia2kaldi.log
 
+    When copied form abkhazia to kaldi, some files are also sorted,
+    just to be sure (for example if the abkhazia corpus has been
+    copied to a different machine after its creation, there might be
+    some machine-dependent differences in the required orders).
+
     '''
     def __init__(self, corpus_dir, recipe_dir, verbose=False, log=None):
         # init the corpus directory
         if not os.path.isdir(corpus_dir):
             raise OSError('{} is not a directory'.format(corpus_dir))
+
         self.data_dir = os.path.join(corpus_dir, 'data')
         if not os.path.isdir(self.data_dir):
             raise OSError('{} is not a directory'.format(self.data_dir))
@@ -142,6 +148,23 @@ class Abkhazia2Kaldi(object):
 
         shutil.copy(filename, os.path.join(self.recipe_dir, name))
 
+    def desired_utterances(self, min_duration=0.015, njobs=1):
+        """Filter out utterances too short for kaldi (less than 15ms)
+
+        They result in empty feature files that trigger kaldi
+        warnings. This is used to filter them out of the text,
+        utt2spk, segments and wav.scp files.
+
+        """
+        self.log.debug('filtering out utterances shorther than 15ms')
+
+        wav_dir = os.path.join(self.data_dir, 'wavs')
+        seg_file = os.path.join(self.data_dir, 'segments.txt')
+        utt_durations = io.get_utt_durations(wav_dir, seg_file, njobs)
+
+        return [utt for utt in utt_durations
+                if utt_durations[utt] >= min_duration]
+
     def setup_lexicon(self, prune_lexicon=False, train_name=None, name='dict'):
         """Create data/local/`name`/lexicon.txt"""
         origin = os.path.join(self.data_dir, 'lexicon.txt')
@@ -165,6 +188,9 @@ class Abkhazia2Kaldi(object):
             # io.copy_first_col_matches(origin, target, allowed_words)
         else:
             shutil.copy(origin, target)
+
+        return target
+
 
     def setup_phone_lexicon(self, name='dict'):
         """Create data/local/`name`/lexicon.txt"""
@@ -232,6 +258,8 @@ class Abkhazia2Kaldi(object):
             shutil.copy(origin, target)
         else:
             io.copy_first_col_matches(origin, target, desired_utts)
+
+        io.cpp_sort(target)
         return target
 
     def setup_utt2spk(self, in_split=None, out_split=None, desired_utts=None):
@@ -245,6 +273,7 @@ class Abkhazia2Kaldi(object):
             shutil.copy(origin, target)
         else:
             io.copy_first_col_matches(origin, target, desired_utts)
+        io.cpp_sort(target)
 
     def setup_segments(self, in_split=None, out_split=None, desired_utts=None):
         """Create segments in data directory"""
@@ -268,6 +297,8 @@ class Abkhazia2Kaldi(object):
                     out.write(u" ".join(
                         [utt_id, record_id] + elements[2:]) + u"\n")
 
+        io.cpp_sort(target)
+
     def setup_wav(self, in_split=None, out_split=None, desired_utts=None):
         """Create wav.scp in data directory"""
         i_path, o_path = self._data_path(in_split, out_split)
@@ -289,6 +320,8 @@ class Abkhazia2Kaldi(object):
                 path = os.path.join(
                     os.path.abspath(self.recipe_dir), 'wavs', wav_id)
                 out.write(u"{0} {1}\n".format(record_id, path))
+
+        io.cpp_sort(target)
 
     def setup_wav_folder(self):
         """using a symbolic link to avoid copying voluminous data"""
@@ -342,15 +375,14 @@ class Abkhazia2Kaldi(object):
 
         target = os.path.join(self.recipe_dir, 'local', 'prepare_lm.sh')
         self.configure(
-            os.path.join(self.share_dir, 'kaldi_templates', 'prepare_lm.sh.in'),
+            os.path.join(
+                self.share_dir, 'kaldi_templates', 'prepare_lm.sh.in'),
             target, args)
 
         # chmod +x run.sh
         os.chmod(target, os.stat(target).st_mode | 0o111)
 
-        for target in (#'prepare_lm.sh',
-                'prepare_lang_wpdpl.sh',
-                'validate_lang_wpdpl.pl'):
+        for target in ('prepare_lang_wpdpl.sh', 'validate_lang_wpdpl.pl'):
             shutil.copy(
                 os.path.join(self.share_dir, 'kaldi_templates', target),
                 os.path.join(self.recipe_dir, 'local', target))

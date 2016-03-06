@@ -36,47 +36,25 @@ class ForceAlign(abstract_recipe.AbstractRecipe):
     name = 'align'
 
     def create(self, args):
-        # DICT folder
+        # local folder
         self.a2k.setup_lexicon()
         self.a2k.setup_phones()
         self.a2k.setup_silences()
         self.a2k.setup_variants()
 
-        # DATA folders. Find utterances that are too short for kaldi
-        # (less than 15ms) (they result in empty feature files that
-        # trigger kaldi warnings) in order to filter them out of the
-        # text, utt2spk, segments and wav.scp files
-        wav_dir = os.path.join(self.corpus_dir, 'data', 'wavs')
-        seg_file = os.path.join(self.corpus_dir, 'data', 'segments.txt')
-
-        self.log.debug('filtering out utterances shorther than 15ms')
-        utt_durations = io.get_utt_durations(wav_dir, seg_file, args.njobs)
-        desired_utts = [utt for utt in utt_durations
-                        if utt_durations[utt] >= .015]
-
         # setup data files
+        desired_utts = self.a2k.desired_utterances(njobs=args.njobs)
         self.a2k.setup_text(desired_utts=desired_utts)
         self.a2k.setup_utt2spk(desired_utts=desired_utts)
         self.a2k.setup_segments(desired_utts=desired_utts)
         self.a2k.setup_wav(desired_utts=desired_utts)
 
-        # do some cpp_sorting just to be sure (for example if the
-        # abkhazia corpus has been copied to a different machine after
-        # its creation, there might be some machine-dependent
-        # differences in the required orders)
-        files = ['text', 'utt2spk', 'segments', 'wav.scp']
-        for target in files:
-            path = os.path.join(self.recipe_dir, 'data', 'main', target)
-            if os.path.exists(path):
-                io.cpp_sort(path)
-
-        # Other files and folders (common to all splits)
+        # setup other files and folders
         self.a2k.setup_wav_folder()
-        # misc. kaldi symlinks, directories and files
         self.a2k.setup_kaldi_folders()
-        # path.sh, cmd.sh
         self.a2k.setup_machine_specific_scripts()
-        # score.sh, run.sh
+
+        # setup score.sh and run.sh
         self.a2k.setup_main_scripts('force_align.sh.in', args)
 
     def export(self):

@@ -33,31 +33,25 @@ class LanguageModel(abstract_recipe.AbstractRecipe):
                 'language model level must be in {}, it is {}'
                 .format(level_choices, args.level))
 
-        self.log.debug('filtering out utterances shorther than 15ms')
-        wav_dir = os.path.join(self.corpus_dir, 'data', 'wavs')
-        seg_file = os.path.join(self.corpus_dir, 'data', 'segments.txt')
-        utt_durations = io.get_utt_durations(wav_dir, seg_file, args.njobs)
-        desired_utts = [utt for utt in utt_durations
-                        if utt_durations[utt] >= .015]
-
         # setup data files common to both levels
-        text = self.a2k.setup_text(desired_utts=desired_utts)
-        io.cpp_sort(text)
-
         self.a2k.setup_phones()
         self.a2k.setup_silences()
         self.a2k.setup_variants()
 
-        prune_lexicon = True if args.prune_lexicon == 'true' else False
-        lm_text = os.path.join(self.a2k._dict_path(), 'lm_text.txt')
-        if args.model_level == 'word':
-            self.a2k.setup_lexicon(prune_lexicon=prune_lexicon)
+        desired_utts = self.a2k.desired_utterances(njobs=args.njobs)
+        text = self.a2k.setup_text(desired_utts=desired_utts)
 
-            # copy train text to word_bigram for LM estimation
+        # prune_lexicon option from str to bool
+        prune_lexicon = True if args.prune_lexicon == 'true' else False
+
+        # setup lm lexicon and input text depending on model level
+        lm_text = os.path.join(self.a2k._dict_path(), 'lm_text.txt')
+        lexicon = self.a2k.setup_lexicon(prune_lexicon=prune_lexicon)
+        if args.model_level == 'word':
             shutil.copy(text, lm_text)
         else:  # phone level
-            lexicon = self.a2k.setup_phone_lexicon()
             io.word2phone(lexicon, text, lm_text)
+            self.a2k.setup_phone_lexicon()
 
         self.a2k.setup_kaldi_folders()
         self.a2k.setup_machine_specific_scripts()

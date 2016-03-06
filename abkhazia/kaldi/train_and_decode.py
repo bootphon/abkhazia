@@ -184,9 +184,6 @@ class TrainDecode(abstract_recipe.AbstractRecipe):
 # weighted by a given LM. This means meddling inside kaldi code, so we
 # won't do it unless we really really need it.
 
-# Control for risk of overwriting of lang and split in recipe/data ?
-# (this folder contains both the splits and the LMs)
-
 # Check in validate_corpus that adding _I, _B, _E or _S suffixes to
 # phones does not create conflicts, otherwise issue a warning to say
 # that word_position_dependent models won't be usable.
