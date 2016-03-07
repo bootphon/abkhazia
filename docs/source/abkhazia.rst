@@ -1,5 +1,6 @@
-abkhazia package
-================
+==========
+Python API
+==========
 
 Subpackages
 -----------

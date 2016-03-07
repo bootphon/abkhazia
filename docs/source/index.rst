@@ -1,6 +1,6 @@
-====================================
-abkhazia's documentation
-====================================
+========================
+Abkhazia's documentation
+========================
 
 .. note::
 
@@ -19,9 +19,6 @@ abkhazia provides the following:
   standard format and performing various tasks on it,
 * a Python library that can be extended to new corpora and new ASR
   models
-
-
-
 
   * verifying the internal consistency of the data
 
@@ -42,14 +39,12 @@ domains, large speech corpora are most of the time not freely
 available. List the list of corpora supported in abkhazia with
 ``abkhazia prepare --help``
 
-
-
-
 .. toctree::
    :caption: Table of contents
    :maxdepth: 2
 
    abkhazia_format
+   abkhazia_usage
    abkhazia
    license
 
