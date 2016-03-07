@@ -14,25 +14,20 @@
 # You should have received a copy of the GNU General Public License
 # along with abkahzia. If not, see <http://www.gnu.org/licenses/>.
 
+# TODO Not yet tested on n-grams with n!=2 or on
+# non-word-position-dependent acoustic models
 
-### TODO
-#
-#  Not yet tested on n-grams with n!=2 or on
-#  non-word-position-dependent acoustic models
-#
-###
-
+# TODO explain here what the recipe does
 
 ###### Parameters ######
 
 # Name of the LM, must correspond to an existing folder in data/
-# (typically created by the python script generating the recipe)
-name=$1
+# (created by the python script generating the recipe)
+name=@@@@
 
 # Should be set to true or false depending on whether the language
 # model produced is destined to be used with an acoustic model trained
 # with or without word position dependent variants of the phones.
-# TODO Only tested when it is true
 word_position_dependent=@@@@
 
 # n in n-gram, only used if a LM is to be estimated from some text

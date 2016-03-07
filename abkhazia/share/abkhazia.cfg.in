@@ -49,7 +49,7 @@ model-level: phone
 # present at least once in the training set.
 prune-lexicon: false
 
-[align]
+[train]
 # Do all computations if true, else focus on the main ones
 optional-silence: true
 

@@ -121,6 +121,7 @@ if [ "$skip_training" = false ] ; then
   steps/align_si.sh --nj 8 --cmd "$train_cmd" \
     data/train data/lang exp/mono exp/mono_ali \
     > exp/mono_ali/align.log
+
   # second: triphone model training
   mkdir -p exp/tri1
   steps/train_deltas.sh --cmd "$train_cmd" \

@@ -15,13 +15,9 @@
 # along with abkahzia. If not, see <http://www.gnu.org/licenses/>.
 
 # This is a simple kaldi recipe for use with the abkhazia library.
-# Its main object is to:
-#
-# - train a GMM-HMM model with triphone word-position-dependent states
-#   and speaker adaptation on a whole corpus
-#
-# - output a forced time-alignment at the phone-level for the whole
-#   corpus
+# Its main object is to compute a forced time-alignment from a trained
+# acoustic model of a corpus. The language model is a n-gram, either
+# at phone-level or word-level.
 
 ###### Parameters ######
 

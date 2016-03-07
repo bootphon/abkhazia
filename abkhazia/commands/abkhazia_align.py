@@ -59,7 +59,7 @@ class AbkhaziaAlign(AbstractRecipeCommand):
         from abkhazia.kaldi.abkhazia2kaldi import add_argument
 
         def add_arg(name, type, help):
-            add_argument(group, cls.name, name, type, help)
+            add_argument(group, 'train', name, type, help)
 
         add_arg('optional-silence', bool,
                 'do all computations if true, else focus on the main ones')

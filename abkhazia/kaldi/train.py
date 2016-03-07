@@ -11,25 +11,22 @@
 # General Public License for more details.
 #
 # You should have received a copy of the GNU General Public License
-# along with abkahzia. If not, see <http://www.gnu.org/licenses/>.
-"""Provides the ForceAlign class"""
+# along with abkhazia. If not, see <http://www.gnu.org/licenses/>.
+"""Provides the AcousticModel class"""
 
-import os
 
 import abkhazia.utils.basic_io as io
 import abkhazia.kaldi.abstract_recipe as abstract_recipe
-import abkhazia.kaldi.kaldi2abkhazia as k2a
 
-
-class ForceAlign(abstract_recipe.AbstractRecipe):
-    """Compute forced alignment of an abkhazia corpus
+class AcousticModel(abstract_recipe.AbstractRecipe):
+    """Compute an acoustic model from an abkhazia corpus
 
     Takes a corpus in abkhazia format and instantiates a kaldi recipe
     to train a standard speaker-adapted triphone HMM-GMM model on the
-    whole corpus and generate a forced alignment.
+    whole corpus.
 
     """
-    name = 'align'
+    name = 'train'
 
     def create(self, args):
         # local folder
@@ -40,10 +37,10 @@ class ForceAlign(abstract_recipe.AbstractRecipe):
 
         # setup data files
         desired_utts = self.a2k.desired_utterances(njobs=args.njobs)
-        self.a2k.setup_text(desired_utts=desired_utts)
-        self.a2k.setup_utt2spk(desired_utts=desired_utts)
-        self.a2k.setup_segments(desired_utts=desired_utts)
-        self.a2k.setup_wav(desired_utts=desired_utts)
+        self.a2k.setup_text(desired_utts=desired_utts, out_split=args.name)
+        self.a2k.setup_utt2spk(desired_utts=desired_utts, out_split=args.name)
+        self.a2k.setup_segments(desired_utts=desired_utts, out_split=args.name)
+        self.a2k.setup_wav(desired_utts=desired_utts, out_split=args.name)
 
         # setup other files and folders
         self.a2k.setup_wav_folder()
@@ -51,17 +48,4 @@ class ForceAlign(abstract_recipe.AbstractRecipe):
         self.a2k.setup_machine_specific_scripts()
 
         # setup score.sh and run.sh
-        self.a2k.setup_main_scripts('force_align.sh.in', args)
-
-    def export(self):
-        """Export the kaldi tra alignment file in abkhazia format
-
-        This method reads data/lang/phones.txt and
-        export/forced_aligment.tra and write
-        export/forced_aligment.txt
-
-        """
-        tra = os.path.join(self.recipe_dir, 'export', 'forced_alignment.tra')
-        k2a.export_phone_alignment(
-            os.path.join(self.recipe_dir, 'data', 'lang', 'phones.txt'),
-            tra, tra.replace('.tra', '.txt'))
+        self.a2k.setup_main_scripts('train.sh.in', args)

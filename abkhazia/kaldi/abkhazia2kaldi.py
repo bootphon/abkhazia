@@ -23,7 +23,7 @@ import abkhazia.utils as utils
 import abkhazia.utils.basic_io as io
 
 # TODO comment !
-def add_argument(parser, recipe, name, type, help,
+def add_argument(parser, section, name, type, help,
                  metavar=None, choices=None):
     if metavar is None:
         try:
@@ -38,17 +38,17 @@ def add_argument(parser, recipe, name, type, help,
     if type is bool:
         parser.add_argument(
             '--'+name, choices=['true', 'false'], metavar=metavar,
-            default=utils.config.get(recipe, name),
+            default=utils.config.get(section, name),
             help=help + ' (default is %(default)s)')
     elif choices is None:
         parser.add_argument(
             '--'+name, type=type, metavar=metavar,
-            default=utils.config.get(recipe, name),
+            default=utils.config.get(section, name),
             help=help + ' (default is %(default)s)')
     else:
         parser.add_argument(
             '--'+name, type=type, choices=choices, metavar=metavar,
-            default=utils.config.get(recipe, name),
+            default=utils.config.get(section, name),
             help=help + ' (default is %(default)s)')
 
 
