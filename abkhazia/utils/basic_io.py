@@ -101,8 +101,8 @@ def read_text(filename):
 
         utt_ids.append(pline[0])
         utt_words.append(pline[1:])
-        if u"" in pline[1:]:
-            print line
+        # if u"" in pline[1:]:
+        #     print line
     return utt_ids, utt_words
 
 

@@ -54,7 +54,8 @@ class AbkhaziaTrain(AbstractRecipeCommand):
 
         parser.add_argument(
             '-n', '--name', default='model',
-            help='name of the recipe in kaldi internals')
+            help='name of the recipe in kaldi internals, '
+            "default is '%(default)s'")
 
         group = parser.add_argument_group(
             'acoustic model parameters', 'those parameters can also be '

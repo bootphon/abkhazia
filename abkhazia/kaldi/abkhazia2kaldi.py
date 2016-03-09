@@ -172,7 +172,10 @@ class Abkhazia2Kaldi(object):
         self.log.debug('creating {}'.format(target))
 
         if prune_lexicon:
-            raise NotImplementedError('prune lexicon still not implemented!')
+            # TODO this should be a step of split, Mathieu thinks...
+            raise NotImplementedError(
+                'prune lexicon option is not implemented!')
+
             # # get words appearing in train part
             # train_text = os.path.join(
             #     self.data_dir, 'split', train_name, 'text.txt')
@@ -190,7 +193,6 @@ class Abkhazia2Kaldi(object):
             shutil.copy(origin, target)
 
         return target
-
 
     def setup_phone_lexicon(self, name='dict'):
         """Create data/local/`name`/lexicon.txt"""
@@ -395,19 +397,19 @@ class Abkhazia2Kaldi(object):
                 self.share_dir, 'kaldi_templates', target + '_template.sh')
             self._copy_template(script, template)
 
-    # TODO split in 2, run.sh possibly configured
-    def setup_main_scripts(self, run_script, args):
-        """Copy score.sh and run.sh to self.recipe_dir"""
-        # score.sh
+    def setup_score(self):
+        """Copy score.sh to self.recipe_dir"""
         local_dir = os.path.join(self.recipe_dir, 'local')
         if not os.path.isdir(local_dir):
             os.mkdir(local_dir)
 
-        score_file = os.path.join(
-            self.share_dir, 'kaldi_templates', 'standard_score.sh')
-        shutil.copy(score_file, os.path.join(local_dir, 'score.sh'))
+        shutil.copy(
+            os.path.join(
+                self.share_dir, 'kaldi_templates', 'standard_score.sh'),
+            os.path.join(local_dir, 'score.sh'))
 
-        # run.sh
+    def setup_run(self, run_script, args):
+        """Configure and copy run.sh to self.recipe_dir"""
         target = os.path.join(self.recipe_dir, 'run.sh')
         origin = os.path.join(self.share_dir, 'kaldi_templates', run_script)
         self.configure(origin, target, args)
@@ -415,12 +417,18 @@ class Abkhazia2Kaldi(object):
         # chmod +x run.sh
         os.chmod(target, os.stat(target).st_mode | 0o111)
 
+    def setup_main_scripts(self, run_script, args):
+        """Copy score.sh and run.sh to self.recipe_dir"""
+        self.setup_score()
+        self.setup_run(run_script, args)
+
     def configure(self, origin, target, args, expr='@@@@'):
         """Configure the file 'target' from 'origin' and 'args'
 
         Replace the lines starting with param='expr' in 'origin' by
-        param=args.param, pass on the unmatched lines and copy the whole
-        in 'target'. Raises IOError if args.param does not exist.
+        param=args.param, do not touch the unmatched lines and copy
+        the whole in 'target'. Raises IOError if args.param does not
+        exist.
 
         """
         self.log.debug('configuring {} to {}'

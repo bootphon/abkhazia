@@ -59,6 +59,7 @@ class AbkhaziaLanguage(AbstractRecipeCommand):
             "compute either a phone-level or a word-level language model",
             metavar='<phone|word>', choices=['phone', 'word'])
 
+        # TODO actually this is not implemented
         add_arg(
             'prune-lexicon', bool, 'Removes from the lexicon all words that '
             'are not present at least once in the training set. This have '

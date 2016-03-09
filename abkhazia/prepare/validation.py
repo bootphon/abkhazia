@@ -73,7 +73,6 @@ class Validation(object):
         # init the number of jobs for parallel computations
         self.njobs = njobs
 
-
     def validate(self):
         '''Validate the whole corpus
 
@@ -94,7 +93,6 @@ class Validation(object):
             raise err
 
         self.log.info("Corpus ready for use with abkhazia")
-
 
     def validate_wavs(self):
         """wav directory must contain mono 16KHz, 16 bit PCM wavs"""
@@ -151,7 +149,6 @@ class Validation(object):
         self.log.debug("'wavs' folder is OK")
         return meta
 
-
     def validate_segments(self, meta):
         '''Checking utterances list in segments.txt'''
         self.log.debug("Checking 'segments.txt' file")
@@ -181,9 +178,9 @@ class Validation(object):
                 "in 'segments.txt' but are not in wav folder: {0}"
                 .format(missing_wavefiles))
 
-        if(len(set(utt_wavs)) == len(utt_wavs)
-           and all([e is None for e in starts])
-           and all([e is None for e in stops])):
+        if(len(set(utt_wavs)) == len(utt_wavs) and
+           all([e is None for e in starts]) and
+           all([e is None for e in stops])):
             # simple case, with one utterance per file and no explicit
             # timestamps provided just get list of files that are very
             # short (less than 15ms)
@@ -208,7 +205,6 @@ class Validation(object):
 
         self.log.debug("'segments.txt' file is OK")
         return utt_ids
-
 
     def validate_speakers(self, utt_ids):
         '''Checking speakers list in utt2spk.txt'''
@@ -290,11 +286,11 @@ class Validation(object):
                 e_txt = set(utt_ids_txt)
                 e_seg = set(utt_ids)
 
-                self.log.error(
+                self.log.debug(
                     "Utterances in text.txt that are not in segments.txt: {}"
                     .format(set.difference(e_txt, e_seg)))
 
-                self.log.error(
+                self.log.debug(
                     "Utterances in segments.txt that are not in text.txt: {}"
                     .format(set.difference(e_seg, e_txt)))
 
