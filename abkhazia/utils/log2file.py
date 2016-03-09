@@ -12,7 +12,7 @@
 # General Public License for more details.
 #
 # You should have received a copy of the GNU General Public License
-# along with abkahzia. If not, see <http://www.gnu.org/licenses/>.
+# along with abkhazia. If not, see <http://www.gnu.org/licenses/>.
 """Utility for logging to a specified file.
 
 This uses the 'logging' module from Python standard library. In the

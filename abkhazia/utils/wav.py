@@ -11,7 +11,7 @@
 # General Public License for more details.
 #
 # You should have received a copy of the GNU General Public License
-# along with abkahzia. If not, see <http://www.gnu.org/licenses/>.
+# along with abkhazia. If not, see <http://www.gnu.org/licenses/>.
 """Provides functions to convert various audio formats to wav"""
 
 import collections
@@ -49,7 +49,7 @@ def sph2wav(sph, wav):
     'wav' if the filename of the created file
 
     sph2pipe is required for converting sph to wav. This function look
-    at it in the abkahzia configuration file.
+    at it in the abkhazia configuration file.
 
     """
     sph2pipe = os.path.join(

@@ -11,7 +11,7 @@
 # General Public License for more details.
 #
 # You should have received a copy of the GNU General Public License
-# along with abkahzia. If not, see <http://www.gnu.org/licenses/>.
+# along with abkhazia. If not, see <http://www.gnu.org/licenses/>.
 """Implementation of the 'abkhazia train' command"""
 
 import argparse
@@ -22,7 +22,7 @@ import abkhazia.kaldi.train as train
 
 
 class AbkhaziaTrain(AbstractRecipeCommand):
-    """This class implements the 'abkahzia train' command"""
+    """This class implements the 'abkhazia train' command"""
     name = 'train'
     description = 'train (or retrain) an acoustic model'
 

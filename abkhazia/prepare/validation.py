@@ -11,8 +11,8 @@
 # General Public License for more details.
 #
 # You should have received a copy of the GNU General Public License
-# along with abkahzia. If not, see <http://www.gnu.org/licenses/>.
-'''Provides a class for validating an abkahzia corpus'''
+# along with abkhazia. If not, see <http://www.gnu.org/licenses/>.
+'''Provides a class for validating an abkhazia corpus'''
 
 import collections
 import os

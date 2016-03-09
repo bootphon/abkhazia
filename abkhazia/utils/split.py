@@ -11,8 +11,8 @@
 # General Public License for more details.
 #
 # You should have received a copy of the GNU General Public License
-# along with abkahzia. If not, see <http://www.gnu.org/licenses/>.
-"""Provides a class to split an abkahzia corpus in train and test subsets"""
+# along with abkhazia. If not, see <http://www.gnu.org/licenses/>.
+"""Provides a class to split an abkhazia corpus in train and test subsets"""
 
 import ConfigParser
 import os
@@ -24,10 +24,10 @@ import abkhazia.utils.basic_io as io
 
 
 class SplitCorpus(object):
-    """A class for spliting an abkahzia corpus into train and test subsets
+    """A class for spliting an abkhazia corpus into train and test subsets
 
     corpus_dir : The root directory of the abkhazia corpus to
-      split. This directory must contain a validated abkahzia corpus.
+      split. This directory must contain a validated abkhazia corpus.
 
     output_dir : The output directory where to write the splits. The
       directory 'output_dir'/split is created, with two subdirs (test

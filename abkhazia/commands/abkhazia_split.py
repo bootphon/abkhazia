@@ -11,7 +11,7 @@
 # General Public License for more details.
 #
 # You should have received a copy of the GNU General Public License
-# along with abkahzia. If not, see <http://www.gnu.org/licenses/>.
+# along with abkhazia. If not, see <http://www.gnu.org/licenses/>.
 """Implementation of the 'abkazia split' command"""
 
 import os
@@ -23,7 +23,7 @@ import abkhazia.utils.split as split
 
 
 class AbkhaziaSplit(AbstractPreparedCommand):
-    '''This class implements the 'abkahzia split' command'''
+    '''This class implements the 'abkhazia split' command'''
     name = 'split'
     description = 'split a corpus in train and test subsets'
 
@@ -40,11 +40,12 @@ class AbkhaziaSplit(AbstractPreparedCommand):
                      else spliter.split)
 
         # retrieve the test proportion
-        testprop = (float(utils.config.get('split', 'default-test-proportion'))
-                    if args.test_prop is None else args.test_prop)
+        test_prop = (
+            float(utils.config.get('split', 'default-test-proportion'))
+            if args.test_prop is None else args.test_prop)
 
         # split the corpus and write it to the output directory
-        split_fun(testprop, args.train_prop)
+        split_fun(test_prop, args.train_prop)
 
     @classmethod
     def add_parser(cls, subparsers):

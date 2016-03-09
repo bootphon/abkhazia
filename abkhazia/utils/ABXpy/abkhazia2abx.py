@@ -11,7 +11,7 @@
 # General Public License for more details.
 #
 # You should have received a copy of the GNU General Public License
-# along with abkahzia. If not, see <http://www.gnu.org/licenses/>.
+# along with abkhazia. If not, see <http://www.gnu.org/licenses/>.
 
 import codecs
 from itertools import groupby
@@ -98,7 +98,7 @@ def alignment2item(alignment_file, item_file, spk_id_len,
 
 
 #TODO put filter_alignment with the functions used for exporting
-# results from kaldi to abkhazia ? Or rather as a generic abkahzia utility
+# results from kaldi to abkhazia ? Or rather as a generic abkhazia utility
 def filter_alignment(alignment_file, output_file, segment_file):
     """ Keep alignment tokens if and only if there is an entry
     for the corresponding utterance in the file provided """

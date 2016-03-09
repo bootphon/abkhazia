@@ -12,7 +12,7 @@
 # General Public License for more details.
 #
 # You should have received a copy of the GNU General Public License
-# along with abkahzia. If not, see <http://www.gnu.org/licenses/>.
+# along with abkhazia. If not, see <http://www.gnu.org/licenses/>.
 
 """Mandarin specific preprocessing for the GlobalPhone corpus
 
@@ -307,6 +307,6 @@ class MandarinPreparator(AbstractGlobalPhonePreparator):
             for line in correct_lines:
                 out.write(line)
 
-        self.log.debug('Dictionary corrected, writed in %s', filename)
+        self.log.debug('Dictionary corrected, wrote in %s', filename)
         self.dictionary = filename
         return True

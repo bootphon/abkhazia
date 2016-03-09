@@ -11,7 +11,7 @@
 # General Public License for more details.
 #
 # You should have received a copy of the GNU General Public License
-# along with abkahzia. If not, see <http://www.gnu.org/licenses/>.
+# along with abkhazia. If not, see <http://www.gnu.org/licenses/>.
 '''Provides the Abkhazia2Kaldi class'''
 
 import os
@@ -56,7 +56,7 @@ class Abkhazia2Kaldi(object):
     '''Instanciate a kaldi recipe from an abkhazia corpus
 
     corpus_dir : The root directory of the abkhazia corpus to
-      split. This directory must contain a validated abkahzia corpus.
+      split. This directory must contain a validated abkhazia corpus.
 
     recipe_dir : The output dircetory where to write the created kaldi
       recipe. A subdirectory hierarchy is created in here, as well as

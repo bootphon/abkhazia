@@ -11,7 +11,7 @@
 # General Public License for more details.
 #
 # You should have received a copy of the GNU General Public License
-# along with abkahzia. If not, see <http://www.gnu.org/licenses/>.
+# along with abkhazia. If not, see <http://www.gnu.org/licenses/>.
 """Implementation of the 'abkhazia align' command"""
 
 import argparse
@@ -21,7 +21,7 @@ import abkhazia.kaldi.force_align as force_align
 
 
 class AbkhaziaAlign(AbstractRecipeCommand):
-    '''This class implements the 'abkahzia align' command'''
+    '''This class implements the 'abkhazia align' command'''
     name = 'align'
     description = 'compute forced-aligment'
 

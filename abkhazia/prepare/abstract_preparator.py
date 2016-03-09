@@ -11,7 +11,7 @@
 # General Public License for more details.
 #
 # You should have received a copy of the GNU General Public License
-# along with abkahzia. If not, see <http://www.gnu.org/licenses/>.
+# along with abkhazia. If not, see <http://www.gnu.org/licenses/>.
 
 """Provides a base class for corpus preparation in the abkhazia format"""
 
@@ -288,19 +288,19 @@ class AbstractPreparator(object):
         with utils.open_utf8(self.phones_file, 'w') as out:
             for phone in self.phones:
                 out.write(u'{0} {1}\n'.format(phone, self.phones[phone]))
-        self.log.debug('writed {}'.format(self.phones_file))
+        self.log.debug('wrote {}'.format(self.phones_file))
 
         if self.silences is not []:
             with utils.open_utf8(self.silences_file, 'w') as out:
                 for sil in self.silences:
                     out.write(sil + u"\n")
-            self.log.debug('writed {}'.format(self.silences_file))
+            self.log.debug('wrote {}'.format(self.silences_file))
 
         if self.variants is not []:
             with utils.open_utf8(self.variants_file, 'w') as out:
                 for var in self.variants:
                     out.write(u" ".join(var) + u"\n")
-            self.log.debug('writed {}'.format(self.variants_file))
+            self.log.debug('wrote {}'.format(self.variants_file))
 
     ############################################
     #
@@ -346,7 +346,7 @@ class AbstractPreparator(object):
         """Return a tuple (inputs, outputs) of two lists of audio files
 
         'inputs' is the list of audio files to convert to
-            abkahzia. Filenames in the list must be absolute paths.
+            abkhazia. Filenames in the list must be absolute paths.
 
         'outputs' is the list of target files to create in
             'self.wavs_dir'. Filenames in the list must be only

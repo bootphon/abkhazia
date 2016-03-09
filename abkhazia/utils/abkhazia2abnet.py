@@ -12,7 +12,7 @@
 # General Public License for more details.
 #
 # You should have received a copy of the GNU General Public License
-# along with abkahzia. If not, see <http://www.gnu.org/licenses/>.
+# along with abkhazia. If not, see <http://www.gnu.org/licenses/>.
 """
 This script contains functions to train an ABnet for a list of pairs of same words
 and to calculate the embeddings using a trained ABnet.

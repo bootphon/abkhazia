@@ -11,7 +11,7 @@
 # General Public License for more details.
 #
 # You should have received a copy of the GNU General Public License
-# along with abkahzia. If not, see <http://www.gnu.org/licenses/>.
+# along with abkhazia. If not, see <http://www.gnu.org/licenses/>.
 """Provides the AbstractRecipe class"""
 
 import os
@@ -22,7 +22,7 @@ import abkhazia.kaldi.abkhazia2kaldi as abkhazia2kaldi
 
 
 class AbstractRecipe(object):
-    """A base class for creating kaldi recipes from an abkahzia corpus"""
+    """A base class for creating kaldi recipes from an abkhazia corpus"""
     name = NotImplemented
     """The recipe's name"""
 

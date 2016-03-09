@@ -12,7 +12,7 @@
 # General Public License for more details.
 #
 # You should have received a copy of the GNU General Public License
-# along with abkahzia. If not, see <http://www.gnu.org/licenses/>.
+# along with abkhazia. If not, see <http://www.gnu.org/licenses/>.
 
 """Vietnamese specific preprocessing for the GlobalPhone corpus
 
@@ -317,7 +317,7 @@ class VietnamesePreparator(AbstractGlobalPhonePreparator):
                                       u'{\\1_\\2 WB}', line)
                         out.write(line)
 
-        self.log.debug('Dictionary corrected, writed in {}'
+        self.log.debug('Dictionary corrected, wrote in {}'
                        .format(corrected_dictionary))
         self.dictionary = corrected_dictionary
         return True

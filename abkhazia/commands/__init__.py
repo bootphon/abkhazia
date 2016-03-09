@@ -11,14 +11,14 @@
 # General Public License for more details.
 #
 # You should have received a copy of the GNU General Public License
-# along with abkahzia. If not, see <http://www.gnu.org/licenses/>.
+# along with abkhazia. If not, see <http://www.gnu.org/licenses/>.
 """Provides implememtations of the abkhazia command line tools
 
 Each abkhazia subcommand is defined here in its own module.
 
 Note that this package contains only the code related to abkhazia
 execution from a terminal. It defines argument parsers and delegates
-the processing to modules in abkhazia.prepare or abkahzia.kaldi
+the processing to modules in abkhazia.prepare or abkhazia.kaldi
 
 """
 
