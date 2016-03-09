@@ -64,7 +64,7 @@ you and will initialize a default configuration file in
     python setup.py build
     python setup.py install
 
-In case you want to modify an dtest the code, replace the last step by
+In case you want to modify and test the code, replace the last step by
 ``python setup.py develop``.
 
 

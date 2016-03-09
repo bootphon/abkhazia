@@ -28,7 +28,6 @@
 # script until it succeed.
 
 
-
 # absolute path to the abkhazia setup directory
 setupdir=`readlink -f .`
 
@@ -76,11 +75,27 @@ http://etree.org/shnutils/shorten/dist/src/shorten-3.6.1.tar.gz"
 conf=$share/abkhazia.cfg
 if [ ! -e $conf ]; then
     # Init an empty configuration file if not existing
-    echo "writing $conf"
-    cp $share/abkhazia.cfg.in $share/abkhazia.cfg
+    echo "Writing $conf"
+    cp $conf.in $conf
     failure "Please specify the path to the kaldi root directory in $conf"
 else
-    # if existing, check kaldi-directory is defined in it
+    echo "Found configuration file as $conf"
+
+    # check all sections defined in abkhazia.cfg.in are in abkhazia.cfg
+    sec_in=$(sed '/^#/d' $conf.in | grep -e '\[.*\]' | tr -d '[]' | sort)
+    sec_out=$(sed '/^#/d' $conf | grep -e '\[.*\]' | tr -d '[]' | sort)
+    [ ! "$sec_in" == "$sec_out" ] && failure "Some configuration sections are missing in
+$conf, please merge it from
+$conf.in"
+
+    # check all parameters defined in abkhazia.cfg.in are in abkhazia.cfg
+    sec_in=$(sed '/^#/d' $conf.in | grep -e '^.*:' | cut -d':' -f 1 | sort)
+    sec_out=$(sed '/^#/d' $conf | grep -e '^.*:' | cut -d':' -f 1 | sort)
+    [ ! "$sec_in" == "$sec_out" ] && failure "Some configuration parameters are missing in
+$conf, please merge it from
+$conf.in"
+
+    # if existing, check if kaldi-directory is defined in it
     kaldi=`cat $conf | sed '/^#/d' | grep kaldi-directory | cut -d: -f2 | sed 's/^ *//'`
     [ -z $kaldi ] &&
         failure "Please specify the path to the kaldi root directory in $conf"
