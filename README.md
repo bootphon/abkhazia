@@ -17,28 +17,37 @@ abkhazia configuration script will fail.
 
 * [Kaldi Speech Recognition Toolkit](http://kaldi-asr.org).
 
-	Follow installation guidelines
-    [here](http://kaldi-asr.org/doc/install.html). You will have to
-    provide the Kaldi directory to abkhazia during configuration.
+	* Install it, following installation guidelines
+      [here](http://kaldi-asr.org/doc/install.html).
+
+    * Install kaldi tools (SRILM and IRSTLM librairies) required by
+      abkhazia. From your kaldi root directory, type:
+
+            cd ./tools
+            ./extras/install_irstlm.sh
+            ./extras/install_srilm.sh
+
+    * You will have to provide the Kaldi directory to abkhazia during
+      configuration.
 
 * [sox](http://sox.sourceforge.net) with flac support and
   [shorten](http://etree.org/shnutils/shorten) for wav conversion from
   various audio formats.
 
-	sox and flac should be in repositories of every standard Unix
-    distribution, for exemple in Debian/Ubuntu:
+    * sox and flac should be in repositories of every standard Unix
+      distribution, for exemple in Debian/Ubuntu:
 
-    	sudo apt-get install flac sox
+    	    sudo apt-get install flac sox
 
-   	shorten must be installed manually, follow these steps to
-    download, compile and install it:
+   	* shorten must be installed manually, follow these steps to
+      download, compile and install it:
 
-    	wget http://etree.org/shnutils/shorten/dist/src/shorten-3.6.1.tar.gz
-   		tar xzf shorten-3.6.1.tar.gz
-   		cd shorten-3.6.1
-   		./configure
-   		make
-   		sudo make install
+    	    wget http://etree.org/shnutils/shorten/dist/src/shorten-3.6.1.tar.gz
+            tar xzf shorten-3.6.1.tar.gz
+            cd shorten-3.6.1
+            ./configure
+            make
+            sudo make install
 
 
 ### Install Abkahzia
@@ -54,6 +63,9 @@ you and will initialize a default configuration file in
 
     python setup.py build
     python setup.py install
+
+In case you want to modify an dtest the code, replace the last step by
+``python setup.py develop``.
 
 
 ## Licence
