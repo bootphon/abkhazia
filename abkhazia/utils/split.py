@@ -19,6 +19,7 @@ import os
 import random
 import shutil
 
+import abkhazia.prepare.validation as validation
 import abkhazia.utils as utils
 import abkhazia.utils.basic_io as io
 
@@ -54,6 +55,8 @@ class SplitCorpus(object):
 
     def __init__(self, corpus_dir, output_dir=None,
                  random_seed=None, verbose=False):
+        self.verbose = verbose
+
         # init the corpus directory
         if not os.path.isdir(corpus_dir):
             raise OSError('{} is not a directory'.format(corpus_dir))
@@ -72,7 +75,7 @@ class SplitCorpus(object):
         split_dir = os.path.join(output_dir, 'split')
         if os.path.exists(split_dir):
             raise OSError(
-                'output split directory alreary existing: {}'
+                'output split directory already existing: {}'
                 .format(split_dir))
 
         # init output_dir/{test, train}
@@ -101,14 +104,14 @@ class SplitCorpus(object):
                        self.size, len(self.speakers))
 
     def _write(self, train_utt_ids, test_utt_ids):
-        """Write the train and test split corpus to the output directory
+        """Write the train and test split corpora to output directory
 
-        Before writing the files, this finction also sort them (with
+        Before writing the files, this function also sort them (with
         respect to the first comulmn)
 
         """
         self.log.info(
-            'splitting proportions are %f for train and %f for test',
+            'split proportions are %f for train and %f for test',
             round(float(len(train_utt_ids))/self.size, 3),
             round(float(len(test_utt_ids))/self.size, 3))
 
@@ -120,7 +123,8 @@ class SplitCorpus(object):
         for target_dir, utts in [(self.train_dir, train_utt_ids),
                                  (self.test_dir, test_utt_ids)]:
             # take subparts of utt2spk.txt, text.txt and segments.txt
-            for filein in (['utt2spk.txt', 'text.txt', 'segments.txt']):
+            filesin = ['utt2spk.txt', 'text.txt', 'segments.txt']
+            for filein in filesin:
                 target = os.path.join(target_dir, filein)
                 try:
                     self.log.debug('writing %s', target)
@@ -135,6 +139,13 @@ class SplitCorpus(object):
                         self.log.error("can't delete %s", self.train_dir)
                     finally:
                         raise OSError('cannot writing to {}'.format(target))
+
+            # symlink the other corpous files from input to output
+            for f in [f for f in utils.list_directory(self.data_dir)
+                      if f not in filesin]:
+                os.symlink(
+                    os.path.join(self.data_dir, f),
+                    os.path.join(target_dir, f))
 
     def _proportions(self, test_prop, train_prop):
         """Return 'regularized' proprotions of test and train data
@@ -273,3 +284,11 @@ class SplitCorpus(object):
                 len(spk_utts), speaker, msg)
 
         self._write(train_utt_ids, test_utt_ids)
+
+    def validate(self):
+        """Corpus validation of the newly created train and test subsets"""
+        for path in [self.train_dir, self.test_dir]:
+            validation.Validation(
+                os.path.dirname(path),
+                data_dir=os.path.basename(path),
+                verbose=self.verbose).validate()

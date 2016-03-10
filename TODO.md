@@ -24,7 +24,16 @@
 
    Move the --prune-lexicon option from language to split ?
 
- - split -> create a complete corpus (sym links)
+ - split
+
+   - [X] create a complete corpus (sym links)
+
+   - [ ] validate train and test subsets
+
+        Actually sometimes bug in validation (without --by-speaker option)
+        fatal error: Stop time for utterance s0101a-sent11 is not compatible with file duration
+
+   - [ ] Move the --prune-lexicon from language to split
 
  - [-] align
 

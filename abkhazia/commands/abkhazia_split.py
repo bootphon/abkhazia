@@ -47,6 +47,9 @@ class AbkhaziaSplit(AbstractPreparedCommand):
         # split the corpus and write it to the output directory
         split_fun(test_prop, args.train_prop)
 
+        if args.with_validation:
+            spliter.validate()
+
     @classmethod
     def add_parser(cls, subparsers):
         # get basic parser init from AbstractCommand
@@ -62,13 +65,13 @@ class AbkhaziaSplit(AbstractPreparedCommand):
             dataset to include in the test set. If not specfied, the
             value is automatically set to the complement of the
             <train>.  If <train> is not specified, <test> is set to
-            %(default)s.''')
+            %(default)s''')
 
         prop.add_argument(
             '-T', '--train-prop', default=None, type=float, metavar='<train>',
             help='''a float between 0.0 and 1.0, represent the proportion of the
             dataset to include in the train set. If not specified, the
-            value is automatically set to the complement of <test>.''')
+            value is automatically set to the complement of <test>''')
 
         group.add_argument(
             '-b', '--by-speakers', action='store_true',
@@ -77,9 +80,14 @@ class AbkhaziaSplit(AbstractPreparedCommand):
             'data from a same speaker is randomly splited in the two subsets')
 
         group.add_argument(
-            '-r', '--random-seed', default=None, metavar='<seed>',
+            '-r', '--random-seed', default=None, type=int, metavar='<seed>',
             help='seed for pseudo-random numbers generation (default is to '
             'use the current system time). Use this option to compute a '
-            'reproducible split.')
+            'reproducible split')
+
+        parser.add_argument(
+            '--with-validation', action='store_true',
+            help='if specified, check the created train and test '
+            'subsets are valid abkhazia corpora')
 
         return parser

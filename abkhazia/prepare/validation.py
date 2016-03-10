@@ -48,14 +48,14 @@ class Validation(object):
     specialized validate_SOMETHING() methods.
 
     '''
-    def __init__(self, corpus_path, njobs=4, verbose=False):
+    def __init__(self, corpus_path, njobs=4, verbose=False, data_dir='data'):
         self.verbose = verbose
 
         # init the corpus data directory
-        self.data_dir = os.path.join(corpus_path, 'data')
+        self.data_dir = os.path.join(corpus_path, data_dir)
         if not os.path.isdir(self.data_dir):
-            raise IOError("Corpus folder {} must contain a 'data' subfolder"
-                          .format(corpus_path))
+            raise IOError("Corpus folder {} must contain a '{}' subfolder"
+                          .format(corpus_path, data_dir))
 
         # init the log system
         log_dir = os.path.join(corpus_path, 'logs')
@@ -64,7 +64,7 @@ class Validation(object):
         self.log_file = os.path.join(log_dir, "data_validation.log")
         self.log = log2file.get_log(self.log_file, verbose)
 
-        self.log.info('validating abkhazia corpus in {}'.format(corpus_path))
+        self.log.info('validating abkhazia corpus in {}'.format(self.data_dir))
 
         # list of the corpus wavs directory (despite of its name, can
         # contain any files or subdirs)

@@ -14,8 +14,11 @@
 # along with abkhazia. If not, see <http://www.gnu.org/licenses/>.
 """Provides the AbstractCommand class"""
 
+
+import argparse
 import os
 import shutil
+import textwrap
 
 import abkhazia.utils as utils
 
@@ -34,7 +37,7 @@ class AbstractCommand(object):
     """The command name, as called from command-line"""
 
     description = NotImplemented
-    """A one-line command description"""
+    """A command description"""
 
     @classmethod
     def add_parser(cls, subparsers):
@@ -47,12 +50,13 @@ class AbstractCommand(object):
         """
         # add a new subparser for the command
         parser = subparsers.add_parser(cls.name)
+        parser.formatter_class = argparse.RawDescriptionHelpFormatter
 
         # link args.command to the run() method
         parser.set_defaults(command=cls.run)
 
         # add a brief description of the command
-        parser.description = cls.description
+        parser.description = textwrap.dedent(cls.description)
 
         # add a --verbose option to all commands
         parser.add_argument(
@@ -91,19 +95,19 @@ class AbstractPreparedCommand(AbstractCommand):
 
         group.add_argument(
             'corpus', metavar='<corpus>',
-            help="""
-            the input abkhazia corpus to split. Must be a directory
-            either relative to the abkhazia data directory ({0}) or
+            help="""the abkhazia corpus to process. Must be a directory either
+            relative to the abkhazia data directory ({0}) or
             relative/absolute on the filesystem. The following rule
-            applies: if <corpus> starts with './' , '../' or '/', path is
-            guessed directly, else <corpus> is guessed as a subdir in
-            {0}""".format(utils.config.get('abkhazia', 'data-directory')))
+            applies: if <corpus> starts with './' , '../', '~/' or
+            '/', path is guessed directly, else <corpus> is guessed as
+            a subdirectory of {0}""".format(
+                utils.config.get('abkhazia', 'data-directory')))
 
         group.add_argument(
             '-o', '--output-dir', default=None, metavar='<output-dir>',
-            help='output directory, the splited corpus is created in '
-            '<output-dir>/split. '
-            'If not specified use <output-dir> = <corpus>.')
+            help='output directory, the output data is wrote to '
+            '<output-dir>/{}. If not specified use <output-dir>=<corpus>.'
+            .format(cls.name))
 
         return parser
 
