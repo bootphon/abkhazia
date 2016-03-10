@@ -287,8 +287,14 @@ class SplitCorpus(object):
 
     def validate(self):
         """Corpus validation of the newly created train and test subsets"""
-        for path in [self.train_dir, self.test_dir]:
-            validation.Validation(
-                os.path.dirname(path),
-                data_dir=os.path.basename(path),
-                verbose=self.verbose).validate()
+        # validate the train set, get back the metainfo on wavs
+        metawavs = validation.Validation(
+            os.path.dirname(self.train_dir),
+            data_dir=os.path.basename(self.train_dir),
+            verbose=self.verbose).validate()
+
+        # validate the test set, feeding the wavs metainfo
+        validation.Validation(
+            os.path.dirname(self.test_dir),
+            data_dir=os.path.basename(self.test_dir),
+            verbose=self.verbose).validate(metawavs)

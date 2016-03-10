@@ -61,10 +61,9 @@ class Validation(object):
         log_dir = os.path.join(corpus_path, 'logs')
         if not os.path.isdir(log_dir):
             os.mkdir(os.path.join(corpus_path, "logs"))
-        self.log_file = os.path.join(log_dir, "data_validation.log")
+        self.log_file = os.path.join(
+            log_dir, "{}_validation.log".format(data_dir))
         self.log = log2file.get_log(self.log_file, verbose)
-
-        self.log.info('validating abkhazia corpus in {}'.format(self.data_dir))
 
         # list of the corpus wavs directory (despite of its name, can
         # contain any files or subdirs)
@@ -73,21 +72,36 @@ class Validation(object):
         # init the number of jobs for parallel computations
         self.njobs = njobs
 
-    def validate(self):
+    def validate(self, meta=None):
         '''Validate the whole corpus
 
-        Log information about the corpus. Raise on the first detected
-        error. If the function returns without raising, this means the
-        corpus is compatible with abkhazia.
+        Log information about the corpus. Raise an IOError on the
+        first detected error. If the function returns without raising,
+        this means the corpus is compatible with abkhazia.
+
+        Return metainformation on the wavs if wavs is True (from
+        utils.wav.scan)
+
+        If meta is not None, it is assumed that it comes from a
+        previous call to validate(). This trick is used during
+        validation of splited corpora, which share the same wavs
+        collection.
 
         '''
+        self.log.info('validating abkhazia corpus in {}'.format(self.data_dir))
+
         try:
-            meta = self.validate_wavs()
+            if meta is None:
+                meta = self.validate_wavs()
+
             utt_ids = self.validate_segments(meta)
             self.validate_speakers(utt_ids)
             self.validate_transcription(utt_ids)
+
             inventory = self.validate_phones()
             self.validate_lexicon(inventory)
+
+            return meta
         except IOError as err:
             self.log.error(err)
             raise err
@@ -106,7 +120,7 @@ class Validation(object):
                 .format(wrong_extensions))
 
         # get meta information on the corpus wav files
-        scanv = 5 if self.verbose else 1
+        scanv = 5 if self.verbose else 0
         meta = utils.wav.scan([
             os.path.join(self.data_dir, 'wavs', w) for w in self.wavs],
                               njobs=self.njobs, verbose=scanv)
@@ -192,7 +206,7 @@ class Validation(object):
             # wavefile, check consistency of the timestamps of all
             # utterances inside it
             warning, short_wavs = self._check_timestamps(
-                meta, utt_ids, starts, stops)
+                meta, utt_ids, utt_wavs, starts, stops)
             if warning:
                 self.log.warning(
                     "Some utterances are overlapping in time, "
@@ -260,7 +274,6 @@ class Validation(object):
 
         self.log.debug("'speakers' file is OK")
 
-
     def validate_transcription(self, utt_ids):
         '''Checking transcriptions in text.txt'''
         self.log.debug("Checking 'text.txt' file")
@@ -301,7 +314,6 @@ class Validation(object):
 
         self.log.debug("'text.txt' file is OK, checking for OOV items later")
 
-
     def validate_phones(self):
         '''Checks phones.txt, silences.txt and variants.txt
 
@@ -311,7 +323,6 @@ class Validation(object):
         phones = self._check_phones()
         sils = self._check_silences(phones)
         return self._check_variants(phones, sils)
-
 
     def validate_lexicon(self, inventory):
         '''Checks lexicon.txt'''
@@ -471,14 +482,13 @@ class Validation(object):
 
         self.log.debug(u"'lexicon.txt' file is OK")
 
-
-    def _check_timestamps(self, meta, utt_ids, starts, stops):
+    def _check_timestamps(self, meta, utt_ids, utt_wavs, starts, stops):
         '''Check for utterances overlap and timestamps consistency'''
         self.log.debug("checking timestamps consistency...")
 
         short_wavs = []
         warning = False
-        for wav in progressbar.ProgressBar()(self.wavs):
+        for wav in progressbar.ProgressBar()(utt_wavs):
             duration = meta[wav].duration
             utts = [(utt,
                      0 if sta is None else sta,
@@ -500,11 +510,12 @@ class Validation(object):
                         "with file duration".format(utt_id))
 
                 if not 0 <= stop <= duration:
-                    raise IOError(
-                        "Stop time for utterance {0} is not compatible "
-                        "with file duration".format(utt_id))
+                    raise IOError(  # print(
+                        "Stop time for utterance {} is not compatible "
+                        "with file duration in {}: {} > {}"
+                        .format(utt_id, wav, stop, duration))
 
-                if stop-start < .015:
+                if stop - start < .015:
                     short_wavs.append(utt_id)
 
             # then check if there is overlap in time between the
@@ -559,14 +570,14 @@ class Validation(object):
 
             return warning, short_wavs
 
-
     def _check_phones(self):
         '''Checks phones.txt'''
         # TODO check xsampa compatibility and/or compatibility
         # with articulatory features databases of IPA or just basic
         # IPA correctness
         self.log.debug('checking phones.txt')
-        phones, ipas = io.read_phones(os.path.join(self.data_dir, "phones.txt"))
+        phones, ipas = io.read_phones(
+            os.path.join(self.data_dir, "phones.txt"))
 
         if u'SIL' in phones:
             raise IOError(
@@ -594,7 +605,6 @@ class Validation(object):
 
         return phones
 
-
     def _check_silences(self, phones):
         '''Checks silences.txt'''
         self.log.debug('checking silences.txt')
@@ -616,13 +626,13 @@ class Validation(object):
                     "The following symbols are used several times "
                     "in 'silences.txt': {}".format(duplicates))
 
-            if not u"SIL" in sils:
+            if u"SIL" not in sils:
                 self.log.debug("Adding missing 'SIL' symbol to silences.txt")
                 with utils.open_utf8(sil_file, 'a') as out:
                     out.write(u"SIL\n")
                 sils.append(u"SIL")
 
-            if not u"SPN" in sils:
+            if u"SPN" not in sils:
                 self.log.debug("Adding missing 'SPN' symbol to silences.txt")
                 with utils.open_utf8(sil_file, 'a') as out:
                     out.write(u"SPN\n")
@@ -635,7 +645,6 @@ class Validation(object):
                     "and 'silences.txt': {}".format(inter))
 
             return sils
-
 
     def _check_variants(self, phones, sils):
         '''Checks variants.txt'''
