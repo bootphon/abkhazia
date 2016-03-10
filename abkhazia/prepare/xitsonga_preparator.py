@@ -199,69 +199,76 @@ class XitsongaPreparator(AbstractPreparator):
         self.log.debug('finished creating text file')
 
 
-    def _collapse_mlf(self):
-        """Return all the files 'mlfs_tso/*.nchlt.mlf' collapsed in a list"""
-        list_total = []
-        for mlf in list_files_with_extension(
-                os.path.join(self.input_dir, 'mlfs_tso'),
-                r'nchlt\.mlf'):
-            with open(mlf) as infile_mlf:
-                list_total.extend(re.split(
-                    # split into a list of files ("." is the separator)
-                    # and increment the total list which will be a list
-                    # containing all small files
-                    r'\.\n',
-                    # join all lines together into one string but
-                    # still keeping new line character
-                    '\n'.join(
-                        [line.replace('\n', '')
-                         for line in infile_mlf.readlines()])))
-        return list_total
-
     # To do this, we need to get the mlfs for the language. Not sure
     # it is available on the NCHLT website.
+ 
     def make_lexicon(self):
-        # Go through each small file
-        out_temp = []
-        for mlf in self._collapse_mlf():
-            # split into a list of words (separator is "[0-9]+
-            # [0-9]+ sp (.*)")
-            for word in re.split('[0-9]+ [0-9]+ sp (.*)', mlf):
-                # split into lines
-                for line in word.strip().split('\n'):
-                    # split each line into tokens
-                    list_phn = line.split()
-                    # if the line contains the word, extract word + phone
-                    if len(list_phn) == 5:
-                        # exclude the silence word, otherwise, extract
-                        # just phone corresponding to word already
-                        # extracted
-                        if list_phn[4] != 'SIL-ENCE':
-                            out_temp.append(list_phn[4] + '\t' + list_phn[2])
-                    elif len(list_phn) == 4:
-                        out_temp.append(' ' + list_phn[2])
-
-        self.log.debug('finished writing temp string')
-
-        # open temp dictionary
+        list_total = []
+        list_file = []
+        list_line = []
+        list_word = []
+        list_phn = []
         dict_word = {}
-        # add these 2 entries in the dict
-        for line in out_temp:
-            matched = re.match("(.*)\t(.*)", line.strip())
-            if matched:
-                word = matched.group(1)
-                phn = matched.group(2)
-
-                # if word not in the lexicon, add entry
-                if word not in dict_word and word != '[s]':
-                    dict_word[word] = phn
-
-        # write lexicon to file, sorted by alphabetical order
+        os.path.join(self.input_dir, 'audio')
+        out_temp = open(os.path.join(self.output_dir, 'temp.txt'), "w")
         out_lex = open(self.lexicon_file, "w")
-        out_lex.write('<noise> NSN\n')
-        out_lex.write('<unk> SPN\n')
-        out_lex.write('<NOISE> NSN\n')
-        for word in sorted(dict_word):
-            out_lex.write(word + ' ' + dict_word[word] + '\n')
-
+        #out_temp = open (outfile_temp, "w")
+        for mlfs in list_files_with_extension(
+            os.path.join(self.input_dir, 'mlfs_tso'),r'nchlt\.mlf'):
+            with open (mlfs) as infile_mlf:
+                #join all lines together into one string but still keeping new line character
+                data = '\n'.join([line.replace('\n', '') for line in infile_mlf.readlines()])
+                #split into a list of files ("." is the separator)
+                list_file = re.split('\.\n', data)
+                #increment the total list which will be a list containing all small files
+                list_total.extend(list_file)
+            infile_mlf.close()
+        #Go through each small file      
+        for i in list_total:
+            #split into a list of words (separator is "[0-9]+ [0-9]+ sp (.*)")
+            list_word = re.split('[0-9]+ [0-9]+ sp (.*)', i)
+            for w in list_word:
+                w = w.strip()
+                #split into lines
+                list_line = w.split('\n')
+                for l in list_line:
+                    #split each line into tokens
+                    list_phn = l.split()
+                    #if the line contains the word, extract word + phone
+                    if (len(list_phn) == 5):
+                        #exclude the silence word
+                        if (list_phn[4] == 'SIL-ENCE'):
+                            continue
+                        #otherwise, extract just phone corresponding to word already extracted
+                        else:
+                            out_temp.write(list_phn[4] + '\t' + list_phn[2])
+                    elif (len(list_phn) == 4):
+                        out_temp.write(' ' + list_phn[2])
+                out_temp.write('\n')
+        out_temp.close()
+        self.log.debug ('finished writing temp file')
+            
+        #open temp dictionary
+        in_temp = open(os.path.join(self.output_dir, 'temp.txt'), "r")
+        #add these 2 entries in the dict
+        out_lex.write ('<noise> NSN\n')
+        out_lex.write ('<unk> SPN\n')
+        for line in in_temp:
+            line = line.strip()
+            m_file = re.match("(.*)\t(.*)", line)
+            if m_file:
+                word = m_file.group(1)
+                phn = m_file.group(2)
+                #if word not in the lexicon, add entry
+                if word not in dict_word:
+                    if (word == "[s]"):
+                        continue
+                    else:
+                        dict_word[word] = phn
+        #write lexicon to file, sorted by alphabetical order
+        for w in sorted(dict_word):
+                out_lex.write (w + ' ' + dict_word[w] + '\n')
+        in_temp.close()
         self.log.debug('finished creating lexicon file')
+        #remove temp file
+        os.remove(os.path.join(self.output_dir, 'temp.txt'))

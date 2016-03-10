@@ -272,6 +272,7 @@ class WallStreetJournalPreparator(AbstractPreparatorWithCMU):
         transcription = []
 
         for trs in self.input_transcriptions:
+            print(trs)
             transcription += open_utf8(trs, 'r').readlines()
 
         # parse each line and write it to output file in abkhazia format
