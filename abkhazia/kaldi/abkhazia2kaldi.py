@@ -308,7 +308,7 @@ class Abkhazia2Kaldi(object):
 
     def setup_wav_folder(self):
         """using a symbolic link to avoid copying voluminous data"""
-        origin = os.path.join(self.data_dir, 'wavs')
+        origin = os.path.abspath(os.path.join(self.data_dir, 'wavs'))
         target = os.path.join(self.recipe_dir, 'wavs')
 
         if os.path.exists(target):

@@ -24,7 +24,7 @@
 
    - [X] create a complete corpus (sym links)
    - [X] validate train and test subsets
-   - [ ] Move the --prune-lexicon from language to split
+   - [X] Move the --prune-lexicon from language to split
 
  - [-] align
 

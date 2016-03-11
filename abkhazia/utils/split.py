@@ -32,8 +32,8 @@ class SplitCorpus(object):
       split. This directory must contain a validated abkhazia corpus.
 
     output_dir : The output directory where to write the splits. The
-      directory 'output_dir'/split is created, with two subdirs (test
-      and train). The log file goes in
+      directory hierarchy 'output_dir'/split/{train, test}/data is
+      created. The log file goes in
       'output_dir'/logs/split_corpus.log. By default use 'corpus_dir'
 
     random_seed : Seed for pseudo-random numbers generation
@@ -79,8 +79,8 @@ class SplitCorpus(object):
                 .format(split_dir))
 
         # init output_dir/{test, train}
-        self.test_dir = os.path.join(output_dir, 'split', 'test')
-        self.train_dir = os.path.join(output_dir, 'split', 'train')
+        self.test_dir = os.path.join(output_dir, 'split', 'test', 'data')
+        self.train_dir = os.path.join(output_dir, 'split', 'train', 'data')
         for path in (self.test_dir, self.train_dir):
             if not os.path.exists(path):
                 os.makedirs(path)
@@ -286,7 +286,9 @@ class SplitCorpus(object):
         for target_dir in (self.train_dir, self.test_dir):
             target = os.path.join(target_dir, origin)
             self.log.debug('writing %s', target)
-            os.symlink(os.path.join(self.data_dir, origin), target)
+
+            _origin = os.path.abspath(os.path.join(self.data_dir, origin))
+            os.symlink(_origin, target)
 
     def _write_lexicon(self):
         """Write lexicon.txt, pruned if required"""
