@@ -41,12 +41,9 @@ class LanguageModel(abstract_recipe.AbstractRecipe):
         desired_utts = self.a2k.desired_utterances(njobs=args.njobs)
         text = self.a2k.setup_text(desired_utts=desired_utts)
 
-        # prune_lexicon option from str to bool
-        prune_lexicon = True if args.prune_lexicon == 'true' else False
-
         # setup lm lexicon and input text depending on model level
         lm_text = os.path.join(self.a2k._dict_path(), 'lm_text.txt')
-        lexicon = self.a2k.setup_lexicon(prune_lexicon=prune_lexicon)
+        lexicon = self.a2k.setup_lexicon()
         if args.model_level == 'word':
             shutil.copy(text, lm_text)
         else:  # phone level

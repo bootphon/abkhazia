@@ -33,7 +33,8 @@ class AbkhaziaSplit(AbstractPreparedCommand):
 
         # instanciate a SplitCorpus instance
         spliter = split.SplitCorpus(
-            corpus, output_dir, args.random_seed, args.verbose)
+            corpus, output_dir,
+            args.random_seed, args.prune_lexicon, args.verbose)
 
         # choose the split function according to --by-speakers
         split_fun = (spliter.split_by_speakers if args.by_speakers
@@ -78,6 +79,17 @@ class AbkhaziaSplit(AbstractPreparedCommand):
             help='if specified, the data for each speaker is attributed '
             'either to the test or train subset as a whole. If not specified, '
             'data from a same speaker is randomly splited in the two subsets')
+
+        group.add_argument(
+            '-p', '--prune-lexicon', action='store_true',
+            help='''if specified, remove from the lexicon all words that are not
+            present at least once in the training set. This have
+            effect on word-level language models. Could be useful when
+            using a lexicon that is tailored to the corpus to the
+            point of overfitting (i.e. only words occuring in the
+            corpus were included and many other common words weren't),
+            which could lead to overestimated performance on words
+            from the lexicon appearing in the test only.''')
 
         group.add_argument(
             '-r', '--random-seed', default=None, type=int, metavar='<seed>',

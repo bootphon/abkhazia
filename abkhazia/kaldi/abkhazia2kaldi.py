@@ -165,33 +165,14 @@ class Abkhazia2Kaldi(object):
         return [utt for utt in utt_durations
                 if utt_durations[utt] >= min_duration]
 
-    def setup_lexicon(self, prune_lexicon=False, train_name=None, name='dict'):
+    def setup_lexicon(self, train_name=None, name='dict'):
         """Create data/local/`name`/lexicon.txt"""
+        # TODO see if we need to add <unk> as in setup_phone_lexicon
         origin = os.path.join(self.data_dir, 'lexicon.txt')
         target = os.path.join(self._dict_path(name), 'lexicon.txt')
+
         self.log.debug('creating {}'.format(target))
-
-        if prune_lexicon:
-            # TODO this should be a step of split, Mathieu thinks...
-            raise NotImplementedError(
-                'prune lexicon option is not implemented!')
-
-            # # get words appearing in train part
-            # train_text = os.path.join(
-            #     self.data_dir, 'split', train_name, 'text.txt')
-
-            # _, utt_words = io.read_text(train_text)
-            # allowed_words = set([word for utt in utt_words for word in utt])
-
-            # # add special OOV word <unk>
-            # allowed_words.add(u'<unk>')
-
-            # # remove other words from the lexicon
-            # allowed_words = list(allowed_words)
-            # io.copy_first_col_matches(origin, target, allowed_words)
-        else:
-            shutil.copy(origin, target)
-
+        shutil.copy(origin, target)
         return target
 
     def setup_phone_lexicon(self, name='dict'):

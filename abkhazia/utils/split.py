@@ -12,12 +12,13 @@
 #
 # You should have received a copy of the GNU General Public License
 # along with abkhazia. If not, see <http://www.gnu.org/licenses/>.
-"""Provides a class to split an abkhazia corpus in train and test subsets"""
+"""Provides the SplitCorpus class"""
 
 import ConfigParser
 import os
 import random
 import shutil
+import tempfile
 
 import abkhazia.prepare.validation as validation
 import abkhazia.utils as utils
@@ -38,24 +39,23 @@ class SplitCorpus(object):
     random_seed : Seed for pseudo-random numbers generation
       (default is None and current system time is used)
 
+    prune_lexicon: If True, remove from the lexicon all words that are
+        not present at least once in the training set. This have
+        effect on word-level language models. Could be useful when
+        using a lexicon that is tailored to the corpus to the point of
+        overfitting (i.e. only words occuring in the corpus were
+        included and many other common words weren't), which could
+        lead to overestimated performance on words from the lexicon
+        appearing in the test only.
+
     verbose : This argument serves as initialization of the log2file
       module. See there for more documentation.
 
     """
-    @staticmethod
-    def default_test_prop():
-        """Return the default proportion for the test set
-
-        Try to read from configuration file, else return 0.5"""
-        try:
-            return float(utils.config.get(
-                'split', 'default-test-proportion'))
-        except ConfigParser.NoOptionError:
-            return 0.5
-
     def __init__(self, corpus_dir, output_dir=None,
-                 random_seed=None, verbose=False):
+                 random_seed=None, prune_lexicon=False, verbose=False):
         self.verbose = verbose
+        self.prune_lexicon = prune_lexicon
 
         # init the corpus directory
         if not os.path.isdir(corpus_dir):
@@ -103,77 +103,16 @@ class SplitCorpus(object):
         self.log.debug('loaded %i utterances from %i speakers',
                        self.size, len(self.speakers))
 
-    def _write(self, train_utt_ids, test_utt_ids):
-        """Write the train and test split corpora to output directory
+    @staticmethod
+    def default_test_prop():
+        """Return the default proportion for the test set
 
-        Before writing the files, this function also sort them (with
-        respect to the first comulmn)
-
-        """
-        self.log.info(
-            'split proportions are %f for train and %f for test',
-            round(float(len(train_utt_ids))/self.size, 3),
-            round(float(len(test_utt_ids))/self.size, 3))
-
-        self.log.info(
-            'writing to %s',
-            os.path.abspath(os.path.join(self.test_dir, '..')))
-
-        # for train and test subsets
-        for target_dir, utts in [(self.train_dir, train_utt_ids),
-                                 (self.test_dir, test_utt_ids)]:
-            # take subparts of utt2spk.txt, text.txt and segments.txt
-            filesin = ['utt2spk.txt', 'text.txt', 'segments.txt']
-            for filein in filesin:
-                target = os.path.join(target_dir, filein)
-                try:
-                    self.log.debug('writing %s', target)
-                    io.copy_first_col_matches(
-                        os.path.join(self.data_dir, filein),
-                        target, utts)
-                    io.cpp_sort(target)
-                except (OSError, ValueError):
-                    try:
-                        utils.remove(target)
-                    except shutil.Error:
-                        self.log.error("can't delete %s", self.train_dir)
-                    finally:
-                        raise OSError('cannot writing to {}'.format(target))
-
-            # symlink the other corpous files from input to output
-            for f in [f for f in utils.list_directory(self.data_dir)
-                      if f not in filesin]:
-                os.symlink(
-                    os.path.join(self.data_dir, f),
-                    os.path.join(target_dir, f))
-
-    def _proportions(self, test_prop, train_prop):
-        """Return 'regularized' proprotions of test and train data
-
-        Return the tuple (test_prop, train_prop), ensures they are in
-        [0, 1] and their sum is 1. If None, return the default values.
-
-        """
-        # set default proportion values
-        if test_prop is None:
-            test_prop = (self.default_test_prop
-                         if train_prop is None else 1 - train_prop)
-        if train_prop is None:
-            train_prop = 1 - test_prop
-
-        if test_prop < 0 or test_prop > 1:
-            raise RuntimeError('test proportion must be in [0, 1]')
-        if train_prop < 0 or train_prop > 1:
-            raise RuntimeError('train proportion must be in [0, 1]')
-
-        self.log.debug('proportion for train is %f', train_prop)
-        self.log.debug('proportion for test is %f', test_prop)
-
-        if test_prop + train_prop != 1:
-            raise RuntimeError(
-                'sum of test and train proportion is not 1')
-
-        return test_prop, train_prop
+        Try to read from configuration file, else return 0.5"""
+        try:
+            return float(utils.config.get(
+                'split', 'default-test-proportion'))
+        except ConfigParser.NoOptionError:
+            return 0.5
 
     def split(self, test_prop=None, train_prop=None):
         """Split the corpus by utterances regardless of the speakers
@@ -286,7 +225,7 @@ class SplitCorpus(object):
         self._write(train_utt_ids, test_utt_ids)
 
     def validate(self):
-        """Corpus validation of the newly created train and test subsets"""
+        """Corpus validation of the created train and test subsets"""
         # validate the train set, get back the metainfo on wavs
         metawavs = validation.Validation(
             os.path.dirname(self.train_dir),
@@ -298,3 +237,117 @@ class SplitCorpus(object):
             os.path.dirname(self.test_dir),
             data_dir=os.path.basename(self.test_dir),
             verbose=self.verbose).validate(metawavs)
+
+    def _write(self, train_utt_ids, test_utt_ids):
+        """Write the train and test split corpora to output directory
+
+        Before writing the files, this function also sort them (with
+        respect to the first column). Prune the lexicon according to
+        self.prune_lexicon.
+
+        """
+        self.log.info(
+            'split proportions are %f for train and %f for test',
+            round(float(len(train_utt_ids))/self.size, 3),
+            round(float(len(test_utt_ids))/self.size, 3))
+
+        self.log.info(
+            'writing to %s',
+            os.path.abspath(os.path.join(self.test_dir, '..')))
+
+        # symlink the wavs directory and the phones related files in
+        # test and train directories
+        for origin in (
+                'wavs', 'phones.txt', 'silences.txt', 'variants.txt'):
+            self._write_symlink(origin)
+
+        # write split subparts of utt2spk.txt, text.txt and segments.txt
+        for origin in ('utt2spk.txt', 'text.txt', 'segments.txt'):
+            self._write_subpart(origin, train_utt_ids, test_utt_ids)
+
+        # write the lexicon (must be called after train/text.txt is wrote)
+        self._write_lexicon()
+
+    def _write_subpart(self, origin, train_utt_ids, test_utt_ids):
+        for target_dir, utts in [(self.train_dir, train_utt_ids),
+                                 (self.test_dir, test_utt_ids)]:
+                target = os.path.join(target_dir, origin)
+                _origin = os.path.join(self.data_dir, origin)
+
+                self.log.debug('writing %s', target)
+                try:
+                    io.copy_first_col_matches(_origin, target, utts)
+                    io.cpp_sort(target)
+                except (OSError, ValueError):
+                    raise OSError('cannot write to {}'.format(target))
+
+    def _write_symlink(self, origin):
+        """Make 'origin' a symbolic link in train and test directories"""
+        for target_dir in (self.train_dir, self.test_dir):
+            target = os.path.join(target_dir, origin)
+            self.log.debug('writing %s', target)
+            os.symlink(os.path.join(self.data_dir, origin), target)
+
+    def _write_lexicon(self):
+        """Write lexicon.txt, pruned if required"""
+        origin = 'lexicon.txt'
+        if not self.prune_lexicon:
+            self._write_symlink(origin)
+        else:
+            origin = os.path.join(self.data_dir, origin)
+            target = tempfile.NamedTemporaryFile(delete=False)
+
+            # get words appearing in train part
+            _, utts = io.read_text(os.path.join(self.train_dir, 'text.txt'))
+            allowed_words = set([word for utt in utts for word in utt])
+
+            # add special OOV word <unk>
+            allowed_words.add(u'<unk>')
+
+            # log a message
+            nlexicon = len(set(io.read_dictionary(origin)[0]))
+            nallowed = len(allowed_words)
+            npruned = nlexicon - nallowed
+            self.log.info(
+                'pruning %i words from %i in lexicon, %i allowed words',
+                npruned, nlexicon, nallowed)
+
+            # remove other words from the lexicon
+            allowed_words = list(allowed_words)
+            io.copy_first_col_matches(origin, target.name, allowed_words)
+
+            # copy the pruned lexicon in test and train
+            origin = target.name
+            for target_dir in (self.train_dir, self.test_dir):
+                target = os.path.join(target_dir, 'lexicon.txt')
+                self.log.debug('writing %s', target)
+                shutil.copy(origin, target)
+            utils.remove(origin)
+
+    def _proportions(self, test_prop, train_prop):
+        """Return 'regularized' proprotions of test and train data
+
+        Return the tuple (test_prop, train_prop), ensures they are in
+        [0, 1] and their sum is 1. If None, return the default values.
+
+        """
+        # set default proportion values
+        if test_prop is None:
+            test_prop = (self.default_test_prop
+                         if train_prop is None else 1 - train_prop)
+        if train_prop is None:
+            train_prop = 1 - test_prop
+
+        if test_prop < 0 or test_prop > 1:
+            raise RuntimeError('test proportion must be in [0, 1]')
+        if train_prop < 0 or train_prop > 1:
+            raise RuntimeError('train proportion must be in [0, 1]')
+
+        self.log.debug('proportion for train is %f', train_prop)
+        self.log.debug('proportion for test is %f', test_prop)
+
+        if test_prop + train_prop != 1:
+            raise RuntimeError(
+                'sum of test and train proportion is not 1')
+
+        return test_prop, train_prop

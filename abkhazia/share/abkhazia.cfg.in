@@ -28,6 +28,14 @@ xitsonga-directory:
 # Defines the default proportion of data for the test set
 default-test-proportion: 0.5
 
+# Could be useful when using a lexicon that is tailored to the corpus
+# to the point of overfitting (i.e. only words occuring in the corpus
+# were included and many other common words weren't), which could lead
+# to overestimated performance on words from the lexicon appearing in
+# the test only. Removes from the lexicon all words that are not
+# present at least once in the training set.
+prune-lexicon: false
+
 [language]
 # Should be set to true or false depending on whether the language
 # model produced is destined to be used with an acoustic model trained
@@ -40,14 +48,6 @@ model-order: 2
 # Can be either 'phone' or 'word' and compute either a phone-level or
 # a word-level language model
 model-level: phone
-
-# Could be useful when using a lexicon that is tailored to the corpus
-# to the point of overfitting (i.e. only words occuring in the corpus
-# were included and many other common words weren't), which could lead
-# to overestimated performance on words from the lexicon appearing in
-# the test only. Removes from the lexicon all words that are not
-# present at least once in the training set.
-prune-lexicon: false
 
 [train]
 # Do all computations if true, else focus on the main ones
