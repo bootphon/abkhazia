@@ -68,3 +68,14 @@ class LanguageModel(abstract_recipe.AbstractRecipe):
 
         # chmod +x run.sh
         os.chmod(run, os.stat(run).st_mode | 0o111)
+
+    def export(self):
+        """Export data/dict/G.fst in export/language_model.fst"""
+        origin = os.path.join(self.recipe_dir, 'data', 'dict', 'G.fst')
+        target = os.path.join(self.recipe_dir, 'export', 'language_model.fst')
+        self.log.info('writing %s', target)
+
+        dirname = os.path.dirname(target)
+        if not os.path.exists(dirname):
+            os.makedirs(dirname)
+        shutil.copy(origin, target)

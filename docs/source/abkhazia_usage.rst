@@ -51,28 +51,26 @@ split: [corpus] -> [corpus], [corpus]
 Split a speech corpus in train and test sets. Write the directories
 ``<corpus>/train`` and ``<corpus>/test``.
 
-train: [corpus] -> [model]
---------------------------
-
-Train a standard speaker-adapted triphone HMM-GMM model from a
-prepared corpus. Write the directory ``<corpus>/model``.
-
-align: [model] -> [result]
---------------------------
-
-Generate a forced-alignment on a trained corpus. Write the directory
-``<corpus>/align`` and the file
-``<corpus>/results/forced_alignement.txt``
-
 language: [corpus] -> [lm]
 --------------------------
 
 Generate a language model from a prepared corpus. Write the directory
-``<corpus>/language`` and the file ``<corpus>/results/language_model.fst``
+``<corpus>/language``.
+
+train: [corpus], [lm] -> [model]
+--------------------------------
+
+Train a standard speaker-adapted triphone HMM-GMM model from a
+prepared corpus. Write the directory ``<corpus>/model``.
+
+align: [model], [lm] -> [result]
+--------------------------------
+
+Generate a forced-alignment from acoustic and language models. Write
+the directory ``<corpus>/align``.
 
 decode: [corpus], [model], [lm] -> [result]
 -------------------------------------------
 
 Decode a prepared corpus from a HMM-GMM model and a language
-model. Write the directory ``<corpus>/decode`` and the file
-``results/transcript.txt``
+model. Write the directory ``<corpus>/decode``.

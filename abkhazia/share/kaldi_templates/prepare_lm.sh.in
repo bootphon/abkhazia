@@ -14,25 +14,25 @@
 # You should have received a copy of the GNU General Public License
 # along with abkahzia. If not, see <http://www.gnu.org/licenses/>.
 
-# TODO Not yet tested on n-grams with n!=2 or on
-# non-word-position-dependent acoustic models
-
 # TODO explain here what the recipe does
 
 ###### Parameters ######
 
 # Name of the LM, must correspond to an existing folder in data/
 # (created by the python script generating the recipe)
-name=@@@@
+name=$1
+
+# n in n-gram, only used if a LM is to be estimated from some text
+# (see below). Only tested with n=2
+model_order=@@@@
 
 # Should be set to true or false depending on whether the language
 # model produced is destined to be used with an acoustic model trained
 # with or without word position dependent variants of the phones.
 word_position_dependent=@@@@
 
-# n in n-gram, only used if a LM is to be estimated from some text
-# (see below). Only tested with n=2
-model_order=@@@@
+# do all computation or focus on main ones
+optional_silence=@@@@
 
 
 ###### Recipe ######
@@ -72,9 +72,18 @@ else
     prepare_lang_exe=utils/prepare_lang.sh
 fi
 
+if [ "$optional_silence" = true ] ; then
+    sil_prob=0.5
+else
+    sil_prob=0.0
+fi
+
 echo "running $prepare_lang_exe..."
-$prepare_lang_exe --position-dependent-phones $word_position_dependent \
-                  $in_dir "<unk>" $tmp_dir $out_dir >& $log
+$prepare_lang_exe \
+    --position-dependent-phones $word_position_dependent \
+    --sil_prob $sil_prob \
+    $in_dir "<unk>" $tmp_dir $out_dir \
+    >& $log || exit 1
 
 
 # here we could use a different silence_prob. I think however that

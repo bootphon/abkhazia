@@ -61,16 +61,26 @@ class AbkhaziaAlign(AbstractRecipeCommand):
         def add_arg(name, type, help):
             add_argument(group, 'train', name, type, help)
 
-        add_arg('optional-silence', bool,
-                'do all computations if true, else focus on the main ones')
+        add_argument(
+            group, 'language', 'optional-silence', bool,
+            'do all computations if true, else focus on the main ones')
+
         add_arg('use-pitch', bool, 'MFCC features parameter')
-        add_arg('num-states-si', int,
-                'number of states in the speaker-independent triphone model')
-        add_arg('num-gauss-si', int,
-                'number of Gaussians in the speaker-independent triphone model')
-        add_arg('num-states-sa', int,
-                'number of states in the speaker-adaptive triphone model')
-        add_arg('num-gauss-sa', int,
-                'number of Gaussians in the speaker-adaptive triphone model')
+
+        add_arg(
+            'num-states-si', int,
+            'number of states in the speaker-independent triphone model')
+
+        add_arg(
+            'num-gauss-si', int,
+            'number of Gaussians in the speaker-independent triphone model')
+
+        add_arg(
+            'num-states-sa', int,
+            'number of states in the speaker-adaptive triphone model')
+
+        add_arg(
+            'num-gauss-sa', int,
+            'number of Gaussians in the speaker-adaptive triphone model')
 
         return parser

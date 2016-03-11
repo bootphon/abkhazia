@@ -131,7 +131,7 @@ class AbstractPreparedCommand(AbstractCommand):
                 print 'removing {}'.format(_dir)
                 shutil.rmtree(_dir)
 
-        return corpus, output_dir
+        return os.path.abspath(corpus), os.path.abspath(output_dir)
 
 
 class AbstractRecipeCommand(AbstractPreparedCommand):

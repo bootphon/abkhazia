@@ -42,6 +42,9 @@ prune-lexicon: false
 # with or without word position dependent variants of the phones
 word-position-dependent: true
 
+# Do all computations if true, else focus on the main ones
+optional-silence: true
+
 # n in n-gram
 model-order: 2
 
@@ -50,9 +53,6 @@ model-order: 2
 model-level: phone
 
 [train]
-# Do all computations if true, else focus on the main ones
-optional-silence: true
-
 # Feature parameters
 use-pitch: true
 

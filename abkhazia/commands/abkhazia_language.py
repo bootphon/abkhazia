@@ -12,10 +12,9 @@
 #
 # You should have received a copy of the GNU General Public License
 # along with abkhazia. If not, see <http://www.gnu.org/licenses/>.
+"""Implementation of the 'abkhazia language' command"""
 
 import argparse
-import os
-import shutil
 
 import abkhazia.utils as utils
 from abkhazia.commands.abstract_command import AbstractRecipeCommand
@@ -41,6 +40,10 @@ class AbkhaziaLanguage(AbstractRecipeCommand):
 
         def add_arg(name, type, help, metavar=None, choices=None):
             add_argument(group, cls.name, name, type, help, metavar, choices)
+
+        add_arg(
+            'optional-silence', bool,
+            'do all computations if true, else focus on the main ones')
 
         add_arg(
             'word-position-dependent', bool,
@@ -79,3 +82,4 @@ class AbkhaziaLanguage(AbstractRecipeCommand):
             recipe.create(args)
         if not args.no_run:
             recipe.run()
+            recipe.export()

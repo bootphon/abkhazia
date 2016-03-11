@@ -19,34 +19,19 @@
     are 2, only one is 3. Is it a problem ?
 
 * Functions
-
- - split
-
-   - [X] create a complete corpus (sym links)
-   - [X] validate train and test subsets
-   - [X] Move the --prune-lexicon from language to split
-
- - [-] align
-
-   - [X] test/debug at least on xitsonga, wsj
-   - [X] integrate the kaldi2abkhazia conversion script as the final
-     step of ForceAlign.run()
-   - [X] add support for template options from command-line
+ - [ ] train
+   - [ ] [<language-model>] positional optional argument
+     compute a simple language model if not provided
+   - [ ] --speaker-adapted option
+   - [ ] --model-type option in {monophone, triphone, neural network}
+   - [ ] --retrain option
+   - [ ] questions vs data-driven option
+   - [ ] test the acoustic model
+     providing WER for every model, eventual automatic parameter search ?
+   - [ ] update command description
+ - [ ] align
    - [ ] remove the language model part from the recipe
-
- - train(train_set)
-
-   Train an acoustic model (and a simple language model if not provided)
-   and test it (providing WER for every model, eventual automatic
-   parameter search ?)
-
-   options:
-   model type = {monophone, triphone, neural network}
-   features = mfcc, mfcc+pitch or custom features (link to the feature_extraction package ?)
-   model parameters (eg, nb of mixtures, nb of triphones, questions vs data-driven,speaker_readapt)
-   output: acoustic_model (répertoire + readme)
-   retrain(train_set, acoustic_model)
-
+   - [ ] remove the training part from the recipe
  - decode(test_set, acoustic_model, (language_model))
 
    Compute phone posteriograms or transcription. If no language_model
@@ -57,7 +42,6 @@
    output = {posteriorgrams, transcription}
    speaker_adapt
    output: results (repertoire)
-
  - list
 
    As an alternative of the README files, display what is in
