@@ -286,7 +286,9 @@ class SplitCorpus(object):
         for target_dir in (self.train_dir, self.test_dir):
             target = os.path.join(target_dir, origin)
             self.log.debug('writing %s', target)
-            os.symlink(os.path.join(self.data_dir, origin), target)
+
+            _origin = os.path.abspath(os.path.join(self.data_dir, origin))
+            os.symlink(_origin, target)
 
     def _write_lexicon(self):
         """Write lexicon.txt, pruned if required"""
