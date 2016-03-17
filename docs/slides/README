@@ -1,0 +1,5 @@
+The slides.md file is in Mardown and can be converted in slides with pandoc
+
+    pandoc -t beamer slides.md -o slides.pdf
+
+The images have been created in svg and converted in pdf with Inkscape
