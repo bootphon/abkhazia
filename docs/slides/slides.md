@@ -2,21 +2,21 @@
 % Xuan Nga Cao; Mathieu Bernard
 % LSCP Bootphon Team Meeting -- March 24, 2016
 
-# Abkhazia -- ASR experiments made easy
 
+# Abkhazia -- ASR experiments made easy
 
 * Abkhazia is a Python library and a **command-line tool**
 
-    - sources and installation instructions are available at
+    - sources and installation instructions at
       *https://github.com/bootphon/abkhazia*
-    - once installed, get in with ``abkhazia --help``
+    - free software (GPL3)
 
 * Performs **various ASR tasks**
 
     - use the Kaldi toolkit for speech recognition (kaldi-asr.org)
     - language and acoustic models, forced-alignment, decoding
-    - computation on the cluster or locally
-    - all from a uniform command-line syntax
+    - parallel computation on the cluster
+    - uniform command-line syntax
 
 * Defines and rely on a **standard speech corpus format**
 
@@ -29,39 +29,52 @@
 ![](./images/big_picture.pdf)\
 
 
+# Outline
+
+1. Abkhazia corpus format
+
+2. Principles and usage from command-line
+
+3. Example: force-alignment on a Buckeye subcorpus
+
+4. Future development
+
+
+
 # Standard speech corpus format
 
 TODO XN
 
 # Supported corpora
 
-* aic          - Articulation Index Corpus LSCP
-* buckeye      - Buckeye Corpus of conversational speech
-* csj          - Corpus of Spontaneous Japanese
-* globalphone  - GlobalPhone multilingual read speech corpus
-* librispeech  - LibriSpeech ASR Corpus
-* wsj          - Wall Street Journal ASR Corpus
-* xitsonga     - NCHLT Xitsonga Speech Corpus
+Actually, abkhazia have preparation scripts for:
 
+* __aic__          - Articulation Index Corpus LSCP
+* __buckeye__      - Buckeye Corpus of conversational speech
+* __csj__          - Corpus of Spontaneous Japanese
+* __globalphone__  - GlobalPhone multilingual read speech corpus
+    * Mandarin, Vietnamese
+* __librispeech__  - LibriSpeech ASR Corpus
+* __wsj__          - Wall Street Journal ASR Corpus
+* __xitsonga__     - NCHLT Xitsonga Speech Corpus
 
 
 # Abkhazia commands
 
-From ``abkhazia --help``
+* ASR tasks are spread over abkhazia _commands_:
+    * __prepare__  - prepare a speech corpus for use with abkhazia
+    * __split__    - split a corpus in train and test subsets
+    * __language__ - compute a language model
+    * __train__    - train (or retrain) an acoustic model
+    * __decode__   - compute phone posteriograms or transcription
+    * __align__    - compute forced-aligment
 
-* prepare  - prepare a speech corpus for use with abkhazia
-* split    - split a corpus in train and test subsets
-* language - compute a language model
-* train    - train (or retrain) an acoustic model
-* decode   - compute phone posteriograms or transcription
-* align    - compute forced-aligment
+* All commands share some basics
+    * read parameters from command-line and/or configuration file
+    * ``--help``, ``--verbose`` and ``--force`` options
+    * a logging system (to stdout and/or a file)
+* A whole pipeline is defined as a succession of commands
 
-
-
-
-Each command have its own help message as
-
-    abkhazia <command> --help
 
 # abkhazia prepare: [raw] -> [corpus]
 
@@ -79,7 +92,18 @@ Exemple: Buckeye preparation
 
 # abkhazia split: [corpus] -> [corpus], [corpus]
 
-Split a corpus in train and test subsets.
+Split a corpus in train and test subsets
+
+* __input__: any abkhazia corpus
+* __output__: test and train corpora
+* __dependancies__: no
+* __key options__:
+    * ``--test-prop``: proportion of samples (utterances) in test set
+    * ``--by-speaker``: do not split a speaker in train/test sets
+    * ``--random-seed``: compute a reproducible split
+    * ``--prune-lexicon``: remove from the lexicon all words not
+      present in the train set
+
 
 # abkhazia language: [corpus] -> [lm]
 
