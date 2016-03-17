@@ -33,7 +33,6 @@
    - [ ] remove the language model part from the recipe
    - [ ] remove the training part from the recipe
  - decode(test_set, acoustic_model, (language_model))
-
    Compute phone posteriograms or transcription. If no language_model
    provided, a default flat unigram one is constructed
 
@@ -43,7 +42,6 @@
    speaker_adapt
    output: results (repertoire)
  - list
-
    As an alternative of the README files, display what is in
    <data-directory> For each corpus: list of present data, recipes and
    results, with the parameters/path they ran from.

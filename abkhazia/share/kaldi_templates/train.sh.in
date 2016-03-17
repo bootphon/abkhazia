@@ -52,7 +52,8 @@ num_gauss_sa=@@@@
 
 
 # Finish preparing data
-utils/utt2spk_to_spk2utt.pl data/$name/utt2spk > data/$name/spk2utt || exit 1
+spk2utt=data/$name/spk2utt
+[ -z $spk2utt ] && utils/utt2spk_to_spk2utt.pl data/$name/utt2spk > $spk2utt || exit 1
 
 
 # Features
@@ -87,6 +88,7 @@ steps/train_mono.sh \
     > exp/mono/train.log || exit 1
 echo " done"
 
+exit
 
 # Triphone model training
 echo -n "force-aligning corpus with the monophone model..."
