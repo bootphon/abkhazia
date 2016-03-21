@@ -51,11 +51,6 @@ num_gauss_sa=@@@@
 . path.sh || { echo "Cannot source path.sh"; exit 1; }
 
 
-# Finish preparing data
-spk2utt=data/$name/spk2utt
-[ -z $spk2utt ] && utils/utt2spk_to_spk2utt.pl data/$name/utt2spk > $spk2utt || exit 1
-
-
 # Features
 mfccdir=mfcc
 if [ "$use_pitch" = true ]

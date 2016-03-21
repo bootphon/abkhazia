@@ -14,9 +14,8 @@
 # along with abkhazia. If not, see <http://www.gnu.org/licenses/>.
 """Provides the AcousticModel class"""
 
-
-import abkhazia.utils.basic_io as io
 import abkhazia.kaldi.abstract_recipe as abstract_recipe
+
 
 class AcousticModel(abstract_recipe.AbstractRecipe):
     """Compute an acoustic model from an abkhazia corpus

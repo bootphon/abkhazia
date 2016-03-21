@@ -43,9 +43,6 @@ num_gauss_sa=@@@@
 
 . path.sh || { echo "Cannot source path.sh"; exit 1; }
 
-# First finish preparing data
-utils/utt2spk_to_spk2utt.pl data/main/utt2spk > data/main/spk2utt
-
 
 # Features
 mfccdir=mfcc
