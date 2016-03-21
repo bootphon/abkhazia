@@ -10,12 +10,13 @@
     - sources and installation instructions at
       *https://github.com/bootphon/abkhazia*
     - free software (GPL3)
+    - in development (about 70% done)...
 
 * Performs **various ASR tasks**
 
-    - use the Kaldi toolkit for speech recognition (kaldi-asr.org)
     - language and acoustic models, forced-alignment, decoding
-    - parallel computation on the cluster
+    - use the Kaldi toolkit (kaldi-asr.org)
+    - local or parallel computation (on the cluster)
     - uniform command-line syntax
 
 * Defines and rely on a **standard speech corpus format**
@@ -69,25 +70,22 @@ Actually, abkhazia have preparation scripts for:
     * __decode__   - compute phone posteriograms or transcription
     * __align__    - compute forced-aligment
 
-* All commands share some basics
-    * read parameters from command-line and/or configuration file
-    * ``--help``, ``--verbose`` and ``--force`` options
-    * a logging system (to stdout and/or a file)
-* A whole pipeline is defined as a succession of commands
+* All commands share some basic functionalities
+    * parameters from command-line and/or configuration file
+    * logging system, help messages
 
 
 # abkhazia prepare: [raw] -> [corpus]
 
-Convert a corpus from its raw distribution to the
-abkhazia format.
+Convert a corpus from its raw distribution to the abkhazia format
 
-
-Exemple: Buckeye preparation
-
-* read the buckeye corpus from ``/path/to/raw/buckeye``
-* convert it to ``<abkhazia-data-dir>/buckeye/data``
-
-        abkhazia prepare buckeye /path/to/raw/buckeye
+* __input__: any supported raw corpus
+* __output__: abkhazia corpus in ``<output>/data``
+* __options__: corpus specific
+* __examples__:
+    * ``abkhazia prepare wsj --help``
+    * ``abkhazia prepare buckeye -v -i ./raw_buckeye``
+    * ``abkhazia prepare globalphone -j 4 -l vietnamese``
 
 
 # abkhazia split: [corpus] -> [corpus], [corpus]
@@ -95,20 +93,30 @@ Exemple: Buckeye preparation
 Split a corpus in train and test subsets
 
 * __input__: any abkhazia corpus
-* __output__: test and train corpora
-* __dependancies__: no
+* __output__: test and train sets in
+    * ``<output>/train/data``
+    * ``<output>/test/data``
 * __key options__:
-    * ``--test-prop``: proportion of samples (utterances) in test set
-    * ``--by-speaker``: do not split a speaker in train/test sets
-    * ``--random-seed``: compute a reproducible split
-    * ``--prune-lexicon``: remove from the lexicon all words not
-      present in the train set
-
+    * ``--test-prop``: proportion of utterances in test set
+    * ``--by-speaker``: split by speaker (default is by utterance)
+* __examples__:
+    * ``abkhazia split --help``
+    * ``abkhazia split --by-speaker ./input_corpus``
+    * ``abkhazia split -t 0.25 -r 0 buckeye``
 
 # abkhazia language: [corpus] -> [lm]
 
-Generate a language model from a prepared corpus. Write the directory
-``<corpus>/language``.
+Compute a *n-*gram language model from an abkhazia corpus
+
+* __input__: any abkhazia corpus
+* __output__: ``language_model.fst`` and a kaldi recipe dir
+* __key options__:
+    * ``--model-order``: n in n-grams
+    * ``--model-level``: phone or word language model
+* __examples__:
+    * ``abkhazia language --help``
+    * ``abkhazia language --model-level word -v buckeye``
+    * ``abkhazia language --model-order 3 ./input_corpus``
 
 # abkhazia train: [corpus], [lm] -> [model]
 
