@@ -1,11 +1,5 @@
 <!-- -*-org-*- this comment force org-mode in emacs -->
 
-* Corpora preparation
-
-  - Buckeye and CSJ
-    Some utterances are overlapping in time. For CSJ some overlaps
-    are 2, only one is 3. Is it a problem ?
-
 * Functions
 
  - [ ] train
@@ -35,9 +29,7 @@
    As an alternative of the README files, display what is in
    <data-directory> For each corpus: list of present data, recipes and
    results, with the parameters/path they ran from.
- - language
-   - [ ] refactor the s5/data directory: no more dict/main separation
-
+* Corpora preparation
 * Documentation
 
   - [ ] have more detailed command description on 'abkhazia <command>
@@ -59,4 +51,4 @@
  - retraining
    it should be possible to retrain a trained model on a new corpus
    (for instance, specifically retrain silence models, or retrain on a
-   bunch of new corpus) Formats: features
+   bunch of new corpus)

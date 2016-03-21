@@ -57,14 +57,16 @@ class Abkhazia2Kaldi(object):
     '''Instanciate a kaldi recipe from an abkhazia corpus
 
     corpus_dir : The root directory of the abkhazia corpus to
-      split. This directory must contain a validated abkhazia corpus.
+      split. This directory must contain a valid abkhazia corpus
 
     recipe_dir : The output dircetory where to write the created kaldi
-      recipe. A subdirectory hierarchy is created in here, as well as
-      a log file.
+      recipe. A subdirectory hierarchy is created in here
+
+    name : The name of the recipe in the directory hierarchy, default
+      is 'recipe'.
 
     verbose : This argument serves as initialization of the log2file
-      module. See there for more documentation.
+      module. See there for more documentation
 
     log : the logger to write in. default is to write in
       'self.recipe_dir'/abkhazia2kaldi.log
@@ -75,7 +77,8 @@ class Abkhazia2Kaldi(object):
     some machine-dependent differences in the required orders).
 
     '''
-    def __init__(self, corpus_dir, recipe_dir, verbose=False, log=None):
+    def __init__(self, corpus_dir, recipe_dir,
+                 name='recipe', verbose=False, log=None):
         # init the corpus directory
         if not os.path.isdir(corpus_dir):
             raise OSError('{} is not a directory'.format(corpus_dir))
@@ -89,6 +92,9 @@ class Abkhazia2Kaldi(object):
         if not os.path.isdir(self.recipe_dir):
             os.makedirs(self.recipe_dir)
 
+        # init the recipe name
+        self.name = name
+
         # init the log system
         self.log = (utils.log2file.get_log(
             os.path.join(self.recipe_dir, 'abkhazia2kaldi.log'), verbose)
@@ -101,9 +107,9 @@ class Abkhazia2Kaldi(object):
         self.share_dir = pkg_resources.resource_filename(
             pkg_resources.Requirement.parse('abkhazia'), 'abkhazia/share')
 
-    def _local_path(self, name='dict'):
-        """Return the directory data/local/`name`, create it if needed"""
-        dict_path = os.path.join(self.recipe_dir, 'data', 'local', name)
+    def _local_path(self):
+        """Return the directory data/local/self.name, create it if needed"""
+        dict_path = os.path.join(self.recipe_dir, 'data', 'local', self.name)
         if not os.path.isdir(dict_path):
             os.makedirs(dict_path)
         return dict_path
@@ -117,7 +123,7 @@ class Abkhazia2Kaldi(object):
           None, is self.data_dir. Else self.data_dir/split/`in_split`
 
         output : path to the output data directory. If `out_split` is
-          None, is self.recipe_dir/data/main. Else
+          None, is self.recipe_dir/data/self.name. Else
           self.recipe_dir/data/`in_split`
 
         """
@@ -127,10 +133,8 @@ class Abkhazia2Kaldi(object):
             inp = os.path.join(self.data_dir, 'split', in_split)
         assert os.path.isdir(inp), "Directory doesn't exist: {0}".format(inp)
 
-        if out_split is None:
-            out = os.path.join(self.recipe_dir, 'data', 'main')
-        else:
-            out = os.path.join(self.recipe_dir, 'data', out_split)
+        final_dir = self.name if out_split is None else out_split
+        out = os.path.join(self.recipe_dir, 'data', final_dir)
         if not os.path.isdir(out):
             os.makedirs(out)
 
@@ -165,27 +169,27 @@ class Abkhazia2Kaldi(object):
         return [utt for utt in utt_durations
                 if utt_durations[utt] >= min_duration]
 
-    def setup_lexicon(self, train_name=None, name='dict'):
-        """Create data/local/`name`/lexicon.txt"""
+    def setup_lexicon(self, train_name=None):
+        """Create data/local/self.name/lexicon.txt"""
         # TODO see if we need to add <unk> as in setup_phone_lexicon
         origin = os.path.join(self.data_dir, 'lexicon.txt')
-        target = os.path.join(self._local_path(name), 'lexicon.txt')
+        target = os.path.join(self._local_path(), 'lexicon.txt')
 
         self.log.debug('creating {}'.format(target))
         shutil.copy(origin, target)
         return target
 
-    def setup_phone_lexicon(self, name='dict'):
-        """Create data/local/`name`/lexicon.txt"""
-        dict_path = self._local_path(name)
-        target = os.path.join(dict_path, 'lexicon.txt')
+    def setup_phone_lexicon(self):
+        """Create data/local/self.name/lexicon.txt"""
+        local_path = self._local_path()
+        target = os.path.join(local_path, 'lexicon.txt')
         self.log.debug('creating {}'.format(target))
 
         # get list of phones (including silence and non-silence phones)
         phones = []
         for origin in (
-                os.path.join(dict_path, 'silence_phones.txt'),
-                os.path.join(dict_path, 'nonsilence_phones.txt')):
+                os.path.join(local_path, 'silence_phones.txt'),
+                os.path.join(local_path, 'nonsilence_phones.txt')):
             phones += [line.strip()
                        for line in utils.open_utf8(origin, 'r').xreadlines()]
 
@@ -200,10 +204,10 @@ class Abkhazia2Kaldi(object):
 
         return target
 
-    def setup_phones(self, name='dict'):
-        """Create data/local/`name`/nonsilence_phones.txt"""
+    def setup_phones(self):
+        """Create data/local/self.name/nonsilence_phones.txt"""
         origin = os.path.join(self.data_dir, 'phones.txt')
-        target = os.path.join(self._local_path(name), 'nonsilence_phones.txt')
+        target = os.path.join(self._local_path(), 'nonsilence_phones.txt')
         self.log.debug('creating {}'.format(target))
 
         with utils.open_utf8(target, 'w') as out:
@@ -211,21 +215,21 @@ class Abkhazia2Kaldi(object):
                 symbol = line.split(u' ')[0]
                 out.write(u"{0}\n".format(symbol))
 
-    def setup_silences(self, name='dict'):
-        """Create data/local/`name`/{silences, optional_silence}.txt"""
-        dict_path = self._local_path(name)
-        self.log.debug('creating silences in {}'.format(dict_path))
+    def setup_silences(self):
+        """Create data/local/self.name/{silences, optional_silence}.txt"""
+        local_path = self._local_path()
+        self.log.debug('creating silences in {}'.format(local_path))
 
         shutil.copy(os.path.join(self.data_dir, 'silences.txt'),
-                    os.path.join(dict_path, 'silence_phones.txt'))
+                    os.path.join(local_path, 'silence_phones.txt'))
 
-        target = os.path.join(dict_path, 'optional_silence.txt')
+        target = os.path.join(local_path, 'optional_silence.txt')
         with utils.open_utf8(target, 'w') as out:
             out.write(u'SIL\n')
 
-    def setup_variants(self, name='dict'):
+    def setup_variants(self):
         """Create data/local/`name`/extra_questions.txt"""
-        target = os.path.join(self._local_path(name), 'extra_questions.txt')
+        target = os.path.join(self._local_path(), 'extra_questions.txt')
         self.log.debug('creating {}'.format(target))
 
         shutil.copy(os.path.join(self.data_dir, 'variants.txt'), target)
@@ -344,6 +348,8 @@ class Abkhazia2Kaldi(object):
         with open(os.path.join(conf_dir, 'pitch.conf'), mode='w') as out:
             pass
 
+    # TODO deprecated since lm is now a separate abkhazia command (was
+    # used as a prestep in train)
     def setup_lm_scripts(self, args):
         """configure template 'prepare_lm.sh.in' in 'self.recipe_dir/local'
 
@@ -398,6 +404,7 @@ class Abkhazia2Kaldi(object):
         # chmod +x run.sh
         os.chmod(target, os.stat(target).st_mode | 0o111)
 
+    # TODO deprecated
     def setup_main_scripts(self, run_script, args):
         """Copy score.sh and run.sh to self.recipe_dir"""
         self.setup_score()

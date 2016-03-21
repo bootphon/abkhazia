@@ -24,8 +24,7 @@
 
 ###### Parameters ######
 
-# data directory in the recipe, specified by the --name option of
-# the command 'abkhazia train'
+# data directory in the recipe
 name=@@@@
 
 # language model directory in the recipe

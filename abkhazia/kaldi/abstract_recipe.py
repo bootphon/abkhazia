@@ -56,7 +56,7 @@ class AbstractRecipe(object):
 
         # init the abkhazia2kaldi converter
         self.a2k = abkhazia2kaldi.Abkhazia2Kaldi(
-            corpus_dir, recipe_dir, verbose, self.log)
+            corpus_dir, recipe_dir, name=self.name, verbose=verbose, log=self.log)
 
     def create(self, args):
         """Create the recipe in `self.recipe_dir`

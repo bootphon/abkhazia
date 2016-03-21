@@ -43,9 +43,6 @@ in_dir=data/local/$name
 # output directory
 out_dir=data/$name
 
-# tmp directory
-tmp_dir=data/local/"$name"_tmp
-
 # log file
 log=data/prepare_"$name".log
 
@@ -79,6 +76,11 @@ else
 fi
 
 echo "running $prepare_lang_exe..."
+
+# temp directory for language preparation
+tmp_dir=$(mktemp -d /tmp/kaldi.XXXX);
+trap 'rm -rf "$tmp_dir"' EXIT
+
 $prepare_lang_exe \
     --position-dependent-phones $word_position_dependent \
     --sil_prob $sil_prob \

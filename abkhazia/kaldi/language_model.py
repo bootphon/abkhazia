@@ -16,6 +16,7 @@
 
 import os
 import shutil
+import textwrap
 
 import abkhazia.utils.basic_io as io
 import abkhazia.kaldi.abstract_recipe as abstract_recipe
@@ -42,7 +43,7 @@ class LanguageModel(abstract_recipe.AbstractRecipe):
         text = self.a2k.setup_text(desired_utts=desired_utts)
 
         # setup lm lexicon and input text depending on model level
-        lm_text = os.path.join(self.a2k._dict_path(), 'lm_text.txt')
+        lm_text = os.path.join(self.a2k._local_path(), 'lm_text.txt')
         lexicon = self.a2k.setup_lexicon()
         if args.model_level == 'word':
             shutil.copy(text, lm_text)
@@ -55,23 +56,22 @@ class LanguageModel(abstract_recipe.AbstractRecipe):
         self.a2k.setup_lm_scripts(args)
 
         run = os.path.join(self.recipe_dir, 'run.sh')
+        script = textwrap.dedent('''\
+        #!/bin/bash -u
+        error_msg="cmd.sh not found. Jobs may not execute properly."
+        [ -f cmd.sh ] && source ./cmd.sh || echo $error_msg
+        . path.sh || { echo "Cannot source path.sh"; exit 1; }
+        ''' + './local/prepare_lm.sh {} || exit 1'.format(self.a2k.name))
+
         with open(run, 'w') as out:
-            out.write("""#!/bin/bash -u
-
-[ -f cmd.sh ] && source ./cmd.sh \
-  || echo "cmd.sh not found. Jobs may not execute properly."
-
-. path.sh || { echo "Cannot source path.sh"; exit 1; }
-
-./local/prepare_lm.sh dict || exit 1
-            """)
+            out.write(script)
 
         # chmod +x run.sh
         os.chmod(run, os.stat(run).st_mode | 0o111)
 
     def export(self):
         """Export data/dict/G.fst in export/language_model.fst"""
-        origin = os.path.join(self.recipe_dir, 'data', 'dict', 'G.fst')
+        origin = os.path.join(self.recipe_dir, 'data', self.a2k.name, 'G.fst')
         target = os.path.join(self.recipe_dir, 'export', 'language_model.fst')
         self.log.info('writing %s', target)
 
