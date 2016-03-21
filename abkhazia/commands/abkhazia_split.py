@@ -41,9 +41,14 @@ class AbkhaziaSplit(AbstractPreparedCommand):
                      else spliter.split)
 
         # retrieve the test proportion
-        test_prop = (
-            float(utils.config.get('split', 'default-test-proportion'))
-            if args.test_prop is None else args.test_prop)
+        if args.train_prop is None:
+            test_prop = (
+                float(utils.config.get('split', 'default-test-proportion'))
+                if args.test_prop is None else args.test_prop)
+        else:
+            test_prop = (
+                1 - args.train_prop
+                if args.test_prop is None else args.test_prop)
 
         # split the corpus and write it to the output directory
         split_fun(test_prop, args.train_prop)
@@ -59,14 +64,15 @@ class AbkhaziaSplit(AbstractPreparedCommand):
         group = parser.add_argument_group('split arguments')
 
         prop = group.add_mutually_exclusive_group()
+        default_prop = utils.config.get('split', 'default-test-proportion'),
         prop.add_argument(
             '-t', '--test-prop', type=float, metavar='<test>',
-            default=utils.config.get('split', 'default-test-proportion'),
+            default=None,
             help='''a float between 0.0 and 1.0, represent the proportion of the
             dataset to include in the test set. If not specfied, the
             value is automatically set to the complement of the
             <train>.  If <train> is not specified, <test> is set to
-            %(default)s''')
+            {}'''.format(default_prop))
 
         prop.add_argument(
             '-T', '--train-prop', default=None, type=float, metavar='<train>',
