@@ -15,6 +15,7 @@
 """Implementation of the 'abkhazia train' command"""
 
 import argparse
+import os
 
 from abkhazia.commands.abstract_command import AbstractRecipeCommand
 from abkhazia.kaldi.abkhazia2kaldi import add_argument
@@ -29,6 +30,28 @@ class AbkhaziaTrain(AbstractRecipeCommand):
     @classmethod
     def run(cls, args):
         corpus, output_dir = cls.prepare_for_run(args)
+
+        # language model stuff
+        lang = (corpus if args.language_model is None
+                else os.path.abspath(args.language_model))
+        lang += '/language/s5/data/language'
+
+        # ensure it's a directory and we have both oov.int and
+        # G.fst in it
+        if not os.path.isdir(lang):
+            raise IOError(
+                'language model not found: {}.\n'.format(lang) +
+                "Please provide a language model "
+                "(use 'abkhazia language <args>')")
+
+        if not (os.path.isfile(os.path.join(lang, 'oov.int')) and
+                os.path.isfile(os.path.join(lang, 'G.fst'))):
+            raise IOError('not a valid language model directory: {}'
+                          .format(lang))
+
+        # this is used to configure the train.sh.in script in create()
+        del args.language_model
+        args.lang = lang
 
         # instanciate the kaldi recipe creator
         recipe = train.AcousticModel(corpus, output_dir, args.verbose)
@@ -48,14 +71,15 @@ class AbkhaziaTrain(AbstractRecipeCommand):
     def add_parser(cls, subparsers):
         """Return a parser for the align command"""
         # get basic parser init from AbstractCommand
-        parser = super(AbkhaziaTrain, cls).add_parser(subparsers)
+        parser, dir_group = super(AbkhaziaTrain, cls).add_parser(subparsers)
         parser.formatter_class = argparse.RawDescriptionHelpFormatter
         parser.description = cls.long_description()
 
-        parser.add_argument(
-            '-n', '--name', default='model',
-            help='name of the recipe in kaldi internals, '
-            "default is '%(default)s'")
+        dir_group.add_argument(
+            '-l', '--language-model', metavar='<lm-dir>', default=None,
+            help='''the language model recipe directory, data is read from
+            <lm-dir>/language. If that option is not specified,
+            compute a unigram phone-level one.''')
 
         group = parser.add_argument_group(
             'acoustic model parameters', 'those parameters can also be '

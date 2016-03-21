@@ -91,9 +91,9 @@ class AbstractPreparedCommand(AbstractCommand):
             help='if specified, overwrite the output directory. '
             'If not specified but the directory exists, the program fails.')
 
-        group = parser.add_argument_group('directories')
+        dir_group = parser.add_argument_group('directories')
 
-        group.add_argument(
+        dir_group.add_argument(
             'corpus', metavar='<corpus>',
             help="""the abkhazia corpus to process. Must be a directory either
             relative to the abkhazia data directory ({0}) or
@@ -103,13 +103,13 @@ class AbstractPreparedCommand(AbstractCommand):
             a subdirectory of {0}""".format(
                 utils.config.get('abkhazia', 'data-directory')))
 
-        group.add_argument(
+        dir_group.add_argument(
             '-o', '--output-dir', default=None, metavar='<output-dir>',
             help='output directory, the output data is wrote to '
             '<output-dir>/{}. If not specified use <output-dir>=<corpus>.'
             .format(cls.name))
 
-        return parser
+        return parser, dir_group
 
     @classmethod
     def prepare_for_run(cls, args):
@@ -139,7 +139,7 @@ class AbstractRecipeCommand(AbstractPreparedCommand):
     @classmethod
     def add_parser(cls, subparsers):
         # get basic parser init from AbstractCommand
-        parser = super(AbstractRecipeCommand, cls).add_parser(subparsers)
+        parser, dir_group = super(AbstractRecipeCommand, cls).add_parser(subparsers)
 
         parser.add_argument(
             '-j', '--njobs', type=int, default=4, metavar='<njobs>',
@@ -158,4 +158,4 @@ class AbstractRecipeCommand(AbstractPreparedCommand):
             '--only-run', action='store_true',
             help='if specified, dont create the recipe but run it')
 
-        return parser
+        return parser, dir_group

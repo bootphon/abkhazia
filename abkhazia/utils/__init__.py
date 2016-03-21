@@ -20,3 +20,4 @@ from .utils import (duplicates, open_utf8, list_directory,
 from .log2file import get_log
 from .config import config, AbkhaziaConfig
 from .wav import convert, scan
+from .spk2utt import spk2utt

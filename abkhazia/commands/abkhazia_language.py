@@ -27,7 +27,7 @@ class AbkhaziaLanguage(AbstractRecipeCommand):
 
     @classmethod
     def add_parser(cls, subparsers):
-        parser = super(AbkhaziaLanguage, cls).add_parser(subparsers)
+        parser, _ = super(AbkhaziaLanguage, cls).add_parser(subparsers)
         parser.formatter_class = argparse.RawDescriptionHelpFormatter
 
         group = parser.add_argument_group('command options')

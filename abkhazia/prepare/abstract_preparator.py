@@ -12,13 +12,11 @@
 #
 # You should have received a copy of the GNU General Public License
 # along with abkhazia. If not, see <http://www.gnu.org/licenses/>.
-
 """Provides a base class for corpus preparation in the abkhazia format"""
 
 import ConfigParser
 import os
 import pkg_resources
-import shlex
 import shutil
 import subprocess
 
@@ -125,11 +123,10 @@ class AbstractPreparator(object):
 
         # init output files that will be populated by prepare()
         def fname(name):
-            """return complete filename"""
+            """return complete filename from name"""
             return os.path.join(self.data_dir, name + '.txt')
         self.segments_file = fname('segments')
         self.speaker_file = fname('utt2spk')
-        self.speaker_file_rev = fname('spk2utt')
         self.transcription_file = fname('text')
         self.lexicon_file = fname('lexicon')
         self.phones_file = fname('phones')
@@ -155,8 +152,7 @@ class AbstractPreparator(object):
             (self.make_speaker, self.speaker_file),
             (self.make_transcription, self.transcription_file),
             (self.make_lexicon, self.lexicon_file),
-            (self.make_phones, self.phones_file),
-            (self._spk2utt, self.speaker_file_rev)
+            (self.make_phones, self.phones_file)
         ]
 
         # make_wavs has it own log message, run it separatly
@@ -166,35 +162,6 @@ class AbstractPreparator(object):
         for step, target in steps:
             self.log.info('preparing {}'.format(os.path.basename(target)))
             step()
-
-    def _spk2utt(self):
-        """Create speaker to utterances file
-
-        Populate self.speaker_file_rev with the list of all speakers
-        mapped to the list of their utterances. This method must be
-        called after self.make_speaker (generating the utt2spk file).
-
-        utt2spk.txt: <speaker-id> <utterance-1-id> ... <utterance-n-id>
-
-        """
-        # ensure utt2spk file is here (ie the make_speaker method have
-        # been called)
-        if not os.path.exists(self.speaker_file):
-            raise OSError('No such file {}'.format(self.speaker_file))
-
-        # path to the conversion perl script
-        script = os.path.join(
-            utils.config.get('kaldi', 'kaldi-directory'),
-            'egs/wsj/s5/utils/utt2spk_to_spk2utt.pl')
-
-        try:
-            # run the script, write self.speaker_file_rev
-            subprocess.Popen(
-                [script, self.speaker_file],
-                stdout=open(self.speaker_file_rev, 'w'),
-                stderr=open(os.devnull)).wait()
-        except OSError:
-            raise OSError('kaldi script not found {}'.format(script))
 
     def broken_wav(self, wav):
         """Return True if the wav needs to be copied again

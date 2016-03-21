@@ -74,17 +74,22 @@ wait;
 
 
 # Monophone model training
+# Flat start and monophone training, with delta-delta features.
+# This script applies cepstral mean normalization (per speaker).
 echo -n "training the monophone model..."
 mkdir -p exp/mono;
 steps/train_mono.sh \
     --nj 8 --cmd "$train_cmd" \
-    data/$name data/$lang exp/mono \
+    data/$name $lang exp/mono \
     > exp/mono/train.log || exit 1
 echo " done"
 
 exit
 
 # Triphone model training
+
+# Computes training alignments using a model with delta or
+# LDA+MLLT features.
 echo -n "force-aligning corpus with the monophone model..."
 mkdir -p exp/mono_ali
 steps/align_si.sh \
@@ -101,7 +106,6 @@ steps/train_deltas.sh \
     data/$name data/$lang exp/mono_ali exp/tri1 \
     > exp/tri1/train.log || exit 1
 echo "  done"
-
 
 # Speaker adaptive triphone model training
 echo -n "forced-aligning corpus with the speaker-independent triphone model..."

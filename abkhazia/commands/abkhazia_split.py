@@ -54,7 +54,7 @@ class AbkhaziaSplit(AbstractPreparedCommand):
     @classmethod
     def add_parser(cls, subparsers):
         # get basic parser init from AbstractCommand
-        parser = super(AbkhaziaSplit, cls).add_parser(subparsers)
+        parser, _ = super(AbkhaziaSplit, cls).add_parser(subparsers)
 
         group = parser.add_argument_group('split arguments')
 

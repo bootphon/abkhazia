@@ -36,10 +36,10 @@ class AcousticModel(abstract_recipe.AbstractRecipe):
 
         # setup data files
         desired_utts = self.a2k.desired_utterances(njobs=args.njobs)
-        self.a2k.setup_text(desired_utts=desired_utts, out_split=args.name)
-        self.a2k.setup_utt2spk(desired_utts=desired_utts, out_split=args.name)
-        self.a2k.setup_segments(desired_utts=desired_utts, out_split=args.name)
-        self.a2k.setup_wav(desired_utts=desired_utts, out_split=args.name)
+        self.a2k.setup_text(desired_utts=desired_utts)
+        self.a2k.setup_utt2spk(desired_utts=desired_utts)
+        self.a2k.setup_segments(desired_utts=desired_utts)
+        self.a2k.setup_wav(desired_utts=desired_utts)
 
         # setup other files and folders
         self.a2k.setup_wav_folder()
@@ -47,4 +47,5 @@ class AcousticModel(abstract_recipe.AbstractRecipe):
         self.a2k.setup_machine_specific_scripts()
 
         # setup score.sh and run.sh
+        args.name = self.name
         self.a2k.setup_main_scripts('train.sh.in', args)

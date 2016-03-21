@@ -250,7 +250,7 @@ class Abkhazia2Kaldi(object):
         return target
 
     def setup_utt2spk(self, in_split=None, out_split=None, desired_utts=None):
-        """Create utt2spk in data directory"""
+        """Create utt2spk and spk2utt in data directory"""
         i_path, o_path = self._data_path(in_split, out_split)
         origin = os.path.join(i_path, 'utt2spk.txt')
         target = os.path.join(o_path, 'utt2spk')
@@ -260,6 +260,13 @@ class Abkhazia2Kaldi(object):
             shutil.copy(origin, target)
         else:
             io.copy_first_col_matches(origin, target, desired_utts)
+        io.cpp_sort(target)
+
+        # create spk2utt
+        origin = target
+        target = os.path.join(o_path, 'spk2utt')
+        self.log.debug('creating {}'.format(target))
+        utils.spk2utt(origin, target)
         io.cpp_sort(target)
 
     def setup_segments(self, in_split=None, out_split=None, desired_utts=None):

@@ -48,7 +48,7 @@ class AbkhaziaAlign(AbstractRecipeCommand):
     def add_parser(cls, subparsers):
         """Return a parser for the align command"""
         # get basic parser init from AbstractCommand
-        parser = super(AbkhaziaAlign, cls).add_parser(subparsers)
+        parser, _ = super(AbkhaziaAlign, cls).add_parser(subparsers)
         parser.formatter_class = argparse.RawDescriptionHelpFormatter
         parser.description = cls.long_description()
 
