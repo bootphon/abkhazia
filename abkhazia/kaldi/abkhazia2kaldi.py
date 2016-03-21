@@ -22,6 +22,7 @@ import shutil
 import abkhazia.utils as utils
 import abkhazia.utils.basic_io as io
 
+
 # TODO comment !
 def add_argument(parser, section, name, type, help,
                  metavar=None, choices=None):
@@ -100,8 +101,7 @@ class Abkhazia2Kaldi(object):
         self.share_dir = pkg_resources.resource_filename(
             pkg_resources.Requirement.parse('abkhazia'), 'abkhazia/share')
 
-    # TODO rename _local_path
-    def _dict_path(self, name='dict'):
+    def _local_path(self, name='dict'):
         """Return the directory data/local/`name`, create it if needed"""
         dict_path = os.path.join(self.recipe_dir, 'data', 'local', name)
         if not os.path.isdir(dict_path):
@@ -169,7 +169,7 @@ class Abkhazia2Kaldi(object):
         """Create data/local/`name`/lexicon.txt"""
         # TODO see if we need to add <unk> as in setup_phone_lexicon
         origin = os.path.join(self.data_dir, 'lexicon.txt')
-        target = os.path.join(self._dict_path(name), 'lexicon.txt')
+        target = os.path.join(self._local_path(name), 'lexicon.txt')
 
         self.log.debug('creating {}'.format(target))
         shutil.copy(origin, target)
@@ -177,7 +177,7 @@ class Abkhazia2Kaldi(object):
 
     def setup_phone_lexicon(self, name='dict'):
         """Create data/local/`name`/lexicon.txt"""
-        dict_path = self._dict_path(name)
+        dict_path = self._local_path(name)
         target = os.path.join(dict_path, 'lexicon.txt')
         self.log.debug('creating {}'.format(target))
 
@@ -203,7 +203,7 @@ class Abkhazia2Kaldi(object):
     def setup_phones(self, name='dict'):
         """Create data/local/`name`/nonsilence_phones.txt"""
         origin = os.path.join(self.data_dir, 'phones.txt')
-        target = os.path.join(self._dict_path(name), 'nonsilence_phones.txt')
+        target = os.path.join(self._local_path(name), 'nonsilence_phones.txt')
         self.log.debug('creating {}'.format(target))
 
         with utils.open_utf8(target, 'w') as out:
@@ -213,7 +213,7 @@ class Abkhazia2Kaldi(object):
 
     def setup_silences(self, name='dict'):
         """Create data/local/`name`/{silences, optional_silence}.txt"""
-        dict_path = self._dict_path(name)
+        dict_path = self._local_path(name)
         self.log.debug('creating silences in {}'.format(dict_path))
 
         shutil.copy(os.path.join(self.data_dir, 'silences.txt'),
@@ -225,7 +225,7 @@ class Abkhazia2Kaldi(object):
 
     def setup_variants(self, name='dict'):
         """Create data/local/`name`/extra_questions.txt"""
-        target = os.path.join(self._dict_path(name), 'extra_questions.txt')
+        target = os.path.join(self._local_path(name), 'extra_questions.txt')
         self.log.debug('creating {}'.format(target))
 
         shutil.copy(os.path.join(self.data_dir, 'variants.txt'), target)
