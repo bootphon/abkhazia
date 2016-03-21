@@ -42,6 +42,7 @@ setup(
     name='abkhazia',
     version=VERSION,
     packages=find_packages(),
+    zip_safe=False,
     scripts=[],
 
     # install python dependencies from PyPI

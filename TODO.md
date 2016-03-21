@@ -1,27 +1,17 @@
 <!-- -*-org-*- this comment force org-mode in emacs -->
 
-- [ ] fix the zip_safe stuff in setup.py... is it an issue ?
-- [ ] have a friendly error message when running a command with
-  unstasfied dependancies. For exemple, trying to train a corpus which
-  have not been prepared outputs 'please prepare the corpus'
-- [ ] have more detailed command description on 'abkhazia <command>
-  --help'. Assume the user doesn't know abkhazia or kaldi.
-
 * Corpora preparation
-
-  - WSJ
-    There is several utterance-ids used several times in 'text.txt' 5608
-    - [X] no duplicates in trs input files (all have different abspath)
-    - [X] check for duplicates in different subfolders
 
   - Buckeye and CSJ
     Some utterances are overlapping in time. For CSJ some overlaps
     are 2, only one is 3. Is it a problem ?
 
 * Functions
+
  - [ ] train
    - [ ] [<language-model>] positional optional argument
      compute a simple language model if not provided
+   - [ ] remove --name NAME option
    - [ ] --speaker-adapted option
    - [ ] --model-type option in {monophone, triphone, neural network}
    - [ ] --retrain option
@@ -45,12 +35,19 @@
    As an alternative of the README files, display what is in
    <data-directory> For each corpus: list of present data, recipes and
    results, with the parameters/path they ran from.
+ - language
+   - [ ] refactor the s5/data directory: no more dict/main separation
 
 * Documentation
 
-  - make a install page, deeper than in readme
-  - improve the 'command line' page
-  - improve the 'corpus format' page
+  - [ ] have more detailed command description on 'abkhazia <command>
+    --help'. Assume the user doesn't know abkhazia or kaldi.
+  - [ ] have a friendly error message when running a command with
+    unstasfied dependancies. For exemple, trying to train a corpus
+    which have not been prepared outputs 'please prepare the corpus'
+  - [ ] make a install page, deeper than in readme
+  - [ ] improve the 'command line' page
+  - [ ] improve the 'corpus format' page
 
 * NOTES (DPX)
 
