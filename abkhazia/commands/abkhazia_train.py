@@ -78,12 +78,21 @@ class AbkhaziaTrain(AbstractRecipeCommand):
         dir_group.add_argument(
             '-l', '--language-model', metavar='<lm-dir>', default=None,
             help='''the language model recipe directory, data is read from
-            <lm-dir>/language. If that option is not specified,
-            compute a unigram phone-level one.''')
+            <lm-dir>/language. If that option is not specified, take
+            <lm-dir>=<corpus>.''')
 
         group = parser.add_argument_group(
             'acoustic model parameters', 'those parameters can also be '
             'specified in the [train] section of the configuration file')
+
+        # TODO merge this option with the num-gauss/num-states options below
+        group.add_argument(
+            '-t',  '--type', metavar='<model-type>', default='tri',
+            choices=['mono', 'tri', 'tri-sa', 'nnet'],
+            help="""the type of acoustic model to train, choose <model-type> in 'mono'
+            for monophone, 'tri' for triphone, 'tri-sa' for
+            speaker-adapted triphone and 'nnet' for deep neural
+            network""")
 
         def add_arg(name, type, help):
             add_argument(group, cls.name, name, type, help)
