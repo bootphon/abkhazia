@@ -16,6 +16,7 @@
 
 from abkhazia.utils import open_utf8
 
+
 def read_kaldi_phonemap(phones_file, word_position_dependent=True):
     phonemap = {}
     for line in open_utf8(phones_file, 'r').xreadlines():
@@ -35,8 +36,8 @@ def read_kaldi_alignment(phonemap,  tra_file):
         sequence = line.strip().split(u" ; ")
         utt_id, code, nframes = sequence[0].split(u" ")
         sequence = [u" ".join([code, nframes])] + sequence[1:]
-         # this seems good enough, but I (Thomas) didn't check in the
-         # make_mfcc code of kaldi to be sure
+        # this seems good enough, but I (Thomas) didn't check in the
+        # make_mfcc code of kaldi to be sure
         start = 0.0125
 
         for elem in sequence:
@@ -54,5 +55,6 @@ def export_phone_alignment(phones_file, tra_file, out_file,
     # phone file: phones.txt in lang_dir, tra_file: in export
     phonemap = read_kaldi_phonemap(phones_file, word_position_dependent)
     with open_utf8(out_file, 'w') as out:
-        for utt_id, start, stop, phone in read_kaldi_alignment(phonemap, tra_file):
+        for utt_id, start, stop, phone in read_kaldi_alignment(
+                phonemap, tra_file):
             out.write(u"{0} {1} {2} {3}\n".format(utt_id, start, stop, phone))

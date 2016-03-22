@@ -31,7 +31,7 @@ class AbkhaziaTrain(AbstractRecipeCommand):
     def run(cls, args):
         corpus, output_dir = cls.prepare_for_run(args)
 
-        # language model stuff
+        # get back the language model directory
         lang = (corpus if args.language_model is None
                 else os.path.abspath(args.language_model))
         lang += '/language/s5/data/language'
@@ -78,8 +78,7 @@ class AbkhaziaTrain(AbstractRecipeCommand):
         dir_group.add_argument(
             '-l', '--language-model', metavar='<lm-dir>', default=None,
             help='''the language model recipe directory, data is read from
-            <lm-dir>/language. If that option is not specified, take
-            <lm-dir>=<corpus>.''')
+            <lm-dir>/language. If not specified, use <lm-dir>=<corpus>.''')
 
         group = parser.add_argument_group(
             'acoustic model parameters', 'those parameters can also be '

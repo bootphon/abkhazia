@@ -3,6 +3,8 @@
 * Functions
 
  - [-] train
+   - [X] symlink the last model directory (storing the target acoustic
+     model) to exp/acoustic_model
    - [ ] --retrain option
      it should be possible to retrain a trained model on a new corpus
      (for instance, specifically retrain silence models, or retrain on a

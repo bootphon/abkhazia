@@ -26,9 +26,6 @@ class AbstractRecipe(object):
     name = NotImplemented
     """The recipe's name"""
 
-    params = NotImplemented
-    """A namespace (or a named tuple) defining the recipe parameters"""
-
     def __init__(self, corpus_dir, recipe_dir=None, verbose=False):
         # check corpus_dir
         if not os.path.isdir(corpus_dir):
@@ -56,15 +53,14 @@ class AbstractRecipe(object):
 
         # init the abkhazia2kaldi converter
         self.a2k = abkhazia2kaldi.Abkhazia2Kaldi(
-            corpus_dir, recipe_dir, name=self.name, verbose=verbose, log=self.log)
+            corpus_dir, recipe_dir,
+            name=self.name, verbose=verbose, log=self.log)
 
     def create(self, args):
         """Create the recipe in `self.recipe_dir`
 
         This method is abstract and must be implemented in child
         classes.
-
-        args : an instance of self.params
 
         """
         raise NotImplementedError
