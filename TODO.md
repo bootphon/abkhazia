@@ -12,20 +12,23 @@
    - [ ] questions vs data-driven option
    - [ ] test the acoustic model
      providing WER for every model, eventual automatic parameter search ?
- - [ ] align
-   - [ ] remove the language model part from the recipe
-   - [ ] remove the training part from the recipe
+ - [-] align
+   - [X] remove the language model part from the recipe
+   - [X] remove the training part from the recipe
+   - [X] read acoustic model from exp/acoustic_model
+   - [X] make it work after language/train commands
+   - [ ] extensive test on several lm/am
  - decode(test_set, acoustic_model, (language_model))
    Compute phone posteriograms or transcription. If no language_model
    provided, a default flat unigram one is constructed.  options:
    evaluate(transcription, gold) output = {posteriorgrams,
    transcription} speaker_adapt output: results (repertoire)
+ - feature
+   Maybe we could have a separate feature command ?
  - list
    As an alternative of the README files, display what is in
    <data-directory> For each corpus: list of present data, recipes and
    results, with the parameters/path they ran from.
- - feature
-   Maybe we could have a separate feature command ?
 
 * Documentation
 

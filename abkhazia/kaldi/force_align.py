@@ -16,7 +16,6 @@
 
 import os
 
-import abkhazia.utils.basic_io as io
 import abkhazia.kaldi.abstract_recipe as abstract_recipe
 import abkhazia.kaldi.kaldi2abkhazia as k2a
 

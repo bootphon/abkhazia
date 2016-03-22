@@ -15,26 +15,23 @@
 # along with abkahzia. If not, see <http://www.gnu.org/licenses/>.
 
 # This is a simple kaldi recipe for use with the abkhazia library.
-# Its main object is to compute a forced time-alignment from a trained
-# acoustic model of a corpus. The language model is a n-gram, either
-# at phone-level or word-level.
+# Its main object is to compute a forced time-alignment from language
+# model and acoustic model trained on an abkhazia corpus.
 
 ###### Parameters ######
 
 # language model directory in the recipe
 lang=@@@@
 
-# feature parameters
-use_pitch=@@@@
+# acoustic model directory in the recipe TODO only from a triphone
+# speaker adapted model for now.  What we need from the directory:
+# {tree,final}.mdl, final.alimdl, final.occs, splice_opts, cmvn_opts,
+# delta_opts, final.mat, full.mat
+acoustic=@@@@
 
-# speaker-independent triphone models parameters
-num_states_si=@@@@
-num_gauss_si=@@@@
 
-# speaker-adaptive triphone models parameters
-num_states_sa=@@@@
-num_gauss_sa=@@@@
-
+[[ -z $acoustic/final.mdl ]] && \
+    (echo "non valid acoustic model, $acoustic/final.mdl not found"; exit 1)
 
 ###### Recipe ######
 
@@ -43,70 +40,6 @@ num_gauss_sa=@@@@
 
 . path.sh || { echo "Cannot source path.sh"; exit 1; }
 
-
-# Features
-mfccdir=mfcc
-if [ "$use_pitch" = true ]
-then
-    make_feats="steps/make_mfcc_pitch.sh"
-else
-    make_feats="steps/make_mfcc.sh"
-fi
-
-echo "running $make_feats"
-for x in main; do
-(
-    $make_feats \
-        --nj 20 --cmd "$train_cmd" data/$x \
-        exp/make_mfcc/$x $mfccdir;
-    steps/compute_cmvn_stats.sh \
-        data/$x exp/make_mfcc/$x $mfccdir;
-) &
-done
-wait;
-
-
-echo "training of the monophone model"
-mkdir -p exp/mono;
-steps/train_mono.sh \
-    --nj 8 --cmd "$train_cmd" \
-    data/main data/$lang exp/mono \
-    > exp/mono/train.log
-
-echo "training of the triphone model"
-
-# first: forced alignment of train set with monophone model
-mkdir -p exp/mono_ali
-steps/align_si.sh \
-    --nj 8 --cmd "$train_cmd" \
-    data/main data/$lang exp/mono exp/mono_ali \
-    > exp/mono_ali/align.log
-
-# second: triphone model training
-mkdir -p exp/tri1
-steps/train_deltas.sh \
-    --cmd "$train_cmd" \
-    $num_states_si $num_gauss_si \
-    data/main data/$lang exp/mono_ali exp/tri1 \
-    > exp/tri1/train.log
-
-echo "training the speaker adaptive triphone model"
-
-# first: forced alignment with fmllr based on speaker independent
-# triphone model
-mkdir -p exp/tri1_ali_fmllr
-steps/align_fmllr.sh \
-    --nj 8 --cmd "$train_cmd" \
-    data/main data/$lang exp/tri1 exp/tri1_ali_fmllr \
-    > exp/tri1_ali_fmllr/align.log
-
-# second: speaker adaptive training
-mkdir -p exp/tri2a
-steps/train_sat.sh \
-    --cmd "$train_cmd" \
-    $num_states_sa $num_gauss_sa \
-    data/main data/$lang exp/tri1_ali_fmllr exp/tri2a \
-    > exp/tri2a/train.log
 
 # Final forced alignment
 mkdir -p exp/tri2a_ali_fmllr
