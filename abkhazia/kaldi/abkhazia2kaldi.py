@@ -79,6 +79,8 @@ class Abkhazia2Kaldi(object):
     '''
     def __init__(self, corpus_dir, recipe_dir,
                  name='recipe', verbose=False, log=None):
+        self.verbose = verbose
+
         # init the corpus directory
         if not os.path.isdir(corpus_dir):
             raise OSError('{} is not a directory'.format(corpus_dir))
@@ -164,7 +166,7 @@ class Abkhazia2Kaldi(object):
 
         wav_dir = os.path.join(self.data_dir, 'wavs')
         seg_file = os.path.join(self.data_dir, 'segments.txt')
-        utt_durations = io.get_utt_durations(wav_dir, seg_file, njobs)
+        utt_durations = io.get_utt_durations(wav_dir, seg_file, njobs, self.verbose)
 
         return [utt for utt in utt_durations
                 if utt_durations[utt] >= min_duration]

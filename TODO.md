@@ -2,21 +2,28 @@
 
 * Functions
 
- - [-] train
-   - [X] symlink the last model directory (storing the target acoustic
-     model) to exp/acoustic_model
+ - prepare
+   Will be usefull to remove short utterances here, instead of
+   during lm/am
+ - [ ] train
+   - [ ] --njobs option for cluster
    - [ ] --retrain option
      it should be possible to retrain a trained model on a new corpus
      (for instance, specifically retrain silence models, or retrain on a
      bunch of new corpus)
    - [ ] questions vs data-driven option
    - [ ] test the acoustic model
-     providing WER for every model, eventual automatic parameter search ?
+   - [ ] add an option for neural nets training (RT)
+     providing WER (word error rate) for every model, eventual
+     automatic parameter search ?
  - [-] align
    - [X] remove the language model part from the recipe
    - [X] remove the training part from the recipe
    - [X] read acoustic model from exp/acoustic_model
    - [X] make it work after language/train commands
+   - [ ] get feats.scp from acoustic_model data (and cmvn.scp ?). Copy
+     files from there instead -> train and align will share the same
+     data
    - [ ] extensive test on several lm/am
  - decode(test_set, acoustic_model, (language_model))
    Compute phone posteriograms or transcription. If no language_model

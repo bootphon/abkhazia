@@ -223,8 +223,8 @@ class WallStreetJournalPreparator(AbstractPreparatorWithCMU):
                     utt_id = re.match(r'(.*) \((.*)\)', line).group(2)
                     self.bad_utts.append(utt_id)
 
-        self.log.info('found {} corrupted utterances'
-                      .format(len(self.bad_utts)))
+        self.log.debug('found {} corrupted utterances'
+                       .format(len(self.bad_utts)))
 
     def filter_files(self, dir_filter, file_filter):
         """Return a list of abspaths to relevant WSJ files"""
@@ -272,7 +272,6 @@ class WallStreetJournalPreparator(AbstractPreparatorWithCMU):
         transcription = []
 
         for trs in self.input_transcriptions:
-            print(trs)
             transcription += open_utf8(trs, 'r').readlines()
 
         # parse each line and write it to output file in abkhazia format

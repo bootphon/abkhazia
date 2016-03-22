@@ -148,7 +148,7 @@ def _scan_one(wav):
         return _metawav(nframes=0)
 
 
-def scan(wavs, njobs=1, verbose=5):
+def scan(wavs, njobs=1, verbose=0):
     """Return meta information on the input `wavs` files
 
     wavs : a list of absolute paths to wav files
