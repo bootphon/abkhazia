@@ -252,8 +252,8 @@ class SplitCorpus(object):
             round(float(len(test_utt_ids))/self.size, 3))
 
         self.log.info(
-            'writing to %s',
-            os.path.abspath(os.path.join(self.test_dir, '..')))
+            'writing to %s/{train,test}',
+            os.path.abspath(os.path.join(self.test_dir, '../..')))
 
         # symlink the wavs directory and the phones related files in
         # test and train directories

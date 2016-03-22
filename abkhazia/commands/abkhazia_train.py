@@ -91,7 +91,7 @@ class AbkhaziaTrain(AbstractRecipeCommand):
             help="""the type of acoustic model to train, choose <model-type> in 'mono'
             for monophone, 'tri' for triphone, 'tri-sa' for
             speaker-adapted triphone and 'nnet' for deep neural
-            network""")
+            network. Default is '%(default)s'.""")
 
         def add_arg(name, type, help):
             add_argument(group, cls.name, name, type, help)
