@@ -35,7 +35,7 @@ class AcousticModel(abstract_recipe.AbstractRecipe):
         self.a2k.setup_variants()
 
         # setup data files
-        desired_utts = self.a2k.desired_utterances(njobs=args.njobs)
+        desired_utts = self.a2k.desired_utterances(njobs=args.njobs_local)
         self.a2k.setup_text(desired_utts=desired_utts)
         self.a2k.setup_utt2spk(desired_utts=desired_utts)
         self.a2k.setup_segments(desired_utts=desired_utts)

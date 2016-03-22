@@ -14,9 +14,8 @@
 #
 # You should have received a copy of the GNU General Public License
 # along with abkhazia. If not, see <http://www.gnu.org/licenses/>.
-"""Provides the TrainDecode class"""
+"""Provides the TrainDecode class
 
-"""
 This script takes a corpus in abkhazia format
 which has been splitted into a train and a test part
 and instantiates a kaldi recipe to train
@@ -35,6 +34,7 @@ import shutil
 
 import abkhazia.utils.basic_io as io
 import abkhazia.kaldi.abstract_recipe as abstract_recipe
+
 
 class TrainDecode(abstract_recipe.AbstractRecipe):
     """Instantiate a ready-to-use kaldi recipe from an abkhazia corpus
@@ -169,8 +169,6 @@ class TrainDecode(abstract_recipe.AbstractRecipe):
 
 # TODO
 
-# prepare_lm.sh should not be able to fail silently.
-
 # Not sure how to get a language models on triphones or
 # word-position-dependent variants or if it even makes sense. I think
 # it can only be done easily within kaldi if triphones or
@@ -183,7 +181,3 @@ class TrainDecode(abstract_recipe.AbstractRecipe):
 # would be to modify the C step (in HCLG) to allow an expansion
 # weighted by a given LM. This means meddling inside kaldi code, so we
 # won't do it unless we really really need it.
-
-# Check in validate_corpus that adding _I, _B, _E or _S suffixes to
-# phones does not create conflicts, otherwise issue a warning to say
-# that word_position_dependent models won't be usable.

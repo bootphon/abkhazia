@@ -139,22 +139,22 @@ class AbstractRecipeCommand(AbstractPreparedCommand):
     @classmethod
     def add_parser(cls, subparsers):
         # get basic parser init from AbstractCommand
-        parser, dir_group = super(AbstractRecipeCommand, cls).add_parser(subparsers)
+        parser, dir_group = super(
+            AbstractRecipeCommand, cls).add_parser(subparsers)
 
+        # add --njobs-local option
         parser.add_argument(
-            '-j', '--njobs', type=int, default=4, metavar='<njobs>',
-            help='number of jobs to launch when doing no-clustered '
-            'parallel computations (mainly for wav analysis). '
-            'Default is to launch %(default)s jobs.')
+            '--njobs-local', type=int, default=4, metavar='<njobs>',
+            help="""number of jobs to launch when doing local (non clustered)
+            computations, default is to launch %(default)s jobs.""")
 
-        group = parser.add_argument_group('command options')
-
-        prop = group.add_mutually_exclusive_group()
-        prop.add_argument(
+        # add --no-run/--only-run options
+        group = parser.add_argument_group('command options')\
+                      .add_mutually_exclusive_group()
+        group.add_argument(
             '--no-run', action='store_true',
             help='if specified create the recipe but dont run it')
-
-        prop.add_argument(
+        group.add_argument(
             '--only-run', action='store_true',
             help='if specified, dont create the recipe but run it')
 

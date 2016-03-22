@@ -39,7 +39,7 @@ class LanguageModel(abstract_recipe.AbstractRecipe):
         self.a2k.setup_silences()
         self.a2k.setup_variants()
 
-        desired_utts = self.a2k.desired_utterances(njobs=args.njobs)
+        desired_utts = self.a2k.desired_utterances(njobs=args.njobs_local)
         text = self.a2k.setup_text(desired_utts=desired_utts)
 
         # setup lm lexicon and input text depending on model level

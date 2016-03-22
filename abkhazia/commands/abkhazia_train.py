@@ -86,7 +86,7 @@ class AbkhaziaTrain(AbstractRecipeCommand):
 
         # TODO merge this option with the num-gauss/num-states options below
         group.add_argument(
-            '-t',  '--type', metavar='<model-type>', default='tri',
+            '-t',  '--type', metavar='<model-type>', default='tri-sa',
             choices=['mono', 'tri', 'tri-sa', 'nnet'],
             help="""the type of acoustic model to train, choose <model-type> in 'mono'
             for monophone, 'tri' for triphone, 'tri-sa' for
@@ -109,5 +109,15 @@ class AbkhaziaTrain(AbstractRecipeCommand):
 
         add_arg('num-gauss-sa', int, 'number of Gaussians in the '
                 'speaker-adaptive triphone model')
+
+        group.add_argument(
+            '-j', '--njobs-train', type=int, default=8, metavar='<njobs>',
+            help="""number of jobs to launch for parallel training, default is to
+            launch %(default)s jobs.""")
+
+        group.add_argument(
+            '-k', '--njobs-feats', type=int, default=20, metavar='<njobs>',
+            help="""number of jobs to launch for feature computations, default is to
+            launch %(default)s jobs.""")
 
         return parser
