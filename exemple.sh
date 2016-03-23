@@ -34,15 +34,15 @@ train_dir=$data_dir/split/train
 
 # Step 3 : compute a language model on the train set (a phone level
 # bigram by default).
-abkhazia language $train_dir -f || exit 1
+abkhazia language $train_dir --model-level word -f || exit 1
 
 # Step 4 : compute an acoustic model on the train set (a speaker
 # adapted triphone model by default).
-abkhazia acoustic $train_dir -t tri-sa -f -j 4 -k 4 || exit 1
+abkhazia acoustic $train_dir -t mono -f -j 4 -k 4 || exit 1
 
 # Step 5 : compute forced-alignment from the trained language and
 # acoustic models.
 abkhazia align $train_dir -vf -j 4 || exit 1
 
 echo 'symlink the result to $data_dir/forced_alignment.txt'
-ln -s $train_dir/align/s5/export/forced_alignment.txt $data_dir
+ln -s -f $train_dir/align/s5/export/forced_alignment.txt $data_dir
