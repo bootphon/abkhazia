@@ -24,9 +24,9 @@
 lang=@@@@
 
 # acoustic model directory in the recipe TODO only from a triphone
-# speaker adapted model for now.  What we need from the directory:
-# {tree,final}.mdl, final.alimdl, final.occs, splice_opts, cmvn_opts,
-# delta_opts, final.mat, full.mat
+# speaker adapted model for now.  What we need from the directory
+# (mainly optional targets): {tree,final}.mdl, final.alimdl,
+# final.occs, splice_opts, cmvn_opts, delta_opts, final.mat, full.mat
 acoustic=@@@@
 
 
@@ -42,21 +42,24 @@ acoustic=@@@@
 
 
 # Final forced alignment
-mkdir -p exp/tri2a_ali_fmllr
+echo -n "computing forced alignment (log in exp/ali_fmllr/align.log)..."
+mkdir -p exp/ali_fmllr
 steps/align_fmllr.sh \
     --nj 1 --cmd "$train_cmd" \
-    data/main data/$lang exp/tri2a exp/tri2a_ali_fmllr \
-    >& exp/tri2a_ali_fmllr/align.log
+    data/align $lang $acoustic exp/ali_fmllr \
+    >& exp/ali_fmllr/align.log || { echo failed; exit 1; }
+echo done
 
 
 ##### Exporting results #####
 
-echo "exporting results to export/forced_alignment.tra"
+echo "exporting results to export/forced_alignment.tra (log in exp/ali_fmllr/export.log)"
 mkdir -p export
 ali-to-phones \
-    --write_lengths=true exp/tri2a/final.mdl \
-    "ark,t:gunzip -c exp/tri2a_ali_fmllr/ali.1.gz|" \
-    ark,t:export/forced_alignment.tra
+    --write_lengths=true $acoustic/final.mdl \
+    "ark,t:gunzip -c exp/ali_fmllr/ali.1.gz|" \
+    ark,t:export/forced_alignment.tra \
+    >& exp/ali_fmllr/export.log || exit 1
 
 # if we want to use the tri2a results directly without the final
 # forced alignment (is there any difference between the two beyond one

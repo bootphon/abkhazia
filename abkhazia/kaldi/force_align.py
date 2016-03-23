@@ -37,12 +37,25 @@ class ForceAlign(abstract_recipe.AbstractRecipe):
         self.a2k.setup_silences()
         self.a2k.setup_variants()
 
-        # setup data files
-        desired_utts = self.a2k.desired_utterances(njobs=args.njobs)
-        self.a2k.setup_text(desired_utts=desired_utts)
-        self.a2k.setup_utt2spk(desired_utts=desired_utts)
-        self.a2k.setup_segments(desired_utts=desired_utts)
-        self.a2k.setup_wav(desired_utts=desired_utts)
+        # setup data files. Those files are linked from the acoustic
+        # model recipe instead of being prepared from the corpus data.
+        target_dir = os.path.join(self.recipe_dir, 'data/align')
+        os.makedirs(target_dir)
+        for source in ('text', 'utt2spk', 'spk2utt', 'segments',
+                       'wav.scp', 'feats.scp', 'cmvn.scp'):
+            origin = os.path.abspath(os.path.join(
+                args.acoustic, '../../data/acoustic', source))
+            if os.path.isfile(origin):
+                target = os.path.join(target_dir, source)
+                os.link(origin, target)
+            else:
+                self.log.debug('no such file %s', origin)
+
+        # desired_utts = self.a2k.desired_utterances(njobs=args.njobs)
+        # self.a2k.setup_text(desired_utts=desired_utts)
+        # self.a2k.setup_utt2spk(desired_utts=desired_utts)
+        # self.a2k.setup_segments(desired_utts=desired_utts)
+        # self.a2k.setup_wav(desired_utts=desired_utts)
 
         # setup other files and folders
         self.a2k.setup_wav_folder()
@@ -52,7 +65,7 @@ class ForceAlign(abstract_recipe.AbstractRecipe):
         # setup score.sh and run.sh
         self.a2k.setup_main_scripts('force_align.sh.in', args)
 
-    def export(self):
+    def export(self, args):
         """Export the kaldi tra alignment file in abkhazia format
 
         This method reads data/lang/phones.txt and
@@ -62,5 +75,5 @@ class ForceAlign(abstract_recipe.AbstractRecipe):
         """
         tra = os.path.join(self.recipe_dir, 'export', 'forced_alignment.tra')
         k2a.export_phone_alignment(
-            os.path.join(self.recipe_dir, 'data', 'lang', 'phones.txt'),
+            os.path.join(args.lang, 'phones.txt'),
             tra, tra.replace('.tra', '.txt'))
