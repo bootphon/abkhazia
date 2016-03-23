@@ -29,6 +29,11 @@ class AbkhaziaAcoustic(AbstractRecipeCommand):
 
     @classmethod
     def run(cls, args):
+        # TODO for nnet not supported
+        if args.type == 'nnet':
+            raise NotImplementedError(
+                'neural network acoustic modeling not yet implemented')
+
         corpus, output_dir = cls.prepare_for_run(args)
 
         # get back the language model directory
