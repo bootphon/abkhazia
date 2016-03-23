@@ -23,11 +23,11 @@
 # language model directory in the recipe
 lang=@@@@
 
-# acoustic model directory in the recipe TODO only from a triphone
-# speaker adapted model for now.  What we need from the directory
-# (mainly optional targets): {tree,final}.mdl, final.alimdl,
-# final.occs, splice_opts, cmvn_opts, delta_opts, final.mat, full.mat
+# acoustic model directory in the recipe
 acoustic=@@@@
+
+# number of parallel jobs
+njobs=@@@@
 
 
 [[ -z $acoustic/final.mdl ]] && \
@@ -45,7 +45,7 @@ acoustic=@@@@
 echo -n "computing forced alignment (log in exp/ali_fmllr/align.log)..."
 mkdir -p exp/ali_fmllr
 steps/align_fmllr.sh \
-    --nj 1 --cmd "$train_cmd" \
+    --nj $njobs --cmd "$train_cmd" \
     data/align $lang $acoustic exp/ali_fmllr \
     >& exp/ali_fmllr/align.log || { echo failed; exit 1; }
 echo done

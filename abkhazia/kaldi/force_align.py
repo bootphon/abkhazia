@@ -31,12 +31,6 @@ class ForceAlign(abstract_recipe.AbstractRecipe):
     name = 'align'
 
     def create(self, args):
-        # local folder
-        self.a2k.setup_lexicon()
-        self.a2k.setup_phones()
-        self.a2k.setup_silences()
-        self.a2k.setup_variants()
-
         # setup data files. Those files are linked from the acoustic
         # model recipe instead of being prepared from the corpus data.
         target_dir = os.path.join(self.recipe_dir, 'data/align')
@@ -51,19 +45,11 @@ class ForceAlign(abstract_recipe.AbstractRecipe):
             else:
                 self.log.debug('no such file %s', origin)
 
-        # desired_utts = self.a2k.desired_utterances(njobs=args.njobs)
-        # self.a2k.setup_text(desired_utts=desired_utts)
-        # self.a2k.setup_utt2spk(desired_utts=desired_utts)
-        # self.a2k.setup_segments(desired_utts=desired_utts)
-        # self.a2k.setup_wav(desired_utts=desired_utts)
-
         # setup other files and folders
-        self.a2k.setup_wav_folder()
         self.a2k.setup_kaldi_folders()
         self.a2k.setup_machine_specific_scripts()
-
-        # setup score.sh and run.sh
-        self.a2k.setup_main_scripts('force_align.sh.in', args)
+        self.a2k.setup_score()
+        self.a2k.setup_run('force_align.sh.in', args)
 
     def export(self, args):
         """Export the kaldi tra alignment file in abkhazia format

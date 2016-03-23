@@ -23,11 +23,7 @@
      providing WER (word error rate) for every model, eventual
      automatic parameter search ?
  - align
-   - [X] get feats.scp from acoustic_model data (and cmvn.scp ?)
-     Copy files from there instead -> train and align will share the same data
-   - [X] make it work after language/train commands
-   - [ ] no more <corpus> option
-   - [ ] have a --njobs option
+   - [X] have a --njobs option
    - [ ] extensive test on several lm/am
  - decode
    (test_set, acoustic_model, (language_model))

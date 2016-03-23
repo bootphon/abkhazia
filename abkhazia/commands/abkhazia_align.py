@@ -26,12 +26,41 @@ class AbkhaziaAlign(AbstractRecipeCommand):
     name = 'align'
     description = 'compute forced-aligment'
 
+    @staticmethod
+    def long_description():
+        """Return the docstring of the ForceAlign class"""
+        return force_align.ForceAlign.__doc__.replace(' '*4, ' '*2).strip()
+
+    @classmethod
+    def add_parser(cls, subparsers):
+        """Return a parser for the align command"""
+        # get basic parser init from AbstractCommand
+        parser, dir_group = super(AbkhaziaAlign, cls).add_parser(subparsers)
+        parser.formatter_class = argparse.RawDescriptionHelpFormatter
+        parser.description = cls.long_description()
+
+        parser.add_argument(
+            '-j', '--njobs', type=int, default=1, metavar='<njobs>',
+            help="""number of jobs to launch for parallel alignment, default is to
+            launch %(default)s jobs.""")
+
+        dir_group.add_argument(
+            '-l', '--language-model', metavar='<lm-dir>', default=None,
+            help='''the language model recipe directory, data is read from
+            <lm-dir>/language. If not specified, use <lm-dir>=<corpus>.''')
+
+        dir_group.add_argument(
+            '-a', '--acoustic-model', metavar='<am-dir>', default=None,
+            help='''the acoustic model recipe directory, data is read from
+            <am-dir>/acoustic. If not specified, use <am-dir>=<corpus>.''')
+
+        return parser
+
     @classmethod
     def run(cls, args):
         corpus, output_dir = cls.prepare_for_run(args)
 
-        # get back the language model directory TODO this code is
-        # shared with acoustic, factorize!
+        # get back the language model directory
         lang = (corpus if args.language_model is None
                 else os.path.abspath(args.language_model))
         lang += '/language/s5/data/language'
@@ -81,28 +110,3 @@ class AbkhaziaAlign(AbstractRecipeCommand):
         if not args.no_run:
             recipe.run()
             recipe.export(args)
-
-    @staticmethod
-    def long_description():
-        """Return the docstring of the ForceAlign class"""
-        return force_align.ForceAlign.__doc__.replace(' '*4, ' '*2).strip()
-
-    @classmethod
-    def add_parser(cls, subparsers):
-        """Return a parser for the align command"""
-        # get basic parser init from AbstractCommand
-        parser, dir_group = super(AbkhaziaAlign, cls).add_parser(subparsers)
-        parser.formatter_class = argparse.RawDescriptionHelpFormatter
-        parser.description = cls.long_description()
-
-        dir_group.add_argument(
-            '-l', '--language-model', metavar='<lm-dir>', default=None,
-            help='''the language model recipe directory, data is read from
-            <lm-dir>/language. If not specified, use <lm-dir>=<corpus>.''')
-
-        dir_group.add_argument(
-            '-a', '--acoustic-model', metavar='<am-dir>', default=None,
-            help='''the acoustic model recipe directory, data is read from
-            <am-dir>/train. If not specified, use <am-dir>=<corpus>.''')
-
-        return parser
