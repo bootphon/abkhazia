@@ -2,9 +2,16 @@
 
 * Functions
 
+ - prepare
+   - [ ] --keep-short-utts option
+     remove short utterances here instead of during lm/am
+   - [ ] word dependent position issue
+     Check in validate_corpus that adding _I, _B, _E or _S suffixes to
+     phones does not create conflicts, otherwise issue a warning to say
+     that word_position_dependent models won't be usable.
  - train
    - [X] --njobs option for cluster
-   - [ ] rename the command 'acoustic'
+   - [X] rename the command 'acoustic'
      consistant with 'language' and disambiguate split/{train,test}
    - [ ] --retrain option
      it should be possible to retrain a trained model on a new corpus
@@ -26,13 +33,6 @@
    provided, a default flat unigram one is constructed.  options:
    evaluate(transcription, gold) output = {posteriorgrams,
    transcription} speaker_adapt output: results (repertoire)
- - prepare
-   - [ ] --keep-short-utts option
-     remove short utterances here instead of during lm/am
-   - [ ] word dependent position issue
-     Check in validate_corpus that adding _I, _B, _E or _S suffixes to
-     phones does not create conflicts, otherwise issue a warning to say
-     that word_position_dependent models won't be usable.
  - feature
    Maybe we could have a separate feature command ?
  - list

@@ -52,7 +52,7 @@ model-order: 2
 # a word-level language model
 model-level: phone
 
-[train]
+[acoustic]
 # Feature parameters
 use-pitch: true
 

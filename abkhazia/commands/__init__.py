@@ -23,9 +23,9 @@ the processing to modules in abkhazia.prepare or abkhazia.kaldi
 """
 
 from abkhazia.commands.abstract_command import AbstractCommand
+from abkhazia.commands.abkhazia_acoustic import AbkhaziaAcoustic
 from abkhazia.commands.abkhazia_align import AbkhaziaAlign
 from abkhazia.commands.abkhazia_language import AbkhaziaLanguage
 from abkhazia.commands.abkhazia_decode import AbkhaziaDecode
 from abkhazia.commands.abkhazia_prepare import AbkhaziaPrepare
 from abkhazia.commands.abkhazia_split import AbkhaziaSplit
-from abkhazia.commands.abkhazia_train import AbkhaziaTrain

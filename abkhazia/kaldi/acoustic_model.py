@@ -20,12 +20,11 @@ import abkhazia.kaldi.abstract_recipe as abstract_recipe
 class AcousticModel(abstract_recipe.AbstractRecipe):
     """Compute an acoustic model from an abkhazia corpus
 
-    Takes a corpus in abkhazia format and instantiates a kaldi recipe
-    to train a standard speaker-adapted triphone HMM-GMM model on the
-    whole corpus.
+    Instantiates and run a kaldi recipe to train a HMM-GMM model on
+    an abkhazia corpus and a language model
 
     """
-    name = 'train'
+    name = 'acoustic'
 
     def create(self, args):
         # local folder
@@ -48,4 +47,4 @@ class AcousticModel(abstract_recipe.AbstractRecipe):
 
         # setup score.sh and run.sh
         args.name = self.name
-        self.a2k.setup_main_scripts('train.sh.in', args)
+        self.a2k.setup_main_scripts('acoustic_model.sh.in', args)

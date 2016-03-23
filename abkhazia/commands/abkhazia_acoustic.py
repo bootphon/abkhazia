@@ -12,19 +12,19 @@
 #
 # You should have received a copy of the GNU General Public License
 # along with abkhazia. If not, see <http://www.gnu.org/licenses/>.
-"""Implementation of the 'abkhazia train' command"""
+"""Implementation of the 'abkhazia acoustic' command"""
 
 import argparse
 import os
 
 from abkhazia.commands.abstract_command import AbstractRecipeCommand
 from abkhazia.kaldi.abkhazia2kaldi import add_argument
-import abkhazia.kaldi.train as train
+import abkhazia.kaldi.acoustic_model as acoustic_model
 
 
-class AbkhaziaTrain(AbstractRecipeCommand):
-    """This class implements the 'abkhazia train' command"""
-    name = 'train'
+class AbkhaziaAcoustic(AbstractRecipeCommand):
+    """This class implements the 'abkhazia acoustic' command"""
+    name = 'acoustic'
     description = 'train (or retrain) an acoustic model'
 
     @classmethod
@@ -49,12 +49,13 @@ class AbkhaziaTrain(AbstractRecipeCommand):
             raise IOError('not a valid language model directory: {}'
                           .format(lang))
 
-        # this is used to configure the train.sh.in script in create()
+        # used to configure the acoustic_model.sh.in script in
+        # the create() method
         del args.language_model
         args.lang = lang
 
         # instanciate the kaldi recipe creator
-        recipe = train.AcousticModel(corpus, output_dir, args.verbose)
+        recipe = acoustic_model.AcousticModel(corpus, output_dir, args.verbose)
 
         # finally create and/or run the recipe
         if not args.only_run:
@@ -64,14 +65,15 @@ class AbkhaziaTrain(AbstractRecipeCommand):
 
     @staticmethod
     def long_description():
-        """Return the docstring of the ForceAlign class"""
-        return train.AcousticModel.__doc__.replace(' '*4, ' '*2).strip()
+        """Return the docstring of the AcousticModel class"""
+        return acoustic_model.AcousticModel\
+                             .__doc__.replace(' '*4, ' '*2).strip()
 
     @classmethod
     def add_parser(cls, subparsers):
         """Return a parser for the align command"""
         # get basic parser init from AbstractCommand
-        parser, dir_group = super(AbkhaziaTrain, cls).add_parser(subparsers)
+        parser, dir_group = super(AbkhaziaAcoustic, cls).add_parser(subparsers)
         parser.formatter_class = argparse.RawDescriptionHelpFormatter
         parser.description = cls.long_description()
 
@@ -82,7 +84,7 @@ class AbkhaziaTrain(AbstractRecipeCommand):
 
         group = parser.add_argument_group(
             'acoustic model parameters', 'those parameters can also be '
-            'specified in the [train] section of the configuration file')
+            'specified in the [acoustic] section of the configuration file')
 
         # TODO merge this option with the num-gauss/num-states options below
         group.add_argument(

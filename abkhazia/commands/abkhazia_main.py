@@ -28,7 +28,7 @@ from abkhazia.commands import (
     AbkhaziaPrepare,
     AbkhaziaSplit,
     AbkhaziaLanguage,
-    AbkhaziaTrain,
+    AbkhaziaAcoustic,
     AbkhaziaDecode,
     AbkhaziaAlign)
 
@@ -42,7 +42,7 @@ class Abkhazia(object):
         AbkhaziaPrepare,
         AbkhaziaSplit,
         AbkhaziaLanguage,
-        AbkhaziaTrain,
+        AbkhaziaAcoustic,
         AbkhaziaDecode,
         AbkhaziaAlign
     ]
