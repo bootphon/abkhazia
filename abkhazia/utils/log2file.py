@@ -33,6 +33,7 @@ The log file is UTF-8 encoded.
 """
 
 import logging
+import os
 import sys
 
 
@@ -53,6 +54,11 @@ def get_log(log_file, verbose=False):
 
     # delete any existing handler before reconfiguring
     log.handlers = []
+
+    # check if the target dircetory exists, create it if needed
+    _dir = os.path.dirname(log_file)
+    if not os.path.isdir(_dir):
+        os.makedirs(_dir)
 
     # log to dedicated file
     file_handler = logging.FileHandler(log_file, mode='w', encoding="UTF-8")
