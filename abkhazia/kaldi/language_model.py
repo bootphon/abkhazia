@@ -27,6 +27,7 @@ class LanguageModel(abstract_recipe.AbstractRecipe):
     name = 'language'
 
     def create(self, args):
+        """TODO define here what is needed in args"""
         # check we have either word or phone level
         level_choices = ['word', 'phone']
         if args.model_level not in level_choices:
