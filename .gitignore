@@ -74,3 +74,4 @@ target/
 # emacs
 \#*
 *~
+lm_test/*

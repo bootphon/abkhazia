@@ -57,7 +57,7 @@ class Abkhazia2Kaldi(object):
     '''Instanciate a kaldi recipe from an abkhazia corpus
 
     corpus_dir : The root directory of the abkhazia corpus to
-      split. This directory must contain a valid abkhazia corpus
+      read from. This directory must contain a valid abkhazia corpus
 
     recipe_dir : The output dircetory where to write the created kaldi
       recipe. A subdirectory hierarchy is created in here
@@ -342,6 +342,8 @@ class Abkhazia2Kaldi(object):
                 os.remove(target)
             os.symlink(origin, target)
 
+    def setup_conf_dir(self):
+        """Setup the conf files for feature extraction"""
         conf_dir = os.path.join(self.recipe_dir, 'conf')
         if os.path.exists(conf_dir):
             shutil.rmtree(conf_dir)
@@ -380,10 +382,17 @@ class Abkhazia2Kaldi(object):
         # chmod +x run.sh
         os.chmod(target, os.stat(target).st_mode | 0o111)
 
+        self.setup_prepare_lang_wpdpl()
+
+    def setup_prepare_lang_wpdpl(self):
+        local = os.path.join(self.recipe_dir, 'local')
+        if not os.path.isdir(local):
+            os.makedirs(local)
+
         for target in ('prepare_lang_wpdpl.sh', 'validate_lang_wpdpl.pl'):
             shutil.copy(
-                os.path.join(self.share_dir, 'kaldi_templates', target),
-                os.path.join(self.recipe_dir, 'local', target))
+                os.path.join(self.share_dir, target),
+                os.path.join(local, target))
 
     def setup_machine_specific_scripts(self):
         """Copy cmd.sh and path.sh to self.recipe_dir"""
