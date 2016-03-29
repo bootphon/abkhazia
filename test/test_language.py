@@ -15,42 +15,36 @@
 """Test of the 'abkhazia language' command"""
 
 import os
-import shlex
-import subprocess
+import pytest
 import tempfile
 
+from abkhazia.kaldi.language_model import LanguageModel
 import abkhazia.utils as utils
 
 HERE = os.path.abspath(os.path.dirname(__file__))
+levels = ['phone', 'word']
+orders = [1, 2, 3]
+params = [(l, o) for l in levels for o in orders]
+# params = [('word', 3)]
 
 
-class TestWordBigram(object):
-    def _run(self, level, order):
-        cmd = ('abkhazia language {} -f --model-order {} --model-level {}'
-               .format(self.data_dir, str(order), level))
-        ps = subprocess.Popen(shlex.split(cmd), stdout=open(os.devnull))
-        ps.wait()
-        assert ps.returncode == 0
+@pytest.mark.parametrize("level, order", params)
+def test_lm(level, order):
+    data_dir = HERE
+    # output_dir = tempfile.mkdtemp()
+    output_dir = os.path.join(HERE, 'lm', '{}_{}'.format(level, order))
+    utils.remove(output_dir)
 
-    def setup(self):
-        self.data_dir = HERE
-        self.output_dir = os.path.join(HERE, 'language')  # tempfile.mkdtemp()
-        self._run('word', 2)
-        self.root = os.path.join(self.output_dir, 'language', 's5')
+    lm = LanguageModel(data_dir, output_dir)
+    lm.level = level
+    lm.order = order
+    lm.create()
+    lm.run()
+    lm.export()
 
-    def teardown(self):
-        # utils.remove(self.output_dir)
-        pass
-
-    def test_output_dirs(self):
-        assert os.path.isdir(self.root)
-
-    def test_log_errors(self):
-        """Look for error in log files"""
-        log1 = os.path.join(self.output_dir, 'logs', 'language.log')
-        for line in open(log1, 'r').readlines():
-            assert 'ERROR' not in line
-
-        log2 = os.path.join(self.root, 'data', 'prepare_language.log')
-        for line in open(log2, 'r').readlines():
-            assert 'ERROR' not in line
+    log = os.path.join(output_dir, 'logs', 'language.log')
+    error_lines = []
+    for line in open(log, 'r').readlines():
+        if 'ERROR' in line:
+            error_lines.append(line)
+    print error_lines

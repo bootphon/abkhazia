@@ -75,3 +75,4 @@ target/
 \#*
 *~
 lm_test/*
+test/lm/*
