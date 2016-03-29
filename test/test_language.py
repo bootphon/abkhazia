@@ -31,9 +31,14 @@ params = [(l, o) for l in levels for o in orders]
 @pytest.mark.parametrize("level, order", params)
 def test_lm(level, order):
     data_dir = HERE
+    assert os.path.isdir(data_dir)
+
     # output_dir = tempfile.mkdtemp()
     output_dir = os.path.join(HERE, 'lm', '{}_{}'.format(level, order))
-    utils.remove(output_dir)
+    try:
+        utils.remove(output_dir)
+    except OSError:
+        pass
 
     lm = LanguageModel(data_dir, output_dir)
     lm.level = level
