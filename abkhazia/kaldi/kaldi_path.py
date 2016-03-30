@@ -21,29 +21,39 @@ import abkhazia.utils as utils
 
 def kaldi_path():
     """Return an environment for running the abkhazia recipes"""
-    env = {}
-    env['kaldiroot'] = utils.config.get('kaldi', 'kaldi-directory')
-    env['kaldisrc'] = os.path.join(env['kaldiroot'], 'src')
+    env = os.environ
+
+    env['LC_ALL'] = 'C'  # for expected sorting and joining behaviour
+
+    kaldiroot = utils.config.get('kaldi', 'kaldi-directory')
+    kaldisrc = os.path.join(kaldiroot, 'src')
 
     targets = ('bin', 'featbin', 'fgmmbin', 'fstbin', 'gmmbin',
                'latbin', 'nnetbin', 'sgmmbin', 'lmbin', 'kwsbin', 'ivectorbin',
                'online2bin', 'sgmm2bin')
-    kaldibin = ':'.join((os.path.join(env['kaldisrc'], target)
+    kaldibin = ':'.join((os.path.join(kaldisrc, target)
                         for target in targets))
 
-    fstbin = os.path.join(env['kaldiroot'], 'tools', 'openfst', 'bin')
+    fstbin = os.path.join(kaldiroot, 'tools', 'openfst', 'bin')
+
     lmbin = ':'.join([
-        os.path.join(env['kaldiroot'], 'tools', 'irstlm', 'bin'),
-        os.path.join(env['kaldiroot'], 'tools', 'srilm', 'bin'),
-        os.path.join(env['kaldiroot'], 'tools', 'srilm', 'bin', 'i686-m64'),
-        os.path.join(env['kaldiroot'], 'tools', 'sctk', 'bin')])
+        os.path.join(kaldiroot, 'tools', 'irstlm', 'bin'),
+        os.path.join(kaldiroot, 'tools', 'srilm', 'bin'),
+        os.path.join(kaldiroot, 'tools', 'srilm', 'bin', 'i686-m64'),
+        os.path.join(kaldiroot, 'tools', 'sctk', 'bin')])
 
     try:
-        env['PATH'] = ':'.join([os.environ['PATH'], kaldibin, fstbin, lmbin])
-    except KeyError:
+        env['PATH'] = ':'.join([env['PATH'], kaldibin, fstbin, lmbin])
+    except KeyError:  # PATH isn't in the environment, should not occur
         env['PATH'] = ':'.join([kaldibin, fstbin, lmbin])
 
-    env['LC_ALL'] = 'C'  # for expected sorting and joining behaviour
-    env['IRSTLM'] = os.path.join(env['kaldiroot'], 'tools', 'irstlm')
+    env['IRSTLM'] = os.path.join(kaldiroot, 'tools', 'irstlm')
 
-    return utils.merge_dicts(os.environ, env)
+    # was a bug -> error while loading shared libraries: libfstscript.so.1
+    fstlib = os.path.join(kaldiroot, 'tools', 'openfst', 'lib')
+    try:
+        env['LD_LIBRARY_PATH'] = ':'.join([env['LD_LIBRARY_PATH'], fstlib])
+    except KeyError:
+        env['LD_LIBRARY_PATH'] = fstlib
+
+    return env
