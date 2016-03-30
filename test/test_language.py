@@ -23,7 +23,7 @@ import abkhazia.utils as utils
 
 HERE = os.path.abspath(os.path.dirname(__file__))
 levels = ['phone', 'word']
-orders = [1, 2, 3]
+orders = [1, 2, 3, 4]
 params = [(l, o) for l in levels for o in orders]
 # params = [('word', 3)]
 
@@ -33,8 +33,8 @@ def test_lm(level, order):
     data_dir = HERE
     assert os.path.isdir(data_dir)
 
-    # output_dir = tempfile.mkdtemp()
-    output_dir = os.path.join(HERE, 'lm', '{}_{}'.format(level, order))
+    output_dir = tempfile.mkdtemp()
+    # output_dir = os.path.join(HERE, 'lm', '{}_{}'.format(level, order))
     try:
         utils.remove(output_dir)
     except OSError:

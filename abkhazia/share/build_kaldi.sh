@@ -23,6 +23,11 @@ share=$(readlink -f .)
 kaldi_dir=$(sed '/^#/d' $share/abkhazia.cfg | grep kaldi-directory | cut -d: -f2)
 
 # Look if there is an existing kaldi in it
+[ -d $kaldi_dir/.git -o -d $kaldi_dir/.svn ] && \
+    { echo "error: a repository already exists in $kaldi_dir"; exit 1; }
 
-
-echo $kaldi_dir
+mkdir -p $kaldi_dir
+# TODO to be continued... Here we want to fetch a specific commit of kaldi
+# - find a working commit
+# - unroll the kaldi config/compilation with -O2 -DNDEBUG added in kaldi.mk
+# - install srilm and irstlm from kaldi/tools

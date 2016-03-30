@@ -201,7 +201,7 @@ class LanguageModel(abstract_recipe.AbstractRecipe):
 
         finally:  # remove temp files
             for f in (text_ready, text_se, text_lm, text_blm):
-                utils.remove(f)
+                utils.remove(f, safe=True)
 
     def _format_lm(self, G_arpa, G_fst):
         """generate FST (use the SRILM library)"""
@@ -218,10 +218,11 @@ class LanguageModel(abstract_recipe.AbstractRecipe):
         tmp_dir = tempfile.mkdtemp()
 
         try:
-            command = ('utils/format_lm_sri.sh '
-                       '--srilm_opts "-subset -prune-lowprobs -unk" '
-                       '{0} {1} {2}'.format(
-                           self.lang_dir, G_arpa, tmp_dir))
+            command = (
+                'utils/format_lm_sri.sh '
+                '--srilm_opts "-subset -prune-lowprobs -unk" {0} {1} {2}'
+                .format(self.lang_dir, G_arpa, tmp_dir))
+
             utils.jobs.run(
                 command,
                 stdout=self.log.debug,

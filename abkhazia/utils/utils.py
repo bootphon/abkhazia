@@ -70,8 +70,12 @@ def list_files_with_extension(directory, extension, abspath=False):
     return matched
 
 
-def remove(path):
-    """Remove a file, link or directory, raise OSError on failure"""
+def remove(path, safe=False):
+    """Remove a file, link or directory, raise OSError on failure
+
+    If safe is True, don't raise on unexisting path
+
+    """
     try:
         if os.path.isdir(path):
             shutil.rmtree(path)
@@ -79,7 +83,10 @@ def remove(path):
             # works for files and links
             os.remove(path)
     except (shutil.Error, os.error) as err:
-        raise OSError(err)
+        if not safe:
+            raise OSError(err)
+        else:
+            pass
 
 
 def is_empty_file(path):
