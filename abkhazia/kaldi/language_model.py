@@ -28,6 +28,7 @@ import abkhazia.kaldi.abstract_recipe as abstract_recipe
 
 class LanguageModel(abstract_recipe.AbstractRecipe):
     """Compute a language model from an abkhazia corpus"""
+
     name = 'language'
 
     def __init__(self, corpus_dir, recipe_dir=None, verbose=False, njobs=1):
@@ -131,18 +132,6 @@ class LanguageModel(abstract_recipe.AbstractRecipe):
         self.a2k.setup_kaldi_folders()
         self.a2k.setup_machine_specific_scripts()
         self.a2k.setup_prepare_lang_wpdpl()
-
-        # run = os.path.join(self.recipe_dir, 'run.sh')
-        # script = textwrap.dedent('''\
-        # #!/bin/bash -u
-        # error_msg="cmd.sh not found. Jobs may not execute properly."
-        # [ -f cmd.sh ] && source ./cmd.sh || echo $error_msg
-        # . path.sh || { echo "Cannot source path.sh"; exit 1; }
-        # ''' + './local/prepare_lm.sh {} || exit 1'.format(self.a2k.name))
-        # with open(run, 'w') as out:
-        #     out.write(script)
-        # # chmod +x run.sh
-        # os.chmod(run, os.stat(run).st_mode | 0o111)
 
     def _compile_fst(self, G_txt, G_fst):
         """Compile and sort a text FST to kaldi binary FST"""

@@ -53,3 +53,4 @@ def test_lm(level, order):
         if 'ERROR' in line:
             error_lines.append(line)
     print error_lines
+    assert len(error_lines) == 0

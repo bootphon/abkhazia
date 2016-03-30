@@ -96,7 +96,7 @@ $conf, please merge it from
 $conf.in"
 
     # if existing, check if kaldi-directory is defined in it
-    kaldi=`cat $conf | sed '/^#/d' | grep kaldi-directory | cut -d: -f2 | sed 's/^ *//'`
+    kaldi=$(cat $conf | sed '/^#/d' | grep kaldi-directory | cut -d: -f2 | sed 's/^ *//')
     [ -z $kaldi ] &&
         failure "Please specify the path to the kaldi root directory in $conf"
 
