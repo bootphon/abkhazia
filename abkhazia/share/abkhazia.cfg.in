@@ -63,3 +63,10 @@ num-gauss-si: 15000
 # Speaker-adaptive triphone models parameters
 num-states-sa: 2500
 num-gauss-sa: 15000
+
+[decode]
+# acoustic scale for extracting posterior from the final lattice
+acoustic-scale: 0.1
+
+# Feature parameters
+use-pitch: true

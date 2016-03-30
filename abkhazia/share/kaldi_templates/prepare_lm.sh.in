@@ -156,8 +156,7 @@ else
     trap 'rm -rf "$tmpdir"' EXIT
 
     utils/format_lm_sri.sh --srilm_opts "-subset -prune-lowprobs -unk" \
-			   $out_dir "$in_dir"/G.arpa.gz \
-			   "$in_dir"/lexicon.txt $tmpdir &>> $log
+			   $out_dir "$in_dir"/G.arpa.gz &>> $log
     rm -Rf $out_dir  # erases the previous content that is redundant anyway
     mv $tmpdir $out_dir
 fi
