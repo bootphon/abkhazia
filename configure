@@ -130,20 +130,13 @@ script, this is already done for you."
 
 Please do not source the tools/env.sh as indicated by that
 script, this is already done for you."
-
 fi
-
 
 # configure and copy path.sh
-if [ -e $share/path.sh ]
-then
-    echo "Found $share/path.sh"
-else
-    cp $share/kaldi_templates/path_template.sh $share/path.sh
-    kaldi=`sed '/^#/d' $conf | grep kaldi-directory | sed 's/kaldi-directory: //'`
-    sed -i -e "s|^\(KALDI_ROOT=\).*$|\1$kaldi|" $share/path.sh
-    echo "Configured $share/path.sh"
-fi
+cp $share/kaldi_templates/path_template.sh $share/path.sh
+kaldi=`sed '/^#/d' $conf | grep kaldi-directory | sed 's/kaldi-directory: //'`
+sed -i -e "s|^\(KALDI_ROOT=\).*$|\1$kaldi|" $share/path.sh
+echo "Configured $share/path.sh"
 
 # configure and copy cmd.sh
 if [ -e $share/cmd.sh ]
