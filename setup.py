@@ -41,7 +41,7 @@ REQUIREMENTS = [] if ON_RTD else [
 setup(
     name='abkhazia',
     version=VERSION,
-    packages=find_packages(),
+    packages=find_packages(exclude=['test']),
     zip_safe=False,
     scripts=[],
 

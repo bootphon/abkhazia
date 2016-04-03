@@ -1,7 +1,42 @@
 <!-- -*-org-*- this comment force org-mode in emacs -->
 
+* Bugs [1/1]
+
+** DONE language
+
+Fail on n!=3 for n-grams. Used to work with previous version of kaldi.
+
+*** py.test -vx ./test/test_language.py | egrep "^\[.*ERROR"
+
+    ["2016-03-30 17:51:06,422 - DEBUG - ERROR
+    (arpa2fst:Read():arpa-file-parser.cc:228) in line 70: Invalid or
+    unexpected directive line '\\2-grams:', expected \\end\\.\n",
+    "2016-03-30 17:51:06,422 - DEBUG - ERROR
+    (arpa2fst:Read():arpa-file-parser.cc:228) in line 70: Invalid or
+    unexpected directive line '\\2-grams:', expected \\end\\.\n",
+    '2016-03-30 17:51:06,423 - DEBUG - ERROR: FstHeader::Read: Bad FST
+    header: standard input\n']
+
+*** details
+
+ - [X] A working kaldi commit
+    a9b65137b4ab90845c1357724d5ddaa805972830 (10 Feb. 2016)
+ - [X] where in abkhazia script the bug occurs?
+   - in _format_lm() -> utils/format_lm_sri.sh
+   - in kaldi-trunk/tools/srilm/bin/change-lm-vocab -> add an empty 3-gram
+ - [X] find a kaldi commit before that bug was introduced?
+   - seems to be introduced by dpovey on commit (after?)
+     a9b65137b4ab90845c1357724d5ddaa805972830 (10 Feb. 2016)
+ - [X] eventually write a pull request?
+
+*** solution
+
+ - submited https://github.com/kaldi-asr/kaldi/pull/639
+ - the bug is fixed within kaldi, see https://github.com/kaldi-asr/kaldi/issues/643
+
 * Functions
 
+ - [ ] Remove the kaldi_templates/*.sh.in and do all in Python.
  - prepare
    - [ ] --keep-short-utts option
      remove short utterances here instead of during lm/am

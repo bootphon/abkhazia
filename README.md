@@ -17,17 +17,35 @@ abkhazia configuration script will fail.
 
 * [Kaldi Speech Recognition Toolkit](http://kaldi-asr.org).
 
-	* Install it, following installation guidelines
-      [here](http://kaldi-asr.org/doc/install.html).
+	* Because Kaldi is developed under continuous integration, there
+      is no published release to rely on. To ensure the abkhazia
+      stability, we therefore  maintain a Kaldi fork that is guaranteed to
+      work. Clone it in a directory of your choice and ensure the
+      active branch is *abkhazia* (this should be the default):
 
-    * Install kaldi tools (SRILM and IRSTLM librairies) required by
-      abkhazia. From your kaldi root directory, type:
+            git clone git@github.com:bootphon/kaldi.git
+
+    * Once cloned, you have to install Kaldi (configuration and
+      compilation ). Follow the instructions from
+      [here](http://kaldi-asr.org/doc/install.html). Basically, you
+      have to do (from the `kaldi` directory):
+
+            cd tools
+            ./extras/check_dependancies.sh
+            make -j 4  # -j N do a parallel build on N CPUs
+            cd ../src
+            ./configure
+            make depend -j 4
+            make -j 4
+
+    * Install kaldi extras tools (SRILM and IRSTLM librairies)
+      required by abkhazia. From your local kaldi directory, type:
 
             cd ./tools
             ./extras/install_irstlm.sh
             ./extras/install_srilm.sh
 
-    * You will have to provide the Kaldi directory to abkhazia during
+    * You will have to provide the `kaldi` directory to abkhazia during
       configuration.
 
 * [sox](http://sox.sourceforge.net) with flac support and

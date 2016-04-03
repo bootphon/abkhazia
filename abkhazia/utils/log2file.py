@@ -33,6 +33,7 @@ The log file is UTF-8 encoded.
 """
 
 import logging
+import os
 import sys
 
 
@@ -46,17 +47,42 @@ class LevelFilter(logging.Filter):
         return record.levelno in self.passlevels
 
 
+# kaldi logs are reported to the abkhazia logger, because they include
+# trailing \n, we want to remove that from the messages (ie strip
+# them) by defining a custom formatter. From
+# https://stackoverflow.com/questions/17931426
+class WhitespaceRemovingFormatter(logging.Formatter):
+    def format(self, record):
+        record.msg = record.msg.strip()
+        return super(WhitespaceRemovingFormatter, self).format(record)
+
+
+# kaldi also generates empty lines, undesirable in a logging framework
+# where they generate empty message, so we filter out empty message
+# here. From https://stackoverflow.com/questions/879732
+class NoEmptyMessageFilter(logging.Filter):
+    def filter(self, record):
+        return len(record.getMessage().strip())
+
+
 def get_log(log_file, verbose=False):
     """Configure and return a logger instance"""
     log = logging.getLogger()
+    log.addFilter(NoEmptyMessageFilter())
     log.setLevel(logging.DEBUG)
 
     # delete any existing handler before reconfiguring
     log.handlers = []
 
+    # check if the target dircetory exists, create it if needed
+    _dir = os.path.dirname(log_file)
+    if not os.path.isdir(_dir):
+        os.makedirs(_dir)
+
     # log to dedicated file
     file_handler = logging.FileHandler(log_file, mode='w', encoding="UTF-8")
-    formatter = logging.Formatter('%(asctime)s - %(levelname)s - %(message)s')
+    formatter = WhitespaceRemovingFormatter(
+        '%(asctime)s - %(levelname)s - %(message)s')
     file_handler.setFormatter(formatter)
     file_handler.setLevel(logging.DEBUG)
 
@@ -68,7 +94,7 @@ def get_log(log_file, verbose=False):
 
     # log to standard output
     std_handler = logging.StreamHandler(sys.stdout)
-    formatter = logging.Formatter('%(message)s')
+    formatter = WhitespaceRemovingFormatter('%(message)s')
     std_handler.setFormatter(formatter)
     std_handler.setLevel(logging.DEBUG)
 

@@ -77,9 +77,14 @@ class AbkhaziaLanguage(AbstractRecipeCommand):
         if args.model_order is None:
             args.model_order = utils.config.get('language', 'model-order')
 
+        recipe.order = args.model_order
+        recipe.level = args.model_level
+        recipe.position_dependent_phones = args.word_position_dependent
+        recipe.silence_probability = 0.5 if args.optional_silence else 0.0
+
         # finally create and/or run the recipe
         if not args.only_run:
-            recipe.create(args)
+            recipe.create()
         if not args.no_run:
             recipe.run()
             recipe.export()

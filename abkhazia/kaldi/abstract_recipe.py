@@ -27,6 +27,8 @@ class AbstractRecipe(object):
     """The recipe's name"""
 
     def __init__(self, corpus_dir, recipe_dir=None, verbose=False):
+        self.verbose = verbose
+
         # check corpus_dir
         if not os.path.isdir(corpus_dir):
             raise IOError("directory doesn't exist: {}".format(corpus_dir))

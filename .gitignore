@@ -2,6 +2,9 @@
 
 # Ignore data directories
 /data/*
+/test/data/*
+/test/out/*
+test/language/*
 
 # Ignore files generated during configuration
 /abkhazia/share/abkhazia.cfg
@@ -71,4 +74,5 @@ target/
 # emacs
 \#*
 *~
-test/*
+lm_test/*
+test/lm/*

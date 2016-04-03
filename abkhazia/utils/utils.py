@@ -21,6 +21,17 @@ import re
 import shutil
 
 
+# from https://stackoverflow.com/questions/38987
+def merge_dicts(*dict_args):
+    '''
+    Given any number of dicts, shallow copy and merge into a new dict,
+    precedence goes to key value pairs in latter dicts.
+    '''
+    result = {}
+    for dictionary in dict_args:
+        result.update(dictionary)
+    return result
+
 def duplicates(iterable):
     """Return a list of duplicated elements in an iterable"""
     counts = collections.Counter(iterable)
@@ -59,8 +70,12 @@ def list_files_with_extension(directory, extension, abspath=False):
     return matched
 
 
-def remove(path):
-    """Remove a file, link or directory, raise OSError on failure"""
+def remove(path, safe=False):
+    """Remove a file, link or directory, raise OSError on failure
+
+    If safe is True, don't raise on unexisting path
+
+    """
     try:
         if os.path.isdir(path):
             shutil.rmtree(path)
@@ -68,7 +83,10 @@ def remove(path):
             # works for files and links
             os.remove(path)
     except (shutil.Error, os.error) as err:
-        raise OSError(err)
+        if not safe:
+            raise OSError(err)
+        else:
+            pass
 
 
 def is_empty_file(path):
