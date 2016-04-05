@@ -18,7 +18,6 @@
 # Prepare 1% of the buckeye corpus as test data for abkhazia. Copy the
 # data in ./data if not specified
 
-
 # init an empty output data directory
 data_dir=${1:-./data}
 [ -e $data_dir ] && { echo "error: $data_dir already existing"; exit 1; }

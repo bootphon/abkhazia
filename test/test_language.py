@@ -17,15 +17,49 @@
 import os
 import pytest
 import tempfile
+# import shutil
 
 from abkhazia.kaldi.language_model import LanguageModel
+# from abkhazia.prepare.buckeye_preparator import BuckeyePreparator
+# import abkhazia.utils.split as split
 import abkhazia.utils as utils
 
 HERE = os.path.abspath(os.path.dirname(__file__))
 levels = ['phone', 'word']
 orders = [1, 2, 3, 4]
 params = [(l, o) for l in levels for o in orders]
-# params = [('word', 3)]
+
+
+# def setup():
+#     """Prepare 1% of buckeye in the data directory (random by utterances)"""
+#     data_dir = os.path.join(HERE, 'data')
+#     if not os.path.isdir(data_dir):
+#         try:
+#             # fail if buckeye not defined in abkhazia.cfg
+#             raw_buckeye = BuckeyePreparator.default_input_dir()
+#             if raw_buckeye is None:
+#                 raise RuntimeError(
+#                     'buckeye-directory not defined in abkhazia.cfg')
+
+#             # prepare the buckeye corpus in default abkhazia dir
+#             prep = BuckeyePreparator(raw_buckeye, njobs=4)
+#             prep.prepare()  # we skip validation
+
+#             # split 1% of buckeye by utterances
+#             temp = tempfile.mkdtemp()
+#             spliter = split.SplitCorpus(
+#                 prep.output_dir, output_dir=temp)
+#             spliter.split(train_prop=0.01)
+
+#             shutil.move(
+#                 os.path.join(temp, 'split', 'train', 'data'),
+#                 data_dir)
+#         finally:
+#             utils.remove(temp)
+
+
+# def teardown():
+#     utils.remove(os.path.join(HERE, 'data'))
 
 
 @pytest.mark.parametrize("level, order", params)

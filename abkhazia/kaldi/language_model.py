@@ -140,7 +140,7 @@ class LanguageModel(abstract_recipe.AbstractRecipe):
 
         # txt to temp
         command1 = (
-            ' fstcompile --isymbols={0} --osymbols={0}'
+            'fstcompile --isymbols={0} --osymbols={0}'
             ' --keep_isymbols=false --keep_osymbols=false {1}'
             .format(os.path.join(self._output_dir, 'words.txt'), G_txt))
         self._log.debug('running %s > %s', command1, temp)
@@ -240,10 +240,6 @@ class LanguageModel(abstract_recipe.AbstractRecipe):
         self.check_parameters()
         self._prepare_lang()
 
-        # - G.arpa.gz MIT/ARPA formatted n-gram is already
-        #   provided in input_dir
-        # - A text.txt file from which to estimate a n-gram is
-        #   provided in input_dir
         local = self.a2k._local_path()
         G_txt = os.path.join(local, 'G.txt')
         G_fst = os.path.join(local, 'G.fst')
@@ -253,6 +249,9 @@ class LanguageModel(abstract_recipe.AbstractRecipe):
         if os.path.isfile(G_txt):
             self._compile_fst(G_txt, G_fst)
         else:
+            # G.arpa.gz MIT/ARPA formatted n-gram is not already
+            # provided in input_dir: compute it. A text.txt file from
+            # which to estimate a n-gram must be provided in input_dir
             if not os.path.isfile(G_arpa):
                 self._compute_lm(G_arpa)
             self._format_lm(G_arpa, G_fst)

@@ -36,30 +36,28 @@ class AbkhaziaLanguage(AbstractRecipeCommand):
             'language model parameters', 'those parameters can also be '
             'specified in the [language] section of the configuration file')
 
-        from abkhazia.kaldi.abkhazia2kaldi import add_argument
+        group.add_argument(
+            '-s', '--optional-silence', action='store_true',
+            help='do all computations if specified, else focus '
+            'on the main ones')
 
-        def add_arg(name, type, help, metavar=None, choices=None):
-            add_argument(group, cls.name, name, type, help, metavar, choices)
-
-        add_arg(
-            'optional-silence', bool,
-            'do all computations if true, else focus on the main ones')
-
-        add_arg(
-            'word-position-dependent', bool,
-            '''Should be set to true or false depending on whether the language
-            model produced is destined to be used with an acoustic
+        group.add_argument(
+            '-w', '--word-position-dependent', action='store_true',
+            help='''Should be set to true or false depending on whether the
+            language model produced is destined to be used with an acoustic
             model trained with or without word position dependent
             variants of the phones''')
 
-        add_arg(
-            'model-order', int,
-            'n in n-gram, only used if a LM is to be estimated from some '
-            'text, see share/kaldi_templates/prepare_lm.sh.in')
+        group.add_argument(
+            '-n', '--model-order', type=int, metavar='<N>',
+            default=utils.config.get('language', 'model-order'),
+            help='n in n-gram, must be a positive integer')
 
-        add_arg(
-            'model-level', str,
-            "compute either a phone-level or a word-level language model",
+        group.add_argument(
+            '-l', '--model-level',
+            default=utils.config.get('language', 'model-level'),
+            help="compute either a phone-level or a word-level language "
+            "model, default is '%(default)s'",
             metavar='<phone|word>', choices=['phone', 'word'])
 
     @classmethod
