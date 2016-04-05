@@ -16,8 +16,10 @@
 
 import os
 
+from abkhazia.kaldi.kaldi_path import kaldi_path
 import abkhazia.kaldi.abstract_recipe as abstract_recipe
 import abkhazia.kaldi.kaldi2abkhazia as k2a
+import abkhazia.utils as utils
 
 
 class ForceAlign(abstract_recipe.AbstractRecipe):
@@ -30,15 +32,49 @@ class ForceAlign(abstract_recipe.AbstractRecipe):
     """
     name = 'align'
 
-    def create(self, args):
-        # setup data files. Those files are linked from the acoustic
-        # model recipe instead of being prepared from the corpus data.
+    def __init__(self, corpus_dir, recipe_dir=None, verbose=False, njobs=1):
+        super(ForceAlign, self).__init__(corpus_dir, recipe_dir, verbose)
+        self.njobs = njobs
+
+        # language and acoustic models directories
+        self.lm_dir = None
+        self.am_dir = None
+
+    @staticmethod
+    def _ckeck_template(param, name, target):
+        if param is None:
+            raise RuntimeError('non specified {} model'.format(name))
+
+        if not os.path.isfile(target):
+            raise RuntimeError('non valid {} model: {} not found'
+                               .format(name, target))
+
+    def _check_acoustic_model(self):
+        self._check_template(
+            self.am_dir, 'acoustic', os.path.join(self.am_dir, 'final.mdl'))
+
+    def _check_language_model(self):
+        self._check_template(
+            self.lm_dir, 'language', os.path.join(self.lm_dir, 'phones.txt'))
+
+    def check_parameters(self):
+        self._check_acoustic_model()
+        self._check_language_model()
+
+    def create(self):
+        """Create the recipe data in `self.recipe_dir`"""
+        self._check_acoustic_model()
+
         target_dir = os.path.join(self.recipe_dir, 'data/align')
         os.makedirs(target_dir)
+
+        # setup data files. Those files are linked from the acoustic
+        # model dircetory instead of being prepared from the corpus
+        # directory.
         for source in ('text', 'utt2spk', 'spk2utt', 'segments',
                        'wav.scp', 'feats.scp', 'cmvn.scp'):
             origin = os.path.abspath(os.path.join(
-                args.acoustic, '../../data/acoustic', source))
+                self.am_dir, '../../data/acoustic', source))
             if os.path.isfile(origin):
                 target = os.path.join(target_dir, source)
                 os.link(origin, target)
@@ -49,9 +85,47 @@ class ForceAlign(abstract_recipe.AbstractRecipe):
         self.a2k.setup_kaldi_folders()
         self.a2k.setup_machine_specific_scripts()
         self.a2k.setup_score()
-        self.a2k.setup_run('force_align.sh.in', args)
+        # self.a2k.setup_run('force_align.sh.in', args)
 
-    def export(self, args):
+    def _align_fmllr(self):
+        target = os.path.join(self.recipe_dir, 'exp', 'ali_fmllr')
+        self.log.info('computing forced alignment to %s', target)
+
+        if not os.path.isdir(target):
+            os.makedirs(target)
+
+        command = (
+            'steps/align_fmllr.sh --nj {0}, --cmd "{1}" data/align {2} {3} {4}'
+            .format(self.njobs, None, self.lm_dir, self.am_dir, target))
+
+        utils.jobs.run(command, stdout=self.log.debug, env=kaldi_path())
+
+    def _ali_to_phones(self):
+        export = os.path.join(self.recipe_dir, 'export')
+        target = os.path.join(export, 'forced_alignment.tra')
+        self.info.log('exporting results to %s', target)
+
+        if not os.path.isdir(export):
+            os.makedirs(export)
+
+        command = (
+            'ali-to-phones --write_lengths=true {0}'
+            ' "ark,t:gunzip -c {1}|" ark,t:{2}',
+            os.path.join(self.am_dir, 'final.mdl'),
+            os.path.join(self.recipe_dir, 'exp', 'ali_fmllr', 'ali.1.gz'),
+            target)
+
+        utils.jobs.run(command, stdout=self.log.debug, env=kaldi_path())
+
+        # if we want to use the tri2a results directly without the final
+        # forced alignment (is there any difference between the two beyond one
+        # being done using only one job?)
+        # ali-to-phones \
+        #     --write_lengths=true exp/tri2a/final.mdl \
+        #     "ark,t:gunzip -c exp/tri2a/ali.*.gz|" \
+        #     ark,t:export/forced_alignment.tra
+
+    def _export(self):
         """Export the kaldi tra alignment file in abkhazia format
 
         This method reads data/lang/phones.txt and
@@ -61,5 +135,11 @@ class ForceAlign(abstract_recipe.AbstractRecipe):
         """
         tra = os.path.join(self.recipe_dir, 'export', 'forced_alignment.tra')
         k2a.export_phone_alignment(
-            os.path.join(args.lang, 'phones.txt'),
+            os.path.join(self.lm_dir, 'phones.txt'),
             tra, tra.replace('.tra', '.txt'))
+
+    def run(self):
+        self.check_parameters()
+        self._align_fmllr()
+        self._ali_to_phones()
+        self._export()

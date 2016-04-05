@@ -58,6 +58,8 @@ class AbkhaziaAlign(AbstractRecipeCommand):
 
     @classmethod
     def run(cls, args):
+        # TODO put the checks in the ForceAlign class
+
         corpus, output_dir = cls.prepare_for_run(args)
 
         # get back the language model directory
@@ -94,19 +96,14 @@ class AbkhaziaAlign(AbstractRecipeCommand):
             raise IOError('not a valid acoustic model directory: {}'
                           .format(acoustic))
 
-        # this is used to configure the force_align.sh.in script in
-        # create()
-        del args.language_model
-        del args.acoustic_model
-        args.lang = lang
-        args.acoustic = acoustic
-
         # instanciate the kaldi recipe creator
         recipe = force_align.ForceAlign(corpus, output_dir, args.verbose)
+        recipe.njobs = args.njobs
+        recipe.lm_dir = lang
+        recipe.am_dir = acoustic
 
         # finally create and/or run the recipe
         if not args.only_run:
             recipe.create(args)
         if not args.no_run:
             recipe.run()
-            recipe.export(args)

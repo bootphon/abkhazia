@@ -30,8 +30,8 @@ acoustic=@@@@
 njobs=@@@@
 
 
-[[ -z $acoustic/final.mdl ]] && \
-    (echo "non valid acoustic model, $acoustic/final.mdl not found"; exit 1)
+# [[ -z $acoustic/final.mdl ]] && \
+#     (echo "non valid acoustic model, $acoustic/final.mdl not found"; exit 1)
 
 ###### Recipe ######
 
