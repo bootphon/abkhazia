@@ -3,6 +3,10 @@
 * Functions
 
  - [ ] Remove the kaldi_templates/*.sh.in and do all in Python.
+ - language
+   - [ ] fix the --word-position-dependent to be conditioned by phone level
+   - [ ] test the --optional-silences option
+   - [ ] more detailed command description
  - prepare
    - [ ] --keep-short-utts option
      remove short utterances here instead of during lm/am
