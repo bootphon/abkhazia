@@ -15,64 +15,66 @@ Before deploying abkahzia on your system, you need to install the
 following dependencies. If they are not available on your system, the
 abkhazia configuration script will fail.
 
-* [Kaldi Speech Recognition Toolkit](http://kaldi-asr.org).
+#### [Kaldi Speech Recognition Toolkit](http://kaldi-asr.org).
 
-    * **In brief** the ``./install_kadi.sh`` will download, configure
-      and compile kaldi to ``./kaldi``. This should work on any
-      standard Unix distribution and fail on the first encoutered
-      error. If so, install kaldi manually as detailed in the
-      following steps.
+* **In brief** the ``./install_kadi.sh`` will download, configure
+  and compile kaldi to ``./kaldi``. This should work on any
+  standard Unix distribution and fail on the first encoutered
+  error. If so, install kaldi manually as detailed in the
+  following steps.
 
-	* Because Kaldi is developed under continuous integration, there
-      is no published release to rely on. To ensure the abkhazia
-      stability, we therefore  maintain a Kaldi fork that is guaranteed to
-      work. Clone it in a directory of your choice and ensure the
-      active branch is *abkhazia* (this should be the default):
+* Because Kaldi is developed under continuous integration, there is no
+  published release to rely on. To ensure the abkhazia stability, we
+  therefore maintain a Kaldi fork that is guaranteed to work. Clone it
+  in a directory of your choice and ensure the active branch is
+  *abkhazia* (this should be the default):
 
-            git clone git@github.com:bootphon/kaldi.git
+        git clone git@github.com:bootphon/kaldi.git
 
-    * Once cloned, you have to install Kaldi (configuration and
-      compilation ). Follow the instructions from
-      [here](http://kaldi-asr.org/doc/install.html). Basically, you
-      have to do (from the `kaldi` directory):
+* Once cloned, you have to install Kaldi (configuration and
+  compilation ). Follow the instructions from
+  [here](http://kaldi-asr.org/doc/install.html). Basically, you have
+  to do (from the `kaldi` directory):
 
-            cd tools
-            ./extras/check_dependancies.sh
-            make -j 4  # -j N do a parallel build on N CPUs
-            cd ../src
-            ./configure
-            make depend -j 4
-            make -j 4
+        cd tools
+        ./extras/check_dependancies.sh
+        make -j 4  # -j N do a parallel build on N CPUs
+        cd ../src
+        ./configure
+        make depend -j 4
+        make -j 4
 
-    * Install kaldi extras tools (SRILM and IRSTLM librairies)
-      required by abkhazia. From your local kaldi directory, type:
+* Install kaldi extras tools (SRILM and IRSTLM librairies)
+  required by abkhazia. From your local kaldi directory, type:
 
-            cd ./tools
-            ./extras/install_irstlm.sh
-            ./extras/install_srilm.sh
+        cd ./tools
+        ./extras/install_irstlm.sh
+        ./extras/install_srilm.sh
 
-    * You will have to provide the `kaldi` directory to abkhazia during
-      configuration.
+* You will have to provide the `kaldi` directory to abkhazia during
+  configuration.
 
-* [sox](http://sox.sourceforge.net) with flac support and
-  [shorten](http://etree.org/shnutils/shorten) for wav conversion from
-  various audio formats.
 
-    * sox and flac should be in repositories of every standard Unix
-      distribution, for exemple in Debian/Ubuntu:
+#### sox and shorten
 
-    	    sudo apt-get install flac sox
+Abkhazia relies on [sox](http://sox.sourceforge.net) with flac support
+and [shorten](http://etree.org/shnutils/shorten) for wav conversion
+from various audio formats.
 
-   	* shorten must be installed manually, follow these steps to
-      download, compile and install it:
+* sox and flac should be in repositories of every standard Unix
+  distribution, for exemple in Debian/Ubuntu:
 
-    	    wget http://etree.org/shnutils/shorten/dist/src/shorten-3.6.1.tar.gz
-            tar xzf shorten-3.6.1.tar.gz
-            cd shorten-3.6.1
-            ./configure
-            make
-            sudo make install
+        sudo apt-get install flac sox
 
+* shorten must be installed manually, follow these steps to
+  download, compile and install it:
+
+        wget http://etree.org/shnutils/shorten/dist/src/shorten-3.6.1.tar.gz
+        tar xzf shorten-3.6.1.tar.gz
+        cd shorten-3.6.1
+        ./configure
+        make
+        sudo make install
 
 ### Install Abkahzia
 

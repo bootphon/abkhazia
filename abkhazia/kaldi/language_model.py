@@ -27,24 +27,56 @@ import abkhazia.kaldi.abstract_recipe as abstract_recipe
 
 
 class LanguageModel(abstract_recipe.AbstractRecipe):
-    """Compute a language model from an abkhazia corpus"""
+    """Compute a language model from an abkhazia corpus
+
+    This class uses Kaldi, IRSTLM and SRILM to compute n-grams
+    language models from any abkhazia speech corpus. The models can be
+    either at word or phone level.
+
+    Example:
+
+    The following exemple compute a word level trigram without
+    optional silences::
+
+        lm = LanguageModel('./path/to/some/corpus')
+        lm.order = 3
+        lm.level = 'word'
+        lm.silence_probability = 0.0
+        lm.create()
+        lm.run()
+        lm.export()
+
+    Attributes:
+        level (str): 'phone' or 'word' language model
+        order (int): order of the language model (n in n-gram)
+        silence_probability (float)
+        position_dependent_phone (bool)
+
+    """
 
     name = 'language'
 
     def __init__(self, corpus_dir, recipe_dir=None, verbose=False, njobs=1):
         super(LanguageModel, self).__init__(corpus_dir, recipe_dir, verbose)
         self.lang_dir = os.path.join(self.recipe_dir, 'lang')
-
         self.njobs = njobs
-        self.level = 'phone'
-        self.order = 3
-        self.silence_probability = 0.5  # default from kaldi prepare_lang.sh
-        self.position_dependent_phones = True
-        # here we could use a different silence_prob. I think however that
-        # --position-dependent-phones has to be the same as what was used for
-        # training (as well as the phones.txt, extra_questions.txt and
-        # nonsilence_phones.txt), otherwise the mapping between phones and
-        # acoustic state in the trained model will be lost
+
+        # setup default values for parameters from the configuration
+        # file. Here we could use a different
+        # silence_probability. Thomas thinks however that
+        # position_dependent_phones has to be the same as what was
+        # used for training (as well as the phones.txt,
+        # extra_questions.txt and nonsilence_phones.txt), otherwise
+        # the mapping between phones and acoustic state in the trained
+        # model will be lost.
+        def config(name):
+            return utils.config.get('language', name)
+        self.level = config('model-level')
+        self.order = config('model-order')
+        # 0.5 is the default from kaldi wsj/utils/prepare_lang.sh
+        self.silence_probability = (0.5 if config('optional-silence') is 'true'
+                                    else 0.0)
+        self.position_dependent_phones = config('word-position-dependent')
 
     def _check_level(self):
         level_choices = ['word', 'phone']
@@ -65,12 +97,14 @@ class LanguageModel(abstract_recipe.AbstractRecipe):
                 'silence probability must be in [0, 1], it is {}'
                 .format(self.silence_probability))
 
-    def check_parameters(self):
-        self._check_level()
-        self._check_order()
-        self._check_silence_probability()
+    def _check_position_dependent(self):
+        if self.level == 'word' and self.position_dependent_phones:
+            self.log.warning(
+                'word position dependent option on word-level model, '
+                'this have no effect')
 
     def _prepare_lang(self):
+        """Prepare the corpus data for language modeling"""
         # First need to do a prepare_lang in the desired folder to get
         # to use the right "phone" or "word" lexicon irrespective of
         # what was used as a lexicon in training. If
@@ -107,34 +141,13 @@ class LanguageModel(abstract_recipe.AbstractRecipe):
             command, stdout=self.log.debug,
             cwd=self.recipe_dir, env=kaldi_path())
 
-    def create(self):
-        """Create the recipe data in `self.recipe_dir`"""
-        # check we have either word or phone level
-        self._check_level()
-
-        # setup data files common to both levels
-        self.a2k.setup_phones()
-        self.a2k.setup_silences()
-        self.a2k.setup_variants()
-
-        desired_utts = self.a2k.desired_utterances(njobs=self.njobs)
-        text = self.a2k.setup_text(desired_utts=desired_utts)
-
-        # setup lm lexicon and input text depending on model level
-        lm_text = os.path.join(self.a2k._local_path(), 'lm_text.txt')
-        lexicon = self.a2k.setup_lexicon()
-        if self.level == 'word':
-            shutil.copy(text, lm_text)
-        else:  # phone level
-            io.word2phone(lexicon, text, lm_text)
-            self.a2k.setup_phone_lexicon()
-
-        self.a2k.setup_kaldi_folders()
-        self.a2k.setup_machine_specific_scripts()
-        self.a2k.setup_prepare_lang_wpdpl()
-
     def _compile_fst(self, G_txt, G_fst):
-        """Compile and sort a text FST to kaldi binary FST"""
+        """Compile and sort a text FST to kaldi binary FST
+
+        This method relies on the Kaldi programs fstcompile and
+        fstarcsort.
+
+        """
         self._log.info('compiling %s to %s', G_txt, G_fst)
         temp = tempfile.NamedTemporaryFile('w', delete=False)
 
@@ -155,10 +168,17 @@ class LanguageModel(abstract_recipe.AbstractRecipe):
         utils.remove(temp.name)
 
     def _compute_lm(self, G_arpa):
+        """Generate an ARPA n-gram from an abkhazia corpus
+
+        This method relies on the following Kaldi programs:
+        add-start-end.sh, build-lm.sh and compile-lm. It uses the
+        IRSTLM library.
+
+        """
         self.log.info('creating %s', G_arpa)
-        # generate ARPA/MIT n-gram with IRSTLM Train need to remove
-        # utt-id on first column of text file TODO and test? ->
-        # compare the diff with/without
+        # generate ARPA/MIT n-gram with IRSTLM. Train need to remove
+        # utt-id on first column of text file TODO and test? Compare
+        # the diff with/without
         lm_text = os.path.join(self.a2k._local_path(), 'lm_text.txt')
         text_ready = os.path.join(self.a2k._local_path(), 'text_ready.txt')
         text_se = os.path.join(self.a2k._local_path(), 'text_se.txt')
@@ -204,12 +224,13 @@ class LanguageModel(abstract_recipe.AbstractRecipe):
                 utils.remove(f, safe=True)
 
     def _format_lm(self, G_arpa, G_fst):
-        """generate FST (use the SRILM library)"""
-        # Includes adapting the vocabulary to lexicon in out_dir
-        # srilm_opts: do not use -tolower by default, since we do not
-        # make assumption that lexicon has no meaningful
-        # lowercase/uppercase distinctions (and if in unicode, no idea
-        # what lowercasing would produce)
+        """Generate FST from ARPA language model
+
+        This methods relies on Kaldi `utils/format_lm_sri.sh`, which
+        use the SRILM library. It includes adapting the vocabulary to
+        the corpus lexicon.
+
+        """
         self.log.info('creating language model in %s', G_fst)
 
         # format_lm_sri.sh copies stuff so we need to instantiate
@@ -218,25 +239,59 @@ class LanguageModel(abstract_recipe.AbstractRecipe):
         tmp_dir = tempfile.mkdtemp()
 
         try:
+            # srilm_opts: do not use -tolower by default, since we do not
+            # make assumption that lexicon has no meaningful
+            # lowercase/uppercase distinctions (and if in unicode, no idea
+            # what lowercasing would produce)
             command = (
                 'utils/format_lm_sri.sh '
                 '--srilm_opts "-subset -prune-lowprobs -unk" {0} {1} {2}'
                 .format(self.lang_dir, G_arpa, tmp_dir))
 
             utils.jobs.run(
-                command,
-                stdout=self.log.debug,
+                command, stdout=self.log.debug,
                 env=kaldi_path(), cwd=self.recipe_dir)
 
             utils.remove(self.lang_dir)
             shutil.move(tmp_dir, self.lang_dir)
         finally:
-            try:
-                utils.remove(tmp_dir)
-            except:
-                pass
+            utils.remove(tmp_dir, safe=True)
+
+    def check_parameters(self):
+        """Raise if the language modeling parameters are not correct"""
+        self._check_level()
+        self._check_order()
+        self._check_silence_probability()
+        self._check_position_dependent()
+
+    def create(self):
+        """Initialize the recipe data in `self.recipe_dir`"""
+        # check we have either word or phone level
+        self._check_level()
+
+        # setup data files common to both levels
+        self.a2k.setup_phones()
+        self.a2k.setup_silences()
+        self.a2k.setup_variants()
+
+        desired_utts = self.a2k.desired_utterances(njobs=self.njobs)
+        text = self.a2k.setup_text(desired_utts=desired_utts)
+
+        # setup lm lexicon and input text depending on model level
+        lm_text = os.path.join(self.a2k._local_path(), 'lm_text.txt')
+        lexicon = self.a2k.setup_lexicon()
+        if self.level == 'word':
+            shutil.copy(text, lm_text)
+        else:  # phone level
+            io.word2phone(lexicon, text, lm_text)
+            self.a2k.setup_phone_lexicon()
+
+        self.a2k.setup_kaldi_folders()
+        self.a2k.setup_machine_specific_scripts()
+        self.a2k.setup_prepare_lang_wpdpl()
 
     def run(self):
+        """Run the created recipe and compute the language model"""
         self.check_parameters()
         self._prepare_lang()
 

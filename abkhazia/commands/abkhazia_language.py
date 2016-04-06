@@ -23,7 +23,7 @@ from abkhazia.kaldi.language_model import LanguageModel
 
 class AbkhaziaLanguage(AbstractRecipeCommand):
     name = LanguageModel.name
-    description = 'compute a language model'
+    description = 'compute a n-gram language model from an abkhazia corpus'
 
     @classmethod
     def add_parser(cls, subparsers):
@@ -46,7 +46,8 @@ class AbkhaziaLanguage(AbstractRecipeCommand):
             help='''Should be set to true or false depending on whether the
             language model produced is destined to be used with an acoustic
             model trained with or without word position dependent
-            variants of the phones''')
+            variants of the phones. This option have no effect on word
+            level models.''')
 
         group.add_argument(
             '-n', '--model-order', type=int, metavar='<N>',
@@ -64,9 +65,6 @@ class AbkhaziaLanguage(AbstractRecipeCommand):
     def run(cls, args):
         corpus, output_dir = cls.prepare_for_run(args)
 
-        # instanciate the lm recipe creator
-        recipe = LanguageModel(corpus, output_dir, args.verbose)
-
         # retrieve recipe parameters
         if args.word_position_dependent is None:
             args.word_position_dependent = utils.config.get(
@@ -75,6 +73,8 @@ class AbkhaziaLanguage(AbstractRecipeCommand):
         if args.model_order is None:
             args.model_order = utils.config.get('language', 'model-order')
 
+        # instanciate the lm recipe creator
+        recipe = LanguageModel(corpus, output_dir, args.verbose)
         recipe.order = args.model_order
         recipe.level = args.model_level
         recipe.position_dependent_phones = args.word_position_dependent

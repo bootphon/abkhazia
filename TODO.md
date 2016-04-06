@@ -3,11 +3,9 @@
 * Functions
 
  - [ ] remove the kaldi_templates/*.sh.in and do all in Python.
- - [X] remove s5 from generated recipes
+   - [ ] when done, remove the --no-run/--only-run options
  - language
-   - [ ] fix the --word-position-dependent to be conditioned by phone level
    - [ ] test the --optional-silences option
-   - [ ] more detailed command description
  - prepare
    - [ ] --keep-short-utts option
      remove short utterances here instead of during lm/am
@@ -32,6 +30,7 @@
  - align
    - [X] have a --njobs option
    - [X] replace force_align.sh.in by pure python
+   - [ ] make sure the lm is at word level
    - [ ] extensive test on several lm/am
  - decode
    (test_set, acoustic_model, (language_model))
