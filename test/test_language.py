@@ -34,23 +34,20 @@ def test_lm(level, order):
     assert os.path.isdir(data_dir)
 
     output_dir = tempfile.mkdtemp()
-    # output_dir = os.path.join(HERE, 'lm', '{}_{}'.format(level, order))
     try:
-        utils.remove(output_dir)
-    except OSError:
-        pass
+        lm = LanguageModel(data_dir, output_dir, verbose=True)
+        lm.level = level
+        lm.order = order
+        lm.create()
+        lm.run()
+        lm.export()
 
-    lm = LanguageModel(data_dir, output_dir)
-    lm.level = level
-    lm.order = order
-    lm.create()
-    lm.run()
-    lm.export()
-
-    log = os.path.join(output_dir, 'logs', 'language.log')
-    error_lines = []
-    for line in open(log, 'r').readlines():
-        if 'ERROR' in line:
-            error_lines.append(line)
-    print error_lines
-    assert len(error_lines) == 0
+        log = os.path.join(output_dir, 'logs', 'language.log')
+        error_lines = []
+        for line in open(log, 'r').readlines():
+            if 'ERROR' in line:
+                error_lines.append(line)
+            print error_lines
+        assert len(error_lines) == 0
+    finally:
+        utils.remove(output_dir, safe=True)

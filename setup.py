@@ -35,7 +35,8 @@ REQUIREMENTS = [] if ON_RTD else [
     'numpy',
     'progressbar2',
     'joblib',
-    'argcomplete'
+    'argcomplete',
+    'pytest'
 ]
 
 setup(

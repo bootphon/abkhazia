@@ -28,13 +28,14 @@ data_dir=~/data/abkhazia/exemple
 abkhazia prepare buckeye -o $data_dir || exit 1
 
 # Step 2 : split the prepared corpus in train and test sets. We keep
-# only 5% for training and split by utterances.
+# only 5% for training and split by utterances (this is an exemple, in
+# real life consider taking more than 5% of the data).
 abkhazia split $data_dir -T 0.05 -f || exit 1
 train_dir=$data_dir/split/train
 
-# Step 3 : compute a language model on the train set (a phone level
-# bigram by default).
-abkhazia language $train_dir --model-level word -f || exit 1
+# Step 3 : compute a language model on the train set (here a phone
+# level bigram).
+abkhazia language $train_dir --model-level phone --model-order 2 -f || exit 1
 
 # Step 4 : compute an acoustic model on the train set (a speaker
 # adapted triphone model by default).

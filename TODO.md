@@ -41,6 +41,10 @@ arpa-file-parser.cc seems to look for a trigram
 
 * Functions
 
+ - language
+   - [ ] fix the --word-position-dependent to be conditioned by phone level
+   - [ ] test the --optional-silences option
+   - [ ] more detailed command description
  - prepare
    - [ ] --keep-short-utts option
      remove short utterances here instead of during lm/am
