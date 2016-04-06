@@ -98,9 +98,13 @@ class ForceAlign(abstract_recipe.AbstractRecipe):
 
         command = (
             'steps/align_fmllr.sh --nj {0} --cmd "{1}" {2} {3} {4} {5}'
-            .format(self.njobs, utils.config.get('kaldi', 'train-cmd'),
-                    os.path.join(self.recipe_dir, 'data', 'align'),
-                    self.lm_dir, self.am_dir, target))
+            .format(
+                self.njobs,
+                utils.config.get('kaldi', 'train-cmd'),
+                os.path.join(self.recipe_dir, 'data', 'align'),
+                self.lm_dir,
+                self.am_dir,
+                target))
 
         self.log.debug('running %s', command)
         utils.jobs.run(command, stdout=self.log.debug,
