@@ -11,6 +11,28 @@ data-directory:
 # YOU MUST SPECIFY THIS PATH MANUALLY.
 kaldi-directory:
 
+# "queue.pl" uses qsub.  The options to it are
+# options to qsub.  If you have GridEngine installed,
+# change this to a queue you have access to.
+# Otherwise, use "run.pl", which will run jobs locally
+# (make sure your --num-jobs options are no more than
+# the number of cpus on your machine.
+
+# On Oberon use:
+# train-cmd: queue.pl -q all.q@puck*.cm.cluster
+# decode-cmd: queue.pl -q all.q@puck*.cm.cluster
+# highmem-cmd: queue.pl -q all.q@puck*.cm.cluster
+
+# On Eddie use:
+# train-cmd: queue.pl -P inf_hcrc_cstr_general
+# decode-cmd: queue.pl -P inf_hcrc_cstr_general
+# highmem-cmd: queue.pl -P inf_hcrc_cstr_general -pe memory-2G 2
+
+# To run locally use:
+train-cmd: run.pl
+decode-cmd: run.pl
+highmem-cmd: run.pl
+
 [corpus]
 # In this section you can specify the default input directory where to
 # read raw data for each supported corpus. By doing so, the

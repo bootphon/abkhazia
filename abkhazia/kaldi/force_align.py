@@ -41,7 +41,7 @@ class ForceAlign(abstract_recipe.AbstractRecipe):
         self.am_dir = None
 
     @staticmethod
-    def _ckeck_template(param, name, target):
+    def _check_template(param, name, target):
         if param is None:
             raise RuntimeError('non specified {} model'.format(name))
 
@@ -66,7 +66,8 @@ class ForceAlign(abstract_recipe.AbstractRecipe):
         self._check_acoustic_model()
 
         target_dir = os.path.join(self.recipe_dir, 'data/align')
-        os.makedirs(target_dir)
+        if not os.path.isdir(target_dir):
+            os.makedirs(target_dir)
 
         # setup data files. Those files are linked from the acoustic
         # model dircetory instead of being prepared from the corpus
@@ -77,14 +78,15 @@ class ForceAlign(abstract_recipe.AbstractRecipe):
                 self.am_dir, '../../data/acoustic', source))
             if os.path.isfile(origin):
                 target = os.path.join(target_dir, source)
-                os.link(origin, target)
+                if not os.path.isfile(target):
+                    os.link(origin, target)
             else:
                 self.log.debug('no such file %s', origin)
 
         # setup other files and folders
         self.a2k.setup_kaldi_folders()
         self.a2k.setup_machine_specific_scripts()
-        self.a2k.setup_score()
+        # self.a2k.setup_score()
         # self.a2k.setup_run('force_align.sh.in', args)
 
     def _align_fmllr(self):
@@ -95,27 +97,33 @@ class ForceAlign(abstract_recipe.AbstractRecipe):
             os.makedirs(target)
 
         command = (
-            'steps/align_fmllr.sh --nj {0}, --cmd "{1}" data/align {2} {3} {4}'
-            .format(self.njobs, None, self.lm_dir, self.am_dir, target))
+            'steps/align_fmllr.sh --nj {0} --cmd "{1}" {2} {3} {4} {5}'
+            .format(self.njobs, utils.config.get('kaldi', 'train-cmd'),
+                    os.path.join(self.recipe_dir, 'data', 'align'),
+                    self.lm_dir, self.am_dir, target))
 
-        utils.jobs.run(command, stdout=self.log.debug, env=kaldi_path())
+        self.log.debug('running %s', command)
+        utils.jobs.run(command, stdout=self.log.debug,
+                       env=kaldi_path(), cwd=self.recipe_dir)
 
     def _ali_to_phones(self):
         export = os.path.join(self.recipe_dir, 'export')
         target = os.path.join(export, 'forced_alignment.tra')
-        self.info.log('exporting results to %s', target)
+        self.log.info('exporting results to %s', target)
 
         if not os.path.isdir(export):
             os.makedirs(export)
 
         command = (
             'ali-to-phones --write_lengths=true {0}'
-            ' "ark,t:gunzip -c {1}|" ark,t:{2}',
-            os.path.join(self.am_dir, 'final.mdl'),
+            ' "ark,t:gunzip -c {1}|" ark,t:{2}'.format(
+                os.path.join(self.am_dir, 'final.mdl'),
             os.path.join(self.recipe_dir, 'exp', 'ali_fmllr', 'ali.1.gz'),
-            target)
+            target))
 
-        utils.jobs.run(command, stdout=self.log.debug, env=kaldi_path())
+        utils.jobs.run(command,
+                       stdout=self.log.debug,
+                       env=kaldi_path())
 
         # if we want to use the tri2a results directly without the final
         # forced alignment (is there any difference between the two beyond one
