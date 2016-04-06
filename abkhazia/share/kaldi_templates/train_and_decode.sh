@@ -100,11 +100,13 @@ local/prepare_lm.sh $lm_name
   $highmem_cmd $graph_dir/mkgraph.log \
     utils/mkgraph.sh --mono $lm "$exp_dir" \
     $graph_dir
+
   # decode and compute WER on test set
   decode_dir_test="$exp_dir"/decode_test_"$lm_name"
   mkdir -p $decode_dir_test
   steps/decode.sh --nj 8 --cmd "$decode_cmd" $graph_dir data/test \
     $decode_dir_test
+
   # if full computations: decode and compute WER on train set too
   if [ "$decode_train" = true ] ; then
     decode_dir_train="$exp_dir"/decode_train_"$lm_name"
@@ -166,9 +168,8 @@ if [ "$skip_training" = false ] ; then
     exp/tri2a > exp/tri2a/train.log
 fi
 
-# Speaker adaptive triphone model test
-# instantiate full decoding graph (HCLG)
-# done in parallel from next training steps
+# Speaker adaptive triphone model test instantiate full decoding graph
+# (HCLG) done in parallel from next training steps
 (
   exp_dir=exp/tri2a
   # instantiate full decoding graph (HCLG)

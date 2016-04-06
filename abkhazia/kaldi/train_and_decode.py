@@ -96,11 +96,11 @@ class TrainDecode(abstract_recipe.AbstractRecipe):
             # abkhazia corpus has been copied to a different machine
             # after its creation, there might be some
             # machine-dependent differences in the required orders)
-            files = ['text', 'utt2spk', 'segments', 'wav.scp']
-            for target in files:
-                path = os.path.join(self.recipe_dir, 'data', out_split, target)
-                if os.path.exists(path):
-                    io.cpp_sort(path)
+            # files = ['text', 'utt2spk', 'segments', 'wav.scp']
+            # for target in files:
+            #     path = os.path.join(self.recipe_dir, 'data', out_split, target)
+            #     if os.path.exists(path):
+            #         io.cpp_sort(path)
 
         # LM folders (common to all splits) for now just have word-
         # and phone-level bigrams estimated from train split
