@@ -43,7 +43,7 @@ class AbstractRecipe(object):
         self.log = utils.log2file.get_log(log_file, verbose)
 
         # check recipe_dir
-        recipe_dir = os.path.join(recipe_dir, self.name, 's5')
+        recipe_dir = os.path.join(recipe_dir, self.name)
         self.recipe_dir = recipe_dir
 
         if os.path.isdir(self.recipe_dir):

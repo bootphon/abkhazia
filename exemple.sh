@@ -17,10 +17,10 @@
 
 # This exemple script computes force alignment of a subsample of the
 # buckeye corpus. Writes to $data_dir, the final alignment will be in
-# the $data_dir/split/train/align/s5/export directory.
+# the $data_dir/split/train/align/export directory.
 
-data_dir=~/data/abkhazia/exemple
-#rm -rf $data_dir
+data_dir=~/lscp/data/abkhazia/exemple
+rm -rf $data_dir
 
 # Step 1 : prepare the corpus. Here we assume you have a raw buckeye
 # distribution and the 'buckeye-directory' is set in the abkhazia
@@ -33,9 +33,9 @@ abkhazia prepare buckeye -o $data_dir || exit 1
 abkhazia split $data_dir -T 0.05 -f || exit 1
 train_dir=$data_dir/split/train
 
-# Step 3 : compute a language model on the train set (here a phone
+# Step 3 : compute a language model on the train set (here a word
 # level bigram).
-abkhazia language $train_dir --model-level phone --model-order 2 -f || exit 1
+abkhazia language $train_dir -l word -n 2 -f || exit 1
 
 # Step 4 : compute an acoustic model on the train set (a speaker
 # adapted triphone model by default).
@@ -46,4 +46,4 @@ abkhazia acoustic $train_dir -t mono -f -j 4 -k 4 || exit 1
 abkhazia align $train_dir -vf -j 4 || exit 1
 
 echo 'symlink the result to $data_dir/forced_alignment.txt'
-ln -s -f $train_dir/align/s5/export/forced_alignment.txt $data_dir
+ln -s -f $train_dir/align/export/forced_alignment.txt $data_dir

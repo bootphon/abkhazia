@@ -65,7 +65,7 @@ class AbkhaziaAlign(AbstractRecipeCommand):
         # get back the language model directory
         lang = (corpus if args.language_model is None
                 else os.path.abspath(args.language_model))
-        lang += '/language/s5/data/language'
+        lang += '/language/lang'
 
         # ensure it's a directory and we have both oov.int and
         # G.fst in it
@@ -83,7 +83,7 @@ class AbkhaziaAlign(AbstractRecipeCommand):
         # get back the acoustic model directory
         acoustic = (corpus if args.acoustic_model is None
                     else os.path.abspath(args.acoustic_model))
-        acoustic += '/acoustic/s5/exp/acoustic_model'
+        acoustic += '/acoustic/exp/acoustic_model'
 
         # ensure it's a directory and we have final.mdl in it
         if not os.path.isdir(lang):
@@ -104,6 +104,6 @@ class AbkhaziaAlign(AbstractRecipeCommand):
 
         # finally create and/or run the recipe
         if not args.only_run:
-            recipe.create(args)
+            recipe.create()
         if not args.no_run:
             recipe.run()

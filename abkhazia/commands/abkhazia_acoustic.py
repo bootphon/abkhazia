@@ -39,7 +39,7 @@ class AbkhaziaAcoustic(AbstractRecipeCommand):
         # get back the language model directory
         lang = (corpus if args.language_model is None
                 else os.path.abspath(args.language_model))
-        lang += '/language/s5/data/language'
+        lang += '/language/lang'
 
         # ensure it's a directory and we have both oov.int and
         # G.fst in it

@@ -2,7 +2,8 @@
 
 * Functions
 
- - [ ] Remove the kaldi_templates/*.sh.in and do all in Python.
+ - [ ] remove the kaldi_templates/*.sh.in and do all in Python.
+ - [X] remove s5 from generated recipes
  - language
    - [ ] fix the --word-position-dependent to be conditioned by phone level
    - [ ] test the --optional-silences option
@@ -18,6 +19,7 @@
    - [X] --njobs option for cluster
    - [X] rename the command 'acoustic'
      consistant with 'language' and disambiguate split/{train,test}
+   - [X] remove score.sh -> this is post-decoding
    - [ ] --retrain option
      it should be possible to retrain a trained model on a new corpus
      (for instance, specifically retrain silence models, or retrain on a

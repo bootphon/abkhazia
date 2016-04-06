@@ -43,8 +43,9 @@ class AcousticModel(abstract_recipe.AbstractRecipe):
         # setup other files and folders
         self.a2k.setup_wav_folder()
         self.a2k.setup_kaldi_folders()
+        self.a2k.setup_conf_dir()
         self.a2k.setup_machine_specific_scripts()
 
         # setup score.sh and run.sh
         args.name = self.name
-        self.a2k.setup_main_scripts('acoustic_model.sh.in', args)
+        self.a2k.setup_run('acoustic_model.sh.in', args)

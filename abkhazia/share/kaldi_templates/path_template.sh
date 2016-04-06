@@ -17,9 +17,9 @@ FSTBIN=$KALDI_ROOT/tools/openfst/bin
 LMBIN=$KALDI_ROOT/tools/irstlm/bin:$KALDI_ROOT/tools/srilm/bin/i686-m64
 LMBIN=$LMBIN:$KALDI_ROOT/tools/srilm/bin/:$KALDI_ROOT/tools/sctk/bin/
 
-[ -d $PWD/local ] || { echo "Error: 'local' subdirectory not found."; }
-[ -d $PWD/utils ] || { echo "Error: 'utils' subdirectory not found."; }
-[ -d $PWD/steps ] || { echo "Error: 'steps' subdirectory not found."; }
+[ -d $PWD/local ] || { echo "$0: 'local' subdirectory not found."; }
+[ -d $PWD/utils ] || { echo "$0: 'utils' subdirectory not found."; }
+[ -d $PWD/steps ] || { echo "$0: 'steps' subdirectory not found."; }
 
 export kaldi_local=$PWD/local
 export kaldi_utils=$PWD/utils

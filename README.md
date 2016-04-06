@@ -17,6 +17,12 @@ abkhazia configuration script will fail.
 
 * [Kaldi Speech Recognition Toolkit](http://kaldi-asr.org).
 
+    * **In brief** the ``./install_kadi.sh`` will download, configure
+      and compile kaldi to ``./kaldi``. This should work on any
+      standard Unix distribution and fail on the first encoutered
+      error. If so, install kaldi manually as detailed in the
+      following steps.
+
 	* Because Kaldi is developed under continuous integration, there
       is no published release to rely on. To ensure the abkhazia
       stability, we therefore  maintain a Kaldi fork that is guaranteed to
