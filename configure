@@ -17,8 +17,9 @@
 
 
 # This script configures abkhazia before installation. It checks if
-# dependancies are installed (sox, shorten and CMU dict) and setup the
-# path to kaldi. It also creates the following files in ./abkhazia/share
+# dependancies are installed (kaldi, sox, shorten and CMU dict) and
+# setup the path to kaldi. It also creates the following files in
+# ./abkhazia/share
 #
 # - abkhazia.cfg default configuration file
 # - path.sh and cmd.sh used by kaldi recipes
@@ -46,7 +47,7 @@ Please fix the problem and run this script again";
 }
 
 
-# Download the CMU pronouncing dictionary if not present
+# download the CMU pronouncing dictionary if not present
 cmu_url="http://svn.code.sf.net/p/cmusphinx/code/trunk/cmudict/cmudict.0.7a"
 cmu_dic=$share/`basename $cmu_url`
 if [ -e $cmu_dic ]
@@ -71,7 +72,7 @@ http://etree.org/shnutils/shorten/dist/src/shorten-3.6.1.tar.gz"
 [ ! -z $shorten ] && echo "Found shorten as $shorten" || failure "$shorten_failure"
 
 
-# Configuring abkhazia/share/abkhazia.cfg
+# configuring abkhazia/share/abkhazia.cfg
 conf=$share/abkhazia.cfg
 if [ ! -e $conf ]; then
     # Init an empty configuration file if not existing
