@@ -28,11 +28,20 @@ class AcousticModel(abstract_recipe.AbstractRecipe):
     Instantiates and run a kaldi recipe to train a HMM-GMM model on
     an abkhazia corpus and a language model
 
+    Parameters:
+        corpus_dir (str): path to an abkhazia corpus
+        recipe_dir (str): path to the created recipe and results
+        verbose (bool): if True send more messages to the logger
+        model_type (str): The type of model to train in 'mono', 'tri', 'tri-sa'
+
     Attributes:
         use_pitch (bool): If True, compute pitch features along with MFCCs
         njobs_feats (int): Number of parallel jobs for computing features
         njobs_train (int): Number of parallel jobs for computing model
-        model_type (str): The type of model to train in 'mono', 'tri', 'tri-sa'
+        num_states_si (int)
+        num_gauss_si (int)
+        num_states_sa (int)
+        num_gauss_sa (int)
 
     """
     name = 'acoustic'
@@ -46,6 +55,10 @@ class AcousticModel(abstract_recipe.AbstractRecipe):
         def config(name):
             return utils.config.get(self.name, name)
         self.use_pitch = config('use-pitch')
+        self.num_states_si = config('num-states-si')
+        self.num_gauss_si = config('num-gauss-si')
+        self.num_states_sa = config('num-states-sa')
+        self.num_gauss_sa = config('num-gauss-sa')
 
         ncores = multiprocessing.cpu_count()
         self.njobs_feats = ncores
@@ -70,7 +83,7 @@ class AcousticModel(abstract_recipe.AbstractRecipe):
     def _compute_features(self):
         script = ('steps/make_mfcc_pitch.sh' if self.use_pitch
                   else 'steps/make_mfcc.sh')
-        self.log.debug('computing features with %s', script)
+        self.log.info('computing features with %s', script)
 
         command = (
             script + ' --nj {0} --cmd "{1}" {2} {3} {4}'.format(
@@ -141,14 +154,71 @@ class AcousticModel(abstract_recipe.AbstractRecipe):
 
         return target
 
-    def _triphone_train(self):
-        pass
+    def _triphone_train(self, origin):
+        target = os.path.join(self.recipe_dir, 'exp', 'tri')
+        self.log.info(
+            'training speaker-independant triphone model in %s', target)
 
-    def _sa_triphone_align(self):
-        pass
+        if not os.path.isdir(target):
+            os.makedirs(target)
 
-    def _sa_triphone_train(self):
-        pass
+        command = ('steps/train_deltas.sh {0} {1} {2} {3} {4} {5}'.format(
+            self.num_states_si,
+            self.num_gauss_si,
+            os.path.join('data', self.name),
+            self.lang,
+            origin,
+            target))
+
+        self.log.debug('running %s', command)
+        utils.jobs.run(command, stdout=self.log.debug,
+                       env=kaldi_path(), cwd=self.recipe_dir)
+
+        return target
+
+    def _sa_triphone_align(self, origin):
+        target = os.path.join(self.recipe_dir, 'exp', 'tri_ali_fmllr')
+        self.log.info(
+            'forced-aligning corpus with the triphone model in %s', target)
+
+        if not os.path.isdir(target):
+            os.makedirs(target)
+
+        command = ('steps/align_fmllr.sh --nj {0} --cmd "{1}" {2} {3} {4} {5}'
+                   .format(
+                       self.njobs_train,
+                       utils.config.get('kaldi', 'train-cmd'),
+                       os.path.join('data', self.name),
+                       self.lang,
+                       origin,
+                       target))
+
+        self.log.debug('running %s', command)
+        utils.jobs.run(command, stdout=self.log.debug,
+                       env=kaldi_path(), cwd=self.recipe_dir)
+
+    def _sa_triphone_train(self, origin):
+        target = os.path.join(self.recipe_dir, 'exp', 'tri-sa')
+        self.log.info(
+            'training speaker-adaptive triphone model in %s', target)
+
+        if not os.path.isdir(target):
+            os.makedirs(target)
+
+        command = ('steps/train_sat.sh {0} {1} {2} {3} {4} {5}'.format(
+            self.num_states_sa,
+            self.num_gauss_sa,
+            os.path.join('data', self.name),
+            self.lang,
+            origin,
+            target))
+
+        self.log.debug('running %s', command)
+        utils.jobs.run(command, stdout=self.log.debug,
+                       env=kaldi_path(), cwd=self.recipe_dir)
+
+        return target
+
 
     def check_parameters(self):
         """Raise if the acoustic modeling parameters are not correct"""
