@@ -44,7 +44,6 @@ class ForceAlign(abstract_recipe.AbstractRecipe):
     def _check_template(param, name, target):
         if param is None:
             raise RuntimeError('non specified {} model'.format(name))
-
         if not os.path.isfile(target):
             raise RuntimeError('non valid {} model: {} not found'
                                .format(name, target))
@@ -56,38 +55,6 @@ class ForceAlign(abstract_recipe.AbstractRecipe):
     def _check_language_model(self):
         self._check_template(
             self.lm_dir, 'language', os.path.join(self.lm_dir, 'phones.txt'))
-
-    def check_parameters(self):
-        self._check_acoustic_model()
-        self._check_language_model()
-
-    def create(self):
-        """Create the recipe data in `self.recipe_dir`"""
-        self._check_acoustic_model()
-
-        target_dir = os.path.join(self.recipe_dir, 'data/align')
-        if not os.path.isdir(target_dir):
-            os.makedirs(target_dir)
-
-        # setup data files. Those files are linked from the acoustic
-        # model dircetory instead of being prepared from the corpus
-        # directory.
-        for source in ('text', 'utt2spk', 'spk2utt', 'segments',
-                       'wav.scp', 'feats.scp', 'cmvn.scp'):
-            origin = os.path.abspath(os.path.join(
-                self.am_dir, '../../data/acoustic', source))
-            if os.path.isfile(origin):
-                target = os.path.join(target_dir, source)
-                if not os.path.isfile(target):
-                    os.link(origin, target)
-            else:
-                self.log.debug('no such file %s', origin)
-
-        # setup other files and folders
-        self.a2k.setup_kaldi_folders()
-        self.a2k.setup_machine_specific_scripts()
-        # self.a2k.setup_score()
-        # self.a2k.setup_run('force_align.sh.in', args)
 
     def _align_fmllr(self):
         target = os.path.join(self.recipe_dir, 'exp', 'ali_fmllr')
@@ -122,8 +89,8 @@ class ForceAlign(abstract_recipe.AbstractRecipe):
             'ali-to-phones --write_lengths=true {0}'
             ' "ark,t:gunzip -c {1}|" ark,t:{2}'.format(
                 os.path.join(self.am_dir, 'final.mdl'),
-            os.path.join(self.recipe_dir, 'exp', 'ali_fmllr', 'ali.1.gz'),
-            target))
+                os.path.join(self.recipe_dir, 'exp', 'ali_fmllr', 'ali.1.gz'),
+                target))
 
         utils.jobs.run(command,
                        stdout=self.log.debug,
@@ -149,6 +116,36 @@ class ForceAlign(abstract_recipe.AbstractRecipe):
         k2a.export_phone_alignment(
             os.path.join(self.lm_dir, 'phones.txt'),
             tra, tra.replace('.tra', '.txt'))
+
+    def check_parameters(self):
+        self._check_acoustic_model()
+        self._check_language_model()
+
+    def create(self):
+        """Create the recipe data in `self.recipe_dir`"""
+        self._check_acoustic_model()
+
+        target_dir = os.path.join(self.recipe_dir, 'data/align')
+        if not os.path.isdir(target_dir):
+            os.makedirs(target_dir)
+
+        # setup data files. Those files are linked from the acoustic
+        # model dircetory instead of being prepared from the corpus
+        # directory.
+        for source in ('text', 'utt2spk', 'spk2utt', 'segments',
+                       'wav.scp', 'feats.scp', 'cmvn.scp'):
+            origin = os.path.abspath(os.path.join(
+                self.am_dir, '../../data/acoustic', source))
+            if os.path.isfile(origin):
+                target = os.path.join(target_dir, source)
+                if not os.path.isfile(target):
+                    os.link(origin, target)
+            else:
+                self.log.debug('no such file %s', origin)
+
+        # setup other files and folders
+        self.a2k.setup_kaldi_folders()
+        self.a2k.setup_machine_specific_scripts()
 
     def run(self):
         self.check_parameters()

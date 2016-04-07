@@ -2,8 +2,6 @@
 
 * Functions
 
- - [ ] remove the kaldi_templates/*.sh.in and do all in Python.
-   - [ ] when done, remove the --no-run/--only-run options
  - language
    - [ ] test the --optional-silences option
  - prepare
@@ -14,10 +12,6 @@
      phones does not create conflicts, otherwise issue a warning to say
      that word_position_dependent models won't be usable.
  - acoustic
-   - [X] --njobs option for cluster
-   - [X] rename the command 'acoustic'
-     consistant with 'language' and disambiguate split/{train,test}
-   - [X] remove score.sh -> this is post-decoding
    - [ ] --retrain option
      it should be possible to retrain a trained model on a new corpus
      (for instance, specifically retrain silence models, or retrain on a
@@ -27,6 +21,15 @@
    - [ ] test the acoustic model
      providing WER (word error rate) for every model, eventual
      automatic parameter search ?
+    - [ ] warning issues in kaldi gmm with buckeye
+      WARNING (gmm-init-model:InitAmGmm():gmm-init-model.cc:55) Tree has
+      pdf-id 81 with no stats; corresponding phone list: 82
+
+      ** The warnings above about 'no stats' generally mean you have phones **
+      ** (or groups of phones) in your phone set that had no corresponding data. **
+      ** You should probably figure out whether something went wrong, **
+      ** or whether your data just doesn't happen to have examples of those **
+      ** phones. **
  - align
    - [X] have a --njobs option
    - [X] replace force_align.sh.in by pure python

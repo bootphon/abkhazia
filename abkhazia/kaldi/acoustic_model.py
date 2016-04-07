@@ -35,9 +35,11 @@ class AcousticModel(abstract_recipe.AbstractRecipe):
         model_type (str): The type of model to train in 'mono', 'tri', 'tri-sa'
 
     Attributes:
+        lang (str): path to the language model directory
         use_pitch (bool): If True, compute pitch features along with MFCCs
         njobs_feats (int): Number of parallel jobs for computing features
         njobs_train (int): Number of parallel jobs for computing model
+        njobs_local (int): Number of parallel jobs for pre/post computing
         num_states_si (int)
         num_gauss_si (int)
         num_states_sa (int)
@@ -60,14 +62,51 @@ class AcousticModel(abstract_recipe.AbstractRecipe):
         self.num_states_sa = config('num-states-sa')
         self.num_gauss_sa = config('num-gauss-sa')
 
+        self.lang = None
+
         ncores = multiprocessing.cpu_count()
         self.njobs_feats = ncores
         self.njobs_train = ncores
+        self.njobs_local = ncores
 
-    def _check_njobs(self, njobs):
-        # if we run jobs locally, make we have enough cores
+    def _check_pitch(self):
+        if isinstance(self.use_pitch, bool):
+            pass
+        elif self.use_pitch == 'true':
+            self.use_pitch = True
+        elif self.use_pitch == 'false':
+            self.use_pitch = False
+        else:
+            raise RuntimeError(
+                "use_pitch must be in 'true' or 'false', it is {}"
+                .format(self.use_pitch))
+
+    def _check_language_model(self):
+        if self.lang is None:
+            raise RuntimeError('non specified language model')
+
+        # ensure it's a directory and we have both oov.int and
+        # G.fst in it
+        if not os.path.isdir(self.lang):
+            raise RuntimeError(
+                'language model not found: {}.\n'.format(self.lang))
+        for target in ['oov.int', 'G.fst']:
+            if not os.path.isfile(os.path.join(self.lang, target)):
+                raise RuntimeError(
+                    'non valid language model: {} not found in {}'
+                    .format(target, self.lang))
+
+    def _check_njobs(self, njobs, local=False):
+        # if we run jobs locally, make sure we have enough cores
+        # TODO refactor
         ncores = multiprocessing.cpu_count()
-        if 'queue' not in utils.config.get('kaldi', 'train-cmd'):
+        if local and ncores < njobs:
+            self.log.warning(
+                'asking {0} cores but {1} available, reducing {0} -> {1}'
+                .format(njobs, ncores))
+            njobs = ncores
+
+        if not local and 'queue' not in utils.config.get('kaldi', 'train-cmd'):
             if ncores < njobs:
                 self.log.warning(
                     'asking {0} cores but {1} available, reducing {0} -> {1}'
@@ -77,8 +116,9 @@ class AcousticModel(abstract_recipe.AbstractRecipe):
 
     def _check_model_type(self):
         if self.model_type not in ['mono', 'tri', 'tri-sa']:
-            raise RuntimeError("model type '{}' not in 'mono', 'tri', 'tri-sa'"
-                               .format(self.model_type))
+            raise RuntimeError(
+                "model type '{}' not in 'mono', 'tri', 'tri-sa'"
+                .format(self.model_type))
 
     def _compute_features(self):
         script = ('steps/make_mfcc_pitch.sh' if self.use_pitch
@@ -95,7 +135,7 @@ class AcousticModel(abstract_recipe.AbstractRecipe):
 
         self.log.debug('running %s', command)
         utils.jobs.run(command, stdout=self.log.debug,
-                       env=kaldi_path(), cwd=self.recipe_dir())
+                       env=kaldi_path(), cwd=self.recipe_dir)
 
     def _compute_cmvn_stats(self):
         command = 'steps/compute_cmvn_stats.sh {0} {1} {2}'.format(
@@ -197,6 +237,8 @@ class AcousticModel(abstract_recipe.AbstractRecipe):
         utils.jobs.run(command, stdout=self.log.debug,
                        env=kaldi_path(), cwd=self.recipe_dir)
 
+        return target
+
     def _sa_triphone_train(self, origin):
         target = os.path.join(self.recipe_dir, 'exp', 'tri-sa')
         self.log.info(
@@ -219,15 +261,17 @@ class AcousticModel(abstract_recipe.AbstractRecipe):
 
         return target
 
-
     def check_parameters(self):
         """Raise if the acoustic modeling parameters are not correct"""
         self._check_model_type()
+        self._check_language_model()
+        self._check_pitch()
 
         self.njobs_feats = self._check_njobs(self.njobs_feats)
         self.njobs_train = self._check_njobs(self.njobs_train)
+        self.njobs_local = self._check_njobs(self.njobs_local, local=True)
 
-    def create(self, args):
+    def create(self):
         """Initialize the recipe data in `self.recipe_dir`"""
         # local folder
         self.a2k.setup_lexicon()
@@ -236,7 +280,7 @@ class AcousticModel(abstract_recipe.AbstractRecipe):
         self.a2k.setup_variants()
 
         # setup data files
-        desired_utts = self.a2k.desired_utterances(njobs=args.njobs_local)
+        desired_utts = self.a2k.desired_utterances(njobs=self.njobs_local)
         self.a2k.setup_text(desired_utts=desired_utts)
         self.a2k.setup_utt2spk(desired_utts=desired_utts)
         self.a2k.setup_segments(desired_utts=desired_utts)
@@ -244,13 +288,9 @@ class AcousticModel(abstract_recipe.AbstractRecipe):
 
         # setup other files and folders
         self.a2k.setup_wav_folder()
-        self.a2k.setup_kaldi_folders()
         self.a2k.setup_conf_dir()
+        self.a2k.setup_kaldi_folders()
         self.a2k.setup_machine_specific_scripts()
-
-        # setup score.sh and run.sh
-        args.name = self.name
-        self.a2k.setup_run('acoustic_model.sh.in', args)
 
     def run(self):
         """Run the created recipe and compute the acoustic model"""
