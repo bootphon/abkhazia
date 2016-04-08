@@ -19,27 +19,27 @@
 # buckeye corpus. Writes to $data_dir, the final alignment will be in
 # the $data_dir/split/train/align/export directory.
 
-data_dir=~/lscp/data/abkhazia/exemple
+data_dir=~/data/abkhazia/exemple
 rm -rf $data_dir
 
 # Step 1 : prepare the corpus. Here we assume you have a raw buckeye
 # distribution and the 'buckeye-directory' is set in the abkhazia
 # configuration file.
-abkhazia prepare buckeye -o $data_dir || exit 1
+abkhazia prepare buckeye -o $data_dir -v || exit 1
 
 # Step 2 : split the prepared corpus in train and test sets. We keep
 # only 5% for training and split by utterances (this is an exemple, in
 # real life consider taking more than 5% of the data).
-abkhazia split $data_dir -T 0.05 -f || exit 1
+abkhazia split $data_dir -T 0.05 -vf || exit 1
 train_dir=$data_dir/split/train
 
 # Step 3 : compute a language model on the train set (here a word
 # level bigram).
-abkhazia language $train_dir -l word -n 2 -f || exit 1
+abkhazia language $train_dir -l word -n 2 -vf || exit 1
 
 # Step 4 : compute an acoustic model on the train set (a speaker
 # adapted triphone model by default).
-abkhazia acoustic $train_dir -t mono -f -j 4 -k 4 || exit 1
+abkhazia acoustic $train_dir -t mono -vf -j 4 -k 4 || exit 1
 
 # Step 5 : compute forced-alignment from the trained language and
 # acoustic models.

@@ -313,4 +313,10 @@ class AcousticModel(abstract_recipe.AbstractRecipe):
 
         # speaker adaptive triphone
         result_directory = self._sa_triphone_align(result_directory)
-        self._sa_triphone_train(result_directory)
+        result_directory = self._sa_triphone_train(result_directory)
+
+        # finally symlink the result to a constant directory
+        final_directory = os.path.join(
+            self.recipe_dir, 'exp', 'acoustic_model')
+        utils.remove(final_directory, safe=True)
+        os.symlink(result_directory, final_directory)
