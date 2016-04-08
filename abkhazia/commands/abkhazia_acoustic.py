@@ -36,7 +36,7 @@ class AbkhaziaAcoustic(AbstractRecipeCommand):
 
         corpus, output_dir = cls.prepare_for_run(args)
 
-        # instanciate the kaldi recipe creator
+        # instanciate the kaldi recipe
         recipe = acoustic_model.AcousticModel(
             corpus, output_dir, args.verbose, args.type)
 

@@ -14,16 +14,19 @@
 # along with abkhazia. If not, see <http://www.gnu.org/licenses/>.
 """Implementation of the 'abkhazia decode' command"""
 
+import os
+
 from abkhazia.commands.abstract_command import AbstractRecipeCommand
 from abkhazia.kaldi.abkhazia2kaldi import add_argument
 import abkhazia.kaldi.decode as decode
-
-import os
+import abkhazia.utils as utils
 
 
 class AbkhaziaDecode(AbstractRecipeCommand):
     name = 'decode'
-    description = 'compute phone posteriograms or transcription'
+
+    description = """compute phone posteriograms or transcription from a language model,
+    an acoustic model and an abkhazia corpus to be decoded"""
 
     @classmethod
     def add_parser(cls, subparsers):
@@ -32,7 +35,7 @@ class AbkhaziaDecode(AbstractRecipeCommand):
         parser, dir_group = super(AbkhaziaDecode, cls).add_parser(subparsers)
 
         parser.add_argument(
-            '-j', '--njobs', type=int, default=1, metavar='<njobs>',
+            '-j', '--njobs-train', type=int, default=1, metavar='<njobs>',
             help="""number of jobs to launch for parallel alignment, default is to
             launch %(default)s jobs.""")
 
@@ -51,65 +54,55 @@ class AbkhaziaDecode(AbstractRecipeCommand):
             help='''the acoustic model recipe directory, data is read from
             <am-dir>/acoustic. If not specified, use <am-dir>=<corpus>.''')
 
-        def add_arg(name, type, help):
-            add_argument(parser, cls.name, name, type, help)
-        add_arg('use-pitch', bool, 'MFCC features parameter')
-        add_arg('acoustic-scale', float, '''acoustic scale for extracting
-        posterior from the final lattice''')
+        group = parser.add_argument_group(
+            'decoding parameters', 'those parameters can also be '
+            'specified in the [decode] section of the configuration file')
+
+        def config(param):
+            return utils.config.get(cls.name, param)
+
+        group.add_argument(
+            '--use-pitch', metavar='<true|false>',
+            default=config('use-pitch'), choices=['true', 'false'],
+            help="""if true, compute pitch features along with MFCCs,
+            default is %(default)s""")
+
+        group.add_argument(
+            '-s', '--acoustic-scale', type=float, metavar='<float>',
+            default=config('acoustic-scale'),
+            help='''acoustic scale for extracting posterior
+            from the final lattice''')
 
         return parser
 
-    # TODO almost the same as align, factorize
     @classmethod
     def run(cls, args):
         corpus, output_dir = cls.prepare_for_run(args)
 
+        # instanciate the kaldi recipe
+        recipe = decode.Decode(corpus, output_dir, args.verbose)
+
         # get back the language model directory
         lang = (corpus if args.language_model is None
                 else os.path.abspath(args.language_model))
-        lang += '/language/data/language'
-
-        # ensure it's a directory and we have both oov.int and
-        # G.fst in it
-        if not os.path.isdir(lang):
-            raise IOError(
-                'language model not found: {}.\n'.format(lang) +
-                "Please provide a language model "
-                "(use 'abkhazia language <args>')")
-
-        if not (os.path.isfile(os.path.join(lang, 'oov.int')) and
-                os.path.isfile(os.path.join(lang, 'G.fst'))):
-            raise IOError('not a valid language model directory: {}'
-                          .format(lang))
+        lang += '/language/lang'
+        recipe.lm_dir = lang
 
         # get back the acoustic model directory
         acoustic = (corpus if args.acoustic_model is None
                     else os.path.abspath(args.acoustic_model))
         acoustic += '/acoustic/exp/acoustic_model'
+        recipe.am_dir = acoustic
 
-        # ensure it's a directory and we have final.mdl in it
-        if not os.path.isdir(lang):
-            raise IOError(
-                'acoustic model not found: {}.\n'.format(lang) +
-                "Please provide a trained acoustic model "
-                "(use 'abkhazia train <args>')")
-
-        if not os.path.isfile(os.path.join(acoustic, 'final.mdl')):
-            raise IOError('not a valid acoustic model directory: {}'
-                          .format(acoustic))
-
-        # this is used to configure the force_align.sh.in script in
-        # create()
-        del args.language_model
-        del args.acoustic_model
-        args.lang = lang
-        args.acoustic = acoustic
-
-        recipe = decode.Decode(corpus, output_dir, args.verbose)
+        # setup other recipe parameters from args
+        recipe.use_pitch = args.use_pitch
+        recipe.acoustic_scale = args.acoustic_scale
+        recipe.njobs_train = args.njobs_train
+        recipe.njobs_feats = args.njobs_feats
 
         # finally create and/or run the recipe
         if not args.only_run:
-            recipe.create(args)
+            recipe.create()
         if not args.no_run:
             recipe.run()
             recipe.export()

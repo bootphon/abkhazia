@@ -313,5 +313,4 @@ class AcousticModel(abstract_recipe.AbstractRecipe):
 
         # speaker adaptive triphone
         result_directory = self._sa_triphone_align(result_directory)
-        result_directory = self._sa_triphone_train(result_directory)
-        return result_directory
+        self._sa_triphone_train(result_directory)
