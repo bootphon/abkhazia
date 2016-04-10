@@ -19,7 +19,7 @@
 # buckeye corpus. Writes to $data_dir, the final alignment will be in
 # the $data_dir/split/train/align/export directory.
 
-data_dir=~/data/abkhazia/exemple
+data_dir=${1:-./exemple}
 rm -rf $data_dir
 
 # Step 1 : prepare the corpus. Here we assume you have a raw buckeye
@@ -38,8 +38,11 @@ train_dir=$data_dir/split/train
 abkhazia language $train_dir -l word -n 2 -vf || exit 1
 
 # Step 4 : compute an acoustic model on the train set (a speaker
-# adapted triphone model by default).
-abkhazia acoustic $train_dir -t mono -vf -j 4 -k 4 || exit 1
+# adapted triphone model by default). The test.cfg file comes with
+# very small parameters for triphone modeling, it overloads the
+# default values. In this exemple it is used to reduce computation
+# time (no matter the model quality).
+abkhazia -c ./test/test.cfg acoustic $train_dir -t tri-sa -vf -j 4 -k 4 || exit 1
 
 # Step 5 : compute forced-alignment from the trained language and
 # acoustic models.

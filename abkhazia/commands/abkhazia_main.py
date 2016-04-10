@@ -17,6 +17,7 @@
 # along with abkhazia. If not, see <http://www.gnu.org/licenses/>.
 """The abkhazia entry point from command line"""
 
+import os
 import sys
 import textwrap
 import pkg_resources
@@ -62,10 +63,13 @@ class Abkhazia(object):
         parser = argparse.ArgumentParser(add_help=False)
 
         class _ConfigAction(argparse.Action):
-            def __call__(self, parser, namespace, values, option_string=None):
-                # TODO list config files later (log it in command __init__)
-                print 'loading configuration from {}'.format(values)
-                utils.config.read(values)
+            def __call__(self, parser, namespace, value, option_string=None):
+                if not os.path.isfile(value):
+                    raise IOError(
+                        'configuration file not found {}'.format(value))
+
+                print 'loading configuration from {}'.format(value)
+                utils.config.read(value)
 
         # add a configuration argument
         parser.add_argument(
