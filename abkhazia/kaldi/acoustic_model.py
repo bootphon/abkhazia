@@ -240,7 +240,7 @@ class AcousticModel(abstract_recipe.AbstractRecipe):
         return target
 
     def _sa_triphone_train(self, origin):
-        target = os.path.join(self.recipe_dir, 'exp', 'tri-sa')
+        target = os.path.join(self.recipe_dir, 'exp', 'tri_sa')
         self.log.info(
             'training speaker-adaptive triphone model in %s', target)
 
@@ -260,6 +260,13 @@ class AcousticModel(abstract_recipe.AbstractRecipe):
                        env=kaldi_path(), cwd=self.recipe_dir)
 
         return target
+
+    def _export(self, result_directory):
+        # finally symlink the result to a constant directory
+        final_directory = os.path.join(
+            self.recipe_dir, 'exp', 'acoustic_model')
+        utils.remove(final_directory, safe=True)
+        os.symlink(result_directory, final_directory)
 
     def check_parameters(self):
         """Raise if the acoustic modeling parameters are not correct"""
@@ -303,20 +310,15 @@ class AcousticModel(abstract_recipe.AbstractRecipe):
         # monophone
         result_directory = self._monophone_train()
         if self.model_type == 'mono':
-            return result_directory
+            return self._export(result_directory)
 
         # triphone
         result_directory = self._triphone_align(result_directory)
         result_directory = self._triphone_train(result_directory)
         if self.model_type == 'tri':
-            return result_directory
+            return self._export(result_directory)
 
         # speaker adaptive triphone
         result_directory = self._sa_triphone_align(result_directory)
         result_directory = self._sa_triphone_train(result_directory)
-
-        # finally symlink the result to a constant directory
-        final_directory = os.path.join(
-            self.recipe_dir, 'exp', 'acoustic_model')
-        utils.remove(final_directory, safe=True)
-        os.symlink(result_directory, final_directory)
+        return self._export(result_directory)
