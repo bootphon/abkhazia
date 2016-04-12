@@ -89,7 +89,7 @@ class ForceAlign(abstract_recipe.AbstractRecipe):
             'ali-to-phones --write_lengths=true {0}'
             ' "ark,t:gunzip -c {1}|" ark,t:{2}'.format(
                 os.path.join(self.am_dir, 'final.mdl'),
-                os.path.join(self.recipe_dir, 'exp', 'ali_fmllr', 'ali.1.gz'),
+                os.path.join(self.recipe_dir, 'exp', 'ali_fmllr', 'ali.*.gz'),
                 target))
 
         utils.jobs.run(command,
