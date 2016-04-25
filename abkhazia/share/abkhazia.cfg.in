@@ -40,6 +40,7 @@ highmem-cmd: run.pl
 # for the corpus you have specified directories here.
 aic-directory:
 buckeye-directory:
+childes-directory:
 csj-directory:
 globalphone-directory:
 librispeech-directory:

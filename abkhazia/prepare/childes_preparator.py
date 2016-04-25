@@ -31,6 +31,7 @@ import contextlib
 import os
 import pkg_resources
 import re
+import tempfile
 import wave
 
 import phonemizer
@@ -124,8 +125,9 @@ class ChildesPreparator(AbstractPreparator):
             input_dir, output_dir, verbose, njobs)
 
         self.copy_wavs = copy_wavs
-        self.tmpdir = os.path.join(self.output_dir, 'tmp')
-        self._clean_tmp = True
+        # self.tmpdir = os.path.join(self.output_dir, 'tmp')
+        self.tmpdir = tempfile.mkdtemp()
+        self._clean_tmpdir = True
 
         # write cleaned utterances to self.tmpdir
         self._extract_cds()
@@ -133,7 +135,7 @@ class ChildesPreparator(AbstractPreparator):
         self.dict_utts = self._select_utts_with_timestamps()
 
     def __del__(self):
-        if self._clean_tmp:
+        if self._clean_tmpdir:
             utils.remove(self.tmpdir, safe=True)
 
     def _extract_cds(self):
