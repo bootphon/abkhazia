@@ -174,16 +174,16 @@ class BuckeyePreparator(AbstractPreparator):
                                               str(n+1) + ' ' +
                                               bname_wav + ' ' +
                                               onset + ' ')
-    
+
                                 index_offset = length_utt[n]
                                 offset_line = lines_2[index_offset-1]
-    
+
                                 match_offset = re.match(
                                     r'\s\s+(.*)\s+(121|122)\s(.*)', offset_line)
                                 if not match_offset:
                                     raise IOError('offset line unmatched: {}'
                                                   .format(offset_line))
-    
+
                                 offset = match_offset.group(1)
                                 outfile.write(str(offset))
                                 current_index = index_offset
@@ -195,7 +195,7 @@ class BuckeyePreparator(AbstractPreparator):
                                               str(n+1) + ' ' +
                                               bname_wav + ' ' +
                                               str(onset) + ' ')
-    
+
                                 index_offset = length_utt[n]+current_index
                                 offset_line = lines_2[index_offset-1]
                                 match_offset = re.match(
@@ -203,7 +203,7 @@ class BuckeyePreparator(AbstractPreparator):
                                 if not match_offset:
                                     raise IOError(
                                         'offset not matched {}'.format(offset_line))
-    
+
                                 offset = match_offset.group(1)
                                 outfile.write(str(offset))
                                 current_index = index_offset

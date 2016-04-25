@@ -18,6 +18,7 @@
 """The abkhazia entry point from command line"""
 
 import os
+import subprocess
 import sys
 import textwrap
 import pkg_resources
@@ -145,6 +146,10 @@ class CatchExceptions(object):
 
         except (IOError, OSError, RuntimeError) as err:
             print 'fatal error: {}'.format(err)
+            sys.exit(1)
+
+        except subprocess.CalledProcessError as err:
+            print 'subprocess fatal error: {}'.format(err)
             sys.exit(1)
 
         except pkg_resources.DistributionNotFound:

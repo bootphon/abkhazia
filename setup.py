@@ -36,7 +36,8 @@ REQUIREMENTS = [] if ON_RTD else [
     'progressbar2',
     'joblib',
     'argcomplete',
-    'pytest'
+    'pytest',
+    'phonemizer'
 ]
 
 setup(
@@ -46,14 +47,15 @@ setup(
     zip_safe=False,
     scripts=[],
 
+    # install other dependancies
+    dependency_links=[
+        'https://github.com/bootphon/phonemizer/archive/v0.2.tar.gz#egg=phonemizer-0.2'
+        # 'https://github.com/bootphon/h5features/archive/v1.1.tar.gz#egg=h5features-1.1',
+        # 'https://github.com/bootphon/ABXpy/archive/v0.2.tar.gz#egg=ABXpy-0.2'
+    ],
+
     # install python dependencies from PyPI
     install_requires=REQUIREMENTS,
-
-    # install other dependancies
-    # dependency_links=[
-    #     'https://github.com/bootphon/h5features/archive/v1.1.tar.gz#egg=h5features-1.1',
-    #     'https://github.com/bootphon/ABXpy/archive/v0.2.tar.gz#egg=ABXpy-0.2'
-    # ],
 
     # include any files in abkhazia/share
     package_data={

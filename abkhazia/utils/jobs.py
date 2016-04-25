@@ -57,10 +57,9 @@ def run(command, stdin=None, stdout=sys.stdout.write,
         with pipe:
             # NOTE: workaround read-ahead bug
             for line in iter(pipe.readline, b''):
-                # consume(line if line.endswith('\n') else line[:-1])
-                # consume(line.rstrip('\n'))
                 consume(line)
             consume('\n')
+
     threading.Thread(
         target=consume_lines,
         args=[job.stdout, lambda line: stdout(line)]).start()

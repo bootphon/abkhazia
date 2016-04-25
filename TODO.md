@@ -1,47 +1,76 @@
 <!-- -*-org-*- this comment force org-mode in emacs -->
 
-* posteriograms on Childes/Brent forced alignement [0/3]
-** TODO intégrer Childes/Brent dans abkhazia
-   From XN
-
-   - le corpus que j'ai utilisé (en fait, j'ai déjà converti tous les
-   wavs en 16KHz mais ceux d'origine ne le sont pas tous donc peut-être
-   ajouter cette fonction dans le prepare - il n'est pas écrit pour
-   l'instant, j'avais entré une commande sur le terminal)
-   oberon:/fhgfs/bootphon/scratch/xcao/Brent_test_abkhazia/Brent_corpus_test_abkhazia
-
-   - tous les scripts que j'ai utilisés pour générer les données.
-   Le principal est childes_prepare.py. il y a un childes_preparator que
-   j'avais commencé pour abkhazia. Il y a des commentaires au début que
-   tu peux peut-être utiliser...
-   oberon:/fhgfs/bootphon/scratch/xcao/Brent_test_abkhazia/scripts
-
-   - les sorties si tu veux comparer quand tu auras écrit le script:
-   oberon:/fhgfs/bootphon/scratch/xcao/Brent_test_abkhazia/ouput_brent_abkhazia
-
+* posteriograms on Childes/Brent forced alignement [1/3]
+** DONE intégrer Childes/Brent dans abkhazia
+   CLOSED: [2016-04-24 dim. 23:33]
+*** corpus original (en 16 kHz)
+    oberon:/fhgfs/bootphon/scratch/xcao/Brent_test_abkhazia/Brent_corpus_test_abkhazia
+*** From XN
+   - tous les scripts que j'ai utilisés pour générer les données
+     oberon:/fhgfs/bootphon/scratch/xcao/Brent_test_abkhazia/scripts
+   - les sorties si tu veux comparer quand tu auras écrit le script
+     oberon:/fhgfs/bootphon/scratch/xcao/Brent_test_abkhazia/ouput_brent_abkhazia
 ** TODO force align HTK like
    on a une sortie alignment forcé des phones mais peut-on avoir un
    alignement des mots? Le mieux serait une sortie des 2 comme le fait
    HTK (voir pj) car je pense qu'on va en avoir besoin plus tard...
 
+   Les sorties des alignements forcés sont dans le même répertoire que
+   toutes autres données du Brent. Tu verras que Kaldi n'a pas pu
+   aligner toutes les phrases qui sont dans text.txt mais c'est normal
+   non?
 
-Les sorties des alignements forcés sont dans le même répertoire que
-toutes autres données du Brent. Tu verras que Kaldi n'a pas pu aligner
-toutes les phrases qui sont dans text.txt mais c'est normal non?
-/fhgfs/bootphon/scratch/xcao/Brent_test_abkhazia/output_brent_abkhazia/output_forced_alignment_kaldi/phone_align
-(pour les fichiers splittés) ou "forced_alignment.txt" Emmanuel et
-Christina attendent avec impatience les postériorgrams sur ces
-alignements forcés donc j'espère que tu sauras les contenter :)
-
-Pour le testing sur mac, ça ne marche pas ou en tout cas, je n'ai pas
-pu avancer.  J'ai lancé install_kaldi.sh et il a fait pleins de choses
-mais il a crashé vers la fin.  J'ai aussi essayé de cloner la dernière
-version de kaldi mais ça ne semble pas marcher sur abkhazia car il
-plante sur abkhazia language.
-
+   oberon:/fhgfs/bootphon/scratch/xcao/Brent_test_abkhazia/output_brent_abkhazia/output_forced_alignment_kaldi/phone_align
+   (pour les fichiers splittés) ou "forced_alignment.txt" Emmanuel et
+   Christina attendent avec impatience les postériorgrams sur ces
+   alignements forcés donc j'espère que tu sauras les contenter :)
 ** TODO compute posteriograms with Kaldi
+* Bugs [1/3]
+** TODO installation on Mac
+   XN -- Pour le testing sur mac, ça ne marche pas ou en tout cas, je
+   n'ai pas pu avancer.  J'ai lancé install_kaldi.sh et il a fait
+   pleins de choses mais il a crashé vers la fin.  J'ai aussi essayé
+   de cloner la dernière version de kaldi mais ça ne semble pas
+   marcher sur abkhazia car il plante sur abkhazia language.
+** TODO updating abkhazia.cfg
+   Need of an automated way to update new versions of the installed
+   configuration file in the ./configure script.
+** DONE language
+   Fail on n!=3 for n-grams. Used to work with previous version of kaldi.
+*** py.test -vx ./test/test_language.py | egrep "^\[.*ERROR"
 
+    ["2016-03-30 17:51:06,422 - DEBUG - ERROR
+    (arpa2fst:Read():arpa-file-parser.cc:228) in line 70: Invalid or
+    unexpected directive line '\\2-grams:', expected \\end\\.\n",
+    "2016-03-30 17:51:06,422 - DEBUG - ERROR
+    (arpa2fst:Read():arpa-file-parser.cc:228) in line 70: Invalid or
+    unexpected directive line '\\2-grams:', expected \\end\\.\n",
+    '2016-03-30 17:51:06,423 - DEBUG - ERROR: FstHeader::Read: Bad FST
+    header: standard input\n']
+
+*** details
+
+ - [X] A working kaldi commit
+    a9b65137b4ab90845c1357724d5ddaa805972830 (10 Feb. 2016)
+ - [X] where in abkhazia script the bug occurs?
+   - in _format_lm() -> utils/format_lm_sri.sh
+   - in kaldi-trunk/tools/srilm/bin/change-lm-vocab -> add an empty 3-gram
+ - [X] find a kaldi commit before that bug was introduced?
+   - seems to be introduced by dpovey on commit (after?)
+     a9b65137b4ab90845c1357724d5ddaa805972830 (10 Feb. 2016)
+ - [X] eventually write a pull request?
+
+*** solution
+
+ - submited https://github.com/kaldi-asr/kaldi/pull/639
+ - the bug is fixed within kaldi, see https://github.com/kaldi-asr/kaldi/issues/643
 * Functions
+** prepare childes
+
+   - have a --cds-only option ?
+   - have a subcorpus selection option?
+
+** other
 
  - language
 
@@ -113,37 +142,3 @@ plante sur abkhazia language.
   - [ ] make a install page, deeper than in readme
   - [ ] improve the 'command line' page
   - [ ] improve the 'corpus format' page
-
-* Bugs [1/1]
-
-** DONE language
-
-Fail on n!=3 for n-grams. Used to work with previous version of kaldi.
-
-*** py.test -vx ./test/test_language.py | egrep "^\[.*ERROR"
-
-    ["2016-03-30 17:51:06,422 - DEBUG - ERROR
-    (arpa2fst:Read():arpa-file-parser.cc:228) in line 70: Invalid or
-    unexpected directive line '\\2-grams:', expected \\end\\.\n",
-    "2016-03-30 17:51:06,422 - DEBUG - ERROR
-    (arpa2fst:Read():arpa-file-parser.cc:228) in line 70: Invalid or
-    unexpected directive line '\\2-grams:', expected \\end\\.\n",
-    '2016-03-30 17:51:06,423 - DEBUG - ERROR: FstHeader::Read: Bad FST
-    header: standard input\n']
-
-*** details
-
- - [X] A working kaldi commit
-    a9b65137b4ab90845c1357724d5ddaa805972830 (10 Feb. 2016)
- - [X] where in abkhazia script the bug occurs?
-   - in _format_lm() -> utils/format_lm_sri.sh
-   - in kaldi-trunk/tools/srilm/bin/change-lm-vocab -> add an empty 3-gram
- - [X] find a kaldi commit before that bug was introduced?
-   - seems to be introduced by dpovey on commit (after?)
-     a9b65137b4ab90845c1357724d5ddaa805972830 (10 Feb. 2016)
- - [X] eventually write a pull request?
-
-*** solution
-
- - submited https://github.com/kaldi-asr/kaldi/pull/639
- - the bug is fixed within kaldi, see https://github.com/kaldi-asr/kaldi/issues/643

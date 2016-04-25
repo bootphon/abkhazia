@@ -12,16 +12,52 @@
 #
 # You should have received a copy of the GNU General Public License
 # along with abkhazia. If not, see <http://www.gnu.org/licenses/>.
-"""Provides functions to convert various audio formats to wav"""
+"""Provides functions to convert various audio formats to wav
+
+Wavs conversion functions in this module are tuned the abkhazia needs,
+that is 16 bits, 16 kHz mono wav files.
+
+"""
 
 import collections
 import os
 import shlex
+import shutil
 import subprocess
 import wave
 
 import joblib
 import config  # this is abkhazia.utils.config
+
+
+def wav2wav(wav_in, wav_out, copy=True):
+    """Copy/link an input wav file
+
+    If the input wav if not 16 bit, 16 kHz or mono it will be
+    converted, else if `copy` is True, copy the file, else symlink it.
+
+    """
+    info = _scan_one(wav_in)
+    if info.rate != 16000 or info.nbc != 1 or info.width != 2:
+        # convert the file to the desired audio format
+        command = ('sox -c 1 -b 16 {} -t wav {} rate 16k'
+                   .format(wav_in, wav_out))
+
+        subprocess.call(shlex.split(command))
+
+    elif copy:
+        shutil.copy(wav_in, wav_out)
+    else:
+        os.symlink(wav_in, wav_out)
+
+
+# a little trick to send wav2wav to joblib
+def _wav2wav_link(i, o):
+    return wav2wav(i, o, copy=False)
+
+
+def _wav2wav_copy(i, o):
+    return wav2wav(i, o, copy=True)
 
 
 def flac2wav(flac, wav):
@@ -36,7 +72,7 @@ def flac2wav(flac, wav):
     except:
         raise OSError('sox is not installed on your system')
 
-    command = ('sox -b 16 {} -t wav {} rate 16k'
+    command = ('sox -c 1 -b 16 {} -t wav {} rate 16k'
                .format(flac, wav))
 
     subprocess.call(shlex.split(command))
@@ -94,13 +130,14 @@ def shn2wav(shn, wav):
     ps.wait()
 
 
-def convert(inputs, outputs, fileformat, njobs=1, verbose=5):
+def convert(inputs, outputs, fileformat, njobs=1, verbose=5, copy=False):
     """Convert a range of audio files to the wav format
 
     inputs: list of input files to convert
     outputs: list of the converted wav files
     fileformat: audio format of the input files, must be in {flac, sph, shn}
     njobs: the number of parallel conversions
+    copy: only for wavs input, see wav2wav
 
     We must have len(inputs) == len(wavs), all files in inputs must
     exist. For details on the verbose level, please refeer to the
@@ -112,7 +149,8 @@ def convert(inputs, outputs, fileformat, njobs=1, verbose=5):
         fnc = {
             'flac': flac2wav,
             'sph': sph2wav,
-            'shn': shn2wav
+            'shn': shn2wav,
+            'wav': _wav2wav_copy if copy else _wav2wav_link
         }[fileformat]
     except KeyError:
         raise IOError('{} is not a supported format'.format(fileformat))

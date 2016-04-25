@@ -32,10 +32,24 @@ def merge_dicts(*dict_args):
         result.update(dictionary)
     return result
 
+
 def duplicates(iterable):
     """Return a list of duplicated elements in an iterable"""
     counts = collections.Counter(iterable)
     return [e for e in counts if counts[e] > 1]
+
+
+def unique(seq, sort=False):
+    """Remove duplicates from a sequence
+
+    Do not preserve order of the sequence. From
+    https://www.peterbe.com/plog/uniqifiers-benchmark
+
+    """
+    keys = {}
+    for e in seq:
+        keys[e] = 1
+    return sorted(keys.keys()) if sort else keys.keys()
 
 
 def open_utf8(filename, mode='rb'):
@@ -80,7 +94,7 @@ def remove(path, safe=False):
         if os.path.isdir(path):
             shutil.rmtree(path)
         else:
-            # works for files and links
+            # works for both files and links
             os.remove(path)
     except (shutil.Error, os.error) as err:
         if not safe:

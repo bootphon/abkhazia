@@ -25,6 +25,7 @@ from abkhazia.prepare import validation
 # TODO clean up those imports
 from abkhazia.prepare.aic_preparator import AICPreparator
 from abkhazia.prepare.buckeye_preparator import BuckeyePreparator
+from abkhazia.prepare.childes_preparator import ChildesPreparator
 from abkhazia.prepare.csj_preparator import CSJPreparator
 from abkhazia.prepare.librispeech_preparator import LibriSpeechPreparator
 from abkhazia.prepare.xitsonga_preparator import XitsongaPreparator
@@ -222,6 +223,10 @@ class CSJFactory(AbstractFactory):
     preparator = CSJPreparator
 
 
+class ChildesFactory(AbstractFactory):
+    preparator = ChildesPreparator
+
+
 class AICFactory(AbstractFactoryWithCMU):
     preparator = AICPreparator
 
@@ -393,6 +398,7 @@ class AbkhaziaPrepare(AbstractCommand):
     supported_corpora = dict((c.preparator.name, c) for c in (
         AICFactory,
         BuckeyeFactory,
+        ChildesFactory,
         CSJFactory,
         GlobalPhoneFactory,
         LibriSpeechFactory,

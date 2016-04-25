@@ -18,7 +18,6 @@ import ConfigParser
 import os
 import pkg_resources
 import shutil
-import subprocess
 
 from abkhazia import utils
 
@@ -54,8 +53,9 @@ class AbstractPreparator(object):
         version of the corpus. If not specified, a default directory
         is guessed based on the corpus name.
 
-    'verbose' : This argument serves as initialization of the log2file
-        module. See there for more documentation.
+    'verbose' : If True, send all log messages to stdout, if False
+       send only info messages and above. See the log2file module for
+       more details.
 
     Methods
     -------
@@ -63,7 +63,7 @@ class AbstractPreparator(object):
     From a user perspective, the most important methods offered by the
     abstract preparator is prepare(). It converts the original data in
     'input_dir' to a corpus in the abkhazia format, storing the data
-    in 'output_dir'
+    in 'output_dir'.
 
     """
     @classmethod
@@ -215,8 +215,9 @@ class AbstractPreparator(object):
         Moreover any file present in output_dir but not listed as a
         desired wav file will be deleted.
 
-        To save some disk space, if the corpus audio file
-        format is wav, the files will be linked and not copied.
+        To save some disk space, if the corpus audio file format is
+        wav, the files will be linked and not copied (except if
+        self.copy_wavs is True).
 
         This method relies on self.list_audio_files() to get the input
         and output files.
@@ -224,12 +225,12 @@ class AbstractPreparator(object):
         """
         # get the list of input and output files to prepare
         inputs, outputs = self.list_audio_files()
-
         self.log.info('preparing {} wav files'.format(len(inputs)))
 
         # should not occur, but if child class is badly implemented...
         if len(inputs) != len(outputs):
-            raise ValueError('inputs and outputs must have the same size')
+            raise ValueError(
+                'number of audio inputs and outputs must be equal')
 
         if os.path.isdir(self.wavs_dir):
             # the wavs directory already exists, clean and prepare for copy
@@ -247,22 +248,15 @@ class AbstractPreparator(object):
         # append path to the directory in outputs
         outputs = [os.path.join(self.wavs_dir, o) for o in outputs]
 
-        # link or copy wav files in function of self.copy_wavs
-        if self.audio_format == 'wav':
-            action = (('copying', shutil.copy) if self.copy_wavs
-                      else ('linking', os.symlink))
-
-            self.log.debug('{} wav files...'.format(action[0]))
-            for inp, out in zip(inputs, outputs):
-                action[1](inp, out)
-            self.log.debug('finished {} wavs'.format(action[0]))
-
-        else:  # if original files are not wav, convert them
-            self.log.info('converting {} {} files to wav...'
-                          .format(len(inputs), self.audio_format))
-            utils.wav.convert(inputs, outputs, self.audio_format, self.njobs,
-                              verbose=5 if self.verbose else 1)
-            self.log.debug('finished converting wavs')
+        # If original files are not wav, convert them. Else link or
+        # copy wav files in function of self.copy_wavs. The wavs that
+        # are not at 16 kHz are resampled.
+        self.log.info('converting {} {} files to 16kHz mono wav...'
+                      .format(len(inputs), self.audio_format))
+        utils.wav.convert(
+            inputs, outputs, self.audio_format, self.njobs,
+            verbose=5 if self.verbose else 1, copy=self.copy_wavs)
+        self.log.debug('finished converting wavs')
 
     def make_phones(self):
         """Create phones, silences and variants list files
@@ -282,7 +276,6 @@ class AbstractPreparator(object):
         silences.txt: <silence-symbol>
 
         variants.txt: <phone_variant_1 phone_variant_2 ... phone_variant_n>
-
 
         """
         with utils.open_utf8(self.phones_file, 'w') as out:

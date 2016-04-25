@@ -53,7 +53,10 @@ class LevelFilter(logging.Filter):
 # https://stackoverflow.com/questions/17931426
 class WhitespaceRemovingFormatter(logging.Formatter):
     def format(self, record):
-        record.msg = record.msg.strip()
+        try:
+            record.msg = record.msg.strip()
+        except AttributeError:
+            pass
         return super(WhitespaceRemovingFormatter, self).format(record)
 
 
