@@ -20,6 +20,7 @@
 # the $data_dir/split/train/align/export directory.
 
 data_dir=${1:-./exemple}
+data_dir=$(readlink -f $data_dir)
 rm -rf $data_dir
 
 # Step 1 : prepare the corpus. Here we assume you have a raw buckeye

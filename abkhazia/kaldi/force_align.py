@@ -92,9 +92,7 @@ class ForceAlign(abstract_recipe.AbstractRecipe):
                 os.path.join(self.recipe_dir, 'exp', 'ali_fmllr', 'ali.*.gz'),
                 target))
 
-        utils.jobs.run(command,
-                       stdout=self.log.debug,
-                       env=kaldi_path())
+        utils.jobs.run(command, stdout=self.log.debug, env=kaldi_path())
 
         # if we want to use the tri2a results directly without the final
         # forced alignment (is there any difference between the two beyond one
