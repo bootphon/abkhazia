@@ -251,11 +251,11 @@ class AbstractPreparator(object):
         # If original files are not wav, convert them. Else link or
         # copy wav files in function of self.copy_wavs. The wavs that
         # are not at 16 kHz are resampled.
-        self.log.info('converting {} {} files to 16kHz mono wav...'
-                      .format(len(inputs), self.audio_format))
+        self.log.debug('converting {} {} files to 16kHz mono wav...'
+                       .format(len(inputs), self.audio_format))
         utils.wav.convert(
             inputs, outputs, self.audio_format, self.njobs,
-            verbose=5 if self.verbose else 1, copy=self.copy_wavs)
+            verbose=5 if self.verbose else 0, copy=self.copy_wavs)
         self.log.debug('finished converting wavs')
 
     def make_phones(self):

@@ -30,6 +30,7 @@ import re
 from abkhazia.utils import list_files_with_extension
 from abkhazia.prepare import AbstractPreparatorWithCMU
 
+
 class LibriSpeechPreparator(AbstractPreparatorWithCMU):
     """Convert the LibriSpeech corpus to the abkhazia format"""
     name = 'librispeech'

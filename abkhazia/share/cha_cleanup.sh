@@ -16,27 +16,15 @@
 # along with abkhazia. If not, see <http://www.gnu.org/licenses/>.
 
 
-# cleaning up selected lines from cha files before generating a phono
-# format
-
-
-#Variables that have been passed by the user
-selfile=$1
-ortho=$2
-
-# tmp=$(mktemp tmp.XXXX)
-# trap EXIT "rm -f $tmp"
-
-echo "Cleaning $selfile"
-
 # Replacements to clean up punctuation, etc. -- usually ok regardless
 # of the corpus. We keep the timestamp in this version of the script
-iconv -f ISO-8859-1 $selfile |
+cat /dev/stdin |
+    iconv -f ISO-8859-1 |
     sed 's/@Media.*//g' |
     sed 's/^....:.//g' |
     # sed "s/\_/ /g" |
     # sed '/^0(.*) .$/d' |
-    # sed  's/.*$//g' |
+    # sed 's/0*//g' |
     sed 's///g' |
     tr -d '\"' |
     tr -d '\"' |
@@ -59,7 +47,6 @@ iconv -f ISO-8859-1 $selfile |
     sed 's/www//g' |
     sed 's/XXX//g' |
     sed 's/yyy//g' |
-    # sed 's/0*//g' |
     sed 's/@o//g' |
     sed 's/@f//g' |
     sed 's/@q//g' |
@@ -76,8 +63,8 @@ iconv -f ISO-8859-1 $selfile |
     awk '{gsub("\"",""); print}' |  # > $tmp
     #********** A T T E N T I O N ***************
     # check that the next set of replacements for unusual spellings is
-    # adapted to our purposes
-    sed 's/allgone/all gone/g' |  # $tmp |
+    # adapted to your purposes
+    sed 's/allgone/all gone/g' |
     #sed 's/[0-9]//g' |
     sed 's/whaddaya/what do you/g' |
     sed 's/whadda/what do/g' |
@@ -106,16 +93,9 @@ iconv -f ISO-8859-1 $selfile |
     sed "s/ im / I\'m /g" |
     tr -d '\t' |
     sed '/^$/d' |
-    iconv -t ISO-8859-1 > $ortho
-
-# This is to process all the "junk" that were generated when making
-# the changes from included to ortho.  For e.g., the cleaning process
-# generated double spaces between 2 words (while not present in
-# included)
-sed -i -e 's/  $//g' $ortho
-sed -i -e 's/  / /g' $ortho
-# sed -i -e 's/  / /g' $ortho  # not same encoding as above?
-sed -i -e 's/^ //g' $ortho
-sed -i -e 's/ $//g' $ortho
-sed -i -e 's/”//g' $ortho
-sed -i -e 's/“//g' $ortho
+    iconv -t ISO-8859-1 |
+    # This is to process all the "junk" that were generated when making
+    # the changes from included to ortho.  For e.g., the cleaning process
+    # generated double spaces between 2 words (while not present in
+    # included)
+    sed -e 's/  $//g' -e 's/  / /g' -e 's/^ //g' -e 's/ $//g' -e 's/”//g' -e 's/“//g'

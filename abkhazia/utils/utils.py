@@ -39,11 +39,12 @@ def duplicates(iterable):
     return [e for e in counts if counts[e] > 1]
 
 
+# From https://www.peterbe.com/plog/uniqifiers-benchmark
 def unique(seq, sort=False):
-    """Remove duplicates from a sequence
+    """Return a list of elements in `seq` with duplicates removed
 
-    Do not preserve order of the sequence. From
-    https://www.peterbe.com/plog/uniqifiers-benchmark
+    Do not preserve order of the sequence. If `sort` is True, return a
+    sorted list.
 
     """
     keys = {}

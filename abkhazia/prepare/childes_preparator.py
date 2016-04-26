@@ -26,18 +26,12 @@ for each subject with all its corresponding files (cha, wav...)
 
 """
 
-from collections import defaultdict
-import contextlib
+import collections
 import os
-import pkg_resources
 import re
-import tempfile
-import wave
 
 import phonemizer
-
 import abkhazia.utils as utils
-from abkhazia.utils import list_files_with_extension
 from abkhazia.prepare import AbstractPreparator
 
 
@@ -118,193 +112,177 @@ class ChildesPreparator(AbstractPreparator):
 
     variants = []  # could use lexical stress variants...
 
+    # Modify this to select the lines you want, for example here, we
+    # exclude speech by children and non-humans. List of specific
+    # names we needed to add to eliminate speech from target child and
+    # non-adults:
+    #
+    # Bloom70/Peter/*.cha   JEN     Child
+    # Bloom70/Peter/*.cha   JEN     Sister
+    # Brent/w1-1005.cha     MAG     Target_Child
+    # Brown/Adam/*.cha      CEC     Cousin
+    # Brown/Adam/adam23.cha PAU     Brother
+    # Brown/Sarah/sarah019.cha      ANN     Cousin
+    # Brown/Sarah/sarah020.cha      JOA     Child
+    # Brown/Sarah/sarah046.cha      SAN     Playmate
+    # Clark/shem15.cha      BRU     Child
+    # Clark/shem15.cha      CAR     Child
+    # Clark/shem15.cha      LEN     Child
+    # Clark/shem37.cha      JEM     Child
+    # Cornell/moore189.cha  JOS     Child
+    # Feldman/09.cha        STV     Target_Child
+    # Feldman/*.cha LAR     Child
+    # MacWhinney/08a.cha    MAD     Child
+    # MacWhinney/*.cha      MAR     Brother
+    # Sachs/n61na.cha       JEN     Playmate
+    # Weist/Roman/rom*.cha  SOP     Sister
+    exclude = ('SI.|BR.|CHI|TO.|ENV|BOY|NON|MAG|JEN|MAG|CEC|PAU|'
+               'ANN|JOA|SAN|BRU|CAR|LEN|JEM|JOS|STV|LAR|MAD|MAR|SOP')
+
     def __init__(self, input_dir, output_dir=None,
-                 verbose=False, njobs=1, copy_wavs=False):
+                 verbose=False, njobs=1,
+                 copy_wavs=False, one_adult=True):
+        """Childes preparator initialization
+
+        If `copy_wavs` is True, copy the wavs file to `output_dir`,
+        else symlinks them.
+
+        If `one_adult` is True, select the cha files with only one
+        adult speaking, else select all the transcriptions.
+
+        """
         # call the AbstractPreparator __init__
         super(ChildesPreparator, self).__init__(
             input_dir, output_dir, verbose, njobs)
 
         self.copy_wavs = copy_wavs
-        # self.tmpdir = os.path.join(self.output_dir, 'tmp')
-        self.tmpdir = tempfile.mkdtemp()
-        self._clean_tmpdir = True
+        self.chas = self._select_chas(one_adult=one_adult)
+        self.utts = self._parse_chas(self.chas, self.exclude)
 
-        # write cleaned utterances to self.tmpdir
-        self._extract_cds()
-        self.cha2wav = self._match_cha_with_wav()
-        self.dict_utts = self._select_utts_with_timestamps()
+    def _select_chas(self, one_adult=True):
+        """Return a dict of (cha files: attached wav) entries
 
-    def __del__(self):
-        if self._clean_tmpdir:
-            utils.remove(self.tmpdir, safe=True)
-
-    def _extract_cds(self):
-        """Extract child directed utterances
-
-        For each subject, extract only the utterances produced by adults to
-        the child and generate 2 files: (For that reason, the output may not
-        necessarily have the same number as the cha files)
-
-        - includedlines: utterances by mother + time stamps if any + first
-        line is the name of the corresponding wav
-        - ortholines: utterances cleaned
-
-        This function calls a bash script that was developed for Alex
-        Cristia's segmentation project. The script was slightly modified
-        to fit our purposes. It was extensively commented so you can have
-        more details there.
+        If `one_adult` is True, select the cha files with only one
+        adult speaking, else select all the transcriptions. The
+        returned paths are relative to self.input_dir.
 
         """
-        self.log.info('extracting child directed speech to %s', self.tmpdir)
+        chas = utils.list_files_with_extension(self.input_dir, '.cha')
+        if one_adult:
+            chas = [c for c in chas if utils.cha.nadults(c) == 1]
+        self.log.debug(
+            'found %s cha files%s', len(chas),
+            ' with only one adult speaker' if one_adult else '')
 
-        script = pkg_resources.resource_filename(
-            pkg_resources.Requirement.parse('abkhazia'),
-            'abkhazia/share/childes_cleanup.sh')
+        # a dict mapping wavs basename (as they are refered to in cha
+        # files) to their full path
+        wavs_dict = dict(
+            (os.path.splitext(os.path.basename(w))[0], w)
+            for w in utils.list_files_with_extension(self.input_dir, '.wav'))
 
-        utils.jobs.run(
-            ' '.join([script, self.input_dir, self.tmpdir,
-                      os.path.dirname(script)]),
-            stdout=self.log.debug)
+        cha_dict = dict()
+        for cha in chas:
+            try:
+                wav = utils.cha.audio(cha)
+                cha_dict[cha] = wavs_dict[wav]
+            except IOError:
+                self.log.debug(
+                    'ignoring cha with no attached wav: %s', cha)
+            except KeyError:
+                self.log.debug(
+                    'ignoring cha because attached wav not found: %s', cha)
 
-    def _select_utts_with_timestamps(self):
-        """Select the utterances used for the alignment
+        self.log.debug(
+            'using %s cha files and %s wav files',
+            len(cha_dict), len(set(cha_dict.values())))
+
+        return cha_dict
+
+    Utterance = collections.namedtuple(
+        'Utterance', 'text wav tbegin tend')
+    """Namedtuple storing an utterance parser from a cha file"""
+
+    def _parse_chas(self, chas, exclude_spks):
+        """Extract cleaned utterances from raw cha files
+
+        Return a dict of utterances where keys are the utterances id and
+        values are Utterance named tuples.
 
         a) the ones considered will be only the ones marked with time-stamps
         b) whose timestamps correspond to wav duration
         c) utterances that are not empty
 
         """
-        # mapping from each wav file to its duration
-        dict_wav = {}
-        for wav in list_files_with_extension(self.input_dir, '.wav'):
-            with contextlib.closing(wave.open(wav, 'r')) as f:
-                duration = f.getnframes() / float(f.getframerate())
-            basewav = os.path.splitext(os.path.basename(wav))[0]
-            dict_wav[basewav] = duration
+        self.log.info('parsing %s cha files...', len(chas))
+        utts = {}
+        for cha, wav in chas.iteritems():
+            # duration of the wav in millisecond
+            duration = int(utils.wav.duration(wav))
 
-        # create a dict of utterances where keys are the sentence id and
-        # values are lists of : 1) the sentence and 2) the timestamp
-        dict_utts = defaultdict(list)
-        cds_dir = os.path.join(self.tmpdir, 'cds_files')
-        for ortho in list_files_with_extension(cds_dir, '-ortholines.txt'):
-            base_ortho = os.path.splitext(os.path.basename(ortho))[0]
-            speaker_id = base_ortho.replace('-ortholines', '')
+            # get cleaned utterances from the raw cha file. At that
+            # point timestamps are the last word of each line.
+            text = utils.cha.clean(
+                l.strip() for l in utils.open_utf8(cha, 'r')
+                if re.search('[0-9]+_[0-9]+', l) and
+                not re.search(exclude_spks, l))
 
-            wav_id = open(ortho.replace('ortho', 'included'))\
-                .readline()\
-                .replace('@Media:', '')\
-                .replace(', audio', '')\
-                .strip()
+            cha_id = os.path.splitext(os.path.basename(cha))[0]
+            counter = 0
+            for words in (t.split() for t in text):
+                if len(words) > 1:  # remove empty utterances
+                    # parsing the timestamps
+                    timestamp = words[-1].split('_')
+                    tbegin = int(timestamp[0])/1000
+                    tend = int(timestamp[1])/1000
 
-            index_sent = 0
-            rejected = 0
-            for line in utils.open_utf8(ortho, 'r'):
-                # looking for timestamps for each utterance
-                words = line.split()
-                if not re.match("([0-9]+)_([0-9]+)", words[-1]):
-                    rejected += 1
-                else:  # timestamps found for that utterance
-                    index_sent += 1
-                    utt_id = speaker_id + '-sent' + str(index_sent)
-                    sent = " ".join(words[:-1])
-                    timestamp = words[-1]
+                    # reject utterances with out of boundaries
+                    # timestamps
+                    if not (tbegin > duration or tend > duration):
+                        counter += 1
+                        utt_id = cha_id + '-utt' + str(counter)
 
-                    # reject empty lines even if we have timestamps
-                    if sent == "":
-                        rejected += 1
-                    else:  # if offset > wav duration, sentence is rejected
-                        offset_sec = float(timestamp.split('_')[1])/1000
-                        duration = dict_wav[wav_id]
-                        if offset_sec > duration:
-                            rejected += 1
-                        else:  # if time is ok, sentence will be considered
-                            dict_utts[utt_id].append(sent)
-                            dict_utts[utt_id].append(timestamp)
-            if rejected != 0:
-                self.log.debug(
-                    'rejected %s utterances from %s', rejected, speaker_id)
+                        utts[utt_id] = self.Utterance(
+                            ' '.join(words[:-1]),
+                            os.path.basename(wav),
+                            tbegin, tend)
 
-        return dict_utts
-
-    def _match_cha_with_wav(self):
-        """This function finds the matching wavs for transcripts we ended up
-        using after the first clean-up step (see above)
-
-        """
-        wavs = [os.path.basename(w).replace('.wav', '')
-                for w in list_files_with_extension(
-                        self.input_dir, '.wav', abspath=False)]
-
-        # Mapping cha file -> wav file
-        dict_cha = {}
-        for cha in list_files_with_extension(self.input_dir, '.cha'):
-            for line in open(cha).readlines():
-                # Extract name of media file
-                m_line = re.match("^@Media:\t(.*), audio", line)
-                if m_line:  # exclude cha files with no wav file attached
-                    wav = m_line.group(1)
-                    if wav not in wavs:
-                        self.log.debug('cha file not matched: ' + cha)
-                    else:
-                        dict_cha[cha] = os.path.join(os.path.dirname(cha), wav)
-
-        return dict_cha
+        return utts
 
     def list_audio_files(self):
-        wavs = [w + '.wav' for w in self.cha2wav.itervalues()]
+        wavs = [w for w in self.chas.itervalues()]
         return wavs, [os.path.basename(w) for w in wavs]
 
     def make_segment(self):
-        # mapping from utterance id to wav file
-        cha2wav = dict(
-            (os.path.splitext(os.path.basename(k))[0], os.path.basename(v))
-            for k, v in self.cha2wav.iteritems())
-        utt2wav = {}
-        for u in self.dict_utts.iterkeys():
-            uttid = '-'.join(os.path.basename(u).split('-')[:-1])
-            utt2wav[uttid] = cha2wav[uttid]
-
         with open(self.segments_file, 'w') as outfile:
-            for key, value in sorted(self.dict_utts.items()):
-                wav = utt2wav['-'.join(os.path.basename(key).split('-')[:-1])]
-                time = value[1].split('_')
-                onset = float(time[0])/1000
-                offset = float(time[1])/1000
-                outfile.write(' '.join(
-                    [key, wav + '.wav', str(onset), str(offset)]) + '\n')
+            for key, value in self.utts.iteritems():
+                outfile.write('{} {} {} {}\n'.format(
+                    key, os.path.basename(value.wav),
+                    value.tbegin, value.tend))
 
     def make_speaker(self):
         with open(self.speaker_file, 'w') as outfile:
-            for k in sorted(self.dict_utts):
-                speaker_id = re.sub('-(.*)-(.*)', '', k)
-                outfile.write(k + ' ' + speaker_id + '\n')
+            for key in self.utts.iterkeys():
+                outfile.write(
+                    '{} {}\n'.format(key, re.sub('-(.*)-(.*)', '', key)))
 
     def make_transcription(self):
         with open(self.transcription_file, "w") as outfile:
-            for k, values in sorted(self.dict_utts.items()):
-                sent = values[0]
-                # separate collocations into words for phonologizer: thank_you"
-                sent = sent.replace('_', ' ')
-                # delete the letter tag of childes: a@l means letter a
-                sent = re.sub('@[a-z]', '', sent)
-                outfile.write(k + ' ' + sent + '\n')
+            for key, value in self.utts.iteritems():
+                # separate collocations into words for the phonemizer:
+                # thank_you", delete the letter tag of childes: a@l
+                # means letter a
+                sent = re.sub('@[a-z]', '', value.text.replace('_', ' '))
+                outfile.write('{} {}\n'.format(key, sent))
 
     def make_lexicon(self):
-        # retrieve all words in transcriptions
-        words = set()
-        for value in self.dict_utts.itervalues():
-            sent = value[0]
-            # separate collocations into words for phonologizer,
-            # e.g. thank_you
-            sent = sent.replace('_', ' ')
-            # delete the letter tag of childes: a@l means letter a
-            sent = re.sub('@[a-z]', '', sent)
-
-            # split the utterances words
-            for w in sent.split(' '):
-                if w.strip() != '':
-                    words.add(w)
-        words = sorted(words)
+        # retrieve all words in transcriptions. Separate collocations
+        # into words for phonologizer, e.g. thank_you -> thank you,
+        # delete the letter tag of childes: a@l means letter a, split
+        # the utterances words.
+        words = sorted(set(
+            word for utt in self.utts.itervalues() for word in
+            re.sub('@[a-z]', '', utt.text.replace('_', ' ')).split(' ')
+            if word != ''))
 
         # initializing the phonemizer
         p = phonemizer.Phonemizer(logger=self.log)
@@ -312,11 +290,11 @@ class ChildesPreparator(AbstractPreparator):
         p.strip_separator = False
 
         # phonemize the words
-        self.log.info('phonemizing %s words', len(words))
+        self.log.info('phonemizing %s words...', len(words))
         lexicon = dict(zip(
             words, (w.strip() for w in p.phonemize(words, njobs=self.njobs))))
 
         # finally write the lexicon file from the lexicon dict
         with open(self.lexicon_file, 'w') as outfile:
-            for key, value in lexicon.iteritems():
-                outfile.write(key + ' ' + value.strip() + '\n')
+            for k, v in sorted(lexicon.iteritems()):
+                outfile.write('{} {}\n'.format(k, v))

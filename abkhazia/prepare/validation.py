@@ -428,7 +428,6 @@ class Validation(object):
                 .format(self._strcounts2unicode(
                     duplicate_transcripts.most_common())))
 
-
             # Commented because it takes a lot of times for certain corpora
             # Maybe put it as an option
             # # get word types:
@@ -506,8 +505,9 @@ class Validation(object):
 
                 if not 0 <= start <= duration:
                     raise IOError(
-                        "Start time for utterance {0} is not compatible "
-                        "with file duration".format(utt_id))
+                        "Start time for utterance {} is not compatible "
+                        "with file duration in {}: {} -> {}"
+                        .format(utt_id, wav, start, duration))
 
                 if not 0 <= stop <= duration:
                     raise IOError(  # print(

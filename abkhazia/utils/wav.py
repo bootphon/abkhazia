@@ -20,6 +20,7 @@ that is 16 bits, 16 kHz mono wav files.
 """
 
 import collections
+import contextlib
 import os
 import shlex
 import shutil
@@ -130,7 +131,7 @@ def shn2wav(shn, wav):
     ps.wait()
 
 
-def convert(inputs, outputs, fileformat, njobs=1, verbose=5, copy=False):
+def convert(inputs, outputs, fileformat, njobs=1, verbose=0, copy=False):
     """Convert a range of audio files to the wav format
 
     inputs: list of input files to convert
@@ -210,3 +211,9 @@ def scan(wavs, njobs=1, verbose=0):
             joblib.delayed(_scan_one)(wav) for wav in wavs)
 
     return dict(zip(wavs, res))
+
+
+def duration(wav):
+    """Return the duration of a wav file in seconds"""
+    with contextlib.closing(wave.open(wav, 'r')) as w:
+        return w.getnframes() / float(w.getframerate())

@@ -23,3 +23,4 @@ from .wav import convert, scan
 from .spk2utt import spk2utt
 
 import jobs
+import cha
