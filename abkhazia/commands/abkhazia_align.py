@@ -44,6 +44,10 @@ class AbkhaziaAlign(AbstractRecipeCommand):
             help="""number of jobs to launch for parallel alignment, default is to
             launch %(default)s jobs.""")
 
+        parser.add_argument(
+            '--no-words', action='store_true',
+            help='do not write words in the final alignment file, only phones')
+
         dir_group.add_argument(
             '-l', '--language-model', metavar='<lm-dir>', default=None,
             help='''the language model recipe directory, data is read from
@@ -107,3 +111,4 @@ class AbkhaziaAlign(AbstractRecipeCommand):
             recipe.create()
         if not args.no_run:
             recipe.run()
+            recipe.export(not args.no_words)

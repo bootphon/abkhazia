@@ -239,7 +239,7 @@ class ChildesPreparator(AbstractPreparator):
                     # timestamps
                     if not (tbegin > duration or tend > duration):
                         counter += 1
-                        utt_id = cha_id + '-utt' + str(counter)
+                        utt_id = cha_id + '-sent' + str(counter)
 
                         utts[utt_id] = self.Utterance(
                             ' '.join(words[:-1]),

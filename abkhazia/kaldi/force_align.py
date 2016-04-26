@@ -22,6 +22,48 @@ import abkhazia.kaldi.kaldi2abkhazia as k2a
 import abkhazia.utils as utils
 
 
+def _read_splited(f):
+    """Read lines from a file, each line being striped and split"""
+    return (l.strip().split() for l in utils.open_utf8(f, 'r'))
+
+
+def _read_utts(f):
+    """Yield utterances as tuples (utt_id, alignment) from an alignment file"""
+    utt_id = None
+    alignment = []
+    for line in _read_splited(f):
+        if utt_id is None:
+            utt_id = line[0]
+            alignment.append(' '.join(line))
+        elif line[0] != utt_id and alignment != []:
+            yield utt_id, alignment
+            utt_id = line[0]
+            alignment = [' '.join(line)]
+        else:
+            alignment.append(' '.join(line))
+    yield utt_id, alignment
+
+
+def _append_words(ftext, flexicon, falignment, foutput):
+    """Append words to phone lines in the final alignment file"""
+    # text[utt_id] = list of words
+    text = dict((l[0], l[1:]) for l in _read_splited(ftext))
+
+    # lexicon[word] = list of phones
+    lexicon = dict((l[0], l[1:]) for l in _read_splited(flexicon))
+
+    with utils.open_utf8(foutput, 'w') as out:
+        for utt_id, utt_align in _read_utts(falignment):
+            idx = 0
+            for word in text[utt_id]:
+                begin = True
+                for phone in lexicon[word]:
+                    out.write('{} {}\n'.format(
+                        utt_align[idx], word if begin else ''))
+                    idx += 1
+                    begin = False
+
+
 class ForceAlign(abstract_recipe.AbstractRecipe):
     """Compute forced alignment of an abkhazia corpus
 
@@ -102,18 +144,29 @@ class ForceAlign(abstract_recipe.AbstractRecipe):
         #     "ark,t:gunzip -c exp/tri2a/ali.*.gz|" \
         #     ark,t:export/forced_alignment.tra
 
-    def _export(self):
+    def export(self, words=True):
         """Export the kaldi tra alignment file in abkhazia format
 
         This method reads data/lang/phones.txt and
         export/forced_aligment.tra and write
         export/forced_aligment.txt
 
+        If words is True, append entire words to the alignment.
+
         """
         tra = os.path.join(self.recipe_dir, 'export', 'forced_alignment.tra')
         k2a.export_phone_alignment(
             os.path.join(self.lm_dir, 'phones.txt'),
-            tra, tra.replace('.tra', '.txt'))
+            tra, tra.replace('.tra', '.tmp' if words else '.txt'))
+
+        # append complete words to the list of aligned phones
+        if words:
+            _append_words(
+                os.path.join(self.corpus_dir, 'data', 'text.txt'),
+                os.path.join(self.corpus_dir, 'data', 'lexicon.txt'),
+                tra.replace('.tra', '.tmp'),
+                tra.replace('.tra', '.txt'))
+            utils.remove(tra.replace('.tra', '.tmp'))
 
     def check_parameters(self):
         self._check_acoustic_model()
@@ -149,4 +202,3 @@ class ForceAlign(abstract_recipe.AbstractRecipe):
         self.check_parameters()
         self._align_fmllr()
         self._ali_to_phones()
-        self._export()

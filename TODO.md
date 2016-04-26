@@ -1,6 +1,6 @@
 <!-- -*-org-*- this comment force org-mode in emacs -->
 
-* posteriograms on Childes/Brent forced alignement [1/3]
+* posteriors on Childes/Brent alignement [2/3]
 ** DONE intégrer Childes/Brent dans abkhazia
    CLOSED: [2016-04-24 dim. 23:33]
 *** corpus original (en 16 kHz)
@@ -10,20 +10,21 @@
      oberon:/fhgfs/bootphon/scratch/xcao/Brent_test_abkhazia/scripts
    - les sorties si tu veux comparer quand tu auras écrit le script
      oberon:/fhgfs/bootphon/scratch/xcao/Brent_test_abkhazia/ouput_brent_abkhazia
-** TODO force align HTK like
+** DONE force align HTK like
+   CLOSED: [2016-04-27 mer. 00:12]
    on a une sortie alignment forcé des phones mais peut-on avoir un
    alignement des mots? Le mieux serait une sortie des 2 comme le fait
    HTK (voir pj) car je pense qu'on va en avoir besoin plus tard...
 
    Les sorties des alignements forcés sont dans le même répertoire que
-   toutes autres données du Brent. Tu verras que Kaldi n'a pas pu
+   toutes autres données du Brent.
+
+   Tu verras que Kaldi n'a pas pu
    aligner toutes les phrases qui sont dans text.txt mais c'est normal
    non?
 
-   oberon:/fhgfs/bootphon/scratch/xcao/Brent_test_abkhazia/output_brent_abkhazia/output_forced_alignment_kaldi/phone_align
-   (pour les fichiers splittés) ou "forced_alignment.txt" Emmanuel et
-   Christina attendent avec impatience les postériorgrams sur ces
-   alignements forcés donc j'espère que tu sauras les contenter :)
+   /ssh:oberon:/fhgfs/bootphon/scratch/xcao/Brent_test_abkhazia/output_brent_abkhazia/output_forced_alignment_kaldi/phone_align
+   (pour les fichiers splittés) ou "forced_alignment.txt"
 ** TODO compute posteriograms with Kaldi
 * Bugs [1/3]
 ** TODO installation on Mac
@@ -67,7 +68,7 @@
 * Functions
 ** prepare childes
 
-   - have a --cds-only option ?
+   - possible error on speaker if one_adult is True
    - have a subcorpus selection option?
 
 ** other
