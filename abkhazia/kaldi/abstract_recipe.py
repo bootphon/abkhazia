@@ -68,10 +68,10 @@ class AbstractRecipe(object):
         raise NotImplementedError
 
     def run(self):
-        """Run the created recipe by executing 'run.sh' as a subprocess"""
-        self.log.info("running 'run.sh' from {}".format(self.recipe_dir))
-        try:
-            subprocess.check_call('./run.sh', cwd=self.recipe_dir)
-            self.log.info('%s recipe succeeded', self.name)
-        except subprocess.CalledProcessError:
-            raise IOError('{} recipe failed'.format(self.name))
+        """Run the recipe by calling Kaldi scripts
+
+        This method is abstract and must be implemented in child
+        classes.
+
+        """
+        raise NotImplementedError

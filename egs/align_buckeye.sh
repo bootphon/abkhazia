@@ -19,14 +19,14 @@
 # buckeye corpus. Writes to $data_dir, the final alignment will be in
 # the $data_dir/split/train/align/export directory.
 
-data_dir=${1:-./exemple}
+data_dir=${1:-/home/mbernard/scratch/data/abkhazia/exemple}
 data_dir=$(readlink -f $data_dir)
 rm -rf $data_dir
 
 # Step 1 : prepare the corpus. Here we assume you have a raw buckeye
 # distribution and the 'buckeye-directory' is set in the abkhazia
 # configuration file.
-abkhazia prepare buckeye -o $data_dir -v || exit 1
+abkhazia prepare buckeye -o $data_dir -v -j 8 || exit 1
 
 # Step 2 : split the prepared corpus in train and test sets. We keep
 # only 5% for training and split by utterances (this is an exemple, in
@@ -43,7 +43,7 @@ abkhazia language $train_dir -l word -n 2 -vf || exit 1
 # very small parameters for triphone modeling, it overloads the
 # default values. In this exemple it is used to reduce computation
 # time (no matter the model quality).
-abkhazia -c ./test/test.cfg acoustic $train_dir -t tri-sa -vf -j 4 -k 4 || exit 1
+abkhazia -c ../test/test.cfg acoustic $train_dir -t tri-sa -vf -j 16 -k 40 || exit 1
 
 # Step 5 : compute forced-alignment from the trained language and
 # acoustic models.

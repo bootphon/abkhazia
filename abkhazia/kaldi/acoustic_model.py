@@ -202,13 +202,15 @@ class AcousticModel(abstract_recipe.AbstractRecipe):
         if not os.path.isdir(target):
             os.makedirs(target)
 
-        command = ('steps/train_deltas.sh {0} {1} {2} {3} {4} {5}'.format(
-            self.num_states_si,
-            self.num_gauss_si,
-            os.path.join('data', self.name),
-            self.lang,
-            origin,
-            target))
+        command = ('steps/train_deltas.sh --cmd "{0}" {1} {2} {3} {4} {5} {6}'
+                   .format(
+                       utils.config.get('kaldi', 'train-cmd'),
+                       self.num_states_si,
+                       self.num_gauss_si,
+                       os.path.join('data', self.name),
+                       self.lang,
+                       origin,
+                       target))
 
         self.log.debug('running %s', command)
         utils.jobs.run(command, stdout=self.log.debug,
@@ -247,13 +249,15 @@ class AcousticModel(abstract_recipe.AbstractRecipe):
         if not os.path.isdir(target):
             os.makedirs(target)
 
-        command = ('steps/train_sat.sh {0} {1} {2} {3} {4} {5}'.format(
-            self.num_states_sa,
-            self.num_gauss_sa,
-            os.path.join('data', self.name),
-            self.lang,
-            origin,
-            target))
+        command = ('steps/train_sat.sh --cmd "{0}" {1} {2} {3} {4} {5} {6}'
+                   .format(
+                       utils.config.get('kaldi', 'train-cmd'),
+                       self.num_states_sa,
+                       self.num_gauss_sa,
+                       os.path.join('data', self.name),
+                       self.lang,
+                       origin,
+                       target))
 
         self.log.debug('running %s', command)
         utils.jobs.run(command, stdout=self.log.debug,

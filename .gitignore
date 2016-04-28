@@ -77,3 +77,4 @@ target/
 lm_test/*
 test/lm/*
 /exemple/*
+egs/align_childes_brent/
