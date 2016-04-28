@@ -44,7 +44,7 @@ def _read_utts(f):
     yield utt_id, alignment
 
 
-def _append_words(ftext, flexicon, falignment, foutput):
+def _append_words(ftext, flexicon, falignment, foutput, log):
     """Append words to phone lines in the final alignment file"""
     # text[utt_id] = list of words
     text = dict((l[0], l[1:]) for l in _read_splited(ftext))
@@ -57,11 +57,14 @@ def _append_words(ftext, flexicon, falignment, foutput):
             idx = 0
             for word in text[utt_id]:
                 begin = True
-                for phone in lexicon[word]:
-                    out.write('{} {}\n'.format(
-                        utt_align[idx], word if begin else ''))
-                    idx += 1
-                    begin = False
+                try:
+                    for phone in lexicon[word]:
+                        out.write('{} {}\n'.format(
+                            utt_align[idx], word if begin else ''))
+                        idx += 1
+                        begin = False
+                except KeyError:  # the word isn't in lexicon
+                    log.debug('ignoring out of lexicon word: %s', word)
 
 
 class ForceAlign(abstract_recipe.AbstractRecipe):
@@ -165,7 +168,8 @@ class ForceAlign(abstract_recipe.AbstractRecipe):
                 os.path.join(self.corpus_dir, 'data', 'text.txt'),
                 os.path.join(self.corpus_dir, 'data', 'lexicon.txt'),
                 tra.replace('.tra', '.tmp'),
-                tra.replace('.tra', '.txt'))
+                tra.replace('.tra', '.txt'),
+                self.log)
             utils.remove(tra.replace('.tra', '.tmp'))
 
     def check_parameters(self):
