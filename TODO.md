@@ -25,7 +25,7 @@
 
    /ssh:oberon:/fhgfs/bootphon/scratch/xcao/Brent_test_abkhazia/output_brent_abkhazia/output_forced_alignment_kaldi/phone_align
    (pour les fichiers splittés) ou "forced_alignment.txt"
-** TODO compute posteriograms with Kaldi
+** TODO compute alignment posteriograms with Kaldi
 * Bugs [1/3]
 ** TODO installation on Mac
    XN -- Pour le testing sur mac, ça ne marche pas ou en tout cas, je
@@ -69,13 +69,20 @@
 ** prepare childes
 
    - possible error on speaker if one_adult is True
-   - have a subcorpus selection option?
+   - test with others than Brent, have a subcorpus selection option?
+   - strange words in trs:
+     xcuse -> excuse
+     fiin / fiin o
+
+
 
 ** other
 
  - language
 
    - [ ] test the --optional-silences option
+
+   - [ ] rename --njobs-local to -j
 
  - prepare
 
@@ -97,15 +104,15 @@
    - [ ] test the acoustic model
      providing WER (word error rate) for every model, eventual
      automatic parameter search ?
-    - [ ] warning issues in kaldi gmm with buckeye
-      WARNING (gmm-init-model:InitAmGmm():gmm-init-model.cc:55) Tree has
-      pdf-id 81 with no stats; corresponding phone list: 82
+     - [ ] warning issues in kaldi gmm with buckeye
+       WARNING (gmm-init-model:InitAmGmm():gmm-init-model.cc:55) Tree has
+       pdf-id 81 with no stats; corresponding phone list: 82
 
-      ** The warnings above about 'no stats' generally mean you have phones **
-      ** (or groups of phones) in your phone set that had no corresponding data. **
-      ** You should probably figure out whether something went wrong, **
-      ** or whether your data just doesn't happen to have examples of those **
-      ** phones. **
+       ** The warnings above about 'no stats' generally mean you have phones **
+       ** (or groups of phones) in your phone set that had no corresponding data. **
+       ** You should probably figure out whether something went wrong, **
+       ** or whether your data just doesn't happen to have examples of those **
+       ** phones. **
 
  - align
 
@@ -116,16 +123,22 @@
 
  - decode
 
-   (test_set, acoustic_model, (language_model))
-   Compute phone posteriograms or transcription. options:
-   evaluate(transcription, gold) output = {posteriorgrams,
-   transcription} speaker_adapt output: results (repertoire)
+   - params: test_set, acoustic_model, (language_model)
+   - Compute phone posteriograms or transcription.
+   - options:
+
+      evaluate(transcription, gold)
+      output = {posteriorgrams, transcription}
+      speaker_adapt
+      output: results (repertoire)
 
    - [ ] If no language model provided, build default flat unigram one
 
  - feature
 
-   Maybe we could have a separate feature command ?
+   - Maybe we could have a separate feature command ? -> Yes we will have one
+   - option to export features from ark to h5f
+   - see [[https://github.com/bootphon/features_extraction/blob/master/kaldi_features.py][kaldi_features.py]] from feature_extraction package
 
  - list
 
