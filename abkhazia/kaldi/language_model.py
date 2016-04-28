@@ -186,7 +186,7 @@ class LanguageModel(abstract_recipe.AbstractRecipe):
         text_blm = os.path.join(self.a2k._local_path(), 'text_blm.gz')
 
         try:
-            # cut -d' ' -f2 < lm_text > text_ready
+            # cut -d' ' -f2 lm_text > text_ready
             with open(text_ready, 'w') as ready:
                 ready.write('\n'.join(
                     [' '.join(line.split()[1:])

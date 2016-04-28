@@ -65,7 +65,8 @@ class AbkhaziaLanguage(AbstractRecipeCommand):
     def run(cls, args):
         corpus, output_dir = cls.prepare_for_run(args)
 
-        # retrieve recipe parameters
+        # retrieve recipe parameters, if not specified in the command
+        # read them from the configuration file
         if args.word_position_dependent is None:
             args.word_position_dependent = utils.config.get(
                 'language', 'word-position-dependent')
