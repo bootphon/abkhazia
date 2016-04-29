@@ -1,5 +1,14 @@
 <!-- -*-org-*- this comment force org-mode in emacs -->
 
+* looking for posteriograms on phone alignment
+** steps/align_fmllr.sh
+Computes training alignments; assumes features are (LDA+MLLT or delta+delta-delta)
++ fMLLR (probably with SAT models).
+It first computes an alignment with the final.alimdl (or the final.mdl if final.alimdl
+is not present), then does 2 iterations of fMLLR estimation.
+
+
+
 * posteriors on Childes/Brent alignement [2/3]
 ** DONE intégrer Childes/Brent dans abkhazia
    CLOSED: [2016-04-24 dim. 23:33]
