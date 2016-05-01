@@ -28,6 +28,7 @@ import abkhazia.utils as utils
 
 from abkhazia.commands import (
     AbkhaziaPrepare,
+    AbkhaziaFeatures,
     AbkhaziaSplit,
     AbkhaziaLanguage,
     AbkhaziaAcoustic,
@@ -42,6 +43,7 @@ class Abkhazia(object):
     # the possible subcommand classes
     _command_classes = [
         AbkhaziaPrepare,
+        AbkhaziaFeatures,
         AbkhaziaSplit,
         AbkhaziaLanguage,
         AbkhaziaAcoustic,

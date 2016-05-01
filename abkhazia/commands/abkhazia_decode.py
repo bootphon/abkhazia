@@ -39,10 +39,10 @@ class AbkhaziaDecode(AbstractRecipeCommand):
             help="""number of jobs to launch for parallel alignment, default is to
             launch %(default)s jobs.""")
 
-        parser.add_argument(
-            '-k', '--njobs-feats', type=int, default=20, metavar='<njobs>',
-            help="""number of jobs to launch for feature computations, default is to
-            launch %(default)s jobs.""")
+        # parser.add_argument(
+        #     '-k', '--njobs-feats', type=int, default=20, metavar='<njobs>',
+        #     help="""number of jobs to launch for feature computations, default is to
+        #     launch %(default)s jobs.""")
 
         dir_group.add_argument(
             '-l', '--language-model', metavar='<lm-dir>', default=None,
@@ -61,11 +61,11 @@ class AbkhaziaDecode(AbstractRecipeCommand):
         def config(param):
             return utils.config.get(cls.name, param)
 
-        group.add_argument(
-            '--use-pitch', metavar='<true|false>',
-            default=config('use-pitch'), choices=['true', 'false'],
-            help="""if true, compute pitch features along with MFCCs,
-            default is %(default)s""")
+        # group.add_argument(
+        #     '--use-pitch', metavar='<true|false>',
+        #     default=config('use-pitch'), choices=['true', 'false'],
+        #     help="""if true, compute pitch features along with MFCCs,
+        #     default is %(default)s""")
 
         group.add_argument(
             '-s', '--acoustic-scale', type=float, metavar='<float>',
@@ -95,10 +95,10 @@ class AbkhaziaDecode(AbstractRecipeCommand):
         recipe.am_dir = acoustic
 
         # setup other recipe parameters from args
-        recipe.use_pitch = args.use_pitch
+#        recipe.use_pitch = args.use_pitch
         recipe.acoustic_scale = args.acoustic_scale
         recipe.njobs_train = args.njobs_train
-        recipe.njobs_feats = args.njobs_feats
+        #recipe.njobs_feats = args.njobs_feats
 
         # finally create and/or run the recipe
         if not args.only_run:

@@ -43,28 +43,29 @@ class Decode(abstract_recipe.AbstractRecipe):
         # setup default values for parameters from the configuration
         def config(name):
             return utils.config.get(self.name, name)
-        self.use_pitch = config('use-pitch')
+        # self.use_pitch = config('use-pitch')
         self.acoustic_scale = config('acoustic-scale')
 
+        self.feat_dir = None
         self.am_dir = None
         self.lm_dir = None
         self.is_monophone_lm = None
 
         ncores = multiprocessing.cpu_count()
-        self.njobs_feats = ncores
+#        self.njobs_feats = ncores
         self.njobs_train = ncores
 
-    def _check_pitch(self):
-        if isinstance(self.use_pitch, bool):
-            pass
-        elif self.use_pitch == 'true':
-            self.use_pitch = True
-        elif self.use_pitch == 'false':
-            self.use_pitch = False
-        else:
-            raise RuntimeError(
-                "use_pitch must be in 'true' or 'false', it is {}"
-                .format(self.use_pitch))
+    # def _check_pitch(self):
+    #     if isinstance(self.use_pitch, bool):
+    #         pass
+    #     elif self.use_pitch == 'true':
+    #         self.use_pitch = True
+    #     elif self.use_pitch == 'false':
+    #         self.use_pitch = False
+    #     else:
+    #         raise RuntimeError(
+    #             "use_pitch must be in 'true' or 'false', it is {}"
+    #             .format(self.use_pitch))
 
     def _check_njobs(self, njobs):
         # if we run jobs locally, make sure we have enough cores
@@ -110,32 +111,32 @@ class Decode(abstract_recipe.AbstractRecipe):
         self.log.debug('language model is a {}-gram'.format(lm_order))
         self.is_monophone_lm = True if lm_order == 1 else False
 
-    def _compute_features(self):
-        script = ('steps/make_mfcc_pitch.sh' if self.use_pitch
-                  else 'steps/make_mfcc.sh')
-        self.log.info('computing features with %s', script)
+    # def _compute_features(self):
+    #     script = ('steps/make_mfcc_pitch.sh' if self.use_pitch
+    #               else 'steps/make_mfcc.sh')
+    #     self.log.info('computing features with %s', script)
 
-        command = (
-            script + ' --nj {0} --cmd "{1}" {2} {3} {4}'.format(
-                self.njobs_feats,
-                utils.config.get('kaldi', 'train-cmd'),
-                os.path.join('data', self.name),
-                os.path.join('exp', 'make_mfcc', self.name),
-                'mfcc'))
+    #     command = (
+    #         script + ' --nj {0} --cmd "{1}" {2} {3} {4}'.format(
+    #             self.njobs_feats,
+    #             utils.config.get('kaldi', 'train-cmd'),
+    #             os.path.join('data', self.name),
+    #             os.path.join('exp', 'make_mfcc', self.name),
+    #             'mfcc'))
 
-        self.log.debug('running %s', command)
-        utils.jobs.run(command, stdout=self.log.debug,
-                       env=kaldi_path(), cwd=self.recipe_dir)
+    #     self.log.debug('running %s', command)
+    #     utils.jobs.run(command, stdout=self.log.debug,
+    #                    env=kaldi_path(), cwd=self.recipe_dir)
 
-    def _compute_cmvn_stats(self):
-        command = 'steps/compute_cmvn_stats.sh {0} {1} {2}'.format(
-            os.path.join('data', self.name),
-            os.path.join('exp', 'make_mfcc', self.name),
-            'mfcc')
+    # def _compute_cmvn_stats(self):
+    #     command = 'steps/compute_cmvn_stats.sh {0} {1} {2}'.format(
+    #         os.path.join('data', self.name),
+    #         os.path.join('exp', 'make_mfcc', self.name),
+    #         'mfcc')
 
-        self.log.debug('running %s', command)
-        utils.jobs.run(command, stdout=self.log.debug,
-                       env=kaldi_path(), cwd=self.recipe_dir)
+    #     self.log.debug('running %s', command)
+    #     utils.jobs.run(command, stdout=self.log.debug,
+    #                    env=kaldi_path(), cwd=self.recipe_dir)
 
     def _mkgraph(self):
         """Instantiate a full decoding graph (HCLG)"""
@@ -211,9 +212,9 @@ class Decode(abstract_recipe.AbstractRecipe):
         """Run the created recipe and decode speech data"""
         self.check_parameters()
 
-        # features
-        self._compute_features()
-        self._compute_cmvn_stats()
+        # # features
+        # self._compute_features()
+        # self._compute_cmvn_stats()
 
         # decoding
         res_dir = self._mkgraph()

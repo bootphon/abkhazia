@@ -47,7 +47,7 @@ class AbkhaziaAcoustic(AbstractRecipeCommand):
         recipe.lang = lang
 
         # setup other recipe parameters from args
-        recipe.use_pitch = args.use_pitch
+#        recipe.use_pitch = args.use_pitch
         recipe.num_states_si = args.num_states_si
         recipe.num_gauss_si = args.num_gauss_si
         recipe.num_states_sa = args.num_states_sa
@@ -79,10 +79,10 @@ class AbkhaziaAcoustic(AbstractRecipeCommand):
             help="""number of jobs to launch for parallel training, default is to
             launch %(default)s jobs.""")
 
-        parser.add_argument(
-            '-k', '--njobs-feats', type=int, default=20, metavar='<njobs>',
-            help="""number of jobs to launch for feature computations, default is to
-            launch %(default)s jobs.""")
+        # parser.add_argument(
+        #     '-k', '--njobs-feats', type=int, default=20, metavar='<njobs>',
+        #     help="""number of jobs to launch for feature computations, default is to
+        #     launch %(default)s jobs.""")
 
         dir_group.add_argument(
             '-l', '--language-model', metavar='<lm-dir>', default=None,
@@ -104,11 +104,11 @@ class AbkhaziaAcoustic(AbstractRecipeCommand):
         def config(param):
             return utils.config.get(cls.name, param)
 
-        group.add_argument(
-            '--use-pitch', metavar='<true|false>',
-            default=config('use-pitch'), choices=['true', 'false'],
-            help="""if true, compute pitch features along with MFCCs,
-            default is %(default)s""")
+        # group.add_argument(
+        #     '--use-pitch', metavar='<true|false>',
+        #     default=config('use-pitch'), choices=['true', 'false'],
+        #     help="""if true, compute pitch features along with MFCCs,
+        #     default is %(default)s""")
 
         group.add_argument(
             '--num-states-si', metavar='<int>', type=int,

@@ -24,5 +24,35 @@ class AbkhaziaFeatures(AbstractRecipeCommand):
     description = 'compute MFCC features'
 
     @classmethod
+    def add_parser(cls, subparsers):
+        """Return a parser for the align command"""
+        # get basic parser init from AbstractCommand
+        parser, dir_group = super(AbkhaziaFeatures, cls).add_parser(subparsers)
+
+        # TODO if local, ncores, else one per wav ?
+        parser.add_argument(
+            '-j', '--njobs', type=int, default=20, metavar='<njobs>',
+            help="""number of jobs to launch for feature computations, default is to
+            launch %(default)s jobs.""")
+
+        parser.add_argument(
+            '--use-pitch', metavar='<true|false>', choices=['true', 'false'],
+            default=utils.config.get('features', 'use-pitch'),
+            help="""if true, compute pitch features along with MFCCs,
+            default is %(default)s""")
+
+        return parser
+
+    @classmethod
     def run(cls, args):
-        pass
+        corpus, output_dir = cls.prepare_for_run(args)
+        recipe = features.Features(corpus, output_dir, args.verbose)
+        recipe.use_pitch = True if args.use_pitch == 'true' else False
+        recipe.njobs = args.njobs
+
+        # finally create and/or run the recipe
+        if not args.only_run:
+            recipe.create()
+        if not args.no_run:
+            recipe.run()
+            recipe.export()

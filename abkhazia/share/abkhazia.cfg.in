@@ -59,6 +59,10 @@ default-test-proportion: 0.5
 # present at least once in the training set.
 prune-lexicon: false
 
+[features]
+# Compute pitch features along with MFCCs
+use-pitch: true
+
 [language]
 # Should be set to true or false depending on whether the language
 # model produced is destined to be used with an acoustic model trained
@@ -76,9 +80,6 @@ model-order: 2
 model-level: phone
 
 [acoustic]
-# Feature parameters
-use-pitch: true
-
 # Speaker-independent triphone models parameters
 num-states-si: 2500
 num-gauss-si: 15000
@@ -90,6 +91,3 @@ num-gauss-sa: 15000
 [decode]
 # acoustic scale for extracting posterior from the final lattice
 acoustic-scale: 0.1
-
-# Feature parameters
-use-pitch: true
