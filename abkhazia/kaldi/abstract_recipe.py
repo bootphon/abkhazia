@@ -15,7 +15,7 @@
 """Provides the AbstractRecipe class"""
 
 import os
-import subprocess
+import tempfile
 
 import abkhazia.utils as utils
 import abkhazia.kaldi.abkhazia2kaldi as abkhazia2kaldi
@@ -75,3 +75,34 @@ class AbstractRecipe(object):
 
         """
         raise NotImplementedError
+
+
+class AbstractTmpRecipe(AbstractRecipe):
+    """Write the recipe in a temprary directory
+
+    Provide an output_dir attribute where to put results files. The
+    recipe directory is deleted on instance destruction. Depending if
+    we run jobs locally or queued, the temp dir is created in /tmp or
+    in output_dir respectivly.
+
+    """
+    def __init__(self, corpus_dir, output_dir, verbose=False):
+        # setup an empty output dir
+        if os.path.isdir(output_dir):
+            raise OSError(
+                'output directory already existing: {}'
+                .format(output_dir))
+        else:
+            os.makedirs(output_dir)
+        self.output_dir = output_dir
+
+        # setup recipe_dir as a temp dir
+        cmd = utils.config.get('kaldi', 'train-cmd')
+        recipe_dir = tempfile.mkdtemp(
+            dir=self.output_dir if 'queue' in cmd else None)
+
+        super(AbstractTmpRecipe, self).__init__(
+            corpus_dir, recipe_dir, verbose)
+
+    def __del__(self):
+        utils.remove(self.recipe_dir)

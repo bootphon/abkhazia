@@ -18,6 +18,7 @@ import os
 import multiprocessing
 
 from abkhazia.kaldi.kaldi_path import kaldi_path
+from abkhazia.kaldi.features import export_features
 import abkhazia.kaldi.abstract_recipe as abstract_recipe
 import abkhazia.utils as utils
 
@@ -36,6 +37,7 @@ class AcousticModel(abstract_recipe.AbstractRecipe):
 
     Attributes:
         lang (str): path to the language model directory
+        feat (str): path to the features directory
         njobs_train (int): Number of parallel jobs for computing model
         njobs_local (int): Number of parallel jobs for pre/post computing
         num_states_si (int)
@@ -66,23 +68,6 @@ class AcousticModel(abstract_recipe.AbstractRecipe):
         self.njobs_train = ncores
         self.njobs_local = ncores
 
-    def _check_features(self):
-        if self.feat is None:
-            raise RuntimeError('non specified features')
-
-        if not os.path.isdir(self.feat):
-            raise RuntimeError(
-                'features not found: {}'.format(self.feat))
-
-        for target in ('feats.scp', 'cmvn.scp'):
-            o = os.path.join(self.feat, 'data', 'features', target)
-            if not os.path.isfile(o):
-                raise RuntimeError('{} not found'.format(o))
-
-            t = os.path.join(self.recipe_dir, 'data', self.name, target)
-            self.log.info('Using %s', o)
-            os.symlink(o, t)
-
     def _check_language_model(self):
         if self.lang is None:
             raise RuntimeError('non specified language model')
@@ -100,7 +85,6 @@ class AcousticModel(abstract_recipe.AbstractRecipe):
 
     def _check_njobs(self, njobs, local=False):
         # if we run jobs locally, make sure we have enough cores
-        # TODO refactor
         ncores = multiprocessing.cpu_count()
         if local and ncores < njobs:
             self.log.warning(
@@ -249,7 +233,6 @@ class AcousticModel(abstract_recipe.AbstractRecipe):
 
     def check_parameters(self):
         """Raise if the acoustic modeling parameters are not correct"""
-        self._check_features()
         self._check_language_model()
         self._check_model_type()
 
@@ -276,6 +259,10 @@ class AcousticModel(abstract_recipe.AbstractRecipe):
         self.a2k.setup_conf_dir()
         self.a2k.setup_kaldi_folders()
         self.a2k.setup_machine_specific_scripts()
+
+        export_features(
+            self.feat,
+            os.path.join(self.recipe_dir, 'data', self.name))
 
     def run(self):
         """Run the created recipe and compute the acoustic model"""

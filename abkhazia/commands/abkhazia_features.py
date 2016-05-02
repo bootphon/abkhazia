@@ -14,6 +14,8 @@
 # along with abkhazia. If not, see <http://www.gnu.org/licenses/>.
 """Implementation of the 'abkhazia features' command"""
 
+import os
+
 from abkhazia.commands.abstract_command import AbstractRecipeCommand
 import abkhazia.kaldi.features as features
 import abkhazia.utils as utils
@@ -46,11 +48,10 @@ class AbkhaziaFeatures(AbstractRecipeCommand):
     @classmethod
     def run(cls, args):
         corpus, output_dir = cls.prepare_for_run(args)
-        recipe = features.Features(corpus, output_dir, args.verbose)
+        recipe = features.Features(corpus, os.path.join(output_dir, cls.name), args.verbose)
         recipe.use_pitch = True if args.use_pitch == 'true' else False
         recipe.njobs = args.njobs
 
         # finally compute the features
         recipe.create()
         recipe.run()
-        recipe.export()

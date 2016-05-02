@@ -106,9 +106,7 @@ class AbkhaziaAlign(AbstractRecipeCommand):
         recipe.lm_dir = lang
         recipe.am_dir = acoustic
 
-        # finally create and/or run the recipe
-        if not args.only_run:
-            recipe.create()
-        if not args.no_run:
-            recipe.run()
-            recipe.export(not args.no_words)
+        # finally compute the alignments
+        recipe.create()
+        recipe.run()
+        recipe.export(not args.no_words)

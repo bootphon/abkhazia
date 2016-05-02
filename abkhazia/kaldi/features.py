@@ -16,18 +16,42 @@
 
 import multiprocessing
 import os
+import shutil
 
 from abkhazia.kaldi.kaldi_path import kaldi_path
 import abkhazia.kaldi.abstract_recipe as abstract_recipe
 import abkhazia.utils as utils
 
 
-class Features(abstract_recipe.AbstractRecipe):
+def export_features(feat_dir, target_dir, copy=False):
+    """Export feats.scp and cmvn.scp from feat_dir to target_dir
+
+    If copy is True, make copies instead of links. Raises IOError if
+    one of the file isn't in feat_dir.
+
+    """
+    for d in (feat_dir, target_dir):
+        if not os.path.isdir(d):
+            raise IOError('{} is not a directory'.format(d))
+
+    for scp in ('feats.scp', 'cmvn.scp'):
+        origin = os.path.join(feat_dir, scp)
+        if not os.path.isfile(origin):
+            raise IOError('{} not found'.format(origin))
+
+        target = os.path.join(target_dir, scp)
+        if copy:
+            shutil.copy(origin, target)
+        else:
+            os.symlink(origin, target)
+
+
+class Features(abstract_recipe.AbstractTmpRecipe):
     """Compute MFCC features from an abkhazia corpus"""
     name = 'features'
 
-    def __init__(self, corpus_dir, recipe_dir=None, verbose=False):
-        super(Features, self).__init__(corpus_dir, recipe_dir, verbose)
+    def __init__(self, corpus_dir, output_dir=None, verbose=False):
+        super(Features, self).__init__(corpus_dir, output_dir, verbose)
 
         self.njobs = multiprocessing.cpu_count()
         self.use_pitch = (
@@ -45,9 +69,8 @@ class Features(abstract_recipe.AbstractRecipe):
                 utils.config.get('kaldi', 'train-cmd'),
                 os.path.join('data', self.name),
                 os.path.join('exp', 'make_mfcc', self.name),
-                'mfcc'))
+                self.output_dir))
 
-        # self.log.debug('running %s', command)
         utils.jobs.run(command, stdout=self.log.debug,
                        env=kaldi_path(), cwd=self.recipe_dir)
 
@@ -55,9 +78,8 @@ class Features(abstract_recipe.AbstractRecipe):
         command = 'steps/compute_cmvn_stats.sh {0} {1} {2}'.format(
             os.path.join('data', self.name),
             os.path.join('exp', 'make_mfcc', self.name),
-            'mfcc')
+            self.output_dir)
 
-        # self.log.debug('running %s', command)
         utils.jobs.run(command, stdout=self.log.debug,
                        env=kaldi_path(), cwd=self.recipe_dir)
 
@@ -77,5 +99,9 @@ class Features(abstract_recipe.AbstractRecipe):
         self._compute_features()
         self._compute_cmvn_stats()
 
-    def export(self):
-        pass
+        for scp in utils.list_files_with_extension(self.output_dir, '.scp'):
+            utils.remove(scp)
+        export_features(
+            os.path.join(self.recipe_dir, 'data', self.name),
+            self.output_dir,
+            copy=True)

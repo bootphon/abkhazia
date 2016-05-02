@@ -18,6 +18,7 @@ import gzip
 import multiprocessing
 import os
 
+from abkhazia.kaldi.features import export_features
 from abkhazia.kaldi.kaldi_path import kaldi_path
 import abkhazia.kaldi.abstract_recipe as abstract_recipe
 import abkhazia.utils as utils
@@ -98,23 +99,6 @@ class Decode(abstract_recipe.AbstractRecipe):
         self.log.debug('language model is a {}-gram'.format(lm_order))
         self.is_monophone_lm = True if lm_order == 1 else False
 
-    def _check_features(self):
-        if self.feat_dir is None:
-            raise RuntimeError('non specified features')
-
-        if not os.path.isdir(self.feat_dir):
-            raise RuntimeError(
-                'features not found: {}'.format(self.feat_dir))
-
-        for target in ('feats.scp', 'cmvn.scp'):
-            o = os.path.join(self.feat_dir, 'data', 'features', target)
-            if not os.path.isfile(o):
-                raise RuntimeError('{} not found'.format(o))
-
-            t = os.path.join(self.recipe_dir, 'data', self.name, target)
-            self.log.info('Using %s', o)
-            os.symlink(o, t)
-
     def _mkgraph(self):
         """Instantiate a full decoding graph (HCLG)"""
         target = os.path.join(self.recipe_dir, 'graph')
@@ -163,7 +147,6 @@ class Decode(abstract_recipe.AbstractRecipe):
         """Raise if the decoding parameters are not correct"""
         self._check_language_model()
         self._check_acoustic_model()
-        self._check_features()
 
         self.njobs_train = self._check_njobs(self.njobs_train)
 
@@ -182,9 +165,14 @@ class Decode(abstract_recipe.AbstractRecipe):
         self.a2k.setup_wav(desired_utts=desired_utts)
 
         # setup other files and folders
+        self.a2k.setup_score()
         self.a2k.setup_wav_folder()
         self.a2k.setup_kaldi_folders()
         self.a2k.setup_machine_specific_scripts()
+
+        export_features(
+            self.feat_dir,
+            os.path.join(self.recipe_dir, 'data', self.name))
 
     def run(self):
         """Run the created recipe and decode speech data"""
