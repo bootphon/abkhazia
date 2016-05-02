@@ -1,0 +1,26 @@
+* time the duration of align buckeye on several hardware configuration
+
+** scenario 1: on the cluster
+
+dir=~/scratch/eraseme
+cfg=./cluster.cfg
+./prepare.sh $dir $cfg
+
+time ./time_align_buckeye.sh $dir
+
+
+** scenario 2: oberon on fhgfs
+
+** scenario 3: oberon on home
+
+** scenario 4: oberon on RAM
+
+time ./prepare.sh /tmp/eraseme local_home.cfg
+real	0m29.707s
+user	0m10.570s
+sys	0m15.162s
+
+time ./time_align_buckeye.sh /tmp/eraseme/split/train local_home.cfg
+real	13m12.660s
+user	66m29.880s
+sys	6m31.640s
