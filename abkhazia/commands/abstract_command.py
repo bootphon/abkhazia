@@ -148,14 +148,14 @@ class AbstractRecipeCommand(AbstractPreparedCommand):
             help="""number of jobs to launch when doing local (non clustered)
             computations, default is to launch %(default)s jobs.""")
 
-        # add --no-run/--only-run options
-        group = parser.add_argument_group('command options')\
-                      .add_mutually_exclusive_group()
-        group.add_argument(
-            '--no-run', action='store_true',
-            help='if specified create the recipe but dont run it')
-        group.add_argument(
-            '--only-run', action='store_true',
-            help='if specified, dont create the recipe but run it')
+        # # add --no-run/--only-run options
+        # group = parser.add_argument_group('command options')\
+        #               .add_mutually_exclusive_group()
+        # group.add_argument(
+        #     '--no-run', action='store_true',
+        #     help='if specified create the recipe but dont run it')
+        # group.add_argument(
+        #     '--only-run', action='store_true',
+        #     help='if specified, dont create the recipe but run it')
 
         return parser, dir_group

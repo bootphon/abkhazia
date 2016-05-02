@@ -52,20 +52,7 @@ class Decode(abstract_recipe.AbstractRecipe):
         self.is_monophone_lm = None
 
         ncores = multiprocessing.cpu_count()
-#        self.njobs_feats = ncores
         self.njobs_train = ncores
-
-    # def _check_pitch(self):
-    #     if isinstance(self.use_pitch, bool):
-    #         pass
-    #     elif self.use_pitch == 'true':
-    #         self.use_pitch = True
-    #     elif self.use_pitch == 'false':
-    #         self.use_pitch = False
-    #     else:
-    #         raise RuntimeError(
-    #             "use_pitch must be in 'true' or 'false', it is {}"
-    #             .format(self.use_pitch))
 
     def _check_njobs(self, njobs):
         # if we run jobs locally, make sure we have enough cores
@@ -100,7 +87,7 @@ class Decode(abstract_recipe.AbstractRecipe):
         # check wether lm is monophone or not. Can retrive this
         # information from data/local/language/G.arpa.gz
         lm_arpa = os.path.abspath(os.path.join(
-            self.lm_dir, '..', '..', 'data', 'local', 'language', 'G_arpa.gz'))
+            self.lm_dir, '..', 'data', 'local', 'language', 'G.arpa.gz'))
         if not os.path.exists(lm_arpa):
             raise RuntimeError('non valid language model: {} not found'
                                .format(lm_arpa))
@@ -111,36 +98,26 @@ class Decode(abstract_recipe.AbstractRecipe):
         self.log.debug('language model is a {}-gram'.format(lm_order))
         self.is_monophone_lm = True if lm_order == 1 else False
 
-    # def _compute_features(self):
-    #     script = ('steps/make_mfcc_pitch.sh' if self.use_pitch
-    #               else 'steps/make_mfcc.sh')
-    #     self.log.info('computing features with %s', script)
+    def _check_features(self):
+        if self.feat_dir is None:
+            raise RuntimeError('non specified features')
 
-    #     command = (
-    #         script + ' --nj {0} --cmd "{1}" {2} {3} {4}'.format(
-    #             self.njobs_feats,
-    #             utils.config.get('kaldi', 'train-cmd'),
-    #             os.path.join('data', self.name),
-    #             os.path.join('exp', 'make_mfcc', self.name),
-    #             'mfcc'))
+        if not os.path.isdir(self.feat_dir):
+            raise RuntimeError(
+                'features not found: {}'.format(self.feat_dir))
 
-    #     self.log.debug('running %s', command)
-    #     utils.jobs.run(command, stdout=self.log.debug,
-    #                    env=kaldi_path(), cwd=self.recipe_dir)
+        for target in ('feats.scp', 'cmvn.scp'):
+            o = os.path.join(self.feat_dir, 'data', 'features', target)
+            if not os.path.isfile(o):
+                raise RuntimeError('{} not found'.format(o))
 
-    # def _compute_cmvn_stats(self):
-    #     command = 'steps/compute_cmvn_stats.sh {0} {1} {2}'.format(
-    #         os.path.join('data', self.name),
-    #         os.path.join('exp', 'make_mfcc', self.name),
-    #         'mfcc')
-
-    #     self.log.debug('running %s', command)
-    #     utils.jobs.run(command, stdout=self.log.debug,
-    #                    env=kaldi_path(), cwd=self.recipe_dir)
+            t = os.path.join(self.recipe_dir, 'data', self.name, target)
+            self.log.info('Using %s', o)
+            os.symlink(o, t)
 
     def _mkgraph(self):
         """Instantiate a full decoding graph (HCLG)"""
-        target = os.path.join(self.recipe_dir, 'graph_lang')
+        target = os.path.join(self.recipe_dir, 'graph')
         self.log.info(
             'computing full decoding graph in %s', target)
         if not os.path.isdir(target):
@@ -148,7 +125,8 @@ class Decode(abstract_recipe.AbstractRecipe):
 
         command = (
             '{0} {1} utils/mkgraph.sh {2} {3} {4} {5}'.format(
-                utils.config.get('kaldi', 'highmem-cmd'),
+                os.path.join(
+                    'utils', utils.config.get('kaldi', 'highmem-cmd')),
                 os.path.join(target, 'mkgraph.log'),
                 '--mono' if self.is_monophone_lm else '',
                 self.lm_dir,
@@ -161,18 +139,19 @@ class Decode(abstract_recipe.AbstractRecipe):
         return target
 
     def _decode(self, origin):
-        target = os.path.join(self.recipe_dir, 'decode_lang')
+        target = os.path.join(self.recipe_dir, 'decode')
         self.log.info(
             'decoding and computing WER in %s', target)
         if not os.path.isdir(target):
             os.makedirs(target)
 
         command = (
-            'steps/decode.sh --nj {0} --cmd "{1}" {2} {3} {4}'.format(
+            'steps/decode.sh --nj {0} --cmd "{1}" --model {2} {3} {4} {5}'.format(
                 self.njobs_train,
                 utils.config.get('kaldi', 'decode-cmd'),
+                os.path.join(self.am_dir, 'final.mdl'),
                 origin,
-                self.corpus_dir,
+                os.path.join('data', self.name),
                 target))
 
         self.log.debug('running %s', command)
@@ -184,9 +163,8 @@ class Decode(abstract_recipe.AbstractRecipe):
         """Raise if the decoding parameters are not correct"""
         self._check_language_model()
         self._check_acoustic_model()
-        self._check_pitch()
+        self._check_features()
 
-        self.njobs_feats = self._check_njobs(self.njobs_feats)
         self.njobs_train = self._check_njobs(self.njobs_train)
 
     def create(self, args):
@@ -211,10 +189,6 @@ class Decode(abstract_recipe.AbstractRecipe):
     def run(self):
         """Run the created recipe and decode speech data"""
         self.check_parameters()
-
-        # # features
-        # self._compute_features()
-        # self._compute_cmvn_stats()
 
         # decoding
         res_dir = self._mkgraph()

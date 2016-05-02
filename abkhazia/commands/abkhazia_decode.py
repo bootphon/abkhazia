@@ -14,6 +14,7 @@
 # along with abkhazia. If not, see <http://www.gnu.org/licenses/>.
 """Implementation of the 'abkhazia decode' command"""
 
+import multiprocessing
 import os
 
 from abkhazia.commands.abstract_command import AbstractRecipeCommand
@@ -35,14 +36,10 @@ class AbkhaziaDecode(AbstractRecipeCommand):
         parser, dir_group = super(AbkhaziaDecode, cls).add_parser(subparsers)
 
         parser.add_argument(
-            '-j', '--njobs-train', type=int, default=1, metavar='<njobs>',
+            '-j', '--njobs-train', type=int, metavar='<njobs>',
+            default=multiprocessing.cpu_count(),
             help="""number of jobs to launch for parallel alignment, default is to
             launch %(default)s jobs.""")
-
-        # parser.add_argument(
-        #     '-k', '--njobs-feats', type=int, default=20, metavar='<njobs>',
-        #     help="""number of jobs to launch for feature computations, default is to
-        #     launch %(default)s jobs.""")
 
         dir_group.add_argument(
             '-l', '--language-model', metavar='<lm-dir>', default=None,
@@ -54,6 +51,11 @@ class AbkhaziaDecode(AbstractRecipeCommand):
             help='''the acoustic model recipe directory, data is read from
             <am-dir>/acoustic. If not specified, use <am-dir>=<corpus>.''')
 
+        dir_group.add_argument(
+            '-m', '--mfcc-features', metavar='<feat-dir>', default=None,
+            help='''the features directory, data is read from
+            <feat-dir>/features/mfcc. If not specified, use <feat-dir>=<corpus>.''')
+
         group = parser.add_argument_group(
             'decoding parameters', 'those parameters can also be '
             'specified in the [decode] section of the configuration file')
@@ -61,17 +63,11 @@ class AbkhaziaDecode(AbstractRecipeCommand):
         def config(param):
             return utils.config.get(cls.name, param)
 
-        # group.add_argument(
-        #     '--use-pitch', metavar='<true|false>',
-        #     default=config('use-pitch'), choices=['true', 'false'],
-        #     help="""if true, compute pitch features along with MFCCs,
-        #     default is %(default)s""")
-
         group.add_argument(
             '-s', '--acoustic-scale', type=float, metavar='<float>',
             default=config('acoustic-scale'),
             help='''acoustic scale for extracting posterior
-            from the final lattice''')
+            from the final lattice, default is %(default)s''')
 
         return parser
 
@@ -79,30 +75,32 @@ class AbkhaziaDecode(AbstractRecipeCommand):
     def run(cls, args):
         corpus, output_dir = cls.prepare_for_run(args)
 
-        # instanciate the kaldi recipe
-        recipe = decode.Decode(corpus, output_dir, args.verbose)
+        # get back the features directory
+        feat = (corpus if args.mfcc_features is None
+                else os.path.abspath(args.mfcc_features))
+        feat += '/features'
 
         # get back the language model directory
         lang = (corpus if args.language_model is None
                 else os.path.abspath(args.language_model))
         lang += '/language/lang'
-        recipe.lm_dir = lang
 
         # get back the acoustic model directory
         acoustic = (corpus if args.acoustic_model is None
                     else os.path.abspath(args.acoustic_model))
         acoustic += '/acoustic/exp/acoustic_model'
-        recipe.am_dir = acoustic
 
-        # setup other recipe parameters from args
-#        recipe.use_pitch = args.use_pitch
+        # instanciate the kaldi recipe
+        recipe = decode.Decode(corpus, output_dir, args.verbose)
+
+        # setup recipe parameters
+        recipe.feat_dir = feat
+        recipe.lm_dir = lang
+        recipe.am_dir = acoustic
         recipe.acoustic_scale = args.acoustic_scale
         recipe.njobs_train = args.njobs_train
-        #recipe.njobs_feats = args.njobs_feats
 
         # finally create and/or run the recipe
-        if not args.only_run:
-            recipe.create()
-        if not args.no_run:
-            recipe.run()
-            recipe.export()
+        recipe.create(args)
+        recipe.run()
+        recipe.export()

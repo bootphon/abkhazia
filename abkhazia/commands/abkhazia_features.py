@@ -50,9 +50,7 @@ class AbkhaziaFeatures(AbstractRecipeCommand):
         recipe.use_pitch = True if args.use_pitch == 'true' else False
         recipe.njobs = args.njobs
 
-        # finally create and/or run the recipe
-        if not args.only_run:
-            recipe.create()
-        if not args.no_run:
-            recipe.run()
-            recipe.export()
+        # finally compute the features
+        recipe.create()
+        recipe.run()
+        recipe.export()

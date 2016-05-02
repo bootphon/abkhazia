@@ -36,8 +36,6 @@ class AcousticModel(abstract_recipe.AbstractRecipe):
 
     Attributes:
         lang (str): path to the language model directory
-        use_pitch (bool): If True, compute pitch features along with MFCCs
-        njobs_feats (int): Number of parallel jobs for computing features
         njobs_train (int): Number of parallel jobs for computing model
         njobs_local (int): Number of parallel jobs for pre/post computing
         num_states_si (int)
@@ -56,30 +54,34 @@ class AcousticModel(abstract_recipe.AbstractRecipe):
         # setup default values for parameters from the configuration
         def config(name):
             return utils.config.get(self.name, name)
-        self.use_pitch = config('use-pitch')
         self.num_states_si = config('num-states-si')
         self.num_gauss_si = config('num-gauss-si')
         self.num_states_sa = config('num-states-sa')
         self.num_gauss_sa = config('num-gauss-sa')
 
         self.lang = None
+        self.feat = None
 
         ncores = multiprocessing.cpu_count()
-        self.njobs_feats = ncores
         self.njobs_train = ncores
         self.njobs_local = ncores
 
-    def _check_pitch(self):
-        if isinstance(self.use_pitch, bool):
-            pass
-        elif self.use_pitch == 'true':
-            self.use_pitch = True
-        elif self.use_pitch == 'false':
-            self.use_pitch = False
-        else:
+    def _check_features(self):
+        if self.feat is None:
+            raise RuntimeError('non specified features')
+
+        if not os.path.isdir(self.feat):
             raise RuntimeError(
-                "use_pitch must be in 'true' or 'false', it is {}"
-                .format(self.use_pitch))
+                'features not found: {}'.format(self.feat))
+
+        for target in ('feats.scp', 'cmvn.scp'):
+            o = os.path.join(self.feat, 'data', 'features', target)
+            if not os.path.isfile(o):
+                raise RuntimeError('{} not found'.format(o))
+
+            t = os.path.join(self.recipe_dir, 'data', self.name, target)
+            self.log.info('Using %s', o)
+            os.symlink(o, t)
 
     def _check_language_model(self):
         if self.lang is None:
@@ -119,33 +121,6 @@ class AcousticModel(abstract_recipe.AbstractRecipe):
             raise RuntimeError(
                 "model type '{}' not in 'mono', 'tri', 'tri-sa'"
                 .format(self.model_type))
-
-    def _compute_features(self):
-        script = ('steps/make_mfcc_pitch.sh' if self.use_pitch
-                  else 'steps/make_mfcc.sh')
-        self.log.info('computing features with %s', script)
-
-        command = (
-            script + ' --nj {0} --cmd "{1}" {2} {3} {4}'.format(
-                self.njobs_feats,
-                utils.config.get('kaldi', 'train-cmd'),
-                os.path.join('data', self.name),
-                os.path.join('exp', 'make_mfcc', self.name),
-                'mfcc'))
-
-        self.log.debug('running %s', command)
-        utils.jobs.run(command, stdout=self.log.debug,
-                       env=kaldi_path(), cwd=self.recipe_dir)
-
-    def _compute_cmvn_stats(self):
-        command = 'steps/compute_cmvn_stats.sh {0} {1} {2}'.format(
-            os.path.join('data', self.name),
-            os.path.join('exp', 'make_mfcc', self.name),
-            'mfcc')
-
-        self.log.debug('running %s', command)
-        utils.jobs.run(command, stdout=self.log.debug,
-                       env=kaldi_path(), cwd=self.recipe_dir)
 
     def _monophone_train(self):
         # Flat start and monophone training, with delta-delta features.
@@ -274,11 +249,10 @@ class AcousticModel(abstract_recipe.AbstractRecipe):
 
     def check_parameters(self):
         """Raise if the acoustic modeling parameters are not correct"""
-        self._check_model_type()
+        self._check_features()
         self._check_language_model()
-        self._check_pitch()
+        self._check_model_type()
 
-        self.njobs_feats = self._check_njobs(self.njobs_feats)
         self.njobs_train = self._check_njobs(self.njobs_train)
         self.njobs_local = self._check_njobs(self.njobs_local, local=True)
 
@@ -306,10 +280,6 @@ class AcousticModel(abstract_recipe.AbstractRecipe):
     def run(self):
         """Run the created recipe and compute the acoustic model"""
         self.check_parameters()
-
-        # features
-        self._compute_features()
-        self._compute_cmvn_stats()
 
         # monophone
         result_directory = self._monophone_train()
