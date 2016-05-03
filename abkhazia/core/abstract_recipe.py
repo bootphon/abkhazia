@@ -18,7 +18,8 @@ import os
 import tempfile
 
 import abkhazia.utils as utils
-import abkhazia.kaldi.abkhazia2kaldi as abkhazia2kaldi
+import abkhazia.core.abkhazia2kaldi as abkhazia2kaldi
+from abkhazia.core.kaldi_path import kaldi_path
 
 
 class AbstractRecipe(object):
@@ -37,13 +38,7 @@ class AbstractRecipe(object):
 
         # init the recipe dir
         self.recipe_dir = self.corpus_dir if recipe_dir is None else recipe_dir
-        self.recipe_dir = os.path.join(self.recipe_dir, self.name)
-
-        if os.path.isdir(self.recipe_dir):
-            raise OSError(
-                'output directory already existing: {}'
-                .format(self.recipe_dir))
-        else:
+        if not os.path.isdir(self.recipe_dir):
             os.makedirs(self.recipe_dir)
 
         # init the log
@@ -55,11 +50,19 @@ class AbstractRecipe(object):
         if not os.path.isdir(log_dir):
             os.makedirs(log_dir)
         self.log = utils.log2file.get_log(log_file, verbose)
+        self.log.debug('reading corpus from %s', self.corpus_dir)
 
         # init the abkhazia2kaldi converter
         self.a2k = abkhazia2kaldi.Abkhazia2Kaldi(
             corpus_dir, self.recipe_dir,
             name=self.name, verbose=verbose, log=self.log)
+
+    def _run_command(self, command):
+        """Run the command as a subprocess, wrapper on utils.jobs"""
+        utils.jobs.run(
+            command,
+            stdout=self.log.debug,
+            env=kaldi_path(), cwd=self.recipe_dir)
 
     def create(self, args):
         """Create the recipe in `self.recipe_dir`
@@ -107,8 +110,8 @@ class AbstractTmpRecipe(AbstractRecipe):
         recipe_dir = tempfile.mkdtemp(
             dir=self.output_dir if 'queue' in cmd else None)
 
-        self.delete_tmp = True
-        self.to_delete = recipe_dir
+        # if True, delete the recipe_dir on instance destruction
+        self.delete_recipe = True
 
         super(AbstractTmpRecipe, self).__init__(
             corpus_dir, recipe_dir, verbose=verbose,
@@ -116,9 +119,10 @@ class AbstractTmpRecipe(AbstractRecipe):
 
     def __del__(self):
         try:
-            if self.delete_tmp:
-                self.log.debug('removing recipe directory {}'
-                               .format(self.to_delete))
-                utils.remove(self.to_delete)
+            if self.delete_recipe:
+                self.log.debug('removing temp directory {}'
+                               .format(self.recipe_dir))
+                utils.remove(self.recipe_dir)
+        # occurs when an exception is raised in __init__
         except AttributeError:
             pass

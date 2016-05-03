@@ -23,8 +23,8 @@ import tempfile
 
 import abkhazia.utils as utils
 import abkhazia.utils.basic_io as io
-from abkhazia.kaldi.kaldi_path import kaldi_path
-import abkhazia.kaldi.abstract_recipe as abstract_recipe
+from abkhazia.core.kaldi_path import kaldi_path
+import abkhazia.core.abstract_recipe as abstract_recipe
 
 
 class LanguageModel(abstract_recipe.AbstractTmpRecipe):
@@ -58,7 +58,6 @@ class LanguageModel(abstract_recipe.AbstractTmpRecipe):
 
     def __init__(self, corpus_dir, output_dir=None, verbose=False):
         super(LanguageModel, self).__init__(corpus_dir, output_dir, verbose)
-        self.lang_dir = os.path.join(self.recipe_dir, 'lang')
         self.njobs = multiprocessing.cpu_count()
 
         # setup default values for parameters from the configuration
@@ -77,7 +76,8 @@ class LanguageModel(abstract_recipe.AbstractTmpRecipe):
         # 0.5 is the default from kaldi wsj/utils/prepare_lang.sh
         self.silence_probability = (
             0.5 if config('optional-silence') is 'true' else 0.0)
-        self.position_dependent_phones = config('word-position-dependent')
+        self.position_dependent_phones = utils.str2bool(
+            config('word-position-dependent'))
 
     def _check_level(self):
         level_choices = ['word', 'phone']
@@ -115,6 +115,9 @@ class LanguageModel(abstract_recipe.AbstractTmpRecipe):
         # (some slight customizations of the script are necessary to
         # decode with a phone loop language model when word position
         # dependent phone variants have been trained).
+
+        self.log.info('preprocessing corpus')
+
         script_prepare_lm = os.path.join(
             self.recipe_dir, 'utils/prepare_lang.sh')
 
@@ -134,10 +137,9 @@ class LanguageModel(abstract_recipe.AbstractTmpRecipe):
                 'true' if self.position_dependent_phones else 'false',
                 self.silence_probability,
                 os.path.join(self.a2k._local_path()),
-                os.path.join(self.lang_dir, 'local'),
-                self.lang_dir))
+                os.path.join(self.output_dir, 'local'),
+                self.output_dir))
 
-        self.log.info('running %s', os.path.basename(script))
         utils.jobs.run(
             command, stdout=self.log.debug,
             cwd=self.recipe_dir, env=kaldi_path())
@@ -176,7 +178,8 @@ class LanguageModel(abstract_recipe.AbstractTmpRecipe):
         IRSTLM library.
 
         """
-        self.log.info('creating %s', G_arpa)
+        self.log.info('computing %s %s-gram', self.level, self.order)
+
         # generate ARPA/MIT n-gram with IRSTLM. Train need to remove
         # utt-id on first column of text file TODO and test? Compare
         # the diff with/without
@@ -232,7 +235,7 @@ class LanguageModel(abstract_recipe.AbstractTmpRecipe):
         the corpus lexicon.
 
         """
-        self.log.info('creating language model in %s', G_fst)
+        self.log.info('converting %s-gram to FST', self.order)
 
         # format_lm_sri.sh copies stuff so we need to instantiate
         # another folder and then clean up (or we could do a custom
@@ -247,16 +250,29 @@ class LanguageModel(abstract_recipe.AbstractTmpRecipe):
             command = (
                 'utils/format_lm_sri.sh '
                 '--srilm_opts "-subset -prune-lowprobs -unk" {0} {1} {2}'
-                .format(self.lang_dir, G_arpa, tmp_dir))
+                .format(self.output_dir, G_arpa, tmp_dir))
 
             utils.jobs.run(
                 command, stdout=self.log.debug,
                 env=kaldi_path(), cwd=self.recipe_dir)
 
-            utils.remove(self.lang_dir)
-            shutil.move(tmp_dir, self.lang_dir)
+            utils.remove(self.output_dir)
+            shutil.move(tmp_dir, self.output_dir)
         finally:
             utils.remove(tmp_dir, safe=True)
+
+    def _setup_prepare_lang_wpdpl(self):
+        local = os.path.join(self.output_dir, 'local')
+        if not os.path.isdir(local):
+            os.makedirs(local)
+
+        share = pkg_resources.resource_filename(
+            pkg_resources.Requirement.parse('abkhazia'), 'abkhazia/share')
+
+        for target in ('prepare_lang_wpdpl.sh', 'validate_lang_wpdpl.pl'):
+            shutil.copy(
+                os.path.join(share, target),
+                os.path.join(local, target))
 
     def check_parameters(self):
         """Raise if the language modeling parameters are not correct"""
@@ -289,7 +305,7 @@ class LanguageModel(abstract_recipe.AbstractTmpRecipe):
 
         self.a2k.setup_kaldi_folders()
         self.a2k.setup_machine_specific_scripts()
-        self.a2k.setup_prepare_lang_wpdpl()
+        self._setup_prepare_lang_wpdpl()
 
     def run(self):
         """Run the created recipe and compute the language model"""
@@ -311,17 +327,3 @@ class LanguageModel(abstract_recipe.AbstractTmpRecipe):
             if not os.path.isfile(G_arpa):
                 self._compute_lm(G_arpa)
             self._format_lm(G_arpa, G_fst)
-
-        self._export()
-
-    def _export(self):
-        """Export recipe_dir/lang to output_dir"""
-        self.log.info('exporting results to %s', self.output_dir)
-        for origin in utils.list_directory(
-                os.path.join(self.recipe_dir, self.lang_dir), abspath=True):
-            if os.path.isdir(origin):
-                shutil.copytree(
-                    origin,
-                    os.path.join(self.output_dir, os.path.basename(origin)))
-            else:
-                shutil.copy(origin, self.output_dir)

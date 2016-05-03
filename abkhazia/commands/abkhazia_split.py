@@ -14,15 +14,12 @@
 # along with abkhazia. If not, see <http://www.gnu.org/licenses/>.
 """Implementation of the 'abkazia split' command"""
 
-import os
-import shutil
-
-from abkhazia.commands.abstract_command import AbstractPreparedCommand
+from abkhazia.commands.abstract_command import AbstractRecipeCommand
 import abkhazia.utils as utils
 import abkhazia.utils.split as split
 
 
-class AbkhaziaSplit(AbstractPreparedCommand):
+class AbkhaziaSplit(AbstractRecipeCommand):
     '''This class implements the 'abkhazia split' command'''
     name = 'split'
     description = 'split a corpus in train and test subsets'

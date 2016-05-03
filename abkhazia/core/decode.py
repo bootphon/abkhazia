@@ -18,9 +18,9 @@ import gzip
 import multiprocessing
 import os
 
-from abkhazia.kaldi.features import export_features
-from abkhazia.kaldi.kaldi_path import kaldi_path
-import abkhazia.kaldi.abstract_recipe as abstract_recipe
+from abkhazia.core.features import export_features
+from abkhazia.core.kaldi_path import kaldi_path
+import abkhazia.core.abstract_recipe as abstract_recipe
 import abkhazia.utils as utils
 
 

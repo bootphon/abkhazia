@@ -18,7 +18,7 @@ import argparse
 import os
 
 from abkhazia.commands.abstract_command import AbstractRecipeCommand
-import abkhazia.kaldi.force_align as force_align
+import abkhazia.core.force_align as force_align
 
 
 class AbkhaziaAlign(AbstractRecipeCommand):
@@ -69,7 +69,7 @@ class AbkhaziaAlign(AbstractRecipeCommand):
         # get back the language model directory
         lang = (corpus if args.language_model is None
                 else os.path.abspath(args.language_model))
-        lang += '/language/lang'
+        lang += '/language'
 
         # ensure it's a directory and we have both oov.int and
         # G.fst in it

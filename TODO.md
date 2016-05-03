@@ -1,14 +1,5 @@
 <!-- -*-org-*- this comment force org-mode in emacs -->
 
-* looking for posteriograms on phone alignment
-** steps/align_fmllr.sh
-Computes training alignments; assumes features are (LDA+MLLT or delta+delta-delta)
-+ fMLLR (probably with SAT models).
-It first computes an alignment with the final.alimdl (or the final.mdl if final.alimdl
-is not present), then does 2 iterations of fMLLR estimation.
-
-
-
 * posteriors on Childes/Brent alignement [2/3]
 ** DONE intégrer Childes/Brent dans abkhazia
    CLOSED: [2016-04-24 dim. 23:33]
@@ -35,6 +26,7 @@ is not present), then does 2 iterations of fMLLR estimation.
    /ssh:oberon:/fhgfs/bootphon/scratch/xcao/Brent_test_abkhazia/output_brent_abkhazia/output_forced_alignment_kaldi/phone_align
    (pour les fichiers splittés) ou "forced_alignment.txt"
 ** TODO compute alignment posteriograms with Kaldi
+
 * Bugs [1/3]
 ** TODO installation on Mac
    XN -- Pour le testing sur mac, ça ne marche pas ou en tout cas, je
@@ -74,36 +66,27 @@ is not present), then does 2 iterations of fMLLR estimation.
 
  - submited https://github.com/kaldi-asr/kaldi/pull/639
  - the bug is fixed within kaldi, see https://github.com/kaldi-asr/kaldi/issues/643
+
 * Functions
 ** prepare childes
-
-   - possible error on speaker if one_adult is True
+   - possible error on speaker if one_adult is True, and aldo check
+     for *MOT* and others as different speakers
    - test with others than Brent, have a subcorpus selection option?
    - strange words in trs:
      xcuse -> excuse
      fiin / fiin o
 
-
-
 ** other
-
  - language
-
    - [ ] test the --optional-silences option
-
-   - [ ] rename --njobs-local to -j
-
  - prepare
-
    - [ ] --keep-short-utts option
      remove short utterances here instead of during lm/am
    - [ ] word dependent position issue
      Check in validate_corpus that adding _I, _B, _E or _S suffixes to
      phones does not create conflicts, otherwise issue a warning to say
      that word_position_dependent models won't be usable.
-
  - acoustic
-
    - [ ] --retrain option
      it should be possible to retrain a trained model on a new corpus
      (for instance, specifically retrain silence models, or retrain on a
@@ -122,38 +105,20 @@ is not present), then does 2 iterations of fMLLR estimation.
        ** You should probably figure out whether something went wrong, **
        ** or whether your data just doesn't happen to have examples of those **
        ** phones. **
-
  - align
-
    - [X] have a --njobs option
    - [X] replace force_align.sh.in by pure python
    - [ ] make sure the lm is at word level
-   - [ ] extensive test on several lm/am
-
  - decode
-
-   - params: test_set, acoustic_model, (language_model)
-   - Compute phone posteriograms or transcription.
    - options:
-
       evaluate(transcription, gold)
       output = {posteriorgrams, transcription}
       speaker_adapt
       output: results (repertoire)
-
    - [ ] If no language model provided, build default flat unigram one
-
  - feature
-
-   - Maybe we could have a separate feature command ? -> Yes we will have one
-   - option to export features from ark to h5f
-   - see [[https://github.com/bootphon/features_extraction/blob/master/kaldi_features.py][kaldi_features.py]] from feature_extraction package
-
- - list
-
-   As an alternative of the README files, display what is in
-   <data-directory> For each corpus: list of present data, recipes and
-   results, with the parameters/path they ran from.
+    option to export features from ark to h5f, see
+    [[https://github.com/bootphon/features_extraction/blob/master/kaldi_features.py][kaldi_features.py]] from feature_extraction package
 
 * Documentation
 

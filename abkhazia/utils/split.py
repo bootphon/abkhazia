@@ -32,7 +32,7 @@ class SplitCorpus(object):
       split. This directory must contain a validated abkhazia corpus.
 
     output_dir : The output directory where to write the splits. The
-      directory hierarchy 'output_dir'/split/{train, test}/data is
+      directory hierarchy 'output_dir'/{train, test}/data is
       created. The log file goes in
       'output_dir'/logs/split_corpus.log. By default use 'corpus_dir'
 
@@ -72,22 +72,22 @@ class SplitCorpus(object):
         # init the output directory
         if output_dir is None:
             output_dir = corpus_dir
-        split_dir = os.path.join(output_dir, 'split')
-        if os.path.exists(split_dir):
+        #split_dir = os.path.join(output_dir, 'split')
+        if os.path.exists(output_dir):
             raise OSError(
                 'output split directory already existing: {}'
-                .format(split_dir))
+                .format(output_dir))
 
         # init output_dir/{test, train}
-        self.test_dir = os.path.join(output_dir, 'split', 'test', 'data')
-        self.train_dir = os.path.join(output_dir, 'split', 'train', 'data')
+        self.test_dir = os.path.join(output_dir, 'test', 'data')
+        self.train_dir = os.path.join(output_dir, 'train', 'data')
         for path in (self.test_dir, self.train_dir):
             if not os.path.exists(path):
                 os.makedirs(path)
 
         # init the log system
         self.log = utils.log2file.get_log(
-            os.path.join(output_dir, 'logs', 'split_corpus.log'), verbose)
+            os.path.join(output_dir, 'split.log'), verbose)
 
         # seed the random generator
         if random_seed is not None:

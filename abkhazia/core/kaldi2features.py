@@ -19,7 +19,7 @@ import h5features
 import numpy as np
 import re
 
-import abkhazia.kaldi.kaldi2abkhazia as k2a
+import abkhazia.core.kaldi2abkhazia as k2a
 
 
 def get_phone_order(phonemap):

@@ -16,38 +16,38 @@
 
 
 # This exemple script computes force alignment of a subsample of the
-# buckeye corpus. Writes to $data_dir, the final alignment will be in
-# the $data_dir/split/train/align/export directory.
+# buckeye corpus. This exemple relies on tiny data and should be run
+# locally. Writes to $data_dir, the final alignment will be in the
+# $data_dir/split/train/align/export directory.
 
 data_dir=${1:-/home/mbernard/data/abkhazia/exemple}
 data_dir=$(readlink -f $data_dir)
 #rm -rf $data_dir
+mkdir -p $data_dir
 
-# Step 1 : prepare the corpus. Here we assume you have a raw buckeye
+# prepare the corpus. Here we assume you have a raw buckeye
 # distribution and the 'buckeye-directory' is set in the abkhazia
 # configuration file.
-abkhazia prepare buckeye -o $data_dir -v -j 4 || exit 1
+abkhazia prepare buckeye -o $data_dir || exit 1
 
-# Step 2 : split the prepared corpus in train and test sets. We keep
-# only 5% for training and split by utterances (this is an exemple, in
-# real life consider taking more than 5% of the data).
-abkhazia split $data_dir -T 0.05 -vf || exit 1
+# split the prepared corpus in train and test sets. We keep only 5%
+# for training and split by utterances (this is an exemple, in real
+# life consider taking more than 5% of the data).
+abkhazia split $data_dir -T 0.05 || exit 1
 train_dir=$data_dir/split/train
 
-# Step 3 : compute a language model on the train set (here a word
-# level bigram).
-abkhazia language $train_dir -l word -n 2 -vf || exit 1
+# compute a language model on the train set
+abkhazia language $train_dir -l word -n 3 || exit 1
 
-# Step 4 : compute an acoustic model on the train set (a speaker
-# adapted triphone model by default). The test.cfg file comes with
-# very small parameters for triphone modeling, it overloads the
-# default values. In this exemple it is used to reduce computation
-# time (no matter the model quality).
-abkhazia -c ../test/test.cfg acoustic $train_dir -t tri-sa -vf -j 4 -k 4 || exit 1
+# compute MFCC features
+abkhazia features $train_dir || exit 1
 
-# Step 5 : compute forced-alignment from the trained language and
-# acoustic models.
-abkhazia align $train_dir -vf -j 4 || exit 1
+# The test.cfg file comes with very small parameters for triphone
+# modeling, this reduce computation time (no matter the model quality).
+abkhazia -c ../test/test.cfg acoustic $train_dir -t tri || exit 1
 
-echo 'symlink the result to $data_dir/forced_alignment.txt'
+# compute forced-alignment from 3-gram and triphone model
+abkhazia align $train_dir || exit 1
+
+echo "symlink the result to $data_dir/forced_alignment.txt"
 ln -s -f $train_dir/align/export/forced_alignment.txt $data_dir

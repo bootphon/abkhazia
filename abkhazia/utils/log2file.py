@@ -47,11 +47,15 @@ class LevelFilter(logging.Filter):
         return record.levelno in self.passlevels
 
 
-# kaldi logs are reported to the abkhazia logger, because they include
-# trailing \n, we want to remove that from the messages (ie strip
-# them) by defining a custom formatter. From
-# https://stackoverflow.com/questions/17931426
 class WhitespaceRemovingFormatter(logging.Formatter):
+    """Strip log messages
+
+    Kaldi logs are reported to the abkhazia logger, because they
+    include trailing \n, we want to remove that from the messages (ie
+    strip them) by defining a custom formatter. From
+    https://stackoverflow.com/questions/17931426
+
+    """
     def format(self, record):
         try:
             record.msg = record.msg.strip()
@@ -60,18 +64,34 @@ class WhitespaceRemovingFormatter(logging.Formatter):
         return super(WhitespaceRemovingFormatter, self).format(record)
 
 
-# kaldi also generates empty lines, undesirable in a logging framework
-# where they generate empty message, so we filter out empty message
-# here. From https://stackoverflow.com/questions/879732
 class NoEmptyMessageFilter(logging.Filter):
+    """Inhibit empty log messages
+
+    kaldi also generates empty lines, undesirable in a logging framework
+    where they generate empty message, so we filter out empty message
+    here. From https://stackoverflow.com/questions/879732
+
+    """
     def filter(self, record):
         return len(record.getMessage().strip())
+
+
+class NoLocalSubdirNotFound(logging.Filter):
+    """Inhibit an unrelevant warning from Kaldi
+
+    Kaldi scripts complains about a missing 'local' subdirectory we
+    don't rely on, so here we inhibit the concerned log messages
+
+    """
+    def filter(self, record):
+        return "'local' subdirectory not found." not in record.getMessage()
 
 
 def get_log(log_file, verbose=False):
     """Configure and return a logger instance"""
     log = logging.getLogger()
     log.addFilter(NoEmptyMessageFilter())
+    log.addFilter(NoLocalSubdirNotFound())
     log.setLevel(logging.DEBUG)
 
     # delete any existing handler before reconfiguring

@@ -17,9 +17,9 @@
 import os
 import multiprocessing
 
-from abkhazia.kaldi.kaldi_path import kaldi_path
-from abkhazia.kaldi.features import export_features
-import abkhazia.kaldi.abstract_recipe as abstract_recipe
+from abkhazia.core.kaldi_path import kaldi_path
+from abkhazia.core.features import export_features
+import abkhazia.core.abstract_recipe as abstract_recipe
 import abkhazia.utils as utils
 
 
@@ -247,13 +247,13 @@ class AcousticModel(abstract_recipe.AbstractRecipe):
 
         # setup other files and folders
         self.a2k.setup_wav_folder()
-        self.a2k.setup_conf_dir()
         self.a2k.setup_kaldi_folders()
         self.a2k.setup_machine_specific_scripts()
 
         export_features(
             self.feat,
-            os.path.join(self.recipe_dir, 'data', self.name))
+            os.path.join(self.recipe_dir, 'data', self.name),
+            self.corpus_dir)
 
     def run(self):
         """Run the created recipe and compute the acoustic model"""

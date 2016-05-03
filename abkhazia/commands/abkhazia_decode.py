@@ -18,16 +18,14 @@ import multiprocessing
 import os
 
 from abkhazia.commands.abstract_command import AbstractRecipeCommand
-from abkhazia.kaldi.abkhazia2kaldi import add_argument
-import abkhazia.kaldi.decode as decode
+import abkhazia.core.decode as decode
 import abkhazia.utils as utils
 
 
 class AbkhaziaDecode(AbstractRecipeCommand):
     name = 'decode'
 
-    description = """compute phone posteriograms or transcription from a language model,
-    an acoustic model and an abkhazia corpus to be decoded"""
+    description = """decode a corpus and provides WER"""
 
     @classmethod
     def add_parser(cls, subparsers):

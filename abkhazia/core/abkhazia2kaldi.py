@@ -16,7 +16,6 @@
 
 import os
 import pkg_resources
-import re
 import shutil
 
 import abkhazia.utils as utils
@@ -133,7 +132,7 @@ class Abkhazia2Kaldi(object):
             inp = self.data_dir
         else:
             inp = os.path.join(self.data_dir, 'split', in_split)
-        assert os.path.isdir(inp), "Directory doesn't exist: {0}".format(inp)
+        assert os.path.isdir(inp), "directory doesn't exist: {0}".format(inp)
 
         final_dir = self.name if out_split is None else out_split
         out = os.path.join(self.recipe_dir, 'data', final_dir)
@@ -342,58 +341,6 @@ class Abkhazia2Kaldi(object):
                 os.remove(target)
             os.symlink(origin, target)
 
-    def setup_conf_dir(self):
-        """Setup the conf files for feature extraction"""
-        conf_dir = os.path.join(self.recipe_dir, 'conf')
-        if os.path.exists(conf_dir):
-            shutil.rmtree(conf_dir)
-        os.mkdir(conf_dir)
-
-        # create mfcc.conf file (following what seems to be commonly
-        # used in other kaldi recipes)
-        with open(os.path.join(conf_dir, 'mfcc.conf'), mode='w') as out:
-            out.write("--use-energy=false   # only non-default option.\n")
-
-        # create empty pitch.conf file (required when using mfcc +
-        # pitch features)
-        with open(os.path.join(conf_dir, 'pitch.conf'), mode='w') as out:
-            pass
-
-    # TODO deprecated since lm is now a separate abkhazia command (was
-    # used as a prestep in train)
-    def setup_lm_scripts(self, args):
-        """configure template 'prepare_lm.sh.in' in 'self.recipe_dir/local'
-
-        Also copy custom prepare_lang.sh and validate_lang.sh scripts
-        to 'local' folder. These scripts are used for models trained
-        with word_position_dependent phone variants.
-
-        """
-        local = os.path.join(self.recipe_dir, 'local')
-        if not os.path.isdir(local):
-            os.makedirs(local)
-
-        target = os.path.join(self.recipe_dir, 'local', 'prepare_lm.sh')
-        self.configure(
-            os.path.join(
-                self.share_dir, 'kaldi_templates', 'prepare_lm.sh.in'),
-            target, args)
-
-        # chmod +x run.sh
-        os.chmod(target, os.stat(target).st_mode | 0o111)
-
-        self.setup_prepare_lang_wpdpl()
-
-    def setup_prepare_lang_wpdpl(self):
-        local = os.path.join(self.recipe_dir, 'local')
-        if not os.path.isdir(local):
-            os.makedirs(local)
-
-        for target in ('prepare_lang_wpdpl.sh', 'validate_lang_wpdpl.pl'):
-            shutil.copy(
-                os.path.join(self.share_dir, target),
-                os.path.join(local, target))
-
     def setup_machine_specific_scripts(self):
         """Copy cmd.sh and path.sh to self.recipe_dir"""
         for target in ('cmd', 'path'):
@@ -412,50 +359,3 @@ class Abkhazia2Kaldi(object):
             os.path.join(
                 self.share_dir, 'kaldi_templates', 'standard_score.sh'),
             os.path.join(local_dir, 'score.sh'))
-
-    def setup_run(self, run_script, args):
-        """Configure and copy run.sh to self.recipe_dir"""
-        target = os.path.join(self.recipe_dir, 'run.sh')
-        origin = os.path.join(self.share_dir, 'kaldi_templates', run_script)
-        self.configure(origin, target, args)
-
-        # chmod +x run.sh
-        os.chmod(target, os.stat(target).st_mode | 0o111)
-
-    # TODO deprecated
-    def setup_main_scripts(self, run_script, args):
-        """Copy score.sh and run.sh to self.recipe_dir"""
-        self.setup_score()
-        self.setup_run(run_script, args)
-
-    def configure(self, origin, target, args, expr='@@@@'):
-        """Configure the file 'target' from 'origin' and 'args'
-
-        Replace the lines starting with param='expr' in 'origin' by
-        param=args.param, do not touch the unmatched lines and copy
-        the whole in 'target'. Raises IOError if args.param does not
-        exist.
-
-        """
-        self.log.debug('configuring {} to {}'
-                       .format(os.path.basename(origin), target))
-
-        with utils.open_utf8(target, 'w') as out:
-            for line in utils.open_utf8(origin, 'r').readlines():
-                matched = re.match('.*=' + expr, line)
-                if matched and not line.startswith('#'):
-                    # parameter name from the file
-                    param = matched.group().split('=')[0].strip()
-                    try:
-                        # parameter value from args
-                        value = vars(args)[param]
-                    except KeyError:
-                        out.close()
-                        utils.remove(out.name)
-                        raise IOError(
-                            "'{}' parameter is requested but not defined"
-                            .format(param))
-
-                    line = param + '=' + str(value).lower() + '\n'
-                    self.log.debug('configured ' + line[:-1])
-                out.write(line)

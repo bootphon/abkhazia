@@ -16,9 +16,9 @@
 
 import os
 
-from abkhazia.kaldi.kaldi_path import kaldi_path
-import abkhazia.kaldi.abstract_recipe as abstract_recipe
-import abkhazia.kaldi.kaldi2abkhazia as k2a
+from abkhazia.core.kaldi_path import kaldi_path
+import abkhazia.core.abstract_recipe as abstract_recipe
+import abkhazia.core.kaldi2abkhazia as k2a
 import abkhazia.utils as utils
 
 

@@ -21,12 +21,29 @@ import re
 import shutil
 
 
+def str2bool(s, safe=False):
+    """Return True if s=='true', False if s=='false', raise TypeError else
+
+    If `safe` is True, don't raise and return False.
+
+    """
+    if safe:
+        return True if s == 'true' else False
+    else:
+        if s == 'true':
+            return True
+        if s == 'false':
+            return False
+    raise TypeError("{} must be 'true' or 'false'".format(s))
+
+
 # from https://stackoverflow.com/questions/38987
 def merge_dicts(*dict_args):
-    '''
-    Given any number of dicts, shallow copy and merge into a new dict,
-    precedence goes to key value pairs in latter dicts.
-    '''
+    """Given any number of dicts, shallow copy and merge into a new dict
+
+    Precedence goes to (key, value) pairs in latter dicts.
+
+    """
     result = {}
     for dictionary in dict_args:
         result.update(dictionary)

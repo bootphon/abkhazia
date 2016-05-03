@@ -19,12 +19,12 @@ import os
 
 import abkhazia.utils as utils
 from abkhazia.commands.abstract_command import AbstractRecipeCommand
-from abkhazia.kaldi.language_model import LanguageModel
+from abkhazia.core.language_model import LanguageModel
 
 
 class AbkhaziaLanguage(AbstractRecipeCommand):
     name = LanguageModel.name
-    description = 'compute a n-gram language model from an abkhazia corpus'
+    description = 'compute a n-gram language model on a corpus'
 
     @classmethod
     def add_parser(cls, subparsers):
@@ -53,7 +53,8 @@ class AbkhaziaLanguage(AbstractRecipeCommand):
         group.add_argument(
             '-n', '--model-order', type=int, metavar='<N>',
             default=utils.config.get('language', 'model-order'),
-            help='n in n-gram, must be a positive integer')
+            help='n in n-gram, must be a positive integer, '
+            'default is %(default)s')
 
         group.add_argument(
             '-l', '--model-level',
@@ -76,10 +77,7 @@ class AbkhaziaLanguage(AbstractRecipeCommand):
             args.model_order = utils.config.get('language', 'model-order')
 
         # instanciate the lm recipe creator
-        recipe = LanguageModel(
-            corpus,
-            os.path.join(output_dir, cls.name),
-            args.verbose)
+        recipe = LanguageModel(corpus, output_dir, args.verbose)
         recipe.order = args.model_order
         recipe.level = args.model_level
         recipe.position_dependent_phones = args.word_position_dependent

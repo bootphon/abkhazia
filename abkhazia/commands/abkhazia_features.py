@@ -14,16 +14,14 @@
 # along with abkhazia. If not, see <http://www.gnu.org/licenses/>.
 """Implementation of the 'abkhazia features' command"""
 
-import os
-
 from abkhazia.commands.abstract_command import AbstractRecipeCommand
-import abkhazia.kaldi.features as features
+import abkhazia.core.features as features
 import abkhazia.utils as utils
 
 
 class AbkhaziaFeatures(AbstractRecipeCommand):
     name = 'features'
-    description = 'compute MFCC features'
+    description = 'compute MFCC features and CMVN statistics'
 
     @classmethod
     def add_parser(cls, subparsers):
@@ -31,10 +29,10 @@ class AbkhaziaFeatures(AbstractRecipeCommand):
         # get basic parser init from AbstractCommand
         parser, dir_group = super(AbkhaziaFeatures, cls).add_parser(subparsers)
 
-        # TODO if local, ncores, else one per wav ?
         parser.add_argument(
-            '-j', '--njobs', type=int, default=20, metavar='<njobs>',
-            help="""number of jobs to launch for feature computations, default is to
+            '-j', '--njobs', type=int, metavar='<njobs>',
+            default=cls._default_njobs(20),
+            help="""number of jobs to launch for features computation, default is to
             launch %(default)s jobs.""")
 
         parser.add_argument(
@@ -48,14 +46,8 @@ class AbkhaziaFeatures(AbstractRecipeCommand):
     @classmethod
     def run(cls, args):
         corpus, output_dir = cls.prepare_for_run(args)
-        recipe = features.Features(
-            corpus,
-            os.path.join(output_dir, cls.name),
-            args.verbose)
-
+        recipe = features.Features(corpus, output_dir, args.verbose)
         recipe.use_pitch = True if args.use_pitch == 'true' else False
         recipe.njobs = args.njobs
-
-        # finally compute the features
         recipe.create()
         recipe.run()

@@ -18,14 +18,14 @@ import argparse
 import os
 
 from abkhazia.commands.abstract_command import AbstractRecipeCommand
-import abkhazia.kaldi.acoustic_model as acoustic_model
+import abkhazia.core.acoustic_model as acoustic_model
 import abkhazia.utils as utils
 
 
 class AbkhaziaAcoustic(AbstractRecipeCommand):
     """This class implements the 'abkhazia acoustic' command"""
     name = 'acoustic'
-    description = 'train an acoustic model'
+    description = 'train an acoustic model on a corpus'
 
     @classmethod
     def run(cls, args):

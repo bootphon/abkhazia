@@ -73,11 +73,11 @@ word-position-dependent: true
 optional-silence: true
 
 # n in n-gram
-model-order: 2
+model-order: 3
 
 # Can be either 'phone' or 'word' and compute either a phone-level or
 # a word-level language model
-model-level: phone
+model-level: word
 
 [acoustic]
 # Speaker-independent triphone models parameters
