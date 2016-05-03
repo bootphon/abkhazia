@@ -15,6 +15,7 @@
 """Implementation of the 'abkhazia language' command"""
 
 import argparse
+import os
 
 import abkhazia.utils as utils
 from abkhazia.commands.abstract_command import AbstractRecipeCommand
@@ -75,15 +76,15 @@ class AbkhaziaLanguage(AbstractRecipeCommand):
             args.model_order = utils.config.get('language', 'model-order')
 
         # instanciate the lm recipe creator
-        recipe = LanguageModel(corpus, output_dir, args.verbose)
+        recipe = LanguageModel(
+            corpus,
+            os.path.join(output_dir, cls.name),
+            args.verbose)
         recipe.order = args.model_order
         recipe.level = args.model_level
         recipe.position_dependent_phones = args.word_position_dependent
         recipe.silence_probability = 0.5 if args.optional_silence else 0.0
 
         # finally create and/or run the recipe
-        if not args.only_run:
-            recipe.create()
-        if not args.no_run:
-            recipe.run()
-            recipe.export()
+        recipe.create()
+        recipe.run()

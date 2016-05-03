@@ -123,7 +123,6 @@ class AcousticModel(abstract_recipe.AbstractRecipe):
                        self.lang,
                        target))
 
-        self.log.debug('running %s', command)
         utils.jobs.run(command, stdout=self.log.debug,
                        env=kaldi_path(), cwd=self.recipe_dir)
         return target
@@ -147,10 +146,8 @@ class AcousticModel(abstract_recipe.AbstractRecipe):
                        origin,
                        target))
 
-        self.log.debug('running %s', command)
         utils.jobs.run(command, stdout=self.log.debug,
                        env=kaldi_path(), cwd=self.recipe_dir)
-
         return target
 
     def _triphone_train(self, origin):
@@ -171,10 +168,8 @@ class AcousticModel(abstract_recipe.AbstractRecipe):
                        origin,
                        target))
 
-        self.log.debug('running %s', command)
         utils.jobs.run(command, stdout=self.log.debug,
                        env=kaldi_path(), cwd=self.recipe_dir)
-
         return target
 
     def _sa_triphone_align(self, origin):
@@ -194,10 +189,8 @@ class AcousticModel(abstract_recipe.AbstractRecipe):
                        origin,
                        target))
 
-        self.log.debug('running %s', command)
         utils.jobs.run(command, stdout=self.log.debug,
                        env=kaldi_path(), cwd=self.recipe_dir)
-
         return target
 
     def _sa_triphone_train(self, origin):
@@ -218,10 +211,8 @@ class AcousticModel(abstract_recipe.AbstractRecipe):
                        origin,
                        target))
 
-        self.log.debug('running %s', command)
         utils.jobs.run(command, stdout=self.log.debug,
                        env=kaldi_path(), cwd=self.recipe_dir)
-
         return target
 
     def _export(self, result_directory):

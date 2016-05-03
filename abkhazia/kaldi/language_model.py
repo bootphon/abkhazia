@@ -15,6 +15,7 @@
 """Provides the LanguageModel class"""
 
 import gzip
+import multiprocessing
 import os
 import pkg_resources
 import shutil
@@ -26,7 +27,7 @@ from abkhazia.kaldi.kaldi_path import kaldi_path
 import abkhazia.kaldi.abstract_recipe as abstract_recipe
 
 
-class LanguageModel(abstract_recipe.AbstractRecipe):
+class LanguageModel(abstract_recipe.AbstractTmpRecipe):
     """Compute a language model from an abkhazia corpus
 
     This class uses Kaldi, IRSTLM and SRILM to compute n-grams
@@ -44,7 +45,6 @@ class LanguageModel(abstract_recipe.AbstractRecipe):
         lm.silence_probability = 0.0
         lm.create()
         lm.run()
-        lm.export()
 
     Attributes:
         level (str): 'phone' or 'word' language model
@@ -56,10 +56,10 @@ class LanguageModel(abstract_recipe.AbstractRecipe):
 
     name = 'language'
 
-    def __init__(self, corpus_dir, recipe_dir=None, verbose=False, njobs=1):
-        super(LanguageModel, self).__init__(corpus_dir, recipe_dir, verbose)
+    def __init__(self, corpus_dir, output_dir=None, verbose=False):
+        super(LanguageModel, self).__init__(corpus_dir, output_dir, verbose)
         self.lang_dir = os.path.join(self.recipe_dir, 'lang')
-        self.njobs = njobs
+        self.njobs = multiprocessing.cpu_count()
 
         # setup default values for parameters from the configuration
         # file. Here we could use a different
@@ -73,9 +73,10 @@ class LanguageModel(abstract_recipe.AbstractRecipe):
             return utils.config.get('language', name)
         self.level = config('model-level')
         self.order = config('model-order')
+
         # 0.5 is the default from kaldi wsj/utils/prepare_lang.sh
-        self.silence_probability = (0.5 if config('optional-silence') is 'true'
-                                    else 0.0)
+        self.silence_probability = (
+            0.5 if config('optional-silence') is 'true' else 0.0)
         self.position_dependent_phones = config('word-position-dependent')
 
     def _check_level(self):
@@ -311,13 +312,16 @@ class LanguageModel(abstract_recipe.AbstractRecipe):
                 self._compute_lm(G_arpa)
             self._format_lm(G_arpa, G_fst)
 
-    def export(self):
-        """Export data/dict/G.fst in export/language_model.fst"""
-        origin = os.path.join(self.recipe_dir, self.lang_dir, 'G.fst')
-        target = os.path.join(self.recipe_dir, 'export', 'language_model.fst')
-        self.log.info('writing %s', target)
+        self._export()
 
-        dirname = os.path.dirname(target)
-        if not os.path.exists(dirname):
-            os.makedirs(dirname)
-        shutil.copy(origin, target)
+    def _export(self):
+        """Export recipe_dir/lang to output_dir"""
+        self.log.info('exporting results to %s', self.output_dir)
+        for origin in utils.list_directory(
+                os.path.join(self.recipe_dir, self.lang_dir), abspath=True):
+            if os.path.isdir(origin):
+                shutil.copytree(
+                    origin,
+                    os.path.join(self.output_dir, os.path.basename(origin)))
+            else:
+                shutil.copy(origin, self.output_dir)

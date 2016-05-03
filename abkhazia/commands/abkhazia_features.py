@@ -48,7 +48,11 @@ class AbkhaziaFeatures(AbstractRecipeCommand):
     @classmethod
     def run(cls, args):
         corpus, output_dir = cls.prepare_for_run(args)
-        recipe = features.Features(corpus, os.path.join(output_dir, cls.name), args.verbose)
+        recipe = features.Features(
+            corpus,
+            os.path.join(output_dir, cls.name),
+            args.verbose)
+
         recipe.use_pitch = True if args.use_pitch == 'true' else False
         recipe.njobs = args.njobs
 

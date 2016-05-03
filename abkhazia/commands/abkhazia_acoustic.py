@@ -44,7 +44,7 @@ class AbkhaziaAcoustic(AbstractRecipeCommand):
         # get back the language model directory
         lang = (corpus if args.language_model is None
                 else os.path.abspath(args.language_model))
-        lang += '/language/lang'
+        lang += '/language'
 
         # instanciate the kaldi recipe
         recipe = acoustic_model.AcousticModel(

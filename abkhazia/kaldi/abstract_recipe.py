@@ -26,7 +26,8 @@ class AbstractRecipe(object):
     name = NotImplemented
     """The recipe's name"""
 
-    def __init__(self, corpus_dir, recipe_dir=None, verbose=False):
+    def __init__(self, corpus_dir, recipe_dir=None,
+                 verbose=False, log_file=None):
         self.verbose = verbose
 
         # check corpus_dir
@@ -34,17 +35,9 @@ class AbstractRecipe(object):
             raise IOError("directory doesn't exist: {}".format(corpus_dir))
         self.corpus_dir = corpus_dir
 
-        # init the log
-        recipe_dir = self.corpus_dir if recipe_dir is None else recipe_dir
-        log_file = os.path.join(recipe_dir, 'logs', self.name + '.log')
-        log_dir = os.path.dirname(log_file)
-        if not os.path.isdir(log_dir):
-            os.makedirs(log_dir)
-        self.log = utils.log2file.get_log(log_file, verbose)
-
-        # check recipe_dir
-        recipe_dir = os.path.join(recipe_dir, self.name)
-        self.recipe_dir = recipe_dir
+        # init the recipe dir
+        self.recipe_dir = self.corpus_dir if recipe_dir is None else recipe_dir
+        self.recipe_dir = os.path.join(self.recipe_dir, self.name)
 
         if os.path.isdir(self.recipe_dir):
             raise OSError(
@@ -53,9 +46,19 @@ class AbstractRecipe(object):
         else:
             os.makedirs(self.recipe_dir)
 
+        # init the log
+        if log_file is None:
+            log_file = os.path.join(
+                self.recipe_dir, 'logs', self.name + '.log')
+        log_dir = os.path.dirname(log_file)
+
+        if not os.path.isdir(log_dir):
+            os.makedirs(log_dir)
+        self.log = utils.log2file.get_log(log_file, verbose)
+
         # init the abkhazia2kaldi converter
         self.a2k = abkhazia2kaldi.Abkhazia2Kaldi(
-            corpus_dir, recipe_dir,
+            corpus_dir, self.recipe_dir,
             name=self.name, verbose=verbose, log=self.log)
 
     def create(self, args):
@@ -83,26 +86,39 @@ class AbstractTmpRecipe(AbstractRecipe):
     Provide an output_dir attribute where to put results files. The
     recipe directory is deleted on instance destruction. Depending if
     we run jobs locally or queued, the temp dir is created in /tmp or
-    in output_dir respectivly.
+    in output_dir respectively.
+
+    If you want to preserve the tmp directory, setup self.delete_tmp
+    to False (default is True)
 
     """
     def __init__(self, corpus_dir, output_dir, verbose=False):
         # setup an empty output dir
+        self.output_dir = os.path.abspath(output_dir)
         if os.path.isdir(output_dir):
             raise OSError(
                 'output directory already existing: {}'
                 .format(output_dir))
         else:
             os.makedirs(output_dir)
-        self.output_dir = output_dir
 
         # setup recipe_dir as a temp dir
         cmd = utils.config.get('kaldi', 'train-cmd')
         recipe_dir = tempfile.mkdtemp(
             dir=self.output_dir if 'queue' in cmd else None)
 
+        self.delete_tmp = True
+        self.to_delete = recipe_dir
+
         super(AbstractTmpRecipe, self).__init__(
-            corpus_dir, recipe_dir, verbose)
+            corpus_dir, recipe_dir, verbose=verbose,
+            log_file=os.path.join(self.output_dir, self.name + '.log'))
 
     def __del__(self):
-        utils.remove(self.recipe_dir)
+        try:
+            if self.delete_tmp:
+                self.log.debug('removing recipe directory {}'
+                               .format(self.to_delete))
+                utils.remove(self.to_delete)
+        except AttributeError:
+            pass
