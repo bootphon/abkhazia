@@ -99,7 +99,7 @@ def get_log(log_file, verbose=False):
 
     # check if the target dircetory exists, create it if needed
     _dir = os.path.dirname(log_file)
-    if not os.path.isdir(_dir):
+    if not os.path.isdir(_dir) and _dir:
         os.makedirs(_dir)
 
     # log to dedicated file
@@ -133,3 +133,13 @@ def get_log(log_file, verbose=False):
     log.addHandler(std_handler)
 
     return log
+
+
+def reopen_files(log, mode='a+'):
+    """Close and reopen all file handlers in `log`"""
+    for h in log.handlers:
+        if isinstance(h, logging.FileHandler):
+            h.acquire()
+            h.stream.close()
+            h.stream = open(h.baseFilename, mode)
+            h.release()

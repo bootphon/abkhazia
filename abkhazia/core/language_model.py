@@ -151,7 +151,7 @@ class LanguageModel(abstract_recipe.AbstractTmpRecipe):
         fstarcsort.
 
         """
-        self._log.info('compiling %s to %s', G_txt, G_fst)
+        self._log.info('compiling text FST to binary FST')
         temp = tempfile.NamedTemporaryFile('w', delete=False)
 
         # txt to temp
@@ -260,6 +260,14 @@ class LanguageModel(abstract_recipe.AbstractTmpRecipe):
             shutil.move(tmp_dir, self.output_dir)
         finally:
             utils.remove(tmp_dir, safe=True)
+
+            # In this kaldi script, gzip fails with the message "gzip:
+            # stdout: Broken pipe". This leads the logfile to be
+            # closed an dwe need to reopen it after the script
+            # returns. Actually we lost the log messages of arpa2fst
+            # and fstisstochastic. But thoses message are still
+            # readable on stdout with --verbose
+            utils.log2file.reopen_files(self.log)
 
     def _setup_prepare_lang_wpdpl(self):
         local = os.path.join(self.output_dir, 'local')
