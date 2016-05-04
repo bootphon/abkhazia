@@ -18,6 +18,7 @@ import gzip
 import multiprocessing
 import os
 
+import abkhazia.core.language_model as language_model
 from abkhazia.core.features import export_features
 from abkhazia.core.kaldi_path import kaldi_path
 import abkhazia.core.abstract_recipe as abstract_recipe
@@ -53,15 +54,13 @@ class Decode(abstract_recipe.AbstractRecipe):
         self.is_monophone_lm = None
 
         ncores = multiprocessing.cpu_count()
-        self.njobs_train = ncores
+        self.njobs = ncores
 
     def _check_njobs(self, njobs):
         # if we run jobs locally, make sure we have enough cores
         ncores = multiprocessing.cpu_count()
-        if (
-                'queue' not in utils.config.get('kaldi', 'train-cmd') and
-                ncores < njobs
-        ):
+        cmd = utils.config.get('kaldi', 'train-cmd')
+        if 'queue' not in cmd and ncores < njobs:
                 self.log.warning(
                     'asking {0} cores but {1} available, reducing {0} -> {1}'
                     .format(njobs, ncores))
@@ -81,22 +80,15 @@ class Decode(abstract_recipe.AbstractRecipe):
             self.am_dir, 'acoustic', os.path.join(self.am_dir, 'final.mdl'))
 
     def _check_language_model(self):
-        for target in ['oov.int', 'G.fst']:
+        # check the requested files are here
+        for target in ['oov.int', 'G.fst', 'G.arpa.gz']:
             self._check_template(
                 self.lm_dir, 'language', os.path.join(self.lm_dir, target))
 
-        # check wether lm is monophone or not. Can retrive this
-        # information from data/local/language/G.arpa.gz
-        lm_arpa = os.path.abspath(os.path.join(
-            self.lm_dir, '..', 'data', 'local', 'language', 'G.arpa.gz'))
-        if not os.path.exists(lm_arpa):
-            raise RuntimeError('non valid language model: {} not found'
-                               .format(lm_arpa))
-        with gzip.open(lm_arpa) as lm:
-            lm_order = max(
-                [int(line.split('=')[0].replace('ngram', '').strip())
-                 for line in lm if line.startswith('ngram')])
-        self.log.debug('language model is a {}-gram'.format(lm_order))
+        # retrieve LM parameters
+        lm_level, lm_order = language_model.read_params(self.lm_dir)
+        self.log.debug(
+            'language model is a {} level {}-gram'.format(lm_level, lm_order))
         self.is_monophone_lm = True if lm_order == 1 else False
 
     def _mkgraph(self):
@@ -131,7 +123,7 @@ class Decode(abstract_recipe.AbstractRecipe):
 
         command = (
             'steps/decode.sh --nj {0} --cmd "{1}" --model {2} {3} {4} {5}'.format(
-                self.njobs_train,
+                self.njobs,
                 utils.config.get('kaldi', 'decode-cmd'),
                 os.path.join(self.am_dir, 'final.mdl'),
                 origin,
@@ -148,9 +140,9 @@ class Decode(abstract_recipe.AbstractRecipe):
         self._check_language_model()
         self._check_acoustic_model()
 
-        self.njobs_train = self._check_njobs(self.njobs_train)
+        self.njobs = self._check_njobs(self.njobs)
 
-    def create(self, args):
+    def create(self):
         # local folder
         self.a2k.setup_lexicon()
         self.a2k.setup_phones()
@@ -158,7 +150,7 @@ class Decode(abstract_recipe.AbstractRecipe):
         self.a2k.setup_variants()
 
         # setup data files
-        desired_utts = self.a2k.desired_utterances(njobs=args.njobs_local)
+        desired_utts = self.a2k.desired_utterances(njobs=self.njobs)
         self.a2k.setup_text(desired_utts=desired_utts)
         self.a2k.setup_utt2spk(desired_utts=desired_utts)
         self.a2k.setup_segments(desired_utts=desired_utts)
@@ -172,7 +164,8 @@ class Decode(abstract_recipe.AbstractRecipe):
 
         export_features(
             self.feat_dir,
-            os.path.join(self.recipe_dir, 'data', self.name))
+            os.path.join(self.recipe_dir, 'data', self.name),
+            self.corpus_dir)
 
     def run(self):
         """Run the created recipe and decode speech data"""

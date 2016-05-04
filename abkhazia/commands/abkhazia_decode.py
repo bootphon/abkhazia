@@ -81,7 +81,7 @@ class AbkhaziaDecode(AbstractRecipeCommand):
         # get back the language model directory
         lang = (corpus if args.language_model is None
                 else os.path.abspath(args.language_model))
-        lang += '/language/lang'
+        lang += '/language'
 
         # get back the acoustic model directory
         acoustic = (corpus if args.acoustic_model is None
@@ -99,6 +99,6 @@ class AbkhaziaDecode(AbstractRecipeCommand):
         recipe.njobs_train = args.njobs_train
 
         # finally create and/or run the recipe
-        recipe.create(args)
+        recipe.create()
         recipe.run()
         recipe.export()

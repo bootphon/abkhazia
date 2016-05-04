@@ -27,6 +27,19 @@ from abkhazia.core.kaldi_path import kaldi_path
 import abkhazia.core.abstract_recipe as abstract_recipe
 
 
+def read_params(lm_dir):
+    """Parse the file `lm_dir`/params.txt and return a pair (lm_level, lm_order)
+
+    Raises IOError on error
+
+    """
+    params = os.path.join(lm_dir, 'params.txt')
+    if not os.path.isfile(params):
+        raise IOError('{} file not found'.format(params))
+
+    return open(params, 'r').readline().strip().split(' ')
+
+
 class LanguageModel(abstract_recipe.AbstractTmpRecipe):
     """Compute a language model from an abkhazia corpus
 
@@ -178,7 +191,8 @@ class LanguageModel(abstract_recipe.AbstractTmpRecipe):
         IRSTLM library.
 
         """
-        self.log.info('computing %s %s-gram', self.level, self.order)
+        self.log.info(
+            'computing %s %s-gram in ARPA format', self.level, self.order)
 
         # generate ARPA/MIT n-gram with IRSTLM. Train need to remove
         # utt-id on first column of text file TODO and test? Compare
@@ -235,7 +249,7 @@ class LanguageModel(abstract_recipe.AbstractTmpRecipe):
         the corpus lexicon.
 
         """
-        self.log.info('converting %s-gram to FST', self.order)
+        self.log.info('converting ARPA to FST')
 
         # format_lm_sri.sh copies stuff so we need to instantiate
         # another folder and then clean up (or we could do a custom
@@ -281,6 +295,17 @@ class LanguageModel(abstract_recipe.AbstractTmpRecipe):
             shutil.copy(
                 os.path.join(share, target),
                 os.path.join(local, target))
+
+    def _export(self):
+        # G.arpa.gz is needed for acoustic modeling
+        origin = os.path.join(
+            self.recipe_dir, 'data', 'local', self.name, 'G.arpa.gz')
+        target = os.path.join(self.output_dir, 'G.arpa.gz')
+        shutil.copy(origin, target)
+
+        # write a little file with LM parameters
+        with open(os.path.join(self.output_dir, 'params.txt'), 'w') as p:
+            p.write('{} {}\n'.format(self.level, self.order))
 
     def check_parameters(self):
         """Raise if the language modeling parameters are not correct"""
@@ -335,3 +360,5 @@ class LanguageModel(abstract_recipe.AbstractTmpRecipe):
             if not os.path.isfile(G_arpa):
                 self._compute_lm(G_arpa)
             self._format_lm(G_arpa, G_fst)
+
+        self._export()
