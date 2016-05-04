@@ -47,7 +47,7 @@ class AbstractRecipe(object):
                 self.recipe_dir, 'logs', self.name + '.log')
         log_dir = os.path.dirname(log_file)
 
-        if not os.path.isdir(log_dir):
+        if not os.path.isdir(log_dir) and log_dir != '':
             os.makedirs(log_dir)
         self.log = utils.log2file.get_log(log_file, verbose)
         self.log.debug('reading corpus from %s', self.corpus_dir)

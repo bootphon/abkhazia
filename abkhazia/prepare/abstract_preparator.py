@@ -17,7 +17,6 @@
 import ConfigParser
 import os
 import pkg_resources
-import shutil
 
 from abkhazia import utils
 
@@ -107,19 +106,15 @@ class AbstractPreparator(object):
         else:
             self.output_dir = os.path.abspath(output_dir)
 
-        # create the log directory if not existing
-        self.logs_dir = os.path.join(self.output_dir, 'logs')
-        if not os.path.isdir(self.logs_dir):
-            os.makedirs(self.logs_dir)
+        # init the directories output_dir/data/wavs
+        self.data_dir = os.path.join(self.output_dir, 'data')
+        self.wavs_dir = os.path.join(self.data_dir, 'wavs')
 
         # init the log
         self.verbose = verbose
         self.log = utils.get_log(
-            os.path.join(self.logs_dir, 'data_preparation.log'), self.verbose)
-
-        # init the directories output_dir/data/wavs
-        self.data_dir = os.path.join(self.output_dir, 'data')
-        self.wavs_dir = os.path.join(self.data_dir, 'wavs')
+            os.path.join(self.data_dir, 'data_preparation.log'),
+            self.verbose)
 
         # init output files that will be populated by prepare()
         def fname(name):

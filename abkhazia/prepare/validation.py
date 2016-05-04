@@ -58,11 +58,8 @@ class Validation(object):
                           .format(corpus_path, data_dir))
 
         # init the log system
-        log_dir = os.path.join(corpus_path, 'logs')
-        if not os.path.isdir(log_dir):
-            os.mkdir(os.path.join(corpus_path, "logs"))
         self.log_file = os.path.join(
-            log_dir, "{}_validation.log".format(data_dir))
+            self.data_dir, "data_validation.log")
         self.log = log2file.get_log(self.log_file, verbose)
 
         # list of the corpus wavs directory (despite of its name, can
@@ -367,7 +364,7 @@ class Validation(object):
         # oov words
         oov_word_types = set.difference(used_word_types, dict_words_set)
         oov_word_counts = collections.Counter(
-            {oov : used_word_counts[oov] for oov in oov_word_types})
+            {oov: used_word_counts[oov] for oov in oov_word_types})
         nb_oov_tokens = sum(oov_word_counts.values())
         nb_oov_types = len(oov_word_types)
 
@@ -419,12 +416,12 @@ class Validation(object):
                 .format(len(duplicate_transcripts)))
 
             self.log.debug(
-                u'There are {} word types with homophones in the pronunciation '
-                u'dictionary'.format(sum(duplicate_transcripts.values())))
+                'There are {} word types with homophones in the pronunciation '
+                'dictionary'.format(sum(duplicate_transcripts.values())))
 
             self.log.debug(
-                u"List of homophonic phone sequences in 'lexicon.txt' "
-                u"with number of corresponding word types: {0}"
+                "List of homophonic phone sequences in 'lexicon.txt' "
+                "with number of corresponding word types: {0}"
                 .format(self._strcounts2unicode(
                     duplicate_transcripts.most_common())))
 
