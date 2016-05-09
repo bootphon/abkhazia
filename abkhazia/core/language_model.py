@@ -21,9 +21,9 @@ import shutil
 import tempfile
 
 import abkhazia.utils as utils
-from abkhazia.core.kaldi_path import kaldi_path
 import abkhazia.core.abstract_recipe as abstract_recipe
-from abkhazia.core.corpus import Corpus
+from abkhazia.core.kaldi_path import kaldi_path
+from abkhazia.core.corpus_loader import CorpusLoader
 
 
 def check_language_model(lm_dir):
@@ -58,10 +58,10 @@ def word2phone(lexicon, text_file, out_file):
 
     """
     # set up dict
-    dictionary = Corpus._load_lexicon(lexicon)
+    dictionary = CorpusLoader.load_lexicon(lexicon)
 
     # transcribe
-    text = Corpus._load_text(text_file)
+    text = CorpusLoader.load_text(text_file)
     with utils.open_utf8(out_file, 'w') as out:
         for utt_id, utt in text.iteritems():
             try:

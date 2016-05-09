@@ -20,10 +20,9 @@ import shutil
 import textwrap
 
 from abkhazia.commands.abstract_command import AbstractCommand
-import abkhazia.core.corpus as corpus
-import abkhazia.utils as utils
+from abkhazia.core.corpus import Corpus
 
-# TODO clean up those imports
+# import all the corpora preparators TODO simplify those imports
 from abkhazia.prepare.aic_preparator import AICPreparator
 from abkhazia.prepare.buckeye_preparator import BuckeyePreparator
 from abkhazia.prepare.childes_preparator import ChildesPreparator
@@ -174,30 +173,34 @@ class AbstractFactory(object):
                 args.verbose, args.njobs, args.copy_wavs)
         else:
             prep = cls.preparator(
-                args.input_dir, output_dir, args.verbose, args.njobs)
+                args.input_dir, output_dir,
+                args.verbose, args.njobs)
         return prep
 
     @classmethod
-    def run(cls, args):
-        """Initialize and run a preparator from command line arguments"""
+    def _run_preparator(cls, args, preparator):
         if not args.only_validation:
-            cls.init_preparator(args).prepare()
+            # initialize corpus from raw with it's preparator
+            corpus = preparator.prepare()
+        else:
+            # corpus already prepared, load it
+            corpus = Corpus.load(args.corpus)
 
         if not args.no_validation:
-            output_dir = os.path.join(
-                cls.preparator.default_output_dir()
-                if args.output_dir is None else args.output_dir,
-                'data')
+            # raise if the corpus is not in correct abkhazia format
+            corpus.validate(args.njobs, preparator.log)
 
-            # TODO this have to be updated when preparators build a
-            # corpus in memory, not files.
-            prepared_corpus = corpus.Corpus.load(output_dir)
-            log = utils.log2file.get_log(
-                os.path.join(output_dir, 'data_validation.log'), args.verbose)
-            corpus.CorpusValidation(
-                prepared_corpus, njobs=args.njobs, log=log).validate()
-            utils.remove(output_dir, safe=True)
-            prepared_corpus.save(output_dir)
+        # save the corpus to the output directory
+        output_dir = os.path.join(
+            cls.preparator.default_output_dir()
+            if args.output_dir is None else args.output_dir,
+            'data')
+        corpus.save(output_dir)
+
+    @classmethod
+    def run(cls, args):
+        """Initialize, validate and save a corpus from command line args"""
+        cls._run_preparator(args, cls.init_preparator(args))
 
 
 class AbstractFactoryWithCMU(AbstractFactory):
@@ -286,17 +289,6 @@ class LibriSpeechFactory(AbstractFactoryWithCMU):
             args.cmu_dict, args.librispeech_dict,
             output_dir, args.verbose, args.njobs)
 
-    @classmethod
-    def run(cls, args):
-        prep = cls.init_preparator(args)
-
-        if not args.only_validation:
-            prep.prepare()
-
-        if not args.no_validation:
-            validation.Validation(
-                prep.output_dir, args.njobs, args.verbose).validate()
-
 
 class WallStreetJournalFactory(AbstractFactoryWithCMU):
     """Instanciate and run one of the WSJ preparators from input arguments"""
@@ -342,16 +334,6 @@ class WallStreetJournalFactory(AbstractFactoryWithCMU):
             args.input_dir, args.cmu_dict,
             output_dir, args.verbose, args.njobs)
 
-    @classmethod
-    def run(cls, args):
-        prep = cls.init_preparator(args)
-        if not args.only_validation:
-            prep.prepare()
-
-        if not args.no_validation:
-            validation.Validation(
-                prep.output_dir, args.njobs, args.verbose).validate()
-
 
 class GlobalPhoneFactory(AbstractFactory):
     preparator = AbstractGlobalPhonePreparator
@@ -393,12 +375,7 @@ class GlobalPhoneFactory(AbstractFactory):
     @classmethod
     def run(cls, args):
         for prep in cls.init_preparator(args):
-            if not args.only_validation:
-                prep.prepare()
-
-            if not args.no_validation:
-                validation.Validation(
-                    prep.output_dir, args.njobs, args.verbose).validate()
+            cls._run_preparator(args, prep)
 
 
 class AbkhaziaPrepare(AbstractCommand):

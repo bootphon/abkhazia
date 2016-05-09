@@ -21,5 +21,21 @@ HERE = os.path.abspath(os.path.dirname(__file__))
 corpus_dir = os.path.join(HERE, 'data')
 
 
-def test_corpus():
-    Corpus.load(corpus_dir, validate=True)
+def test_corpus(tmpdir):
+    c = Corpus.load(corpus_dir)
+    c.validate()
+
+    corpus_saved = os.path.join(str(tmpdir), 'corpus')
+    c.save(corpus_saved)
+
+    d = Corpus.load(corpus_saved)
+    assert c.lexicon == d.lexicon
+    assert c.wavs == d.wavs
+    assert c.segments == d.segments
+    assert c.phones == d.phones
+
+
+def test_spk2utt():
+    c = Corpus()
+    c.utt2spk = {'u1': 's1', 'u2': 's1', 'u3': 's2'}
+    assert c.spk2utt() == {'s1': ['u1', 'u2'], 's2': ['u3']}

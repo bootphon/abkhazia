@@ -88,7 +88,8 @@ class AbstractPreparator(object):
         except ConfigParser.NoOptionError:
             return None
 
-    def __init__(self, input_dir, output_dir=None, verbose=False, njobs=1):
+    def __init__(self, input_dir, output_dir=None,
+                 verbose=False, njobs=1):
         # init njobs for parallelized preparation steps
         if not isinstance(njobs, int) or not njobs > 0:
             raise IOError('njobs must be a strictly positive integer')
@@ -113,7 +114,7 @@ class AbstractPreparator(object):
         # init the log
         self.verbose = verbose
         self.log = utils.get_log(
-            os.path.join(self.data_dir, 'data_preparation.log'),
+            os.path.join(self.data_dir, 'corpus_preparation.log'),
             self.verbose)
 
         # init output files that will be populated by prepare()
