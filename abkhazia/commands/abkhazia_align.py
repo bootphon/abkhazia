@@ -17,11 +17,11 @@
 import argparse
 import os
 
-from abkhazia.commands.abstract_command import AbstractRecipeCommand
+from abkhazia.commands.abstract_command import AbstractKaldiCommand
 import abkhazia.core.force_align as force_align
 
 
-class AbkhaziaAlign(AbstractRecipeCommand):
+class AbkhaziaAlign(AbstractKaldiCommand):
     '''This class implements the 'abkhazia align' command'''
     name = 'align'
     description = 'compute forced-aligment'
@@ -40,11 +40,6 @@ class AbkhaziaAlign(AbstractRecipeCommand):
         parser.description = cls.long_description()
 
         parser.add_argument(
-            '-j', '--njobs', type=int, default=1, metavar='<njobs>',
-            help="""number of jobs to launch for parallel alignment, default is to
-            launch %(default)s jobs.""")
-
-        parser.add_argument(
             '--no-words', action='store_true',
             help='do not write words in the final alignment file, only phones')
 
@@ -52,6 +47,12 @@ class AbkhaziaAlign(AbstractRecipeCommand):
             '-l', '--language-model', metavar='<lm-dir>', default=None,
             help='''the language model recipe directory, data is read from
             <lm-dir>/language. If not specified, use <lm-dir>=<corpus>.''')
+
+        dir_group.add_argument(
+            '-f', '--features', metavar='<feat-dir>', default=None,
+            help='''the features directory, data is read from
+            <feat-dir>/features/mfcc. If not specified, use
+            <feat-dir>=<corpus>.''')
 
         dir_group.add_argument(
             '-a', '--acoustic-model', metavar='<am-dir>', default=None,
@@ -62,49 +63,30 @@ class AbkhaziaAlign(AbstractRecipeCommand):
 
     @classmethod
     def run(cls, args):
-        # TODO put the checks in the ForceAlign class
-
-        corpus, output_dir = cls.prepare_for_run(args)
+        corpus, output_dir = cls._parse_io_dirs(args)
 
         # get back the language model directory
         lang = (corpus if args.language_model is None
                 else os.path.abspath(args.language_model))
         lang += '/language'
 
-        # ensure it's a directory and we have both oov.int and
-        # G.fst in it
-        if not os.path.isdir(lang):
-            raise IOError(
-                'language model not found: {}.\n'.format(lang) +
-                "Please provide a language model "
-                "(use 'abkhazia language <args>')")
-
-        if not (os.path.isfile(os.path.join(lang, 'oov.int')) and
-                os.path.isfile(os.path.join(lang, 'G.fst'))):
-            raise IOError('not a valid language model directory: {}'
-                          .format(lang))
-
         # get back the acoustic model directory
         acoustic = (corpus if args.acoustic_model is None
                     else os.path.abspath(args.acoustic_model))
-        acoustic += '/acoustic/exp/acoustic_model'
+        acoustic += '/acoustic'
 
-        # ensure it's a directory and we have final.mdl in it
-        if not os.path.isdir(lang):
-            raise IOError(
-                'acoustic model not found: {}.\n'.format(lang) +
-                "Please provide a trained acoustic model "
-                "(use 'abkhazia train <args>')")
-
-        if not os.path.isfile(os.path.join(acoustic, 'final.mdl')):
-            raise IOError('not a valid acoustic model directory: {}'
-                          .format(acoustic))
+        # get back the features directory
+        feat = (corpus if args.features is None
+                else os.path.abspath(args.features))
+        feat += '/features'
 
         # instanciate the kaldi recipe creator
         recipe = force_align.ForceAlign(corpus, output_dir, args.verbose)
         recipe.njobs = args.njobs
         recipe.lm_dir = lang
+        recipe.feat_dir = feat
         recipe.am_dir = acoustic
+        recipe.delete_recipe = False if args.recipe else True
 
         # finally compute the alignments
         recipe.create()

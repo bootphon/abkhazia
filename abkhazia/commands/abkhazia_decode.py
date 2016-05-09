@@ -17,12 +17,12 @@
 import multiprocessing
 import os
 
-from abkhazia.commands.abstract_command import AbstractRecipeCommand
+from abkhazia.commands.abstract_command import AbstractKaldiCommand
 import abkhazia.core.decode as decode
 import abkhazia.utils as utils
 
 
-class AbkhaziaDecode(AbstractRecipeCommand):
+class AbkhaziaDecode(AbstractKaldiCommand):
     name = 'decode'
 
     description = """decode a corpus and provides WER"""
@@ -32,12 +32,6 @@ class AbkhaziaDecode(AbstractRecipeCommand):
         """Return a parser for the align command"""
         # get basic parser init from AbstractCommand
         parser, dir_group = super(AbkhaziaDecode, cls).add_parser(subparsers)
-
-        parser.add_argument(
-            '-j', '--njobs-train', type=int, metavar='<njobs>',
-            default=multiprocessing.cpu_count(),
-            help="""number of jobs to launch for parallel alignment, default is to
-            launch %(default)s jobs.""")
 
         dir_group.add_argument(
             '-l', '--language-model', metavar='<lm-dir>', default=None,
@@ -50,9 +44,9 @@ class AbkhaziaDecode(AbstractRecipeCommand):
             <am-dir>/acoustic. If not specified, use <am-dir>=<corpus>.''')
 
         dir_group.add_argument(
-            '-m', '--mfcc-features', metavar='<feat-dir>', default=None,
+            '-f', '--features', metavar='<feat-dir>', default=None,
             help='''the features directory, data is read from
-            <feat-dir>/features/mfcc. If not specified, use <feat-dir>=<corpus>.''')
+            <feat-dir>/features. If not specified, use <feat-dir>=<corpus>.''')
 
         group = parser.add_argument_group(
             'decoding parameters', 'those parameters can also be '
@@ -71,11 +65,11 @@ class AbkhaziaDecode(AbstractRecipeCommand):
 
     @classmethod
     def run(cls, args):
-        corpus, output_dir = cls.prepare_for_run(args)
+        corpus, output_dir = cls._parse_io_dirs(args)
 
         # get back the features directory
-        feat = (corpus if args.mfcc_features is None
-                else os.path.abspath(args.mfcc_features))
+        feat = (corpus if args.features is None
+                else os.path.abspath(args.features))
         feat += '/features'
 
         # get back the language model directory
@@ -86,7 +80,7 @@ class AbkhaziaDecode(AbstractRecipeCommand):
         # get back the acoustic model directory
         acoustic = (corpus if args.acoustic_model is None
                     else os.path.abspath(args.acoustic_model))
-        acoustic += '/acoustic/exp/acoustic_model'
+        acoustic += '/acoustic'
 
         # instanciate the kaldi recipe
         recipe = decode.Decode(corpus, output_dir, args.verbose)
@@ -96,7 +90,8 @@ class AbkhaziaDecode(AbstractRecipeCommand):
         recipe.lm_dir = lang
         recipe.am_dir = acoustic
         recipe.acoustic_scale = args.acoustic_scale
-        recipe.njobs_train = args.njobs_train
+        recipe.njobs = args.njobs
+        recipe.delete_recipe = False if args.recipe else True
 
         # finally create and/or run the recipe
         recipe.create()

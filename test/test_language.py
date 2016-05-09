@@ -17,11 +17,8 @@
 import os
 import pytest
 import tempfile
-# import shutil
 
-from abkhazia.kaldi.language_model import LanguageModel
-# from abkhazia.prepare.buckeye_preparator import BuckeyePreparator
-# import abkhazia.utils.split as split
+from abkhazia.core.language_model import LanguageModel
 import abkhazia.utils as utils
 
 HERE = os.path.abspath(os.path.dirname(__file__))
@@ -30,44 +27,13 @@ orders = [1, 2, 3, 4]
 params = [(l, o) for l in levels for o in orders]
 
 
-# def setup():
-#     """Prepare 1% of buckeye in the data directory (random by utterances)"""
-#     data_dir = os.path.join(HERE, 'data')
-#     if not os.path.isdir(data_dir):
-#         try:
-#             # fail if buckeye not defined in abkhazia.cfg
-#             raw_buckeye = BuckeyePreparator.default_input_dir()
-#             if raw_buckeye is None:
-#                 raise RuntimeError(
-#                     'buckeye-directory not defined in abkhazia.cfg')
-
-#             # prepare the buckeye corpus in default abkhazia dir
-#             prep = BuckeyePreparator(raw_buckeye, njobs=4)
-#             prep.prepare()  # we skip validation
-
-#             # split 1% of buckeye by utterances
-#             temp = tempfile.mkdtemp()
-#             spliter = split.SplitCorpus(
-#                 prep.output_dir, output_dir=temp)
-#             spliter.split(train_prop=0.01)
-
-#             shutil.move(
-#                 os.path.join(temp, 'split', 'train', 'data'),
-#                 data_dir)
-#         finally:
-#             utils.remove(temp)
-
-
-# def teardown():
-#     utils.remove(os.path.join(HERE, 'data'))
-
-
 @pytest.mark.parametrize("level, order", params)
 def test_lm(level, order):
     data_dir = HERE
     assert os.path.isdir(data_dir)
 
-    output_dir = tempfile.mkdtemp()
+    tmp_dir = tempfile.mkdtemp()
+    output_dir = os.path.join(tmp_dir, 'test_lm')
     try:
         lm = LanguageModel(data_dir, output_dir, verbose=True)
         lm.level = level
@@ -76,7 +42,7 @@ def test_lm(level, order):
         lm.run()
         lm.export()
 
-        log = os.path.join(output_dir, 'logs', 'language.log')
+        log = os.path.join(output_dir, 'language.log')
         error_lines = []
         for line in open(log, 'r').readlines():
             if 'ERROR' in line:
@@ -84,4 +50,4 @@ def test_lm(level, order):
             print error_lines
         assert len(error_lines) == 0
     finally:
-        utils.remove(output_dir, safe=True)
+        utils.remove(tmp_dir, safe=True)

@@ -15,14 +15,13 @@
 """Implementation of the 'abkhazia language' command"""
 
 import argparse
-import os
 
 import abkhazia.utils as utils
-from abkhazia.commands.abstract_command import AbstractRecipeCommand
+from abkhazia.commands.abstract_command import AbstractKaldiCommand
 from abkhazia.core.language_model import LanguageModel
 
 
-class AbkhaziaLanguage(AbstractRecipeCommand):
+class AbkhaziaLanguage(AbstractKaldiCommand):
     name = LanguageModel.name
     description = 'compute a n-gram language model on a corpus'
 
@@ -65,7 +64,7 @@ class AbkhaziaLanguage(AbstractRecipeCommand):
 
     @classmethod
     def run(cls, args):
-        corpus, output_dir = cls.prepare_for_run(args)
+        corpus, output_dir = cls._parse_io_dirs(args)
 
         # retrieve recipe parameters, if not specified in the command
         # read them from the configuration file

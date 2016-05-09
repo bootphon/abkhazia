@@ -14,7 +14,9 @@
 # along with abkhazia. If not, see <http://www.gnu.org/licenses/>.
 """Provides the AbstractRecipe class"""
 
+import multiprocessing
 import os
+import shutil
 import tempfile
 
 import abkhazia.utils as utils
@@ -43,14 +45,12 @@ class AbstractRecipe(object):
 
         # init the log
         if log_file is None:
-            log_file = os.path.join(
-                self.recipe_dir, 'logs', self.name + '.log')
-        log_dir = os.path.dirname(log_file)
-
-        if not os.path.isdir(log_dir) and log_dir != '':
-            os.makedirs(log_dir)
+            log_file = os.path.join(self.output_dir, self.name + '.log')
         self.log = utils.log2file.get_log(log_file, verbose)
         self.log.debug('reading corpus from %s', self.corpus_dir)
+
+        # init njobs
+        self.njobs = utils.default_njobs()
 
         # init the abkhazia2kaldi converter
         self.a2k = abkhazia2kaldi.Abkhazia2Kaldi(
@@ -62,16 +62,48 @@ class AbstractRecipe(object):
         utils.jobs.run(
             command,
             stdout=self.log.debug,
-            env=kaldi_path(), cwd=self.recipe_dir)
+            env=kaldi_path(),
+            cwd=self.recipe_dir)
 
-    def create(self, args):
+    def _check_njobs(self, local=False):
+        # if we run jobs locally, make sure we have enough cores
+        ncores = multiprocessing.cpu_count()
+        queued = not local or 'queue' in utils.config.get('kaldi', 'train-cmd')
+        if queued and ncores < self.njobs:
+            self.log.warning(
+                'asking {0} cores but {1} available, reducing {0} -> {1}'
+                .format(self.njobs, ncores))
+            self.njobs = ncores
+
+    def check_parameters(self):
+        """Perform sanity checks on recipe parameters, raise on error"""
+        self._check_njobs()
+
+    def create(self):
         """Create the recipe in `self.recipe_dir`
 
-        This method is abstract and must be implemented in child
-        classes.
+        Setup Kaldi scripts and environment in self.recipe_dir
 
         """
-        raise NotImplementedError
+        self.check_parameters()
+
+        # local folder
+        self.a2k.setup_lexicon()
+        self.a2k.setup_phones()
+        self.a2k.setup_silences()
+        self.a2k.setup_variants()
+
+        # setup data files
+        desired_utts = self.a2k.desired_utterances(njobs=self.njobs)
+        self.a2k.setup_text(desired_utts=desired_utts)
+        self.a2k.setup_utt2spk(desired_utts=desired_utts)
+        self.a2k.setup_segments(desired_utts=desired_utts)
+        self.a2k.setup_wav(desired_utts=desired_utts)
+
+        # setup other files and folders
+        self.a2k.setup_wav_folder()
+        self.a2k.setup_kaldi_folders()
+        self.a2k.setup_machine_specific_scripts()
 
     def run(self):
         """Run the recipe by calling Kaldi scripts
@@ -91,38 +123,41 @@ class AbstractTmpRecipe(AbstractRecipe):
     we run jobs locally or queued, the temp dir is created in /tmp or
     in output_dir respectively.
 
-    If you want to preserve the tmp directory, setup self.delete_tmp
-    to False (default is True)
+    If you want the recipe directory in output_dir/recipe, set
+    self.delete_recipe to False (default is True)
 
     """
     def __init__(self, corpus_dir, output_dir, verbose=False):
+        # if True, delete the recipe_dir on instance destruction
+        self.delete_recipe = True
+
         # setup an empty output dir
-        self.output_dir = os.path.abspath(output_dir)
         if os.path.isdir(output_dir):
             raise OSError(
                 'output directory already existing: {}'
                 .format(output_dir))
         else:
             os.makedirs(output_dir)
+        self.output_dir = os.path.abspath(output_dir)
 
         # setup recipe_dir as a temp dir
         cmd = utils.config.get('kaldi', 'train-cmd')
         recipe_dir = tempfile.mkdtemp(
             dir=self.output_dir if 'queue' in cmd else None)
 
-        # if True, delete the recipe_dir on instance destruction
-        self.delete_recipe = True
-
         super(AbstractTmpRecipe, self).__init__(
-            corpus_dir, recipe_dir, verbose=verbose,
-            log_file=os.path.join(self.output_dir, self.name + '.log'))
+            corpus_dir, recipe_dir, verbose=verbose)
 
     def __del__(self):
         try:
             if self.delete_recipe:
-                self.log.debug('removing temp directory {}'
+                self.log.debug('removing recipe directory {}'
                                .format(self.recipe_dir))
-                utils.remove(self.recipe_dir)
-        # occurs when an exception is raised in __init__
-        except AttributeError:
+                utils.remove(self.recipe_dir, safe=True)
+            else:
+                self.log.debug('copying recipe to %s', self.output_dir)
+                shutil.move(
+                    self.recipe_dir,
+                    os.path.join(self.output_dir, 'recipe'))
+        except AttributeError:  # if raised from __init__
             pass

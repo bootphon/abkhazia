@@ -311,8 +311,6 @@ class AbstractPreparator(object):
 
     """
 
-    # TODO this is actually a design error, we should have a decorator
-    # or subclass instead
     copy_wavs = False
     """A boolean used only for corpora with original audio files in wav
 

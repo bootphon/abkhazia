@@ -14,12 +14,12 @@
 # along with abkhazia. If not, see <http://www.gnu.org/licenses/>.
 """Implementation of the 'abkhazia features' command"""
 
-from abkhazia.commands.abstract_command import AbstractRecipeCommand
+from abkhazia.commands.abstract_command import AbstractKaldiCommand
 import abkhazia.core.features as features
 import abkhazia.utils as utils
 
 
-class AbkhaziaFeatures(AbstractRecipeCommand):
+class AbkhaziaFeatures(AbstractKaldiCommand):
     name = 'features'
     description = 'compute MFCC features and CMVN statistics'
 
@@ -28,12 +28,6 @@ class AbkhaziaFeatures(AbstractRecipeCommand):
         """Return a parser for the align command"""
         # get basic parser init from AbstractCommand
         parser, dir_group = super(AbkhaziaFeatures, cls).add_parser(subparsers)
-
-        parser.add_argument(
-            '-j', '--njobs', type=int, metavar='<njobs>',
-            default=cls._default_njobs(20),
-            help="""number of jobs to launch for features computation, default is to
-            launch %(default)s jobs.""")
 
         parser.add_argument(
             '--use-pitch', metavar='<true|false>', choices=['true', 'false'],
@@ -45,9 +39,9 @@ class AbkhaziaFeatures(AbstractRecipeCommand):
 
     @classmethod
     def run(cls, args):
-        corpus, output_dir = cls.prepare_for_run(args)
+        corpus, output_dir = cls._parse_io_dirs(args)
         recipe = features.Features(corpus, output_dir, args.verbose)
-        recipe.use_pitch = True if args.use_pitch == 'true' else False
+        recipe.use_pitch = utils.str2bool(args.use_pitch)  # 'true' to True
         recipe.njobs = args.njobs
         recipe.create()
         recipe.run()

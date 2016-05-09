@@ -1,4 +1,6 @@
 #!/usr/bin/env python
+# coding: utf-8
+
 # PYTHON_ARGCOMPLETE_OK
 #
 # Copyright 2016 Thomas Schatz, Xuan Nga Cao, Mathieu Bernard
@@ -142,26 +144,26 @@ class CatchExceptions(object):
     def __init__(self, function):
         self.function = function
 
+    def _exit(self, msg):
+        sys.stderr.write(msg + '\n')
+        sys.exit(1)
+
     def __call__(self):
         try:
             self.function()
 
-        except (IOError, OSError, RuntimeError) as err:
-            print 'fatal error: {}'.format(err)
-            sys.exit(1)
+        except (IOError, OSError, RuntimeError, AssertionError) as err:
+            self._exit('fatal error: {}'.format(err))
 
         except subprocess.CalledProcessError as err:
-            print 'subprocess fatal error: {}'.format(err)
-            sys.exit(1)
+            self._exit('subprocess fatal error: {}'.format(err))
 
         except pkg_resources.DistributionNotFound:
-            print ('fatal error: abkhazia package not found\n'
-                   'please install abkhazia on your platform')
-            sys.exit(1)
+            self.exit('fatal error: abkhazia package not found\n'
+                      'please install abkhazia on your platform')
 
         except KeyboardInterrupt:
-            print 'keyboard interruption, exiting'
-            sys.exit(1)
+            self._exit('keyboard interruption, exiting')
 
 
 # when debugging the abkhazia command-line tools from a terminal, it

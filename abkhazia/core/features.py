@@ -111,23 +111,7 @@ class Features(abstract_recipe.AbstractTmpRecipe):
                 os.path.join('exp', 'make_mfcc', self.name),
                 self.output_dir))
 
-    def create(self):
-        desired_utts = self.a2k.desired_utterances(njobs=self.njobs)
-        self.a2k.setup_text(desired_utts=desired_utts)
-        self.a2k.setup_utt2spk(desired_utts=desired_utts)
-        self.a2k.setup_segments(desired_utts=desired_utts)
-        self.a2k.setup_wav(desired_utts=desired_utts)
-
-        self.a2k.setup_wav_folder()
-        self.a2k.setup_kaldi_folders()
-        self.a2k.setup_machine_specific_scripts()
-
-        self._setup_conf_dir()
-
-    def run(self):
-        self._compute_features()
-        self._compute_cmvn_stats()
-
+    def _export(self):
         for scp in utils.list_files_with_extension(self.output_dir, '.scp'):
             utils.remove(scp)
 
@@ -136,3 +120,12 @@ class Features(abstract_recipe.AbstractTmpRecipe):
             self.output_dir,
             self.corpus_dir,
             copy=True)
+
+    def create(self):
+        super(Features, self).create()
+        self._setup_conf_dir()
+
+    def run(self):
+        self._compute_features()
+        self._compute_cmvn_stats()
+        self._export()

@@ -16,9 +16,23 @@
 
 import codecs
 import collections
+import multiprocessing
 import os
 import re
 import shutil
+
+import config  # this is abkhazia.utils.config
+
+
+def default_njobs(nj_queue=20):
+    """Return `nj_queue` if running on a queue, ncores if running locally
+
+    Default for `nj_queue` is 20, the standard number of jobs for
+    features computation in the kaldi WSJ recipe.
+
+    """
+    cmd = config.config.get('kaldi', 'train-cmd')
+    return nj_queue if 'queue' in cmd else multiprocessing.cpu_count()
 
 
 def str2bool(s, safe=False):
@@ -124,3 +138,14 @@ def remove(path, safe=False):
 def is_empty_file(path):
     """Return True if the file `path` is empty"""
     return os.stat(path).st_size == 0
+
+
+def check_directory(dir, files, name='directory'):
+    """Raise OSError any of the `files` is not present in `dir`"""
+    if not os.path.isdir(dir):
+        raise OSError('{} not found: {}.\n'.format(name, dir))
+
+    for f in files:
+        if not os.path.isfile(os.path.join(dir, f)):
+            raise OSError(
+                'non valid {}: {} not found in {}'.format(name, f, dir))

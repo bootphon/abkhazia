@@ -14,44 +14,15 @@
 # along with abkhazia. If not, see <http://www.gnu.org/licenses/>.
 """Implementation of the 'abkazia split' command"""
 
-from abkhazia.commands.abstract_command import AbstractRecipeCommand
+from abkhazia.commands.abstract_command import AbstractCoreCommand
 import abkhazia.utils as utils
 import abkhazia.utils.split as split
 
 
-class AbkhaziaSplit(AbstractRecipeCommand):
+class AbkhaziaSplit(AbstractCoreCommand):
     '''This class implements the 'abkhazia split' command'''
     name = 'split'
     description = 'split a corpus in train and test subsets'
-
-    @classmethod
-    def run(cls, args):
-        corpus, output_dir = cls.prepare_for_run(args)
-
-        # instanciate a SplitCorpus instance
-        spliter = split.SplitCorpus(
-            corpus, output_dir,
-            args.random_seed, args.prune_lexicon, args.verbose)
-
-        # choose the split function according to --by-speakers
-        split_fun = (spliter.split_by_speakers if args.by_speakers
-                     else spliter.split)
-
-        # retrieve the test proportion
-        if args.train_prop is None:
-            test_prop = (
-                float(utils.config.get('split', 'default-test-proportion'))
-                if args.test_prop is None else args.test_prop)
-        else:
-            test_prop = (
-                1 - args.train_prop
-                if args.test_prop is None else args.test_prop)
-
-        # split the corpus and write it to the output directory
-        split_fun(test_prop, args.train_prop)
-
-        if args.with_validation:
-            spliter.validate()
 
     @classmethod
     def add_parser(cls, subparsers):
@@ -106,3 +77,32 @@ class AbkhaziaSplit(AbstractRecipeCommand):
             'subsets are valid abkhazia corpora')
 
         return parser
+
+    @classmethod
+    def run(cls, args):
+        corpus, output_dir = cls._parse_io_dirs(args)
+
+        # instanciate a SplitCorpus instance
+        spliter = split.SplitCorpus(
+            corpus, output_dir,
+            args.random_seed, args.prune_lexicon, args.verbose)
+
+        # choose the split function according to --by-speakers
+        split_fun = (spliter.split_by_speakers if args.by_speakers
+                     else spliter.split)
+
+        # retrieve the test proportion
+        if args.train_prop is None:
+            test_prop = (
+                float(utils.config.get('split', 'default-test-proportion'))
+                if args.test_prop is None else args.test_prop)
+        else:
+            test_prop = (
+                1 - args.train_prop
+                if args.test_prop is None else args.test_prop)
+
+        # split the corpus and write it to the output directory
+        split_fun(test_prop, args.train_prop)
+
+        if args.with_validation:
+            spliter.validate()

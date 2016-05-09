@@ -22,7 +22,7 @@
 
 data_dir=${1:-/home/mbernard/data/abkhazia/exemple}
 data_dir=$(readlink -f $data_dir)
-#rm -rf $data_dir
+rm -rf $data_dir
 mkdir -p $data_dir
 
 # prepare the corpus. Here we assume you have a raw buckeye
@@ -36,18 +36,17 @@ abkhazia prepare buckeye -o $data_dir || exit 1
 abkhazia split $data_dir -T 0.05 || exit 1
 train_dir=$data_dir/split/train
 
-# compute a language model on the train set
+# compute a language model on the train set (word level trigram)
 abkhazia language $train_dir -l word -n 3 || exit 1
 
 # compute MFCC features
 abkhazia features $train_dir || exit 1
 
-# The test.cfg file comes with very small parameters for triphone
-# modeling, this reduce computation time (no matter the model quality).
-abkhazia -c ../test/test.cfg acoustic $train_dir -t tri || exit 1
+# compute a speaker-adapted triphone HMM-GMM acoustic model
+abkhazia acoustic $train_dir -t tri-sa --recipe || exit 1
 
-# compute forced-alignment from 3-gram and triphone model
+# compute alignment (should be done on the test set)
 abkhazia align $train_dir || exit 1
 
-echo "symlink the result to $data_dir/forced_alignment.txt"
-ln -s -f $train_dir/align/export/forced_alignment.txt $data_dir
+# decode the corpus (should be done on test set)
+abkhazia decode $train_dir || exit 1

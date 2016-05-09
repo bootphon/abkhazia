@@ -12,10 +12,22 @@
 #
 # You should have received a copy of the GNU General Public License
 # along with abkhazia. If not, see <http://www.gnu.org/licenses/>.
-"""Provides the AbstractCommand class"""
+"""Provides base classes for abkhazia commands
+
+This module defines a hierarchy of 3 classes, each of the command-line
+tools (aka abkhazia commands) must inherit from one of these classes.
+
+AbstractCommand -> prepare
+AbstractCoreCommand -> split
+AbstractKaldiCommand -> language, acoustic, align, decode
+
+Basically this classes defines the methods add_parser() and run(),
+respectively defining the command parser and how to run it from the
+parsed arguments.
+
+"""
 
 import argparse
-import multiprocessing
 import os
 import shutil
 import textwrap
@@ -24,15 +36,7 @@ import abkhazia.utils as utils
 
 
 class AbstractCommand(object):
-    """The base class of all abkhazia commands
-
-    All the abkhazia commands must implement this interface.
-
-    Basically this class defines the methods add_parser() and run(),
-    respectively defining the command parser and how to run it from
-    the parsed arguments.
-
-    """
+    """The base class of all abkhazia commands"""
     name = NotImplemented
     """The command name, as called from command-line"""
 
@@ -45,7 +49,7 @@ class AbstractCommand(object):
 
         This method implements only minimal parsing and should be
         overloaded in child classes. Basically you may want to add
-        some arguments to parse...
+        some parameters and options to your command.
 
         """
         # add a new subparser for the command
@@ -63,7 +67,12 @@ class AbstractCommand(object):
             '-v', '--verbose', action='store_true',
             help='display more messages to stdout')
 
-        # TODO add a --log <file> option for non default log files
+        # add a --log option for non default log files
+        parser.add_argument(
+            '--log', default=None, metavar='<file>',
+            help='file to write log messages, default is {} '
+            'in the output directory'.format(cls.name + '.log'))
+
         return parser
 
     @classmethod
@@ -71,52 +80,44 @@ class AbstractCommand(object):
         """Run the command according to the parsed arguments in `args`"""
         raise NotImplementedError
 
-    @classmethod
-    def _default_njobs(cls, nj_queue=20):
-        """Return `nj_queue` if running on a queue, ncores if running locally
 
-        Default for `nj_queue` is 20, the standard number of jobs for
-        features computation in the kaldi WSJ recipe.
-
-        """
-        cmd = utils.config.get('kaldi', 'train-cmd')
-        return nj_queue if 'queue' in cmd else multiprocessing.cpu_count()
-
-
-class AbstractRecipeCommand(AbstractCommand):
+class AbstractCoreCommand(AbstractCommand):
     """Base class for abkhazia commands other than 'prepare'
 
     Overloads the add_parser() method with a --force option, as well
-    as input and output directories arguments. This class also defines
-    a prepare_for_run() method which implement the behavior of these
-    parameters.
+    as input and output directories arguments.
+
+    This class also defines a parse_input_output() method which
+    implement the behavior of these parameters as described in the
+    add_parser() method.
 
     """
     @classmethod
     def add_parser(cls, subparsers):
         # get basic parser init from AbstractCommand
-        parser = super(AbstractRecipeCommand, cls).add_parser(subparsers)
+        parser = super(AbstractCoreCommand, cls).add_parser(subparsers)
 
         # add a --force option to all commands
         parser.add_argument(
-            '-f', '--force', action='store_true',
+            '--force', action='store_true',
             help='if specified, overwrite the output directory. '
-            'If not specified but the directory exists, the program fails.')
+            'If not specified but the directory exists, exit with error')
 
         dir_group = parser.add_argument_group('directories')
 
-        # TODO simplify this! Implicit read in filesystem if failed in
-        # abkhazia data directory
+        # add a <corpus> mandatory parameter
         dir_group.add_argument(
-            'corpus', metavar='<corpus>',
-            help="""the abkhazia corpus to process is read from <corpus>/data.
-            Must be a directory either relative to the abkhazia data directory
-            ({0}) or relative/absolute on the filesystem. The
-            following rule applies: if <corpus> starts with './' ,
-            '../', '~/' or '/', path is guessed directly, else
-            <corpus> is guessed as a subdirectory of {0}""".format(
-                utils.config.get('abkhazia', 'data-directory')))
+            'corpus', metavar='<corpus>', help="""
+            abkhazia corpus is read from <corpus>/data. Must be an
+            existing directory, relative to the abkhazia data
+            directory ({0}) or as a path on the filesystem. If
+            <corpus> doesn't start with './' , '../', '~/' or '/', the
+            following rule applies: <corpus> is guessed as a
+            subdirectory of {0} and, if not found, as a subdirectory
+            of the current working directory."""
+            .format(utils.config.get('abkhazia', 'data-directory')))
 
+        # add a --output-dir option
         dir_group.add_argument(
             '-o', '--output-dir', default=None, metavar='<output-dir>',
             help='output directory, the output data is wrote to '
@@ -125,28 +126,63 @@ class AbstractRecipeCommand(AbstractCommand):
 
         return parser, dir_group
 
-    @classmethod
-    def prepare_for_run(cls, args):
-        # retrieve the corpus input directory
-        if args.corpus.startswith(('/', './', '../', '~/')):
-            corpus = args.corpus
-        else:
-            corpus = os.path.join(
-                utils.config.get('abkhazia', 'data-directory'),
-                args.corpus)
-        corpus = os.path.abspath(corpus)
+    @staticmethod
+    def _parse_corpus_dir(corpus):
+        """Parse the corpus input directory as specified in help message"""
+        if not corpus.startswith(('/', './', '../', '~/')):
+            # try to find the corpus in abkhazia data directory
+            _corpus = os.path.join(
+                utils.config.get('abkhazia', 'data-directory'), corpus)
+            if os.path.isdir(_corpus):
+                corpus = _corpus
+        return os.path.abspath(corpus)
 
-        # retrieve the output directory, append the command name as
-        # specified in the parser help message
-        output_dir = os.path.join(
-            corpus if args.output_dir is None else args.output_dir,
-            cls.name)
-        output_dir = os.path.abspath(output_dir)
+    @classmethod
+    def _parse_output_dir(cls, output, corpus, force=False):
+        """Parse the output directory as specified in help message"""
+        # append the command name
+        output = os.path.abspath(os.path.join(
+            corpus if output is None else output, cls.name))
 
         # if --force, remove any existing output_dir
-        if args.force:
-            if os.path.exists(output_dir):
-                print 'overwriting {}'.format(output_dir)
-                shutil.rmtree(output_dir)
+        if force and os.path.exists(output):
+            print 'overwriting {}'.format(output)
+            shutil.rmtree(output)
 
-        return corpus, output_dir
+        return output
+
+    @classmethod
+    def _parse_io_dirs(cls, args):
+        """Return (corpus_dir, output_dir) parsed form `args`"""
+        i = cls._parse_corpus_dir(args.corpus)
+        o = cls._parse_output_dir(args.output_dir, i, args.force)
+        return i, o
+
+
+class AbstractKaldiCommand(AbstractCoreCommand):
+    """Base class for commands relying on Kaldi recipes
+
+    Adds a --recipe option that do not remove the Kaldi recipe
+    directory and a --njobs option for parallel processing
+
+    """
+    @classmethod
+    def add_parser(cls, subparsers):
+        # get basic parser init from AbstractCommand
+        parser, dir_group = super(
+            AbstractKaldiCommand, cls).add_parser(subparsers)
+
+        # add a --recipe option
+        parser.add_argument(
+            '--recipe', action='store_true', help="""
+            put the Kaldi recipe in <output_dir>/recipe, by default the recipe
+            is deleted""")
+
+        # add a --njobs option
+        parser.add_argument(
+            '-j', '--njobs', type=int, metavar='<njobs>',
+            default=utils.default_njobs(),
+            help="""number of jobs for parallel computation, default is to launch
+            %(default)s jobs.""")
+
+        return parser, dir_group

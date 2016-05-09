@@ -143,3 +143,9 @@ def reopen_files(log, mode='a+'):
             h.stream.close()
             h.stream = open(h.baseFilename, mode)
             h.release()
+
+
+def null_logger():
+    log = logging.getLogger()
+    log.addHandler(logging.NullHandler())
+    return log

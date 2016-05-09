@@ -80,6 +80,11 @@ model-order: 3
 model-level: word
 
 [acoustic]
+# Default acoustic model to compute in 'mono', 'tri', 'tri-sa' for
+# monophone, triphone and triphone speaker-adapted HMM-GMM models
+# respectively
+model: tri
+
 # Speaker-independent triphone models parameters
 num-states-si: 2500
 num-gauss-si: 15000

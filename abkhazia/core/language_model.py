@@ -15,16 +15,23 @@
 """Provides the LanguageModel class"""
 
 import gzip
-import multiprocessing
 import os
 import pkg_resources
 import shutil
 import tempfile
 
 import abkhazia.utils as utils
-import abkhazia.utils.basic_io as io
 from abkhazia.core.kaldi_path import kaldi_path
 import abkhazia.core.abstract_recipe as abstract_recipe
+from abkhazia.core.corpus import Corpus
+
+
+def check_language_model(lm_dir):
+    """Raise IOError if oov.int, G.fst and G.arpa.fst are not in `lm_dir`"""
+    utils.check_directory(
+        lm_dir,
+        ['oov.int', 'G.fst', 'G.arpa.gz', 'phones.txt'],
+        name='language model')
 
 
 def read_params(lm_dir):
@@ -38,6 +45,35 @@ def read_params(lm_dir):
         raise IOError('{} file not found'.format(params))
 
     return open(params, 'r').readline().strip().split(' ')
+
+
+def word2phone(lexicon, text_file, out_file):
+    """Create 'phone' version of text file
+
+    Transcription of text directly into phones, without any word
+    boundary marker. This is used to estimate phone-level n-gram
+    language models for use with kaldi recipes.
+
+    For OOVs: just drop the whole sentence for now.
+
+    """
+    # set up dict
+    dictionary = Corpus._load_lexicon(lexicon)
+
+    # transcribe
+    text = Corpus._load_text(text_file)
+    with utils.open_utf8(out_file, 'w') as out:
+        for utt_id, utt in text.iteritems():
+            try:
+                hierarchical_transcript = [dictionary[word] for word in utt]
+            except KeyError:
+                # OOV: for now we just drop the sentence silently in
+                # this case (could add a warning)
+                continue
+
+            flat_transcript = [e for l in hierarchical_transcript for e in l]
+            out.write(u" ".join([utt_id] + flat_transcript))
+            out.write(u"\n")
 
 
 class LanguageModel(abstract_recipe.AbstractTmpRecipe):
@@ -71,7 +107,6 @@ class LanguageModel(abstract_recipe.AbstractTmpRecipe):
 
     def __init__(self, corpus_dir, output_dir=None, verbose=False):
         super(LanguageModel, self).__init__(corpus_dir, output_dir, verbose)
-        self.njobs = multiprocessing.cpu_count()
 
         # setup default values for parameters from the configuration
         # file. Here we could use a different
@@ -143,19 +178,14 @@ class LanguageModel(abstract_recipe.AbstractTmpRecipe):
                   if self.level == 'phone' and self.position_dependent_phones
                   else script_prepare_lm)
 
-        command = (
-            script +
-            ' --position-dependent-phones {0}'
+        self._run_command(
+            script + ' --position-dependent-phones {0}'
             ' --sil_prob {1} {2} "<unk>" {3} {4}'.format(
                 'true' if self.position_dependent_phones else 'false',
                 self.silence_probability,
                 os.path.join(self.a2k._local_path()),
                 os.path.join(self.output_dir, 'local'),
                 self.output_dir))
-
-        utils.jobs.run(
-            command, stdout=self.log.debug,
-            cwd=self.recipe_dir, env=kaldi_path())
 
     def _compile_fst(self, G_txt, G_fst):
         """Compile and sort a text FST to kaldi binary FST
@@ -180,7 +210,6 @@ class LanguageModel(abstract_recipe.AbstractTmpRecipe):
             'fstarcsort --sort_type=ilabel {}'.format(temp.name))
         self._log.debug('running %s > %s', command2, G_fst)
         utils.jobs.run(command2, open(G_fst, 'w').write)
-
         utils.remove(temp.name)
 
     def _compute_lm(self, G_arpa):
@@ -218,19 +247,12 @@ class LanguageModel(abstract_recipe.AbstractTmpRecipe):
 
             # k option is number of split, useful for huge text files
             # build-lm.sh in kaldi/tools/irstlm/bin
-            command = ('build-lm.sh -i {0} -n {1} -o {2} -k 1 -s kneser-ney'
-                       .format(text_se, self.order, text_lm))
-            utils.jobs.run(
-                command,
-                stdout=self.log.debug,
-                env=kaldi_path(), cwd=self.recipe_dir)
+            self._run_command(
+                'build-lm.sh -i {0} -n {1} -o {2} -k 1 -s kneser-ney'
+                .format(text_se, self.order, text_lm))
 
-            command = ('compile-lm -i {} --text=yes {}'
-                       .format(text_lm, text_blm))
-            utils.jobs.run(
-                command,
-                stdout=self.log.debug,
-                env=kaldi_path(), cwd=self.recipe_dir)
+            self._run_command(
+                'compile-lm -i {} --text=yes {}'.format(text_lm, text_blm))
 
             # gzip the compiled lm (from
             # https://docs.python.org/2/library/gzip.html#examples-of-usage)
@@ -261,15 +283,10 @@ class LanguageModel(abstract_recipe.AbstractTmpRecipe):
             # make assumption that lexicon has no meaningful
             # lowercase/uppercase distinctions (and if in unicode, no idea
             # what lowercasing would produce)
-            command = (
+            self._run_command(
                 'utils/format_lm_sri.sh '
                 '--srilm_opts "-subset -prune-lowprobs -unk" {0} {1} {2}'
                 .format(self.output_dir, G_arpa, tmp_dir))
-
-            utils.jobs.run(
-                command, stdout=self.log.debug,
-                env=kaldi_path(), cwd=self.recipe_dir)
-
             utils.remove(self.output_dir)
             shutil.move(tmp_dir, self.output_dir)
         finally:
@@ -277,14 +294,13 @@ class LanguageModel(abstract_recipe.AbstractTmpRecipe):
 
             # In this kaldi script, gzip fails with the message "gzip:
             # stdout: Broken pipe". This leads the logfile to be
-            # closed an dwe need to reopen it after the script
-            # returns. Actually we lost the log messages of arpa2fst
-            # and fstisstochastic. But thoses message are still
-            # readable on stdout with --verbose
+            # closed, so we reopen it here. Actually we loose the log
+            # messages from arpa2fst and fstisstochastic. But thoses
+            # message are still readable on stdout with --verbose
             utils.log2file.reopen_files(self.log)
 
     def _setup_prepare_lang_wpdpl(self):
-        local = os.path.join(self.output_dir, 'local')
+        local = os.path.join(self.recipe_dir, 'local')
         if not os.path.isdir(local):
             os.makedirs(local)
 
@@ -309,6 +325,7 @@ class LanguageModel(abstract_recipe.AbstractTmpRecipe):
 
     def check_parameters(self):
         """Raise if the language modeling parameters are not correct"""
+        super(LanguageModel, self).check_parameters()
         self._check_level()
         self._check_order()
         self._check_silence_probability()
@@ -316,8 +333,7 @@ class LanguageModel(abstract_recipe.AbstractTmpRecipe):
 
     def create(self):
         """Initialize the recipe data in `self.recipe_dir`"""
-        # check we have either word or phone level
-        self._check_level()
+        self.check_parameters()
 
         # setup data files common to both levels
         self.a2k.setup_phones()
@@ -333,16 +349,16 @@ class LanguageModel(abstract_recipe.AbstractTmpRecipe):
         if self.level == 'word':
             shutil.copy(text, lm_text)
         else:  # phone level
-            io.word2phone(lexicon, text, lm_text)
+            word2phone(lexicon, text, lm_text)
             self.a2k.setup_phone_lexicon()
 
         self.a2k.setup_kaldi_folders()
         self.a2k.setup_machine_specific_scripts()
+
         self._setup_prepare_lang_wpdpl()
 
     def run(self):
         """Run the created recipe and compute the language model"""
-        self.check_parameters()
         self._prepare_lang()
 
         local = self.a2k._local_path()

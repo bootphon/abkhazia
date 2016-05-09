@@ -16,10 +16,12 @@
 
 import os
 
-from abkhazia.core.kaldi_path import kaldi_path
 import abkhazia.core.abstract_recipe as abstract_recipe
 import abkhazia.core.kaldi2abkhazia as k2a
 import abkhazia.utils as utils
+from abkhazia.core.language_model import check_language_model
+from abkhazia.core.acoustic_model import check_acoustic_model
+from abkhazia.core.features import export_features
 
 
 def _read_splited(f):
@@ -44,7 +46,7 @@ def _read_utts(f):
     yield utt_id, alignment
 
 
-def _append_words(ftext, flexicon, falignment, foutput, log):
+def _append_words_to_alignment(ftext, flexicon, falignment, foutput, log):
     """Append words to phone lines in the final alignment file"""
     # text[utt_id] = list of words
     text = dict((l[0], l[1:]) for l in _read_splited(ftext))
@@ -67,7 +69,7 @@ def _append_words(ftext, flexicon, falignment, foutput, log):
                     log.debug('ignoring out of lexicon word: %s', word)
 
 
-class ForceAlign(abstract_recipe.AbstractRecipe):
+class ForceAlign(abstract_recipe.AbstractTmpRecipe):
     """Compute forced alignment of an abkhazia corpus
 
     Takes a corpus in abkhazia format and instantiates a kaldi recipe
@@ -77,38 +79,22 @@ class ForceAlign(abstract_recipe.AbstractRecipe):
     """
     name = 'align'
 
-    def __init__(self, corpus_dir, recipe_dir=None, verbose=False, njobs=1):
-        super(ForceAlign, self).__init__(corpus_dir, recipe_dir, verbose)
-        self.njobs = njobs
+    def __init__(self, corpus_dir, output_dir=None, verbose=False):
+        super(ForceAlign, self).__init__(corpus_dir, output_dir, verbose)
 
         # language and acoustic models directories
         self.lm_dir = None
+        self.feat_dir = None
         self.am_dir = None
 
-    @staticmethod
-    def _check_template(param, name, target):
-        if param is None:
-            raise RuntimeError('non specified {} model'.format(name))
-        if not os.path.isfile(target):
-            raise RuntimeError('non valid {} model: {} not found'
-                               .format(name, target))
-
-    def _check_acoustic_model(self):
-        self._check_template(
-            self.am_dir, 'acoustic', os.path.join(self.am_dir, 'final.mdl'))
-
-    def _check_language_model(self):
-        self._check_template(
-            self.lm_dir, 'language', os.path.join(self.lm_dir, 'phones.txt'))
-
     def _align_fmllr(self):
-        target = os.path.join(self.recipe_dir, 'exp', 'ali_fmllr')
-        self.log.info('computing forced alignment to %s', target)
+        self.log.info('computing forced alignment')
 
+        target = os.path.join(self.recipe_dir, 'exp', 'ali_fmllr')
         if not os.path.isdir(target):
             os.makedirs(target)
 
-        command = (
+        self._run_command(
             'steps/align_fmllr.sh --nj {0} --cmd "{1}" {2} {3} {4} {5}'
             .format(
                 self.njobs,
@@ -118,26 +104,20 @@ class ForceAlign(abstract_recipe.AbstractRecipe):
                 self.am_dir,
                 target))
 
-        self.log.debug('running %s', command)
-        utils.jobs.run(command, stdout=self.log.debug,
-                       env=kaldi_path(), cwd=self.recipe_dir)
-
     def _ali_to_phones(self):
+        self.log.info('exporting to phone alignment')
+
         export = os.path.join(self.recipe_dir, 'export')
         target = os.path.join(export, 'forced_alignment.tra')
-        self.log.info('exporting results to %s', target)
-
         if not os.path.isdir(export):
             os.makedirs(export)
 
-        command = (
+        self._run_command(
             'ali-to-phones --write_lengths=true {0}'
             ' "ark,t:gunzip -c {1}|" ark,t:{2}'.format(
                 os.path.join(self.am_dir, 'final.mdl'),
                 os.path.join(self.recipe_dir, 'exp', 'ali_fmllr', 'ali.*.gz'),
                 target))
-
-        utils.jobs.run(command, stdout=self.log.debug, env=kaldi_path())
 
         # if we want to use the tri2a results directly without the final
         # forced alignment (is there any difference between the two beyond one
@@ -157,6 +137,8 @@ class ForceAlign(abstract_recipe.AbstractRecipe):
         If words is True, append entire words to the alignment.
 
         """
+        target = os.path.join(self.output_dir, 'alignment.txt')
+
         tra = os.path.join(self.recipe_dir, 'export', 'forced_alignment.tra')
         k2a.export_phone_alignment(
             os.path.join(self.lm_dir, 'phones.txt'),
@@ -164,45 +146,29 @@ class ForceAlign(abstract_recipe.AbstractRecipe):
 
         # append complete words to the list of aligned phones
         if words:
-            _append_words(
+            _append_words_to_alignment(
                 os.path.join(self.corpus_dir, 'data', 'text.txt'),
                 os.path.join(self.corpus_dir, 'data', 'lexicon.txt'),
                 tra.replace('.tra', '.tmp'),
-                tra.replace('.tra', '.txt'),
+                target,
                 self.log)
             utils.remove(tra.replace('.tra', '.tmp'))
 
     def check_parameters(self):
-        self._check_acoustic_model()
-        self._check_language_model()
+        super(ForceAlign, self).check_parameters()
+        check_acoustic_model(self.am_dir)
+        check_language_model(self.lm_dir)
 
     def create(self):
         """Create the recipe data in `self.recipe_dir`"""
-        self._check_acoustic_model()
+        super(ForceAlign, self).create()
 
-        target_dir = os.path.join(self.recipe_dir, 'data/align')
-        if not os.path.isdir(target_dir):
-            os.makedirs(target_dir)
-
-        # setup data files. Those files are linked from the acoustic
-        # model dircetory instead of being prepared from the corpus
-        # directory.
-        for source in ('text', 'utt2spk', 'spk2utt', 'segments',
-                       'wav.scp', 'feats.scp', 'cmvn.scp'):
-            origin = os.path.abspath(os.path.join(
-                self.am_dir, '../../data/acoustic', source))
-            if os.path.isfile(origin):
-                target = os.path.join(target_dir, source)
-                if not os.path.isfile(target):
-                    os.link(origin, target)
-            else:
-                self.log.debug('no such file %s', origin)
-
-        # setup other files and folders
-        self.a2k.setup_kaldi_folders()
-        self.a2k.setup_machine_specific_scripts()
+        # setup scp files from the features directory in the recipe dir
+        export_features(
+            self.feat_dir,
+            os.path.join(self.recipe_dir, 'data', self.name),
+            self.corpus_dir)
 
     def run(self):
-        self.check_parameters()
         self._align_fmllr()
         self._ali_to_phones()

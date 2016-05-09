@@ -20,7 +20,8 @@ import shutil
 import textwrap
 
 from abkhazia.commands.abstract_command import AbstractCommand
-from abkhazia.prepare import validation
+import abkhazia.core.corpus as corpus
+import abkhazia.utils as utils
 
 # TODO clean up those imports
 from abkhazia.prepare.aic_preparator import AICPreparator
@@ -183,11 +184,16 @@ class AbstractFactory(object):
             cls.init_preparator(args).prepare()
 
         if not args.no_validation:
-            output_dir = (cls.preparator.default_output_dir()
-                          if args.output_dir is None
-                          else args.output_dir)
-            validation.Validation(
-                output_dir, args.njobs, args.verbose).validate()
+            output_dir = os.path.join(
+                cls.preparator.default_output_dir()
+                if args.output_dir is None else args.output_dir,
+                'data')
+
+            prepared_corpus = corpus.Corpus.load(output_dir)
+            log = utils.log2file.get_log(
+                os.path.join(output_dir, 'data_validation.log'), args.verbose)
+            corpus.CorpusValidation(
+                prepared_corpus, njobs=args.njobs, log=log).validate()
 
 
 class AbstractFactoryWithCMU(AbstractFactory):
