@@ -127,6 +127,25 @@ class ForceAlign(abstract_recipe.AbstractTmpRecipe):
         #     "ark,t:gunzip -c exp/tri2a/ali.*.gz|" \
         #     ark,t:export/forced_alignment.tra
 
+    def check_parameters(self):
+        super(ForceAlign, self).check_parameters()
+        check_acoustic_model(self.am_dir)
+        check_language_model(self.lm_dir)
+
+    def create(self):
+        """Create the recipe data in `self.recipe_dir`"""
+        super(ForceAlign, self).create()
+
+        # setup scp files from the features directory in the recipe dir
+        export_features(
+            self.feat_dir,
+            os.path.join(self.recipe_dir, 'data', self.name),
+            self.corpus_dir)
+
+    def run(self):
+        self._align_fmllr()
+        self._ali_to_phones()
+
     def export(self, words=True):
         """Export the kaldi tra alignment file in abkhazia format
 
@@ -154,21 +173,4 @@ class ForceAlign(abstract_recipe.AbstractTmpRecipe):
                 self.log)
             utils.remove(tra.replace('.tra', '.tmp'))
 
-    def check_parameters(self):
-        super(ForceAlign, self).check_parameters()
-        check_acoustic_model(self.am_dir)
-        check_language_model(self.lm_dir)
-
-    def create(self):
-        """Create the recipe data in `self.recipe_dir`"""
-        super(ForceAlign, self).create()
-
-        # setup scp files from the features directory in the recipe dir
-        export_features(
-            self.feat_dir,
-            os.path.join(self.recipe_dir, 'data', self.name),
-            self.corpus_dir)
-
-    def run(self):
-        self._align_fmllr()
-        self._ali_to_phones()
+        super(ForceAlign, self).export()

@@ -36,11 +36,15 @@ def default_njobs(nj_queue=20):
 
 
 def str2bool(s, safe=False):
-    """Return True if s=='true', False if s=='false', raise TypeError else
+    """Return True if s=='true', False if s=='false'
 
-    If `safe` is True, don't raise and return False.
+    If s is already a bool return it, else raise TypeError.
+    If `safe` is True, never raise but return False instead.
 
     """
+    if isinstance(s, bool):
+        return s
+
     if safe:
         return True if s == 'true' else False
     else:
@@ -49,6 +53,13 @@ def str2bool(s, safe=False):
         if s == 'false':
             return False
     raise TypeError("{} must be 'true' or 'false'".format(s))
+
+
+def bool2str(s):
+    """Return 'true' if `s` is True, else return 'false'"""
+    if s is True:
+        return 'true'
+    return 'false'
 
 
 # from https://stackoverflow.com/questions/38987

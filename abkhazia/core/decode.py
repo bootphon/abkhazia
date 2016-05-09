@@ -106,4 +106,4 @@ class Decode(abstract_recipe.AbstractTmpRecipe):
         return res_dir
 
     def export(self):
-        pass
+        super(Decode, self).export()

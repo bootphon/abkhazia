@@ -111,7 +111,15 @@ class Features(abstract_recipe.AbstractTmpRecipe):
                 os.path.join('exp', 'make_mfcc', self.name),
                 self.output_dir))
 
-    def _export(self):
+    def create(self):
+        super(Features, self).create()
+        self._setup_conf_dir()
+
+    def run(self):
+        self._compute_features()
+        self._compute_cmvn_stats()
+
+    def export(self):
         for scp in utils.list_files_with_extension(self.output_dir, '.scp'):
             utils.remove(scp)
 
@@ -121,11 +129,4 @@ class Features(abstract_recipe.AbstractTmpRecipe):
             self.corpus_dir,
             copy=True)
 
-    def create(self):
-        super(Features, self).create()
-        self._setup_conf_dir()
-
-    def run(self):
-        self._compute_features()
-        self._compute_cmvn_stats()
-        self._export()
+        super(Features, self).export()

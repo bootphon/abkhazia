@@ -37,7 +37,8 @@ abkhazia split $data_dir -T 0.05 || exit 1
 train_dir=$data_dir/split/train
 
 # compute a language model on the train set (word level trigram)
-abkhazia language $train_dir -l word -n 3 || exit 1
+abkhazia language $train_dir -l word -n 3 -v || exit 1
+exit 0
 
 # compute MFCC features
 abkhazia features $train_dir || exit 1

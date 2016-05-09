@@ -222,7 +222,7 @@ class AbstractPreparator(object):
         inputs, outputs = self.list_audio_files()
         self.log.info('preparing {} wav files'.format(len(inputs)))
 
-        # should not occur, but if child class is badly implemented...
+        # should not occur, except if child class is badly implemented
         if len(inputs) != len(outputs):
             raise ValueError(
                 'number of audio inputs and outputs must be equal')

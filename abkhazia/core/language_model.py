@@ -65,14 +65,14 @@ def word2phone(lexicon, text_file, out_file):
     with utils.open_utf8(out_file, 'w') as out:
         for utt_id, utt in text.iteritems():
             try:
-                hierarchical_transcript = [dictionary[word] for word in utt]
+                transcript = [''.join(dictionary[word])
+                              for word in utt.split()]
             except KeyError:
                 # OOV: for now we just drop the sentence silently in
                 # this case (could add a warning)
                 continue
 
-            flat_transcript = [e for l in hierarchical_transcript for e in l]
-            out.write(u" ".join([utt_id] + flat_transcript))
+            out.write(u" ".join([utt_id] + transcript))
             out.write(u"\n")
 
 
@@ -124,8 +124,7 @@ class LanguageModel(abstract_recipe.AbstractTmpRecipe):
         # 0.5 is the default from kaldi wsj/utils/prepare_lang.sh
         self.silence_probability = (
             0.5 if config('optional-silence') is 'true' else 0.0)
-        self.position_dependent_phones = utils.str2bool(
-            config('word-position-dependent'))
+        self.position_dependent_phones = config('word-position-dependent')
 
     def _check_level(self):
         level_choices = ['word', 'phone']
@@ -147,7 +146,11 @@ class LanguageModel(abstract_recipe.AbstractTmpRecipe):
                 .format(self.silence_probability))
 
     def _check_position_dependent(self):
-        if self.level == 'word' and self.position_dependent_phones:
+        # if bool, convert to str
+        self.position_dependent_phones = utils.bool2str(
+            self.position_dependent_phones)
+
+        if self.level == 'word' and self.position_dependent_phones == 'true':
             self.log.warning(
                 'word position dependent option on word-level model, '
                 'this have no effect')
@@ -163,7 +166,6 @@ class LanguageModel(abstract_recipe.AbstractTmpRecipe):
         # (some slight customizations of the script are necessary to
         # decode with a phone loop language model when word position
         # dependent phone variants have been trained).
-
         self.log.info('preprocessing corpus')
 
         script_prepare_lm = os.path.join(
@@ -175,13 +177,14 @@ class LanguageModel(abstract_recipe.AbstractTmpRecipe):
             share_dir, 'prepare_lang_wpdpl.sh')
 
         script = (script_prepare_lm_wpdpl
-                  if self.level == 'phone' and self.position_dependent_phones
+                  if self.level == 'phone' and
+                  self.position_dependent_phones == 'true'
                   else script_prepare_lm)
 
         self._run_command(
             script + ' --position-dependent-phones {0}'
             ' --sil_prob {1} {2} "<unk>" {3} {4}'.format(
-                'true' if self.position_dependent_phones else 'false',
+                self.position_dependent_phones,
                 self.silence_probability,
                 os.path.join(self.a2k._local_path()),
                 os.path.join(self.output_dir, 'local'),
@@ -223,34 +226,34 @@ class LanguageModel(abstract_recipe.AbstractTmpRecipe):
         self.log.info(
             'computing %s %s-gram in ARPA format', self.level, self.order)
 
-        # generate ARPA/MIT n-gram with IRSTLM. Train need to remove
-        # utt-id on first column of text file TODO and test? Compare
-        # the diff with/without
-        lm_text = os.path.join(self.a2k._local_path(), 'lm_text.txt')
-        text_ready = os.path.join(self.a2k._local_path(), 'text_ready.txt')
-        text_se = os.path.join(self.a2k._local_path(), 'text_se.txt')
-        text_lm = os.path.join(self.a2k._local_path(), 'text_lm.gz')
-        text_blm = os.path.join(self.a2k._local_path(), 'text_blm.gz')
-
+        # generate ARPA/MIT n-gram with IRSTLM.
         try:
-            # cut -d' ' -f2 lm_text > text_ready
-            with open(text_ready, 'w') as ready:
+            # cut -d' ' -f2 lm_text > text_ready. Train need to
+            # remove utt-id on first column of text file
+            lm_text = os.path.join(self.a2k._local_path(), 'lm_text.txt')
+            text_ready = os.path.join(self.a2k._local_path(), 'text_ready.txt')
+            with utils.open_utf8(text_ready, 'w') as ready:
                 ready.write('\n'.join(
                     [' '.join(line.split()[1:])
-                     for line in open(lm_text, 'r').xreadlines()]))
+                     for line in utils.open_utf8(lm_text, 'r').xreadlines()]))
 
+            text_se = os.path.join(self.a2k._local_path(), 'text_se.txt')
             utils.jobs.run(
                 'add-start-end.sh',
                 stdin=open(text_ready, 'r'),
                 stdout=open(text_se, 'w').write,
                 env=kaldi_path(), cwd=self.recipe_dir)
+            assert os.path.isfile(text_se), 'LM failed on add-start-end'
 
             # k option is number of split, useful for huge text files
             # build-lm.sh in kaldi/tools/irstlm/bin
+            text_lm = os.path.join(self.a2k._local_path(), 'text_lm.gz')
             self._run_command(
                 'build-lm.sh -i {0} -n {1} -o {2} -k 1 -s kneser-ney'
                 .format(text_se, self.order, text_lm))
+            assert os.path.isfile(text_lm), 'LM failed on build-lm'
 
+            text_blm = os.path.join(self.a2k._local_path(), 'text_blm.gz')
             self._run_command(
                 'compile-lm -i {} --text=yes {}'.format(text_lm, text_blm))
 
@@ -260,8 +263,9 @@ class LanguageModel(abstract_recipe.AbstractTmpRecipe):
                 shutil.copyfileobj(fin, fout)
 
         finally:  # remove temp files
-            for f in (text_ready, text_se, text_lm, text_blm):
-                utils.remove(f, safe=True)
+            # for f in (text_ready, text_se, text_lm, text_blm):
+            #     utils.remove(f, safe=True)
+            pass
 
     def _format_lm(self, G_arpa, G_fst):
         """Generate FST from ARPA language model
@@ -312,17 +316,6 @@ class LanguageModel(abstract_recipe.AbstractTmpRecipe):
                 os.path.join(share, target),
                 os.path.join(local, target))
 
-    def _export(self):
-        # G.arpa.gz is needed for acoustic modeling
-        origin = os.path.join(
-            self.recipe_dir, 'data', 'local', self.name, 'G.arpa.gz')
-        target = os.path.join(self.output_dir, 'G.arpa.gz')
-        shutil.copy(origin, target)
-
-        # write a little file with LM parameters
-        with open(os.path.join(self.output_dir, 'params.txt'), 'w') as p:
-            p.write('{} {}\n'.format(self.level, self.order))
-
     def check_parameters(self):
         """Raise if the language modeling parameters are not correct"""
         super(LanguageModel, self).check_parameters()
@@ -361,20 +354,32 @@ class LanguageModel(abstract_recipe.AbstractTmpRecipe):
         """Run the created recipe and compute the language model"""
         self._prepare_lang()
 
-        local = self.a2k._local_path()
-        G_txt = os.path.join(local, 'G.txt')
-        G_fst = os.path.join(local, 'G.fst')
-        G_arpa = os.path.join(local, 'G.arpa.gz')
+        def _local(f):
+            return os.path.join(self.a2k._local_path(), f)
+        G_txt = _local('G.txt')
+        G_fst = _local('G.fst')
+        G_arpa = _local('G.arpa.gz')
 
         # G.txt file is already provided (FST grammar in text format)
         if os.path.isfile(G_txt):
             self._compile_fst(G_txt, G_fst)
         else:
             # G.arpa.gz MIT/ARPA formatted n-gram is not already
-            # provided in input_dir: compute it. A text.txt file from
-            # which to estimate a n-gram must be provided in input_dir
+            # provided in input_dir: compute it from corpus text
             if not os.path.isfile(G_arpa):
                 self._compute_lm(G_arpa)
             self._format_lm(G_arpa, G_fst)
 
-        self._export()
+    def export(self):
+        # G.arpa.gz is needed for acoustic modeling
+        origin = os.path.join(
+            self.recipe_dir, 'data', 'local', self.name, 'G.arpa.gz')
+        target = os.path.join(self.output_dir, 'G.arpa.gz')
+        shutil.copy(origin, target)
+
+        # write a little file with LM parameters
+        with open(os.path.join(self.output_dir, 'params.txt'), 'w') as p:
+            p.write('{} {}\n'.format(self.level, self.order))
+
+        # finally copy the recipe dir to output dir if asked
+        super(LanguageModel, self).export()

@@ -21,6 +21,7 @@ import re
 from abkhazia.utils import list_files_with_extension
 from abkhazia.prepare import AbstractPreparator
 
+
 class BuckeyePreparator(AbstractPreparator):
     """Convert the Buckeye corpus to the abkhazia format"""
 
@@ -136,7 +137,6 @@ class BuckeyePreparator(AbstractPreparator):
 
     def __init__(self, input_dir, output_dir=None,
                  verbose=False, njobs=1, copy_wavs=False):
-        # call the AbstractPreparator __init__
         super(BuckeyePreparator, self).__init__(
             input_dir, output_dir, verbose, njobs)
 

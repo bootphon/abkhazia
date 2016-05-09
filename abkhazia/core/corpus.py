@@ -16,6 +16,7 @@
 
 import collections
 import os
+import shutil
 
 import abkhazia.utils as utils
 
@@ -33,14 +34,6 @@ class Corpus(object):
         self.silences = None
         self.utt2spk = None
         self.variants = None
-
-    def save(self, path):
-        """Save the corpus to the directory `path`
-
-        `path` is assumed to be a non existing directory
-
-        """
-        pass  # TODO
 
     @classmethod
     def load(cls, corpus_dir, validate=False):
@@ -71,6 +64,27 @@ class Corpus(object):
             CorpusValidation(corpus).validate()
 
         return corpus
+
+    def save(self, path, copy_wavs=False):
+        """Save the corpus to the directory `path`
+
+        `path` is assumed to be a non existing directory.
+
+        If `copy_wavs` if True, force a file copy, else use symlinks.
+
+        """
+        def _local(f):
+            return os.path.join(path, f)
+
+        os.makedirs(path)
+        self._save_wavs(_local('wavs'))
+        self._save_lexicon(_local('lexicon.txt'))
+        self._save_segments(_local('segments.txt'))
+        self._save_text(_local('text.txt'))
+        self._save_phones(_local('phones.txt'))
+        self._save_silences(_local('silences.txt'))
+        self._save_utt2spk(_local('utt2spk.txt'))
+        self._save_variants(_local('variants.txt'))
 
     @staticmethod
     def _load_corpus_dir(corpus_dir):
@@ -183,6 +197,54 @@ class Corpus(object):
 
         """
         return [line.strip() for line in utils.open_utf8(path, 'r')]
+
+    def _save_wavs(self, path, copy_wavs=False):
+        os.makedirs(path)
+
+        for w in self.wavs.itervalues():
+            target = os.path.join(path, os.path.basename(w))
+            # if copy_wavs is True:
+            #     shutil.copy(w, target)
+            # else:
+            os.symlink(w, target)
+
+    def _save_lexicon(self, path):
+        with utils.open_utf8(path, 'w') as out:
+            for k, v in self.lexicon.iteritems():
+                out.write('{} {}\n'.format(k, v))
+
+    def _save_segments(self, path):
+        with utils.open_utf8(path, 'w') as out:
+            for k, v in self.segments.iteritems():
+                # different case with/without timestamps
+                v = (v[0] if v[1] is None and v[2] is None
+                     else '{} {} {}'.format(v[0], v[1], v[2]))
+                out.write('{} {}\n'.format(k, v))
+
+    def _save_text(self, path):
+        with utils.open_utf8(path, 'w') as out:
+            for k, v in self.text.iteritems():
+                out.write('{} {}\n'.format(k, v))
+
+    def _save_phones(self, path):
+        with utils.open_utf8(path, 'w') as out:
+            for k, v in self.phones.iteritems():
+                out.write(u'{} {}\n'.format(k, v))
+
+    def _save_silences(self, path):
+        with utils.open_utf8(path, 'w') as out:
+            for s in self.silences:
+                out.write('{}\n'.format(s))
+
+    def _save_utt2spk(self, path):
+        with utils.open_utf8(path, 'w') as out:
+            for k, v in self.utt2spk.iteritems():
+                out.write('{} {}\n'.format(k, v))
+
+    def _save_variants(self, path):
+        with utils.open_utf8(path, 'w') as out:
+            for v in self.variants:
+                out.write('{}\n'.format(v))
 
 
 class CorpusValidation(object):

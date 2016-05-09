@@ -45,3 +45,4 @@ class AbkhaziaFeatures(AbstractKaldiCommand):
         recipe.njobs = args.njobs
         recipe.create()
         recipe.run()
+        recipe.export()

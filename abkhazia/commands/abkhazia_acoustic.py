@@ -127,3 +127,4 @@ class AbkhaziaAcoustic(AbstractKaldiCommand):
         # finally build the acoustic model
         recipe.create()
         recipe.run()
+        recipe.export()

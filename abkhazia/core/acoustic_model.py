@@ -199,3 +199,5 @@ class AcousticModel(abstract_recipe.AbstractTmpRecipe):
                     os.path.join(self.output_dir, os.path.basename(path)))
             else:
                 shutil.copy(path, self.output_dir)
+
+        super(AcousticModel, self).export()

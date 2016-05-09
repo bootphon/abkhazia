@@ -189,11 +189,15 @@ class AbstractFactory(object):
                 if args.output_dir is None else args.output_dir,
                 'data')
 
+            # TODO this have to be updated when preparators build a
+            # corpus in memory, not files.
             prepared_corpus = corpus.Corpus.load(output_dir)
             log = utils.log2file.get_log(
                 os.path.join(output_dir, 'data_validation.log'), args.verbose)
             corpus.CorpusValidation(
                 prepared_corpus, njobs=args.njobs, log=log).validate()
+            utils.remove(output_dir, safe=True)
+            prepared_corpus.save(output_dir)
 
 
 class AbstractFactoryWithCMU(AbstractFactory):

@@ -57,8 +57,11 @@ class AbstractRecipe(object):
             corpus_dir, self.recipe_dir,
             name=self.name, verbose=verbose, log=self.log)
 
-    def _run_command(self, command):
+    def _run_command(self, command, verbose=True):
         """Run the command as a subprocess, wrapper on utils.jobs"""
+        if verbose is True:
+            self.log.debug('running %s', command)
+
         utils.jobs.run(
             command,
             stdout=self.log.debug,
@@ -114,6 +117,15 @@ class AbstractRecipe(object):
         """
         raise NotImplementedError
 
+    def export(self):
+        """Copy result files to self.output_dir
+
+        This method is abstract and must be implemented in child
+        classes.
+
+        """
+        raise NotImplementedError
+
 
 class AbstractTmpRecipe(AbstractRecipe):
     """Write the recipe in a temprary directory
@@ -148,16 +160,16 @@ class AbstractTmpRecipe(AbstractRecipe):
         super(AbstractTmpRecipe, self).__init__(
             corpus_dir, recipe_dir, verbose=verbose)
 
+    def export(self):
+        if not self.delete_recipe:
+            target = os.path.join(self.output_dir, 'recipe')
+            self.log.info('copying recipe to %s', target)
+            shutil.move(self.recipe_dir, target)
+
     def __del__(self):
         try:
-            if self.delete_recipe:
-                self.log.debug('removing recipe directory {}'
-                               .format(self.recipe_dir))
-                utils.remove(self.recipe_dir, safe=True)
-            else:
-                self.log.debug('copying recipe to %s', self.output_dir)
-                shutil.move(
-                    self.recipe_dir,
-                    os.path.join(self.output_dir, 'recipe'))
+            self.log.debug(
+                'removing recipe directory {}'.format(self.recipe_dir))
+            utils.remove(self.recipe_dir, safe=True)
         except AttributeError:  # if raised from __init__
             pass

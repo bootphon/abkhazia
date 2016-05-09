@@ -81,7 +81,9 @@ class AbkhaziaLanguage(AbstractKaldiCommand):
         recipe.level = args.model_level
         recipe.position_dependent_phones = args.word_position_dependent
         recipe.silence_probability = 0.5 if args.optional_silence else 0.0
+        recipe.delete_recipe = False if args.recipe else True
 
         # finally create and/or run the recipe
         recipe.create()
         recipe.run()
+        recipe.export()
