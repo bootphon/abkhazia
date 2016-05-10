@@ -18,8 +18,8 @@
 import os
 import re
 
-from abkhazia.utils import list_files_with_extension
-from abkhazia.prepare import AbstractPreparator
+import abkhazia.utils as utils
+from abkhazia.prepare.abstract_preparator_2 import AbstractPreparator
 
 
 class BuckeyePreparator(AbstractPreparator):
@@ -143,12 +143,13 @@ class BuckeyePreparator(AbstractPreparator):
         self.copy_wavs = copy_wavs
 
     def list_audio_files(self):
-        wavs = list_files_with_extension(self.input_dir, '.wav', abspath=True)
+        wavs = utils.list_files_with_extension(
+            self.input_dir, '.wav', abspath=True)
         return wavs, [os.path.basename(w) for w in wavs]
 
     def make_segment(self):
         outfile = open(self.segments_file, "w")
-        for utts in list_files_with_extension(self.input_dir, '.txt'):
+        for utts in utils.list_files_with_extension(self.input_dir, '.txt'):
             length_utt = []
             bname = os.path.basename(utts)
             dir_file = os.path.dirname(utts)
@@ -179,7 +180,8 @@ class BuckeyePreparator(AbstractPreparator):
                                 offset_line = lines_2[index_offset-1]
 
                                 match_offset = re.match(
-                                    r'\s\s+(.*)\s+(121|122)\s(.*)', offset_line)
+                                    r'\s\s+(.*)\s+(121|122)\s(.*)',
+                                    offset_line)
                                 if not match_offset:
                                     raise IOError('offset line unmatched: {}'
                                                   .format(offset_line))
@@ -199,10 +201,12 @@ class BuckeyePreparator(AbstractPreparator):
                                 index_offset = length_utt[n]+current_index
                                 offset_line = lines_2[index_offset-1]
                                 match_offset = re.match(
-                                    r'\s\s+(.*)\s+(121|122)\s(.*)', offset_line)
+                                    r'\s\s+(.*)\s+(121|122)\s(.*)',
+                                    offset_line)
                                 if not match_offset:
                                     raise IOError(
-                                        'offset not matched {}'.format(offset_line))
+                                        'offset not matched {}'
+                                        .format(offset_line))
 
                                 offset = match_offset.group(1)
                                 outfile.write(str(offset))
@@ -210,55 +214,52 @@ class BuckeyePreparator(AbstractPreparator):
                                 last_offset = offset
                                 outfile.write('\n')
 
-        self.log.debug('finished creating segments file')
-
     def make_speaker(self):
-        outfile = open(self.speaker_file, "w")
-        for utts in list_files_with_extension(self.input_dir, '.txt'):
+        # outfile = open(self.speaker_file, "w")
+        utt2spk = dict()
+        for utts in utils.list_files_with_extension(self.input_dir, '.txt'):
             bname = os.path.basename(utts)
             if not bname.startswith("readme"):
-                with open(utts) as infile_txt:
+                with utils.open_utf8(utts) as infile_txt:
                     lines = infile_txt.readlines()
                     bname = os.path.basename(utts)
                     utt = bname.replace('.txt', '')
                     speaker_id = re.sub(r"[0-9][0-9](a|b)\.txt", "", bname)
                     for idx, _ in enumerate(lines, start=1):
-                        outfile.write(
-                            utt + '-sent' + str(idx) + ' ' + speaker_id + '\n')
-        self.log.debug('finished creating utt2spk file')
+                        utt2spk[utt + '-sent' + str(idx)] = speaker_id
+        return utt2spk
 
     def make_transcription(self):
-        outfile = open(self.transcription_file, "w")
-        for utts in list_files_with_extension(self.input_dir, '.txt'):
+        text = dict()
+        for utts in utils.list_files_with_extension(self.input_dir, '.txt'):
             bname = os.path.basename(utts)
             if not bname.startswith("readme"):
                 with open(utts) as infile_txt:
                     lines = infile_txt.readlines()
-                    bname = os.path.basename(utts)
                     utt = bname.replace('.txt', '')
-                    for idx, val in enumerate(lines, start=1):
-                        outfile.write(utt + '-sent' + str(idx) + ' ')
-                        words = val.split()
+                    for idx, line in enumerate(lines, start=1):
+                        key = utt + '-sent' + str(idx)
+                        words = line.split()
+                        value = ''
                         if len(words) > 1:
                             for word in words[:-1]:
-                                outfile.write(word + ' ')
-                            outfile.write(str(words[-1]) + '\n')
+                                value += word + ' '
+                            value += str(words[-1])
                         else:
                             for word in words:
-                                outfile.write(word)
-                            outfile.write('\n')
-        self.log.debug('finished creating text file')
+                                value += word
+                        text[key] = value
+        return text
 
     def make_lexicon(self):
-        dict_word = {}
-        outfile = open(self.lexicon_file, "w")
-        for utts in list_files_with_extension(self.input_dir, '.words_fold'):
+        dict_word = dict()
+        for utts in utils.list_files_with_extension(
+                self.input_dir, '.words_fold'):
             with open(utts) as infile_txt:
                 # for each line of transcription, store the words in a
                 # dictionary and increase frequency
                 lines = infile_txt.readlines()
-                for line in lines:
-                    line.strip()
+                for line in (l.strip() for l in lines):
                     format_match = re.match(
                         r'\s\s+(.*)\s+(121|122)\s(.*)', line)
 
@@ -270,35 +271,7 @@ class BuckeyePreparator(AbstractPreparator):
                         if word_format_match:
                             word = word_format_match.group(1)
                             phn_trs = word_format_match.group(3)
-                            # TODO what is that ? a comment ? a legacy code ?
-                            # Doing some foldings for spoken noise"
-                            # pattern1 = re.compile("<UNK(.*)")
-                            # if pattern1.match(word):
-                            #     phn_trs = phn_trs.replace('UNKNOWN', 'SPN')
-                            # pattern2 = re.compile("<(CUT|cut)(.*)")
-                            # if pattern2.match(word):
-                            #     phn_trs = phn_trs.replace('CUTOFF', 'SPN')
-                            # pattern3 = re.compile("<LAU(.*)")
-                            # if pattern3.match(word):
-                            #     phn_trs = phn_trs.replace('LAUGH', 'SPN')
-                            # pattern4 = re.compile("<(EXT|EXt)(.*)")
-                            # if pattern4.match(word):
-                            #     phn_trs = phn_trs.replace('LENGTH_TAG', 'SPN')
-                            # pattern5 = re.compile("<ERR(.*)")
-                            # if pattern5.match(word):
-                            #     phn_trs = phn_trs.replace('ERROR', 'SPN')
-                            # pattern6 = re.compile("<HES(.*)")
-                            # if pattern6.match(word):
-                            # phn_trs = phn_trs.replace('HESITATION_TAG', 'SPN')
-                            # pattern7 = re.compile("<EXCL(.*)")
-                            # if pattern7.match(word):
-                            #     phn_trs = phn_trs.replace('EXCLUDE', 'SPN')
+                            dict_word[word] = phn_trs
 
-                            if word not in dict_word:
-                                dict_word[word] = phn_trs
-
-        for word, freq in sorted(
-                dict_word.items(), key=lambda kv: kv[1], reverse=True):
-            outfile.write(word + ' ' + freq + '\n')
-
-        self.log.debug('finished creating lexicon file')
+        return {word: phones for word, phones in sorted(
+                dict_word.items(), key=lambda kv: kv[1], reverse=True)}
