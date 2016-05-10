@@ -108,11 +108,16 @@ def list_directory(directory, abspath=False):
     return lsd
 
 
-def list_files_with_extension(directory, extension, abspath=False):
+def list_files_with_extension(
+        directory, extension, abspath=False, realpath=True):
     """Return all files of given extension in directory hierarchy
 
     The files are returned in a list with a path relative to
-    'directory' except if abspath is True
+    'directory' except if abspath or realpath is True
+
+    If `abspath` is True, return absolute path to the file/link
+
+    If `realpath` is True, return resolved links
 
     """
     # the regular expression to match in filenames
@@ -124,6 +129,8 @@ def list_files_with_extension(directory, extension, abspath=False):
         matched += [os.path.join(path, f) for f in files if re.match(expr, f)]
     if abspath:
         matched = [os.path.abspath(m) for m in matched]
+    if realpath:
+        matched = [os.path.realpath(m) for m in matched]
     return matched
 
 

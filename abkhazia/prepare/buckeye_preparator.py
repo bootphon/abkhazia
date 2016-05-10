@@ -135,20 +135,16 @@ class BuckeyePreparator(AbstractPreparator):
 
     variants = []  # could use lexical stress variants...
 
-    def __init__(self, input_dir, output_dir=None,
-                 verbose=False, njobs=1, copy_wavs=False):
-        super(BuckeyePreparator, self).__init__(
-            input_dir, output_dir, verbose, njobs)
-
+    def __init__(self, input_dir, wavs_dir, verbose=False, copy_wavs=False):
+        super(BuckeyePreparator, self).__init__(input_dir, wavs_dir, verbose)
         self.copy_wavs = copy_wavs
 
     def list_audio_files(self):
-        wavs = utils.list_files_with_extension(
-            self.input_dir, '.wav', abspath=True)
-        return wavs, [os.path.basename(w) for w in wavs]
+        return utils.list_files_with_extension(
+            self.input_dir, '.wav', abspath=True, realpath=True)
 
     def make_segment(self):
-        outfile = open(self.segments_file, "w")
+        segments = dict()
         for utts in utils.list_files_with_extension(self.input_dir, '.txt'):
             length_utt = []
             bname = os.path.basename(utts)
@@ -158,7 +154,6 @@ class BuckeyePreparator(AbstractPreparator):
                     current_index = 0
                     last_offset = 0
                     bname_new = bname.replace('txt', 'words_fold')
-                    bname_wav = bname.replace('txt', 'wav')
                     utt = bname.replace('.txt', '')
                     length_utt = [len(line.strip().split())
                                   for line in infile_txt.readlines()]
@@ -168,37 +163,32 @@ class BuckeyePreparator(AbstractPreparator):
                         del lines_2[:9]
                         assert len(lines_2) == sum(length_utt),\
                             '{} {}'.format(len(lines_2), sum(length_utt))
+
+                        last_offset = '0.000'
+                        current_index = 0
                         for n in range(len(length_utt)):
-                            if n == 0:
-                                onset = '0.000'
-                                outfile.write(utt + '-sent' +
-                                              str(n+1) + ' ' +
-                                              bname_wav + ' ' +
-                                              onset + ' ')
+                            # if n == 0:
+                            #     onset = '0.000'
 
-                                index_offset = length_utt[n]
-                                offset_line = lines_2[index_offset-1]
+                            #     index_offset = length_utt[n]
+                            #     offset_line = lines_2[index_offset-1]
+                            #     match_offset = re.match(
+                            #         r'\s\s+(.*)\s+(121|122)\s(.*)',
+                            #         offset_line)
+                            #     if not match_offset:
+                            #         raise IOError('offset line unmatched: {}'
+                            #                       .format(offset_line))
+                            #     offset = match_offset.group(1)
 
-                                match_offset = re.match(
-                                    r'\s\s+(.*)\s+(121|122)\s(.*)',
-                                    offset_line)
-                                if not match_offset:
-                                    raise IOError('offset line unmatched: {}'
-                                                  .format(offset_line))
+                            #     segments[utt + '-sent' + str(n+1)] = (
+                            #         utt, onset, str(offset))
 
-                                offset = match_offset.group(1)
-                                outfile.write(str(offset))
-                                current_index = index_offset
-                                last_offset = offset
-                                outfile.write('\n')
-                            else:
+                            #     current_index = index_offset
+                            #     last_offset = offset
+                            # else:
                                 onset = last_offset
-                                outfile.write(utt + '-sent' +
-                                              str(n+1) + ' ' +
-                                              bname_wav + ' ' +
-                                              str(onset) + ' ')
 
-                                index_offset = length_utt[n]+current_index
+                                index_offset = length_utt[n] + current_index
                                 offset_line = lines_2[index_offset-1]
                                 match_offset = re.match(
                                     r'\s\s+(.*)\s+(121|122)\s(.*)',
@@ -209,13 +199,16 @@ class BuckeyePreparator(AbstractPreparator):
                                         .format(offset_line))
 
                                 offset = match_offset.group(1)
-                                outfile.write(str(offset))
+
+                                segments[utt + '-sent' + str(n+1)] = (
+                                    utt, str(onset), str(offset))
+
                                 current_index = index_offset
                                 last_offset = offset
-                                outfile.write('\n')
+
+        return segments
 
     def make_speaker(self):
-        # outfile = open(self.speaker_file, "w")
         utt2spk = dict()
         for utts in utils.list_files_with_extension(self.input_dir, '.txt'):
             bname = os.path.basename(utts)
@@ -255,23 +248,17 @@ class BuckeyePreparator(AbstractPreparator):
         dict_word = dict()
         for utts in utils.list_files_with_extension(
                 self.input_dir, '.words_fold'):
-            with open(utts) as infile_txt:
-                # for each line of transcription, store the words in a
-                # dictionary and increase frequency
-                lines = infile_txt.readlines()
-                for line in (l.strip() for l in lines):
-                    format_match = re.match(
-                        r'\s\s+(.*)\s+(121|122)\s(.*)', line)
+            for line in open(utts, 'r').readlines():
+                format_match = re.match(
+                    r'\s\s+(.*)\s+(121|122)\s(.*)', line)
 
-                    if format_match:
-                        word_trs = format_match.group(3)
-                        word_format_match = re.match(
-                            "(.*); (.*); (.*); (.*)", word_trs)
+                if format_match:
+                    word_trs = format_match.group(3)
+                    word_format_match = re.match(
+                        "(.*); (.*); (.*); (.*)", word_trs)
 
-                        if word_format_match:
-                            word = word_format_match.group(1)
-                            phn_trs = word_format_match.group(3)
-                            dict_word[word] = phn_trs
-
-        return {word: phones for word, phones in sorted(
-                dict_word.items(), key=lambda kv: kv[1], reverse=True)}
+                    if word_format_match:
+                        word = word_format_match.group(1)
+                        phn_trs = word_format_match.group(3)
+                        dict_word[word] = phn_trs
+        return dict_word

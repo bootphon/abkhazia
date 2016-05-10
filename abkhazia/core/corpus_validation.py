@@ -145,8 +145,7 @@ class CorpusValidation(object):
         duplicates = utils.duplicates(utt_ids)
         if duplicates:
             raise IOError(
-                "There is utterance-ids in "
-                "'segments.txt' used several times: {0}"
+                "There is utterance-ids in segments used several times: {}"
                 .format(duplicates))
 
         # all referenced wavs are in wav folder
@@ -155,7 +154,7 @@ class CorpusValidation(object):
         if missing_wavefiles:
             raise IOError(
                 "The following wavefiles are referenced "
-                "in segments but are not in wavs"
+                "in segments but are not in wavs {}"
                 .format(missing_wavefiles))
 
         if(len(set(utt_wavs)) == len(utt_wavs) and
@@ -171,12 +170,11 @@ class CorpusValidation(object):
             # timestamps) associated to each wavefile and for each
             # wavefile, check consistency of the timestamps of all
             # utterances inside it
-            warning, short_wavs = self._check_timestamps(
-                corpus, meta, utt_ids, utt_wavs, starts, stops)
+            warning, short_wavs = self._check_timestamps(corpus, meta)
             if warning:
                 self.log.warning(
                     "Some utterances are overlapping in time, "
-                    "see details in log file:\n{}".format(self.log_file))
+                    "see details in log file")
 
         if short_wavs:
             self.log.debug(
@@ -191,35 +189,34 @@ class CorpusValidation(object):
         speakers = corpus.utt2spk.values()
         utt_ids = corpus.segments.keys()
 
-        # same utterance-ids in segments.txt and utt2spk.txt
+        # same utterance-ids in segments and utt2spk
         if utt_ids_spk != utt_ids:
             duplicates = utils.duplicates(utt_ids_spk)
             if duplicates:
                 raise IOError(
                     "The following utterance-ids are used several times "
-                    "in 'utt2spk.txt': {}".format(duplicates))
+                    "in utt2spk: {}".format(duplicates))
             else:
                 e_spk = set(utt_ids_spk)
                 e_seg = set(utt_ids)
 
                 self.log.debug(
-                    "Utterances in utt2spk.txt that are not in "
-                    "segments.txt: {}".format(set.difference(e_spk, e_seg)))
+                    "Utterances in utt2spk that are not in segments: {}"
+                    .format(set.difference(e_spk, e_seg)))
 
                 self.log.debug(
-                    "Utterances in segments.txt that are not in "
-                    "utt2spk.txt: {}".format(set.difference(e_seg, e_spk)))
+                    "Utterances in segments that are not in utt2spk: {}"
+                    .format(set.difference(e_seg, e_spk)))
 
                 raise IOError(
-                    "Utterance-ids in 'segments.txt' and 'utt2spk.txt' are "
-                    "not consistent, see details in log:\n{}"
-                    .format(self.log_file))
+                    "Utterance-ids in segments and utt2spk are "
+                    "not consistent, see details in log")
 
         # speaker ids must have a fixed length
         default_len = len(speakers[0])
         if not all([len(s) == default_len for s in speakers]):
             self.log.debug(
-                "Speaker-ids length observed in utt2spk.txt with associated "
+                "Speaker-ids length observed in utt2spk with associated "
                 "frequencies: {0}".format(
                     collections.Counter([len(s) for s in speakers])))
 
@@ -241,31 +238,31 @@ class CorpusValidation(object):
         utt_ids_txt = corpus.text.keys()
 
         # we will check that the words are mostly in the lexicon later
-        # same utterance-ids in segments.txt and text.txt
+        # same utterance-ids in segments and text
         if utt_ids_txt != utt_ids:
             duplicates = utils.duplicates(utt_ids_txt)
             if duplicates:
                 self.log.debug(
-                    "There is several utterance-ids used several times "
-                    "in text: {}".format(len(duplicates)))
+                    "utterance-ids used several times in text: {}"
+                    .format(len(duplicates)))
 
                 raise IOError(
-                    "There is several utterance-ids used several times "
-                    "in text: {}".format(duplicates))
+                    "utterance-ids used several times in text: {}"
+                    .format(duplicates))
             else:
                 e_txt = set(utt_ids_txt)
                 e_seg = set(utt_ids)
 
                 self.log.debug(
-                    "Utterances in text that are not in segments.txt: {}"
+                    "utterances in text but not in segments: {}"
                     .format(set.difference(e_txt, e_seg)))
 
                 self.log.debug(
-                    "Utterances in segments that are not in text.txt: {}"
+                    "utterances in segments but not in text: {}"
                     .format(set.difference(e_seg, e_txt)))
 
                 raise IOError(
-                    "Utterance-ids in segments and text are not consistent")
+                    "utterance-ids in segments and text are not consistent")
 
     def validate_phones(self, corpus):
         """Checks phones, silences and variants, return phones inventory"""
@@ -294,14 +291,14 @@ class CorpusValidation(object):
         duplicates = utils.duplicates(phones)
         if duplicates:
             raise IOError(
-                "The following phone symbols are used several times "
-                "in phones: {}".format(duplicates))
+                "following phone symbols are used several times in phones: {}"
+                .format(duplicates))
 
         duplicates = utils.duplicates(ipas)
         if duplicates:
             raise IOError(
-                "The following IPA symbols are used several times "
-                "in phones: {}".format(duplicates))
+                "following IPA symbols are used several times in phones: {}"
+                .format(duplicates))
 
         return phones
 
@@ -311,21 +308,21 @@ class CorpusValidation(object):
         sils = corpus.silences
         if len(sils) == 0:
             self.log.warning(
-                "No silence symbols, adding 'SIL' and 'SPN'")
+                "no silence symbols, adding 'SIL' and 'SPN'")
             sils += ['SIL', 'SPN']
         else:
             duplicates = utils.duplicates(sils)
             if duplicates:
                 raise IOError(
-                    "The following symbols are used several times "
-                    "in 'silences.txt': {}".format(duplicates))
+                    "following symbols are used several times in silences: {}"
+                    .format(duplicates))
 
             if u"SIL" not in sils:
-                self.log.debug("Adding missing 'SIL' symbol to silences")
+                self.log.debug("adding missing 'SIL' symbol to silences")
                 sils.append('SIL')
 
             if u"SPN" not in sils:
-                self.log.debug("Adding missing 'SPN' symbol to silences")
+                self.log.debug("adding missing 'SPN' symbol to silences")
                 sils.append('SPN')
 
             inter = set.intersection(set(sils), set(phones))
@@ -360,7 +357,7 @@ class CorpusValidation(object):
         return inventory
 
     def validate_lexicon(self, corpus, inventory):
-        self.log.debug("Checking lexicon")
+        self.log.debug("checking lexicon")
 
         dict_words = corpus.lexicon.keys()
         transcriptions = [t.split() for t in corpus.lexicon.values()]
@@ -371,8 +368,8 @@ class CorpusValidation(object):
         if duplicates:
             raise IOError(
                 "Alternative pronunciations are not currently supported. "
-                "The following words have several transcriptions "
-                "in 'lexicon.txt': {0}".format(duplicates))
+                "Following words have several transcriptions in lexicon: {}"
+                .format(duplicates))
 
         # OOV item
         if u"<unk>" not in dict_words:
@@ -385,13 +382,12 @@ class CorpusValidation(object):
                     "'<unk>' word is reserved for mapping "
                     "OOV items and should always be transcribed "
                     "as 'SPN' (vocal) noise'")
-        # TODO Should we log a warning for all words containing silence phones?
+        # TODO should we log a warning for all words containing silence phones?
 
         # unused words
-        utt_words = (word for utt in corpus.text.itervalues()
-                     for word in utt.split())
+        used_words = [word for utt in corpus.text.itervalues()
+                      for word in utt.split()]
         dict_words_set = set(dict_words)
-        used_words = [word for words in utt_words for word in words]
         used_word_types = set(used_words)
         used_word_counts = collections.Counter(used_words)
         used_dict_words = set.intersection(dict_words_set, used_word_types)
@@ -414,23 +410,21 @@ class CorpusValidation(object):
             .format(nb_oov_tokens, len(used_words)))
 
         self.log.debug(
-            u"List of OOV word types with occurences counts: {0}"
+            u"list of OOV word types with occurences counts: {0}"
             .format(self._strcounts2unicode(oov_word_counts.most_common())))
 
         # raise alarm if the proportion of oov words is too large
         # either in terms of types or tokens
         oov_proportion_types = nb_oov_types/float(len(used_word_types))
-        oov_proportion_tokens = nb_oov_tokens/float(len(used_words))
         self.log.debug("Proportion of oov word types: {}"
                        .format(oov_proportion_types))
-
-        self.log.debug("Proportion of oov word tokens: {}"
-                       .format(oov_proportion_tokens))
-
         if oov_proportion_types > 0.1:
             self.log.warning('More than 10 percent of word '
                              'types used are Out-Of-Vocabulary items!')
 
+        oov_proportion_tokens = nb_oov_tokens/float(len(used_words))
+        self.log.debug("Proportion of oov word tokens: {}"
+                       .format(oov_proportion_tokens))
         if oov_proportion_tokens > 0.1:
             self.log.warning('More than 10 percent of word '
                              'tokens used are Out-Of-Vocabulary items!')
@@ -512,20 +506,19 @@ class CorpusValidation(object):
                 "The following phones are never found "
                 "in the transcriptions: {}".format(unused_phones))
 
-    def _check_timestamps(self, corpus, meta,
-                          utt_ids, utt_wavs, starts, stops):
-        '''Check for utterances overlap and timestamps consistency'''
+    def _check_timestamps(self, corpus, meta):
+        """Check for utterances overlap and timestamps consistency"""
         self.log.debug("checking timestamps consistency")
 
         short_wavs = []
         warning = False
-        for wav in utt_wavs:
+        for wav in corpus.wavs.iterkeys():
             duration = meta[wav].duration
             utts = [(utt,
-                     0 if sta is None else sta,
-                     duration if sto is None else sto)
-                    for utt, w, sta, sto
-                    in zip(utt_ids, corpus.wavs.keys(), starts, stops)
+                     0 if sta is None else float(sta),
+                     duration if sto is None else float(sto))
+                    for utt, (w, sta, sto)
+                    in corpus.segments.iteritems()
                     if w == wav]
 
             # first check that start < stop and within file duration
@@ -534,20 +527,17 @@ class CorpusValidation(object):
                     raise IOError(
                         "Stop time for utterance {0} is lower than "
                         "start time".format(utt_id))
-
-                if not 0 <= start <= duration:
+                elif not 0 <= start <= duration:
                     raise IOError(
                         "Start time for utterance {} is not compatible "
                         "with file duration in {}: {} -> {}"
                         .format(utt_id, wav, start, duration))
-
-                if not 0 <= stop <= duration:
+                elif not 0 <= stop <= duration:
                     raise IOError(  # print(
                         "Stop time for utterance {} is not compatible "
                         "with file duration in {}: {} > {}"
                         .format(utt_id, wav, stop, duration))
-
-                if stop - start < .015:
+                elif stop - start < .015:
                     short_wavs.append(utt_id)
 
             # then check if there is overlap in time between the
@@ -561,16 +551,16 @@ class CorpusValidation(object):
             same_start = {}
             for start in counts:
                 if counts[start] > 1:
-                    same_start[start] = [utt for utt, sta, _ in utts
-                                         if sta == start]
+                    same_start[start] = [
+                        utt for utt, sta, _ in utts if sta == start]
 
             wav_stops = [stop for _, _, stop in utts]
             counts = collections.Counter(wav_stops)
             same_stop = {}
             for stop in counts:
                 if counts[stop] > 1:
-                    same_stop[stop] = [utt for utt, _, sto in utts
-                                       if sto == stop]
+                    same_stop[stop] = [
+                        utt for utt, _, sto in utts if sto == stop]
 
             if same_start:
                 warning = True
@@ -588,11 +578,10 @@ class CorpusValidation(object):
             timestamps = list(set(wav_starts)) + list(set(wav_stops))
             timestamps.sort()
 
-            # TODO fix that... maybe > 1
             overlapped = [
                 (utt, timestamps.index(stop) - timestamps.index(start))
                 for utt, start, stop in utts
-                if timestamps.index(stop) - timestamps.index(start) != 1]
+                if timestamps.index(stop) - timestamps.index(start) > 2]
 
             if overlapped:
                 warning = True
@@ -600,7 +589,7 @@ class CorpusValidation(object):
                     "The following utterances from file {} are "
                     "overlapping in time: {}".format(wav, overlapped))
 
-            return warning, short_wavs
+        return warning, short_wavs
 
     @staticmethod
     def _strcounts2unicode(strcounts):

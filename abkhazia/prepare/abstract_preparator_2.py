@@ -76,11 +76,10 @@ class AbstractPreparator(object):
         except ConfigParser.NoOptionError:
             return None
 
-    def __init__(self, input_dir, verbose=False, njobs=1):
-        # init njobs for parallelized preparation steps
-        if not isinstance(njobs, int) or not njobs > 0:
-            raise IOError('njobs must be a strictly positive integer')
-        self.njobs = njobs
+    def __init__(self, input_dir, wavs_dir, log=utils.log2file.null_logger()):
+        self.njobs = utils.default_njobs()
+        self.log = log
+        self.wavs_dir = wavs_dir
 
         # init input directory
         if not os.path.isdir(input_dir):
@@ -90,16 +89,6 @@ class AbstractPreparator(object):
 
         # init empty output corpus
         self.corpus = Corpus()
-
-        # init the directories output_dir/data/wavs
-        self.data_dir = os.path.join(self.output_dir, 'data')
-        self.wavs_dir = os.path.join(self.data_dir, 'wavs')
-
-        # init the log
-        self.verbose = verbose
-        self.log = utils.get_log(
-            os.path.join(self.data_dir, 'corpus_preparation.log'),
-            self.verbose)
 
     def prepare(self):
         """Prepare the corpus from raw distribution to abkhazia format
@@ -152,7 +141,7 @@ class AbstractPreparator(object):
 
             # the target file is found in the directory, delete it if
             # it is empty, delete it it's a link and we force copying
-            if wav in target and not self.broken_wav(path):
+            if wav in target and not self._broken_wav(path):
                 del target[wav]
                 found += 1
             else:
@@ -166,13 +155,13 @@ class AbstractPreparator(object):
         return target.values(), target.keys()
 
     def make_wavs(self):
-        """Convert to wav and copy the corpus audio files
+        """Convert to wav and copy/link the corpus audio files
 
         Because converting thousands of files can be heavy, only the
-        files that are not already present in self.output_dir are
+        files that are not already present in self.wavs_dir are
         converted.
 
-        Moreover any file present in output_dir but not listed as a
+        Moreover any file present in self.wavs_dir but not listed as a
         desired wav file will be deleted.
 
         To save some disk space, if the corpus audio file format is
@@ -184,39 +173,41 @@ class AbstractPreparator(object):
 
         """
         # get the list of input and output files to prepare
-        inputs, outputs = self.list_audio_files()
+        inputs = self.list_audio_files()
+        outputs = [os.path.basename(f) for f in inputs]
+
         self.log.info('preparing {} wav files'.format(len(inputs)))
 
-        # should not occur, except if child class is badly implemented
-        if len(inputs) != len(outputs):
-            raise ValueError(
-                'number of audio inputs and outputs must be equal')
-
         if os.path.isdir(self.wavs_dir):
-            # the wavs directory already exists, clean and prepare for copy
-            inputs, outputs = self.prepare_wavs_dir(inputs, outputs)
-
-            # the job is done if all the files are already here, else
-            # we continue the preparation
-            if len(inputs) == 0:
-                self.log.debug(
-                    'all wav files already present in the directory')
-                return
+            # the wavs directory already exists, clean it and prepare
+            # it for copy/link of wav files
+            inputs, outputs = self._prepare_wavs_dir(inputs, outputs)
         else:  # self.wavs_dir does not exist
             os.makedirs(self.wavs_dir)
 
-        # append path to the directory in outputs
-        outputs = [os.path.join(self.wavs_dir, o) for o in outputs]
+        # the job is done if all the files are already here, else
+        # we continue the preparation
+        if len(inputs) == 0:
+            self.log.debug(
+                'all wav files already present in the directory')
+        else:
+            # append path to the directory in outputs
+            outputs = [os.path.join(self.wavs_dir, o) for o in outputs]
 
-        # If original files are not wav, convert them. Else link or
-        # copy wav files in function of self.copy_wavs. The wavs that
-        # are not at 16 kHz are resampled.
-        self.log.debug('converting {} {} files to 16kHz mono wav...'
-                       .format(len(inputs), self.audio_format))
-        utils.wav.convert(
-            inputs, outputs, self.audio_format, self.njobs,
-            verbose=5 if self.verbose else 0, copy=self.copy_wavs)
-        self.log.debug('finished converting wavs')
+            # If original files are not wav, convert them. Else link or
+            # copy wav files in function of self.copy_wavs. The wavs that
+            # are not at 16 kHz are resampled.
+            self.log.debug('converting {} {} files to 16kHz mono wav...'
+                           .format(len(inputs), self.audio_format))
+            utils.wav.convert(
+                inputs, outputs, self.audio_format,
+                self.njobs, verbose=5, copy=self.copy_wavs)
+            self.log.debug('finished converting wavs')
+
+        # finally build the corpus wavs dictionary
+        return {os.path.splitext(os.path.basename(w))[0]: w
+                for w in utils.list_files_with_extension(
+                        self.wavs_dir, '.wav', True, True)}
 
     ############################################
     #
@@ -257,14 +248,9 @@ class AbstractPreparator(object):
     """A list of tonal variants associated with the phones"""
 
     def list_audio_files(self):
-        """Return a tuple (inputs, outputs) of two lists of audio files
+        """Return a list of audio files belonging to the corpus
 
-        'inputs' is the list of audio files to convert to
-            abkhazia. Filenames in the list must be absolute paths.
-
-        'outputs' is the list of target files to create in
-            'self.wavs_dir'. Filenames in the list must be only
-            basenames (ie pure filenames with no path).
+        Returned filenames must be absolute paths to files.
 
         """
         raise NotImplementedError
@@ -331,16 +317,14 @@ class AbstractPreparatorWithCMU(AbstractPreparator):
         pkg_resources.Requirement.parse('abkhazia'),
         'abkhazia/share/cmudict.0.7a')
 
-    def __init__(self, input_dir, cmu_dict=None,
-                 output_dir=None, verbose=False, njobs=1):
-        # call the AbstractPreparator __init__
+    def __init__(self, input_dir, wavs_dir, cmu_dict=None,
+                 log=utils.log2file.null_logger()):
         super(AbstractPreparatorWithCMU, self).__init__(
-            input_dir, output_dir, verbose, njobs)
+            input_dir, wavs_dir, log)
 
         # init path to CMU dictionary
         if cmu_dict is None:
             cmu_dict = self.default_cmu_dict
-
         if not os.path.isfile(cmu_dict):
             raise IOError(
                 'CMU dictionary does not exist: {}'

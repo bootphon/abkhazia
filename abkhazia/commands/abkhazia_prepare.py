@@ -19,8 +19,9 @@ import os
 import shutil
 import textwrap
 
-from abkhazia.commands.abstract_command import AbstractCommand
+import abkhazia.utils as utils
 from abkhazia.core.corpus import Corpus
+from abkhazia.commands.abstract_command import AbstractCommand
 
 # import all the corpora preparators TODO simplify those imports
 from abkhazia.prepare.aic_preparator import AICPreparator
@@ -78,6 +79,19 @@ class AbstractFactory(object):
             cls.preparator.long_description.replace('    ', '  '))
 
     @classmethod
+    def default_output_dir(cls):
+        """Return the default output directory for corpus preparation
+
+        This directory is 'data-directory'/'name', where
+        'data-directory' is read from the abkhazia configuration file
+        and 'name' is self.name
+
+        """
+        return os.path.join(
+            utils.config.get('abkhazia', 'data-directory'),
+            cls.preparator.name)
+
+    @classmethod
     def add_parser(cls, subparsers):
         """Return a default argument parser for corpus preparation"""
         parser = subparsers.add_parser(cls.preparator.name)
@@ -103,7 +117,7 @@ class AbstractFactory(object):
             '-o', '--output-dir', metavar='<output-dir>', default=None,
             help='output directory, the prepared corpus is created in '
             '<output-dir>/data. If not specified use {}.'
-            .format(cls.preparator.default_output_dir()))
+            .format(cls.default_output_dir()))
 
         parser.add_argument(
             '-v', '--verbose', action='store_true',
@@ -151,7 +165,7 @@ class AbstractFactory(object):
         if prep is None:
             prep = cls.preparator
 
-        output_dir = (prep.default_output_dir()
+        output_dir = (cls.default_output_dir()
                       if args.output_dir is None
                       else args.output_dir)
 
@@ -165,16 +179,16 @@ class AbstractFactory(object):
     @classmethod
     def init_preparator(cls, args):
         """Return an initialized preparator from parsed arguments"""
-        output_dir = cls.get_output_dir(args)
+        data_dir = cls.get_output_dir(args)
+        wavs_dir = os.path.join(data_dir, 'wavs')
+        log = utils.get_log(
+            os.path.join(data_dir, 'data_preparation.log'), args.verbose)
 
         if cls.preparator.audio_format == 'wav':
             prep = cls.preparator(
-                args.input_dir, output_dir,
-                args.verbose, args.njobs, args.copy_wavs)
+                args.input_dir, wavs_dir, log, args.copy_wavs)
         else:
-            prep = cls.preparator(
-                args.input_dir, output_dir,
-                args.verbose, args.njobs)
+            prep = cls.preparator(args.input_dir, wavs_dir, log)
         return prep
 
     @classmethod
