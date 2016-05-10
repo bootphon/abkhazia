@@ -167,44 +167,25 @@ class BuckeyePreparator(AbstractPreparator):
                         last_offset = '0.000'
                         current_index = 0
                         for n in range(len(length_utt)):
-                            # if n == 0:
-                            #     onset = '0.000'
+                            onset = last_offset
 
-                            #     index_offset = length_utt[n]
-                            #     offset_line = lines_2[index_offset-1]
-                            #     match_offset = re.match(
-                            #         r'\s\s+(.*)\s+(121|122)\s(.*)',
-                            #         offset_line)
-                            #     if not match_offset:
-                            #         raise IOError('offset line unmatched: {}'
-                            #                       .format(offset_line))
-                            #     offset = match_offset.group(1)
+                            index_offset = length_utt[n] + current_index
+                            offset_line = lines_2[index_offset-1]
+                            match_offset = re.match(
+                                r'\s\s+(.*)\s+(121|122)\s(.*)',
+                                offset_line)
+                            if not match_offset:
+                                raise IOError(
+                                    'offset not matched {}'
+                                    .format(offset_line))
 
-                            #     segments[utt + '-sent' + str(n+1)] = (
-                            #         utt, onset, str(offset))
+                            offset = match_offset.group(1)
 
-                            #     current_index = index_offset
-                            #     last_offset = offset
-                            # else:
-                                onset = last_offset
+                            segments[utt + '-sent' + str(n+1)] = (
+                                utt, str(onset), str(offset))
 
-                                index_offset = length_utt[n] + current_index
-                                offset_line = lines_2[index_offset-1]
-                                match_offset = re.match(
-                                    r'\s\s+(.*)\s+(121|122)\s(.*)',
-                                    offset_line)
-                                if not match_offset:
-                                    raise IOError(
-                                        'offset not matched {}'
-                                        .format(offset_line))
-
-                                offset = match_offset.group(1)
-
-                                segments[utt + '-sent' + str(n+1)] = (
-                                    utt, str(onset), str(offset))
-
-                                current_index = index_offset
-                                last_offset = offset
+                            current_index = index_offset
+                            last_offset = offset
 
         return segments
 
