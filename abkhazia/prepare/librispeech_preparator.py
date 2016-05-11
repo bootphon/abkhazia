@@ -27,7 +27,7 @@ http://www.openslr.org/resources/11/librispeech-lexicon.txt
 import os
 import re
 
-from abkhazia.utils import list_files_with_extension
+import abkhazia.utils as utils
 from abkhazia.prepare import AbstractPreparatorWithCMU
 
 
@@ -93,9 +93,9 @@ class LibriSpeechPreparator(AbstractPreparatorWithCMU):
 
     variants = []  # could use lexical stress variants...
 
-    def __init__(self, input_dir, selection=None,
-                 librispeech_dict=None, cmu_dict=None,
-                 output_dir=None, verbose=False, njobs=1):
+    def __init__(self, input_dir, log=utils.null_logger(),
+                 cmu_dict=None, selection=None, librispeech_dict=None):
+        super(LibriSpeechPreparator, self).__init__(input_dir, log=log)
 
         # guess librispeech dictionary if not specified, look for it
         # in the Librispeech root directory
@@ -110,23 +110,16 @@ class LibriSpeechPreparator(AbstractPreparatorWithCMU):
                 .format(librispeech_dict))
         self.librispeech_dict = librispeech_dict
 
-        # init output dir
-        self.output_dir = (self.default_output_dir() if output_dir is None
-                           else output_dir)
-
         # update name, input and output directories if a subpart
         # selection is specified
         if selection is not None:
             self.name += '-' + selection
-            input_dir = os.path.join(input_dir, selection)
-            output_dir += '-' + selection
+            self.input_dir = os.path.join(input_dir, selection)
 
-        # call the AbstractPreparatorWithCMU __init__
-        super(LibriSpeechPreparator, self).__init__(
-            input_dir, cmu_dict, output_dir, verbose, njobs)
+        self._wavs = None
 
     def list_audio_files(self):
-        flacs = list_files_with_extension(
+        flacs = utils.list_files_with_extension(
             self.input_dir, '.flac', abspath=True)
 
         wavs = []
@@ -136,71 +129,55 @@ class LibriSpeechPreparator(AbstractPreparatorWithCMU):
             prefix = '00' if len_sid == 2 else '0' if len_sid == 3 else ''
             wavs.append(prefix + utt_id + '.wav')
 
-        return flacs, wavs
+        self._wavs = wavs
+        return zip(flacs, wavs)
 
     def make_segment(self):
-        with open(self.segments_file, 'w') as outfile:
-            for wav_file in list_files_with_extension(self.wavs_dir, '.wav'):
-                bname = os.path.basename(wav_file)
-                utt_id = bname.replace('.wav', '')
-                outfile.write(utt_id + ' ' + bname + '\n')
-        self.log.debug('finished creating segments file')
+        segments = dict()
+        for wav_file in self._wavs:
+            utt_id = os.path.basename(wav_file).replace('.wav', '')
+            segments[utt_id] = (utt_id, None, None)
+        return segments
 
     def make_speaker(self):
-        with open(self.speaker_file, 'w') as outfile:
-            for wav in list_files_with_extension(self.wavs_dir, '.wav'):
-                bname = os.path.basename(wav)
-                utt_id = bname.replace('.wav', '')
-                speaker_id = bname.split("-")[0]
-                outfile.write(utt_id + ' ' + speaker_id + '\n')
-        self.log.debug('finished creating utt2spk file')
+        utt2spk = dict()
+        for wav in self._wavs:
+            bname = os.path.basename(wav)
+            utt_id = bname.replace('.wav', '')
+            speaker_id = bname.split("-")[0]
+            utt2spk[utt_id] = speaker_id
+        return utt2spk
 
     def make_transcription(self):
-        corrupted_wavs = os.path.join(self.logs_dir, 'corrupted_wavs.txt')
+        text = dict()
+        wav_list = [os.path.basename(w).replace('.wav', '')
+                    for w in self._wavs]
 
-        outfile = open(self.transcription_file, "w")
-        outfile2 = open(corrupted_wavs, "w")
-
-        wav_list = [os.path.basename(w).replace('.wav', '') for w in
-                    list_files_with_extension(self.wavs_dir, '.wav')]
-
-        for trs_file in list_files_with_extension(self.input_dir, '.trans.txt'):
-            # for each line of transcript, convert the utt_ID to
-            # normalize speaker_ID and check if wav file exists; if
-            # not, output corrputed files to corrupted_wavs.txt, else
-            # output text.txt
-            for line in open(trs_file):
+        corrupted_wavs = []
+        for trs in utils.list_files_with_extension(
+                self.input_dir, '.trans.txt'):
+            for line in open(trs, 'r'):
                 matched = re.match(r'([0-9\-]+)\s([A-Z].*)', line)
                 if matched:
-                    utt_id = matched.group(1)
-                    speaker_id = utt_id.split("-")[0]
                     utt = matched.group(2)
 
-                    # TODO refactor this
-                    if len(speaker_id) == 2:
-                        new_utt_id = "00" + utt_id
-                        if new_utt_id in wav_list:
-                            outfile.write(new_utt_id + ' ' + utt + '\n')
-                        else:
-                            outfile2.write(new_utt_id + '.wav\n')
-                    elif len(speaker_id) == 3:
-                        new_utt_id = "0" + utt_id
-                        if new_utt_id in wav_list:
-                            outfile.write(new_utt_id + ' ' + utt + '\n')
-                        else:
-                            outfile2.write(new_utt_id + '.wav\n')
-                    else:
-                        if utt_id in wav_list:
-                            outfile.write(utt_id + ' ' + utt + '\n')
-                        else:
-                            outfile2.write(utt_id + '.wav\n')
+                    lid = len(matched.group(1).split("-")[0])
+                    prefix = '00' if lid == 2 else '0' if lid == 3 else ''
+                    utt_id = prefix + matched.group(1)
 
-        self.log.debug('finished creating text file')
+                    if utt_id in wav_list:
+                        text[utt_id] = utt
+                    else:
+                        corrupted_wavs.append(utt_id)
+        if corrupted_wavs != []:
+            self.log.debug('some utterances have no associated wav: {}'
+                           .format(corrupted_wavs))
+        return text
 
     def make_lexicon(self):
         # To generate the lexicon, we will use the cmu dict and the
         # dict of OOVs generated by LibriSpeech)
-        cmu_combined = {}
+        cmu_combined = dict()
 
         with open(self.librispeech_dict, 'r') as infile:
             for line in infile:
@@ -230,11 +207,4 @@ class LibriSpeechPreparator(AbstractPreparatorWithCMU):
                         # create the combined dictionary
                         cmu_combined[entry] = phn
 
-        # Loop through the words in transcripts by descending
-        # frequency and create the lexicon by looking up in the
-        # combined dictionary.
-        with open(self.lexicon_file, "w") as outfile:
-            for word, freq in sorted(cmu_combined.items()):
-                outfile.write(word + ' ' + freq + '\n')
-
-        self.log.debug('finished creating lexicon file')
+        return cmu_combined

@@ -16,7 +16,7 @@
 """This package provides various utilities to abkhazia"""
 
 from .utils import *
-from .log2file import get_log
+from .log2file import get_log, null_logger
 from .config import config, AbkhaziaConfig
 from .wav import convert, scan
 from .spk2utt import spk2utt

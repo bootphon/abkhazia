@@ -19,7 +19,7 @@ import os
 import re
 
 import abkhazia.utils as utils
-from abkhazia.prepare.abstract_preparator_2 import AbstractPreparator
+from abkhazia.prepare import AbstractPreparator
 
 
 class BuckeyePreparator(AbstractPreparator):
@@ -97,23 +97,23 @@ class BuckeyePreparator(AbstractPreparator):
         'hh': u'h',
         'el': u'l\u0329',
         'tq': u'ʔ',
-        'B': u'B',
-        'E': u'E',
-        'ahn': u'ʌ\u0329',
-        'iyn': u'iː\u0329',
-        'eyn': u'eɪ\u0329',
-        'oyn': u'ɔɪ\u0329',
-        'ehn': u'ɛ\u0329',
-        'uhn': u'ʊ\u0329',
-        'ayn': u'aɪ\u0329',
-        'own': u'oʊ\u0329',
-        'awn': u'aʊ\u0329',
-        'aon': u'ɔː\u0329',
-        'aan': u'ɑː\u0329',
-        'ihn': u'ɪ\u0329',
-        'ern': u'ɝ\u0329',
-        'uwn': u'uː\u0329',
-        'aen': u'æ\u0329',
+        # 'B': u'B',
+        # 'E': u'E',
+        # 'ahn': u'ʌ\u0329',
+        # 'iyn': u'iː\u0329',
+        # 'eyn': u'eɪ\u0329',
+        # 'oyn': u'ɔɪ\u0329',
+        # 'ehn': u'ɛ\u0329',
+        # 'uhn': u'ʊ\u0329',
+        # 'ayn': u'aɪ\u0329',
+        # 'own': u'oʊ\u0329',
+        # 'awn': u'aʊ\u0329',
+        # 'aon': u'ɔː\u0329',
+        # 'aan': u'ɑː\u0329',
+        # 'ihn': u'ɪ\u0329',
+        # 'ern': u'ɝ\u0329',
+        # 'uwn': u'uː\u0329',
+        # 'aen': u'æ\u0329',
         '{B_TRANS}': u'{B_TRANS}',
         '{E_TRANS}': u'{E_TRANS}',
         'CUTOFF': u'CUTOFF',
@@ -135,100 +135,89 @@ class BuckeyePreparator(AbstractPreparator):
 
     variants = []  # could use lexical stress variants...
 
-    def __init__(self, input_dir, wavs_dir, verbose=False, copy_wavs=False):
-        super(BuckeyePreparator, self).__init__(input_dir, wavs_dir, verbose)
+    def __init__(self, input_dir, log=utils.null_logger(), copy_wavs=False):
+        super(BuckeyePreparator, self).__init__(input_dir, log=log)
         self.copy_wavs = copy_wavs
 
+    def _list_files(self, ext, exclude=None, abspath=False, realpath=False):
+        files = utils.list_files_with_extension(
+            self.input_dir, ext, abspath=abspath, realpath=realpath)
+
+        if exclude is not None:
+            files = [f for f in files for e in exclude if e not in f]
+
+        return files
+
     def list_audio_files(self):
-        return utils.list_files_with_extension(
-            self.input_dir, '.wav', abspath=True, realpath=True)
+        return self._list_files('.wav', abspath=True, realpath=True)
 
     def make_segment(self):
         segments = dict()
-        for utts in utils.list_files_with_extension(self.input_dir, '.txt'):
-            length_utt = []
+        for utts in self._list_files('.txt', exclude=['readme']):
             bname = os.path.basename(utts)
-            dir_file = os.path.dirname(utts)
-            if not bname.startswith("readme"):
-                with open(utts) as infile_txt:
-                    current_index = 0
-                    last_offset = 0
-                    bname_new = bname.replace('txt', 'words_fold')
-                    utt = bname.replace('.txt', '')
-                    length_utt = [len(line.strip().split())
-                                  for line in infile_txt.readlines()]
-                    wrd = os.path.join(dir_file, bname_new)
-                    with open(wrd) as infile_wrd:
-                        lines_2 = infile_wrd.readlines()
-                        del lines_2[:9]
-                        assert len(lines_2) == sum(length_utt),\
-                            '{} {}'.format(len(lines_2), sum(length_utt))
+            utt = bname.replace('.txt', '')
+            length_utt = [
+                len(line.strip().split()) for line in
+                open(utts, 'r').readlines() if len(line.strip())]
 
-                        last_offset = '0.000'
-                        current_index = 0
-                        for n in range(len(length_utt)):
-                            onset = last_offset
+            words = utts.replace('txt', 'words_fold')
+            lines = open(words, 'r').readlines()
+            del lines[:9]
 
-                            index_offset = length_utt[n] + current_index
-                            offset_line = lines_2[index_offset-1]
-                            match_offset = re.match(
-                                r'\s\s+(.*)\s+(121|122)\s(.*)',
-                                offset_line)
-                            if not match_offset:
-                                raise IOError(
-                                    'offset not matched {}'
-                                    .format(offset_line))
+            assert len(lines) == sum(length_utt),\
+                '{} {}'.format(len(lines), sum(length_utt))
 
-                            offset = match_offset.group(1)
+            last_offset = '0.000'
+            current_index = 0
+            for n in range(len(length_utt)):
+                onset = last_offset
 
-                            segments[utt + '-sent' + str(n+1)] = (
-                                utt, str(onset), str(offset))
+                index_offset = length_utt[n] + current_index
+                offset_line = lines[index_offset-1]
+                match_offset = re.match(
+                    r'\s\s+(.*)\s+(121|122)\s(.*)',
+                    offset_line)
+                if not match_offset:
+                    raise IOError(
+                        'offset not matched {}'
+                        .format(offset_line))
 
-                            current_index = index_offset
-                            last_offset = offset
+                offset = match_offset.group(1)
+
+                segments[utt + '-sent' + str(n+1)] = (
+                    utt, str(onset), str(offset))
+
+                current_index = index_offset
+                last_offset = offset
 
         return segments
 
     def make_speaker(self):
         utt2spk = dict()
-        for utts in utils.list_files_with_extension(self.input_dir, '.txt'):
+        for utts in self._list_files('.txt', exclude=['readme']):
             bname = os.path.basename(utts)
-            if not bname.startswith("readme"):
-                with utils.open_utf8(utts) as infile_txt:
-                    lines = infile_txt.readlines()
-                    bname = os.path.basename(utts)
-                    utt = bname.replace('.txt', '')
-                    speaker_id = re.sub(r"[0-9][0-9](a|b)\.txt", "", bname)
-                    for idx, _ in enumerate(lines, start=1):
-                        utt2spk[utt + '-sent' + str(idx)] = speaker_id
+            utt = bname.replace('.txt', '')
+            lines = [l.strip() for l in open(utts, 'r').readlines()
+                     if len(l.strip())]
+            speaker_id = re.sub(r"[0-9][0-9](a|b)\.txt", "", bname)
+            for idx, _ in enumerate(lines, start=1):
+                utt2spk[utt + '-sent' + str(idx)] = speaker_id
         return utt2spk
 
     def make_transcription(self):
         text = dict()
-        for utts in utils.list_files_with_extension(self.input_dir, '.txt'):
+        for utts in self._list_files('.txt', exclude=['readme']):
             bname = os.path.basename(utts)
-            if not bname.startswith("readme"):
-                with open(utts) as infile_txt:
-                    lines = infile_txt.readlines()
-                    utt = bname.replace('.txt', '')
-                    for idx, line in enumerate(lines, start=1):
-                        key = utt + '-sent' + str(idx)
-                        words = line.split()
-                        value = ''
-                        if len(words) > 1:
-                            for word in words[:-1]:
-                                value += word + ' '
-                            value += str(words[-1])
-                        else:
-                            for word in words:
-                                value += word
-                        text[key] = value
+            utt = os.path.splitext(bname)[0]
+            for idx, line in enumerate(
+                    (l.strip() for l in open(utts).readlines()
+                     if len(l.strip())), start=1):
+                text[utt + '-sent' + str(idx)] = line
         return text
 
     def make_lexicon(self):
         dict_word = dict()
-        for utts in utils.list_files_with_extension(
-                self.input_dir, '.words_fold'):
+        for utts in self._list_files('.words_fold'):
             for line in open(utts, 'r').readlines():
                 format_match = re.match(
                     r'\s\s+(.*)\s+(121|122)\s(.*)', line)

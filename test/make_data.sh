@@ -22,12 +22,12 @@
 data_dir=${1:-./data}
 [ -e $data_dir ] && { echo "error: $data_dir already existing"; exit 1; }
 mkdir $data_dir
-
-# init an empty tmp directory, destroy it at exit
-tmpdir=$(mktemp -d /tmp/data.XXXX)
-trap "rm -rf $tmpdir" EXIT
+tmpdir=$data_dir/all
+# # init an empty tmp directory, destroy it at exit
+# tmpdir=$(mktemp -d /tmp/data.XXXX)
+# trap "rm -rf $tmpdir" EXIT
 
 # prepare 1% of buckeye in the data directory with constant seed
-abkhazia prepare buckeye > /dev/null
-abkhazia split buckeye -T 0.01 -r 0 -o $tmpdir > /dev/null
+abkhazia prepare buckeye -o $tmpdir > /dev/null
+abkhazia split $tmpdir -T 0.01 -r 0 > /dev/null
 mv $tmpdir/split/train/data/* $data_dir

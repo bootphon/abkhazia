@@ -21,7 +21,7 @@ import abkhazia.utils as utils
 
 
 class CorpusValidation(object):
-    """Checks a given speech corpus is in a valid state
+    """Check and correct a speech corpus
 
     corpus (Corpus): the abkhazia corpus to validate.
 
@@ -43,12 +43,13 @@ class CorpusValidation(object):
     specialized validate_SOMETHING() methods.
 
     """
-    def __init__(self, njobs=utils.default_njobs(),
+    def __init__(self, corpus, njobs=utils.default_njobs(),
                  log=utils.log2file.null_logger()):
+        self.corpus = corpus
         self.njobs = njobs
         self.log = log
 
-    def validate(self, corpus, meta=None):
+    def validate(self, meta=None):
         """Validate the whole corpus
 
         Log information about the corpus. Raise an IOError on the
@@ -66,22 +67,22 @@ class CorpusValidation(object):
         self.log.info('validating abkhazia corpus')
 
         if meta is None:
-            meta = self.validate_wavs(corpus)
-        self.validate_segments(corpus, meta)
+            meta = self.validate_wavs()
+        self.validate_segments(meta)
 
-        self.validate_speakers(corpus)
-        self.validate_transcription(corpus)
+        self.validate_speakers()
+        self.validate_transcription()
 
-        inventory = self.validate_phones(corpus)
-        self.validate_lexicon(corpus, inventory)
+        inventory = self.validate_phones()
+        self.validate_lexicon(inventory)
 
         self.log.info("corpus validated: ready for use with abkhazia")
         return meta
 
-    def validate_wavs(self, corpus):
+    def validate_wavs(self):
         """Corpus wavs must be mono 16KHz, 16 bit PCM"""
         self.log.debug("checking wavs")
-        wavs = corpus.wavs
+        wavs = self.corpus.wavs
 
         wrong_extensions = [
             w for w in wavs.values() if os.path.splitext(w)[1] != ".wav"]
@@ -132,10 +133,10 @@ class CorpusValidation(object):
 
         return meta
 
-    def validate_segments(self, corpus, meta):
+    def validate_segments(self, meta):
         """Checking utterances list in segments"""
         self.log.debug("checking segments")
-        segments = corpus.segments
+        segments = self.corpus.segments
         utt_ids = segments.keys()
         utt_wavs = [w[0] for w in segments.itervalues()]
         starts = [w[1] for w in segments.itervalues()]
@@ -150,7 +151,7 @@ class CorpusValidation(object):
 
         # all referenced wavs are in wav folder
         missing_wavefiles = set.difference(
-            set(utt_wavs), set(corpus.wavs.keys()))
+            set(utt_wavs), set(self.corpus.wavs.keys()))
         if missing_wavefiles:
             raise IOError(
                 "The following wavefiles are referenced "
@@ -170,7 +171,7 @@ class CorpusValidation(object):
             # timestamps) associated to each wavefile and for each
             # wavefile, check consistency of the timestamps of all
             # utterances inside it
-            warning, short_wavs = self._check_timestamps(corpus, meta)
+            warning, short_wavs = self._check_timestamps(meta)
             if warning:
                 self.log.warning(
                     "Some utterances are overlapping in time, "
@@ -181,13 +182,13 @@ class CorpusValidation(object):
                 "The following utterances are less than 15ms long and "
                 "won't be used in kaldi recipes: {}".format(short_wavs))
 
-    def validate_speakers(self, corpus):
+    def validate_speakers(self):
         """Checking speakers from corpus.utt2spk"""
         self.log.debug("checking speakers")
 
-        utt_ids_spk = corpus.utt2spk.keys()
-        speakers = corpus.utt2spk.values()
-        utt_ids = corpus.segments.keys()
+        utt_ids_spk = self.corpus.utt2spk.keys()
+        speakers = self.corpus.utt2spk.values()
+        utt_ids = self.corpus.segments.keys()
 
         # same utterance-ids in segments and utt2spk
         if utt_ids_spk != utt_ids:
@@ -230,12 +231,12 @@ class CorpusValidation(object):
                     "All utterance-ids must be prefixed by the "
                     "corresponding speaker-id")
 
-    def validate_transcription(self, corpus):
+    def validate_transcription(self):
         """Checking transcriptions"""
         self.log.debug("checking transcriptions")
 
-        utt_ids = corpus.segments.keys()
-        utt_ids_txt = corpus.text.keys()
+        utt_ids = sorted(self.corpus.segments.keys())
+        utt_ids_txt = sorted(self.corpus.text.keys())
 
         # we will check that the words are mostly in the lexicon later
         # same utterance-ids in segments and text
@@ -264,19 +265,19 @@ class CorpusValidation(object):
                 raise IOError(
                     "utterance-ids in segments and text are not consistent")
 
-    def validate_phones(self, corpus):
+    def validate_phones(self):
         """Checks phones, silences and variants, return phones inventory"""
-        phones = self._check_phones(corpus)
-        sils = self._check_silences(corpus, phones)
-        return self._check_variants(corpus, phones, sils)
+        phones = self._check_phones()
+        sils = self._check_silences(phones)
+        return self._check_variants(phones, sils)
 
-    def _check_phones(self, corpus):
+    def _check_phones(self):
         # TODO check xsampa compatibility and/or compatibility
         # with articulatory features databases of IPA or just basic
         # IPA correctness
         self.log.debug('checking phones')
-        phones = corpus.phones.keys()
-        ipas = corpus.phones.values()
+        phones = self.corpus.phones.keys()
+        ipas = self.corpus.phones.values()
 
         if u'SIL' in phones:
             raise IOError(
@@ -302,10 +303,10 @@ class CorpusValidation(object):
 
         return phones
 
-    def _check_silences(self, corpus, phones):
+    def _check_silences(self, phones):
         self.log.debug('checking phones silences')
 
-        sils = corpus.silences
+        sils = self.corpus.silences
         if len(sils) == 0:
             self.log.warning(
                 "no silence symbols, adding 'SIL' and 'SPN'")
@@ -333,10 +334,10 @@ class CorpusValidation(object):
 
             return sils
 
-    def _check_variants(self, corpus, phones, sils):
+    def _check_variants(self, phones, sils):
         self.log.debug('checking phones variants')
 
-        variants = corpus.variants
+        variants = self.corpus.variants
 
         all_symbols = [symbol for group in variants for symbol in group]
         unknown_symbols = [symbol for symbol in all_symbols
@@ -356,11 +357,11 @@ class CorpusValidation(object):
         inventory = set.union(set(phones), set(sils))
         return inventory
 
-    def validate_lexicon(self, corpus, inventory):
+    def validate_lexicon(self, inventory):
         self.log.debug("checking lexicon")
 
-        dict_words = corpus.lexicon.keys()
-        transcriptions = [t.split() for t in corpus.lexicon.values()]
+        dict_words = self.corpus.lexicon.keys()
+        transcriptions = [t.split() for t in self.corpus.lexicon.values()]
 
         # unique word entries (alternative pronunciations are not
         # currently supported)
@@ -373,11 +374,12 @@ class CorpusValidation(object):
 
         # OOV item
         if u"<unk>" not in dict_words:
-            self.log.debug("No '<unk>' word in lexicon, adding one")
-            dict_words.append(u"<unk>")
-            transcriptions.append([u"SPN"])
+            self.log.debug("adding '<unk>' word to lexicon")
+            dict_words.append("<unk>")
+            transcriptions.append(["SPN"])
+            self.corpus.lexicon['<unk>'] = 'SPN'
         else:
-            if transcriptions[dict_words.index(u"<unk>")] != [u"SPN"]:
+            if transcriptions[dict_words.index("<unk>")] != ["SPN"]:
                 raise IOError(
                     "'<unk>' word is reserved for mapping "
                     "OOV items and should always be transcribed "
@@ -385,7 +387,7 @@ class CorpusValidation(object):
         # TODO should we log a warning for all words containing silence phones?
 
         # unused words
-        used_words = [word for utt in corpus.text.itervalues()
+        used_words = [word for utt in self.corpus.text.itervalues()
                       for word in utt.split()]
         dict_words_set = set(dict_words)
         used_word_types = set(used_words)
@@ -449,11 +451,11 @@ class CorpusValidation(object):
                 'There are {} word types with homophones in the pronunciation '
                 'dictionary'.format(sum(duplicate_transcripts.values())))
 
-            self.log.debug(
-                "List of homophonic phone sequences in lexicon "
-                "with number of corresponding word types: {0}"
-                .format(self._strcounts2unicode(
-                    duplicate_transcripts.most_common())))
+            # self.log.debug(
+            #     "List of homophonic phone sequences in lexicon "
+            #     "with number of corresponding word types: {0}"
+            #     .format(self._strcounts2unicode(
+            #         duplicate_transcripts.most_common())))
 
             # Commented because it takes a lot of times for certain corpora
             # Maybe put it as an option
@@ -506,46 +508,32 @@ class CorpusValidation(object):
                 "The following phones are never found "
                 "in the transcriptions: {}".format(unused_phones))
 
-    def _check_timestamps(self, corpus, meta):
+    def _check_timestamps(self, meta):
         """Check for utterances overlap and timestamps consistency"""
         self.log.debug("checking timestamps consistency")
 
-        short_wavs = []
+        short_utts = []
         warning = False
-        for wav in corpus.wavs.iterkeys():
+        for wav, utts in self.corpus.wav2utt().iteritems():
             duration = meta[wav].duration
-            utts = [(utt,
-                     0 if sta is None else float(sta),
-                     duration if sto is None else float(sto))
-                    for utt, (w, sta, sto)
-                    in corpus.segments.iteritems()
-                    if w == wav]
 
-            # first check that start < stop and within file duration
+            # check all utterances are within wav boundaries
             for utt_id, start, stop in utts:
-                if not stop >= start:  # should it be > ?
+                if not (start >= 0 and stop >= 0 and start <= stop and
+                        start <= duration and stop <= duration):
                     raise IOError(
-                        "Stop time for utterance {0} is lower than "
-                        "start time".format(utt_id))
-                elif not 0 <= start <= duration:
-                    raise IOError(
-                        "Start time for utterance {} is not compatible "
-                        "with file duration in {}: {} -> {}"
-                        .format(utt_id, wav, start, duration))
-                elif not 0 <= stop <= duration:
-                    raise IOError(  # print(
-                        "Stop time for utterance {} is not compatible "
-                        "with file duration in {}: {} > {}"
-                        .format(utt_id, wav, stop, duration))
-                elif stop - start < .015:
-                    short_wavs.append(utt_id)
+                        "utterance {} is not whithin boudaries in wav {} "
+                        "({} not in {})"
+                        .format(utt_id, wav,
+                                '[{}, {}]'.format(start, stop),
+                                '[0, {}]'.format(duration)))
+
+                if stop - start < .015:
+                    short_utts.append(utt_id)
 
             # then check if there is overlap in time between the
             # different utterances and if there is, issue a
             # warning (not an error)
-
-            # 1. check that no two utterances start or finish at
-            # the same time
             wav_starts = [start for _, start, _ in utts]
             counts = collections.Counter(wav_starts)
             same_start = {}
@@ -572,9 +560,8 @@ class CorpusValidation(object):
                 warning = True
                 self.log.warning(
                     "The following utterances stop at the same time "
-                    "in wavefile {0}: {1}".format(wav, same_stop))
+                    "in wavefile {}: {}".format(wav, same_stop))
 
-            # 2. now it suffices to check the following:
             timestamps = list(set(wav_starts)) + list(set(wav_stops))
             timestamps.sort()
 
@@ -589,7 +576,7 @@ class CorpusValidation(object):
                     "The following utterances from file {} are "
                     "overlapping in time: {}".format(wav, overlapped))
 
-        return warning, short_wavs
+        return warning, short_utts
 
     @staticmethod
     def _strcounts2unicode(strcounts):

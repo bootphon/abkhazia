@@ -49,15 +49,16 @@ class Corpus(object):
         self.utt2spk = None
         self.variants = None
 
-    def save(self, path, copy_wavs=False):
+    def save(self, path, no_wavs=False):
         """Save the corpus to the directory `path`
 
         `path` is assumed to be a non existing directory.
 
-        If `copy_wavs` if True, force a file copy, else use symlinks.
+        If `no_wavs` if True, dont save the wavs (ie don't write wavs
+        subdir)
 
         """
-        corpus_saver.CorpusSaver.save(self, path, copy_wavs=copy_wavs)
+        corpus_saver.CorpusSaver.save(self, path, no_wavs=no_wavs)
 
     def validate(self,
                  njobs=utils.default_njobs(),
@@ -68,16 +69,36 @@ class Corpus(object):
         CorpusValidation class.
 
         """
-        corpus_validation.CorpusValidation(njobs, log).validate(self)
+        corpus_validation.CorpusValidation(
+            self, njobs=njobs, log=log).validate()
 
     def spk2utt(self):
         """Return a dict of speakers mapped to an utterances list
 
-        Built from self.utt2spk. This is a Python implementation of
-        Kaldi egs/wsj/s5/utils/utt2spk_to_spk2utt.pl.
+        Built from self.utt2spk. This method is a Python
+        implementation of the Kaldi script
+        egs/wsj/s5/utils/utt2spk_to_spk2utt.pl.
 
         """
+        # init an empty list for all speakers
         spk2utt = {spk: [] for spk in set(self.utt2spk.itervalues())}
+
+        # populate lists with utterance ids
         for utt, spk in self.utt2spk.iteritems():
             spk2utt[spk].append(utt)
         return spk2utt
+
+    def wav2utt(self):
+        """Return a dict of wav ids mapped to utterances/timestamps they contain
+
+        The values of the returned dict are tuples (utt-id, tstart,
+        tend). Built on self.segments.
+
+        """
+        # init an empty list for all wavs
+        wav2utt = {wav: [] for wav, _, _ in self.segments.itervalues()}
+
+        # populate lists with utterance ids and timestamps
+        for utt, (wav, tstart, tend) in self.segments.iteritems():
+            wav2utt[wav].append((utt, float(tstart), float(tend)))
+        return wav2utt

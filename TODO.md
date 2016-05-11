@@ -105,10 +105,6 @@
        ** You should probably figure out whether something went wrong, **
        ** or whether your data just doesn't happen to have examples of those **
        ** phones. **
- - align
-   - [X] have a --njobs option
-   - [X] replace force_align.sh.in by pure python
-   - [ ] make sure the lm is at word level
  - decode
    - options:
       evaluate(transcription, gold)

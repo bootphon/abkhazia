@@ -23,26 +23,13 @@ import abkhazia.utils as utils
 from abkhazia.core.corpus import Corpus
 from abkhazia.commands.abstract_command import AbstractCommand
 
-# import all the corpora preparators TODO simplify those imports
-from abkhazia.prepare.aic_preparator import AICPreparator
-from abkhazia.prepare.buckeye_preparator import BuckeyePreparator
-from abkhazia.prepare.childes_preparator import ChildesPreparator
-from abkhazia.prepare.csj_preparator import CSJPreparator
-from abkhazia.prepare.librispeech_preparator import LibriSpeechPreparator
-from abkhazia.prepare.xitsonga_preparator import XitsongaPreparator
-
-from abkhazia.prepare.globalphone_abstract_preparator import (
-    AbstractGlobalPhonePreparator)
-from abkhazia.prepare.globalphone_mandarin_preparator import (
-    MandarinPreparator)
-from abkhazia.prepare.globalphone_vietnamese_preparator import (
-    VietnamesePreparator)
-
-from abkhazia.prepare.wsj_preparator import (
-    WallStreetJournalPreparator,
-    JournalistReadPreparator,
-    JournalistSpontaneousPreparator,
-    MainReadPreparator)
+# import all the corpora preparators
+from abkhazia.prepare import (
+    AICPreparator, BuckeyePreparator, ChildesPreparator,
+    CSJPreparator, LibriSpeechPreparator, XitsongaPreparator,
+    AbstractGlobalPhonePreparator, MandarinPreparator, VietnamesePreparator,
+    WallStreetJournalPreparator, JournalistReadPreparator,
+    JournalistSpontaneousPreparator, MainReadPreparator)
 
 
 class AbstractFactory(object):
@@ -101,22 +88,21 @@ class AbstractFactory(object):
         group = parser.add_argument_group('directories')
 
         default_input_dir = cls.preparator.default_input_dir()
-        if default_input_dir is not None:
+        if default_input_dir is None:
+            group.add_argument(
+                'input_dir', metavar='<input-dir>',
+                help='root directory of the raw corpus distribution')
+        else:
             group.add_argument(
                 '-i', '--input-dir', metavar='<input-dir>',
                 default=default_input_dir,
                 help='root directory of the raw corpus distribution, '
-                '(default readed from configuration file is %(default)s)')
-
-        else:
-            group.add_argument(
-                'input_dir', metavar='<input-dir>',
-                help='root directory of the raw corpus distribution')
+                'default is %(default)s')
 
         group.add_argument(
             '-o', '--output-dir', metavar='<output-dir>', default=None,
-            help='output directory, the prepared corpus is created in '
-            '<output-dir>/data. If not specified use {}.'
+            help='the prepared corpus is created in '
+            '<output-dir>/data, if not specified use {}.'
             .format(cls.default_output_dir()))
 
         parser.add_argument(
@@ -131,7 +117,8 @@ class AbstractFactory(object):
             'do not convert them again.')
 
         parser.add_argument(
-            '-j', '--njobs', type=int, default=4, metavar='<njobs>',
+            '-j', '--njobs', type=int, default=utils.default_njobs(),
+            metavar='<njobs>',
             help='number of jobs to launch when doing parallel '
             'computations (mainly for wav conversion). '
             'Default is to launch %(default)s jobs.')
@@ -155,7 +142,7 @@ class AbstractFactory(object):
         return parser
 
     @classmethod
-    def get_output_dir(cls, args, prep=None):
+    def _output_dir(cls, args, prep=None):
         """Return the preparator output directory <output-dir>/data
 
         if the --force option have been specified, delete
@@ -174,42 +161,39 @@ class AbstractFactory(object):
             print 'removing {}'.format(_dir)
             shutil.rmtree(_dir)
 
-        return output_dir
+        return _dir
+
+    @classmethod
+    def _init_log(cls, args):
+        return utils.get_log(os.path.join(
+            cls._output_dir(args),
+            'data_preparation.log'), args.verbose)
 
     @classmethod
     def init_preparator(cls, args):
         """Return an initialized preparator from parsed arguments"""
-        data_dir = cls.get_output_dir(args)
-        wavs_dir = os.path.join(data_dir, 'wavs')
-        log = utils.get_log(
-            os.path.join(data_dir, 'data_preparation.log'), args.verbose)
-
-        if cls.preparator.audio_format == 'wav':
-            prep = cls.preparator(
-                args.input_dir, wavs_dir, log, args.copy_wavs)
-        else:
-            prep = cls.preparator(args.input_dir, wavs_dir, log)
-        return prep
+        return cls.preparator(args.input_dir, log=cls._init_log(args))
 
     @classmethod
     def _run_preparator(cls, args, preparator):
+        output_dir = os.path.join(
+            cls._output_dir(args) if args.output_dir is None
+            else args.output_dir, 'data')
+
         if not args.only_validation:
             # initialize corpus from raw with it's preparator
-            corpus = preparator.prepare()
+            corpus = preparator.prepare(os.path.join(output_dir, 'wavs'))
         else:
             # corpus already prepared, load it
             corpus = Corpus.load(args.corpus)
 
         if not args.no_validation:
-            # raise if the corpus is not in correct abkhazia format
+            # raise if the corpus is not in correct abkhazia
+            # format. Redirect the log to the preparator logger
             corpus.validate(args.njobs, preparator.log)
 
         # save the corpus to the output directory
-        output_dir = os.path.join(
-            cls.preparator.default_output_dir()
-            if args.output_dir is None else args.output_dir,
-            'data')
-        corpus.save(output_dir)
+        corpus.save(output_dir, no_wavs=True)
 
     @classmethod
     def run(cls, args):
@@ -232,10 +216,8 @@ class AbstractFactoryWithCMU(AbstractFactory):
 
     @classmethod
     def init_preparator(cls, args):
-        output_dir = cls.get_output_dir(args)
         return cls.preparator(
-            args.input_dir, args.cmu_dict,
-            output_dir, args.verbose, args.njobs)
+            args.input_dir, cmu_dict=args.cmu_dict, log=cls._init_log(args))
 
 
 class BuckeyeFactory(AbstractFactory):
@@ -295,13 +277,9 @@ class LibriSpeechFactory(AbstractFactoryWithCMU):
     def init_preparator(cls, args):
         selection = (None if args.selection is None
                      else cls.selection[args.selection-1])
-
-        output_dir = cls.get_output_dir(args)
-
         return cls.preparator(
-            args.input_dir, selection,
-            args.cmu_dict, args.librispeech_dict,
-            output_dir, args.verbose, args.njobs)
+            args.input_dir, log=cls._init_log(args), selection=selection,
+            cmu_dict=args.cmu_dict, librispeech_dict=args.librispeech_dict)
 
 
 class WallStreetJournalFactory(AbstractFactoryWithCMU):
@@ -342,11 +320,8 @@ class WallStreetJournalFactory(AbstractFactoryWithCMU):
         preparator = (cls.preparator if args.selection is None
                       else cls.selection[args.selection-1][1])
 
-        output_dir = cls.get_output_dir(args)
-
-        return preparator(
-            args.input_dir, args.cmu_dict,
-            output_dir, args.verbose, args.njobs)
+        wavs_dir, log = cls._init_wavdir_log(args)
+        return preparator(args.input_dir, args.cmu_dict, wavs_dir, log)
 
 
 class GlobalPhoneFactory(AbstractFactory):
@@ -381,9 +356,10 @@ class GlobalPhoneFactory(AbstractFactory):
         preps = []
         for l in args.language:
             prep = cls.preparators[l]
-            output_dir = cls.get_output_dir(args, prep)
-            preps.append(
-                prep(args.input_dir, output_dir, args.verbose, args.njobs))
+            wavs_dir, log = cls._init_wavdir_log(args)
+            p = prep(args.input_dir, wavs_dir, log)
+            p.njobs = args.njobs
+            preps.append(p)
         return preps
 
     @classmethod
@@ -396,7 +372,7 @@ class AbkhaziaPrepare(AbstractCommand):
     name = 'prepare'
     description = 'prepare a speech corpus for use with abkhazia'
 
-    supported_corpora = dict((c.preparator.name, c) for c in (
+    supported_corpora = {c.preparator.name: c for c in (
         AICFactory,
         BuckeyeFactory,
         ChildesFactory,
@@ -405,15 +381,15 @@ class AbkhaziaPrepare(AbstractCommand):
         LibriSpeechFactory,
         WallStreetJournalFactory,
         XitsongaFactory
-    ))
+    )}
 
     @classmethod
     def describe_corpora(cls):
         """Return a list of strings describing the supported corpora"""
         return ['{} - {}'.format(
             # librispeech is the longest corpus name so the desired
-            # key length is len('librispeech ') == 12
-            key + ' '*(12 - len(key)),
+            # key length is len('librispeech ') == 11
+            key + ' '*(11 - len(key)),
             value.preparator.description)
                 for key, value in sorted(cls.supported_corpora.iteritems())]
 
@@ -421,20 +397,23 @@ class AbkhaziaPrepare(AbstractCommand):
     def add_parser(cls, subparsers):
         # get basic parser init from AbstractCommand
         parser = super(AbkhaziaPrepare, cls).add_parser(subparsers)
+
+        # setup custom help formatter and description
         parser.formatter_class = argparse.RawTextHelpFormatter
         parser.description = textwrap.dedent(
             cls.description + '\n' +
             "type 'abkhazia prepare <corpus> --help' for help " +
             'on a specific corpus\n\n')
 
+        # register the subparsers belonging to each supported corpus
         subparsers = parser.add_subparsers(
             metavar='<corpus>', dest='corpus',
             help=textwrap.dedent('supported corpora are:\n' +
                                  '\n'.join(cls.describe_corpora())))
-
-        for factory in cls.supported_corpora.itervalues():
-            factory.add_parser(subparsers)
+        for corpus in cls.supported_corpora.itervalues():
+            corpus.add_parser(subparsers)
 
     @classmethod
     def run(cls, args):
+        # delegation to the run() method of the chosen corpus factory
         cls.supported_corpora[args.corpus].run(args)
