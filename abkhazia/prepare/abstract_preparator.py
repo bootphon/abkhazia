@@ -214,7 +214,7 @@ class AbstractPreparator(object):
         # finally build the corpus wavs dictionary
         return {os.path.splitext(os.path.basename(w))[0]: w
                 for w in utils.list_files_with_extension(
-                        wavs_dir, '.wav', abspath=True, realpath=True)}
+                        wavs_dir, '.wav', abspath=True, realpath=False)}
 
     ############################################
     #

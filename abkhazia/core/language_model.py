@@ -23,7 +23,6 @@ import tempfile
 import abkhazia.utils as utils
 import abkhazia.core.abstract_recipe as abstract_recipe
 from abkhazia.core.kaldi_path import kaldi_path
-from abkhazia.core.corpus_loader import CorpusLoader
 
 
 def check_language_model(lm_dir):
@@ -47,36 +46,29 @@ def read_params(lm_dir):
     return open(params, 'r').readline().strip().split(' ')
 
 
-def word2phone(lexicon, text_file, out_file):
-    """Create 'phone' version of text file
+def word2phone(corpus):
+    """Create 'phone' version of a corpus text
 
-    Transcription of text directly into phones, without any word
-    boundary marker. This is used to estimate phone-level n-gram
+    Transcription of a corpus text directly into phones, without any
+    word boundary marker. This is used to estimate phone-level n-gram
     language models for use with kaldi recipes.
 
     For OOVs: just drop the whole sentence for now.
 
     """
-    # set up dict
-    dictionary = CorpusLoader.load_lexicon(lexicon)
-
-    # transcribe
-    text = CorpusLoader.load_text(text_file)
-    with utils.open_utf8(out_file, 'w') as out:
-        for utt_id, utt in text.iteritems():
-            try:
-                transcript = [''.join(dictionary[word])
-                              for word in utt.split()]
-            except KeyError:
-                # OOV: for now we just drop the sentence silently in
-                # this case (could add a warning)
-                continue
-
-            out.write(u" ".join([utt_id] + transcript))
-            out.write(u"\n")
+    phones = dict()
+    for utt_id, utt in corpus.text.iteritems():
+        try:
+            phones[utt_id] = ' '.join(
+                [''.join(corpus.lexicon[word]) for word in utt.split()])
+        except KeyError:
+            # OOV: for now we just drop the sentence silently in
+            # this case (could add a warning)
+            pass
+    return phones
 
 
-class LanguageModel(abstract_recipe.AbstractTmpRecipe):
+class LanguageModel(abstract_recipe.AbstractRecipe):
     """Compute a language model from an abkhazia corpus
 
     This class uses Kaldi, IRSTLM and SRILM to compute n-grams
@@ -88,7 +80,8 @@ class LanguageModel(abstract_recipe.AbstractTmpRecipe):
     The following exemple compute a word level trigram without
     optional silences::
 
-        lm = LanguageModel('./path/to/some/corpus')
+        corpus = Corpus.load('/path/to/corpus')
+        lm = LanguageModel(corpus)
         lm.order = 3
         lm.level = 'word'
         lm.silence_probability = 0.0
@@ -105,8 +98,8 @@ class LanguageModel(abstract_recipe.AbstractTmpRecipe):
 
     name = 'language'
 
-    def __init__(self, corpus_dir, output_dir=None, verbose=False):
-        super(LanguageModel, self).__init__(corpus_dir, output_dir, verbose)
+    def __init__(self, corpus, output_dir, log=utils.null_logger()):
+        super(LanguageModel, self).__init__(corpus, output_dir, log=log)
 
         # setup default values for parameters from the configuration
         # file. Here we could use a different
@@ -178,12 +171,12 @@ class LanguageModel(abstract_recipe.AbstractTmpRecipe):
 
         script = (script_prepare_lm_wpdpl
                   if self.level == 'phone' and
-                  self.position_dependent_phones == 'true'
+                  utils.str2bool(self.position_dependent_phones) is True
                   else script_prepare_lm)
 
         self._run_command(
             script + ' --position-dependent-phones {0}'
-            ' --sil_prob {1} {2} "<unk>" {3} {4}'.format(
+            ' --sil-prob {1} {2} "<unk>" {3} {4}'.format(
                 self.position_dependent_phones,
                 self.silence_probability,
                 os.path.join(self.a2k._local_path()),
@@ -328,26 +321,27 @@ class LanguageModel(abstract_recipe.AbstractTmpRecipe):
         """Initialize the recipe data in `self.recipe_dir`"""
         self.check_parameters()
 
-        # setup data files common to both levels
+        # setp phones
         self.a2k.setup_phones()
         self.a2k.setup_silences()
         self.a2k.setup_variants()
 
-        desired_utts = self.a2k.desired_utterances(njobs=self.njobs)
-        text = self.a2k.setup_text(desired_utts=desired_utts)
-
-        # setup lm lexicon and input text depending on model level
+        # setup the lexicon and input text depending on word/phone
+        # ngram level
+        text = self.a2k.setup_text()
         lm_text = os.path.join(self.a2k._local_path(), 'lm_text.txt')
-        lexicon = self.a2k.setup_lexicon()
         if self.level == 'word':
             shutil.copy(text, lm_text)
+            self.a2k.setup_lexicon()
         else:  # phone level
-            word2phone(lexicon, text, lm_text)
+            with utils.open_utf8(lm_text, 'w') as out:
+                for k, v in sorted(word2phone(self.corpus).iteritems()):
+                    out.write(u'{} {}\n'.format(k, v))
             self.a2k.setup_phone_lexicon()
 
+        # setup data files common to both levels
         self.a2k.setup_kaldi_folders()
         self.a2k.setup_machine_specific_scripts()
-
         self._setup_prepare_lang_wpdpl()
 
     def run(self):
@@ -380,6 +374,3 @@ class LanguageModel(abstract_recipe.AbstractTmpRecipe):
         # write a little file with LM parameters
         with open(os.path.join(self.output_dir, 'params.txt'), 'w') as p:
             p.write('{} {}\n'.format(self.level, self.order))
-
-        # finally copy the recipe dir to output dir if asked
-        super(LanguageModel, self).export()

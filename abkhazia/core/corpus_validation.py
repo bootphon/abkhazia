@@ -44,7 +44,7 @@ class CorpusValidation(object):
 
     """
     def __init__(self, corpus, njobs=utils.default_njobs(),
-                 log=utils.log2file.null_logger()):
+                 log=utils.null_logger()):
         self.corpus = corpus
         self.njobs = njobs
         self.log = log
@@ -355,6 +355,14 @@ class CorpusValidation(object):
 
         dict_words = self.corpus.lexicon.keys()
         transcriptions = [t.split() for t in self.corpus.lexicon.values()]
+
+        # checks all words have a non empty transcription
+        empties = {k: v for k, v in self.corpus.lexicon.iteritems()
+                   if v.strip() == ''}
+        if empties:
+            raise IOError(
+                'the following words have no transcription in lexicon: {}'
+                .format(empties.keys()))
 
         # unique word entries (alternative pronunciations are not
         # currently supported)

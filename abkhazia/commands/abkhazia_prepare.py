@@ -332,6 +332,21 @@ class WallStreetJournalFactory(AbstractFactoryWithCMU):
         return parser
 
     @classmethod
+    def _output_dir(cls, args):
+        _dir = super(WallStreetJournalFactory, cls)._output_dir(args)
+        if args.output_dir is None:
+            # remove '/data' from path
+            d = os.path.dirname(_dir)
+            # append selection name to path
+            d = (d if args.selection is None
+                 else d + '-' + cls.selection[args.selection-1][0])
+            # reappend '/data'
+            return os.path.join(d, 'data')
+        else:
+            return (_dir if args.selection is None
+                    else _dir + '-' + cls._selection(args))
+
+    @classmethod
     def init_preparator(cls, args):
         # select the preparator
         preparator = (cls.preparator if args.selection is None

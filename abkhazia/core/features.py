@@ -30,9 +30,9 @@ def export_features(feat_dir, target_dir, corpus_dir, copy=False):
 
     """
     # sanity checks
-    for d in (feat_dir, target_dir, corpus_dir):
-        if not os.path.isdir(d):
-            raise IOError('{} is not a directory'.format(d))
+    for _dir in (feat_dir, target_dir, corpus_dir):
+        if not os.path.isdir(_dir):
+            raise IOError('{} is not a directory'.format(_dir))
 
     # export feats and cmvn
     for scp in ('feats.scp', 'cmvn.scp'):
@@ -50,13 +50,13 @@ def export_features(feat_dir, target_dir, corpus_dir, copy=False):
     # instead of recipe_dir
     origin = os.path.join(feat_dir, 'wav.scp')
     if not os.path.isfile(origin):
-            raise IOError('{} not found'.format(origin))
+        raise IOError('{} not found'.format(origin))
 
     prefix = os.path.join(corpus_dir, 'data', 'wavs')
-    with open(os.path.join(target_dir, 'wav.scp'), 'w') as target:
+    with open(os.path.join(target_dir, 'wav.scp'), 'w') as scp:
         for line in open(origin, 'r').readlines():
             line = line.strip().split(' ')
-            target.write('{} {}\n'.format(
+            scp.write('{} {}\n'.format(
                 line[0], os.path.join(prefix, line[1].split('/')[-1])))
 
 

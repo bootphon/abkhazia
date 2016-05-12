@@ -15,10 +15,12 @@
 """Implementation of the 'abkhazia language' command"""
 
 import argparse
+import os
 
 import abkhazia.utils as utils
 from abkhazia.commands.abstract_command import AbstractKaldiCommand
 from abkhazia.core.language_model import LanguageModel
+from abkhazia.core.corpus import Corpus
 
 
 class AbkhaziaLanguage(AbstractKaldiCommand):
@@ -76,7 +78,9 @@ class AbkhaziaLanguage(AbstractKaldiCommand):
             args.model_order = utils.config.get('language', 'model-order')
 
         # instanciate the lm recipe creator
-        recipe = LanguageModel(corpus, output_dir, args.verbose)
+        log = utils.get_log(
+            os.path.join(output_dir, 'language.log'), verbose=args.verbose)
+        recipe = LanguageModel(Corpus.load(corpus), output_dir, log=log)
         recipe.order = args.model_order
         recipe.level = args.model_level
         recipe.position_dependent_phones = args.word_position_dependent

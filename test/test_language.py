@@ -18,7 +18,9 @@ import os
 import pytest
 import tempfile
 
-from abkhazia.core.language_model import LanguageModel, word2phone
+from abkhazia.core.corpus import Corpus
+from abkhazia.core.language_model import (
+    LanguageModel, word2phone, check_language_model)
 import abkhazia.utils as utils
 
 HERE = os.path.abspath(os.path.dirname(__file__))
@@ -31,49 +33,48 @@ class TestLanguage(object):
     def setup(self):
         self.tmp_dir = tempfile.mkdtemp()
         self.output_dir = os.path.join(self.tmp_dir, 'lang')
-        self.data_dir = HERE
-        self.lm = LanguageModel(self.data_dir, self.output_dir, verbose=True)
+        self.corpus = Corpus.load(os.path.join(HERE, 'data'))
+        self.flog = os.path.join(self.output_dir, 'language.log')
+        self.lm = LanguageModel(
+            self.corpus, self.output_dir, log=utils.get_log(self.flog))
 
     def teardown(self):
         utils.remove(self.tmp_dir, safe=True)
         del self.lm
 
     def test_word2phone(self):
-        root = os.path.join(self.data_dir, 'data')
-        lexicon = os.path.join(root, 'lexicon.txt')
-        text = os.path.join(root, 'text.txt')
-        out = os.path.join(self.tmp_dir, 'w2p')
-        word2phone(lexicon, text, out)
+        phones = word2phone(self.corpus)
 
-        assert len(utils.open_utf8(text, 'r').readlines()) == \
-            len(utils.open_utf8(out, 'r').readlines())
+        assert sorted(phones.keys()) == sorted(self.corpus.utts())
+        assert len(phones) == len(self.corpus.text)
 
-    def test_recipe(self):
-        lm = self.lm
-        lm.level = 'phone'
-        lm.order = 1
-        lm.delete_recipe = False
-        lm.create()
-        lm.run()
-        lm.export()
+    # def test_recipe(self):
+    #     lm = self.lm
+    #     lm.level = 'phone'
+    #     lm.order = 1
+    #     lm.delete_recipe = False
+    #     lm.create()
+    #     lm.run()
+    #     lm.export()
 
-        recipe = os.path.join(self.output_dir, 'recipe')
-        assert os.path.isdir(recipe)
-        for f in ('steps', 'utils'):
-            assert os.path.islink(os.path.join(recipe, f))
-            assert os.path.isdir(os.path.join(recipe, f))
+    #     recipe = os.path.join(self.output_dir, 'recipe')
+    #     assert os.path.isdir(recipe)
+    #     for f in ('steps', 'utils'):
+    #         assert os.path.islink(os.path.join(recipe, f))
+    #         assert os.path.isdir(os.path.join(recipe, f))
 
-    def test_no_recipe(self):
-        lm = self.lm
-        lm.level = 'phone'
-        lm.order = 1
-        lm.delete_recipe = True
-        lm.create()
-        lm.run()
-        lm.export()
+    # def test_no_recipe(self):
+    #     lm = self.lm
+    #     lm.level = 'phone'
+    #     lm.order = 1
+    #     lm.delete_recipe = True
+    #     lm.create()
+    #     lm.run()
+    #     lm.export()
+    #     del lm
 
-        recipe = os.path.join(self.output_dir, 'recipe')
-        assert not os.path.isdir(recipe)
+    #     recipe = os.path.join(self.output_dir, 'recipe')
+    #     assert not os.path.exists(recipe)
 
     @pytest.mark.parametrize("level, order", params)
     def test_lm(self, level, order):
@@ -83,11 +84,13 @@ class TestLanguage(object):
         lm.create()
         lm.run()
         lm.export()
+        check_language_model(self.output_dir)
 
-    #     # log = os.path.join(output_dir, 'language.log')
-    #     # error_lines = []
-    #     # for line in open(log, 'r').readlines():
-    #     #     if 'ERROR' in line:
-    #     #         error_lines.append(line)
-    #     #     print error_lines
-    #     # assert len(error_lines) == 0
+        # assert os.path.isfile(self.flog)
+
+        # error_lines = []
+        # for line in open(self.flog, 'r').readlines():
+        #     if 'ERROR' in line:
+        #         error_lines.append(line)
+        #     print error_lines
+        # assert len(error_lines) == 0

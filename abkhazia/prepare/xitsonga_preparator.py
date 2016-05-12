@@ -124,9 +124,9 @@ class XitsongaPreparator(AbstractPreparator):
 
     def list_audio_files(self):
         # get the list of wav files in corpus, relative to input_dir
-        inputs = [os.path.join('audio', wav) for wav in
-                  utils.list_files_with_extension(
-                      os.path.join(self.input_dir, 'audio'), '.wav')]
+        inputs = utils.list_files_with_extension(
+            os.path.join(self.input_dir, 'audio'), '.wav',
+            abspath=True, realpath=True)
 
         self._wavs = [os.path.basename(wav).replace('nchlt_tso_', '')
                       for wav in inputs]
@@ -153,12 +153,8 @@ class XitsongaPreparator(AbstractPreparator):
     def make_transcription(self):
         # get all the utt ID to make sure that the trs match with the
         # wav files
-        list_utt = []
-        with open(self.segments_file, 'r') as segments:
-            for line in segments:
-                m_segment = re.match('(.*) (.*)', line)
-                if m_segment:
-                    list_utt.append(m_segment.group(1))
+        list_utt = [os.path.splitext(os.path.basename(wav))[0]
+                    for wav in self._wavs]
 
         list_total = []
         trs_dir = os.path.join(self.input_dir, 'transcriptions')
@@ -179,15 +175,15 @@ class XitsongaPreparator(AbstractPreparator):
                 "(.*)<recording audio=(.*).wav(.*)<orth>(.*)</orth>", i)
             if m_text:
                 utt_id = m_text.group(2)
-                text = m_text.group(4)
+                utt_text = m_text.group(4)
                 # remove beginning of wav path to have utt_id
                 utt_id = re.sub("(.*)nchlt_tso_", "", utt_id)
                 # replace [s] by <NOISE>
-                text = text.replace("[s]", "<NOISE>")
+                utt_text = utt_text.replace("[s]", "<NOISE>")
                 # check that the text has the equivalent wav and write
                 # to outfile
                 if utt_id in list_utt:
-                    dict[utt_id] = text
+                    text[utt_id] = utt_text
                 else:
                     raise IOError('bad utterance: {}'.format(utt_id))
         return text

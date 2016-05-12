@@ -23,16 +23,31 @@ corpus_dir = os.path.join(HERE, 'data')
 
 def test_corpus(tmpdir):
     c = Corpus.load(corpus_dir)
-    c.validate()
+    assert c.is_valid()
 
     corpus_saved = os.path.join(str(tmpdir), 'corpus')
     c.save(corpus_saved)
 
     d = Corpus.load(corpus_saved)
+    assert d.is_valid()
     assert c.lexicon == d.lexicon
     assert c.wavs == d.wavs
     assert c.segments == d.segments
     assert c.phones == d.phones
+
+
+def test_empty():
+    c = Corpus()
+    assert not c.is_valid()
+    assert c.spk2utt() == {}
+    assert len(c.utts()) == 0
+
+
+def test_subcorpus():
+    c = Corpus.load(corpus_dir)
+    d = c.subcorpus(c.utts()[:10])
+    assert len(d.utts()) == 10
+    assert d.is_valid()
 
 
 def test_spk2utt():

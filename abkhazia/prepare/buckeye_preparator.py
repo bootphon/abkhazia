@@ -217,6 +217,7 @@ class BuckeyePreparator(AbstractPreparator):
 
     def make_lexicon(self):
         dict_word = dict()
+        no_trs = set()
         for utts in self._list_files('.words_fold'):
             for line in open(utts, 'r').readlines():
                 format_match = re.match(
@@ -230,5 +231,12 @@ class BuckeyePreparator(AbstractPreparator):
                     if word_format_match:
                         word = word_format_match.group(1)
                         phn_trs = word_format_match.group(3)
-                        dict_word[word] = phn_trs
+                        if phn_trs == '':
+                            no_trs.add(word)
+                        else:
+                            dict_word[word] = phn_trs
+        if no_trs:
+            self.log.debug(
+                'following words have no transcription in lexicon: {}'
+                .format(no_trs))
         return dict_word

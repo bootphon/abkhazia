@@ -129,7 +129,7 @@ class AbstractCoreCommand(AbstractCommand):
     @staticmethod
     def _parse_corpus_dir(corpus):
         """Parse the corpus input directory as specified in help message"""
-        if not corpus.startswith(('/', './', '../', '~/')):
+        if not corpus.startswith(('/', '.', '../', '~/')):
             # try to find the corpus in abkhazia data directory
             _corpus = os.path.join(
                 utils.config.get('abkhazia', 'data-directory'), corpus)
@@ -156,7 +156,7 @@ class AbstractCoreCommand(AbstractCommand):
         """Return (corpus_dir, output_dir) parsed form `args`"""
         i = cls._parse_corpus_dir(args.corpus)
         o = cls._parse_output_dir(args.output_dir, i, args.force)
-        return i, o
+        return os.path.join(i, 'data'), o
 
 
 class AbstractKaldiCommand(AbstractCoreCommand):

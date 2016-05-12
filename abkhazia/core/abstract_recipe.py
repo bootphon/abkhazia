@@ -16,8 +16,6 @@
 
 import multiprocessing
 import os
-import shutil
-import tempfile
 
 import abkhazia.utils as utils
 import abkhazia.core.abkhazia2kaldi as abkhazia2kaldi
@@ -25,37 +23,42 @@ from abkhazia.core.kaldi_path import kaldi_path
 
 
 class AbstractRecipe(object):
-    """A base class for creating kaldi recipes from an abkhazia corpus"""
+    """A base class for kaldi recipes operating on an abkhazia corpus
+
+    If you want the recipe directory in output_dir/recipe, set
+    self.delete_recipe to False (default is True)
+
+    """
     name = NotImplemented
     """The recipe's name"""
 
-    def __init__(self, corpus_dir, recipe_dir=None,
-                 verbose=False, log_file=None):
-        self.verbose = verbose
+    def __init__(self, corpus, output_dir, log=utils.null_logger()):
+        self.log = log
+        self.njobs = utils.default_njobs()
+        self.corpus = corpus
 
-        # check corpus_dir
-        if not os.path.isdir(corpus_dir):
-            raise IOError("directory doesn't exist: {}".format(corpus_dir))
-        self.corpus_dir = corpus_dir
+        if not os.path.isdir(output_dir):
+            os.makedirs(output_dir)
+        self.output_dir = os.path.abspath(output_dir)
 
-        # init the recipe dir
-        self.recipe_dir = self.corpus_dir if recipe_dir is None else recipe_dir
+        # init the recipe dir  as a subdirectory of output_dir
+        self.recipe_dir = os.path.join(self.output_dir, 'recipe')
         if not os.path.isdir(self.recipe_dir):
             os.makedirs(self.recipe_dir)
 
-        # init the log
-        if log_file is None:
-            log_file = os.path.join(self.output_dir, self.name + '.log')
-        self.log = utils.log2file.get_log(log_file, verbose)
-        self.log.debug('reading corpus from %s', self.corpus_dir)
-
-        # init njobs
-        self.njobs = utils.default_njobs()
+        # if True, delete the recipe_dir on instance destruction
+        self.delete_recipe = True
 
         # init the abkhazia2kaldi converter
         self.a2k = abkhazia2kaldi.Abkhazia2Kaldi(
-            corpus_dir, self.recipe_dir,
-            name=self.name, verbose=verbose, log=self.log)
+            self.corpus, self.recipe_dir, name=self.name, log=self.log)
+
+    def __del__(self):
+        try:
+            if self.delete_recipe:
+                utils.remove(self.recipe_dir, safe=True)
+        except AttributeError:  # if raised from __init__
+            pass
 
     def _run_command(self, command, verbose=True):
         """Run the command as a subprocess, wrapper on utils.jobs"""
@@ -97,11 +100,10 @@ class AbstractRecipe(object):
         self.a2k.setup_variants()
 
         # setup data files
-        desired_utts = self.a2k.desired_utterances(njobs=self.njobs)
-        self.a2k.setup_text(desired_utts=desired_utts)
-        self.a2k.setup_utt2spk(desired_utts=desired_utts)
-        self.a2k.setup_segments(desired_utts=desired_utts)
-        self.a2k.setup_wav(desired_utts=desired_utts)
+        self.a2k.setup_text()
+        self.a2k.setup_utt2spk()
+        self.a2k.setup_segments()
+        self.a2k.setup_wav()
 
         # setup other files and folders
         self.a2k.setup_wav_folder()
@@ -124,52 +126,8 @@ class AbstractRecipe(object):
         classes.
 
         """
-        raise NotImplementedError
+        pass
 
 
 class AbstractTmpRecipe(AbstractRecipe):
-    """Write the recipe in a temprary directory
-
-    Provide an output_dir attribute where to put results files. The
-    recipe directory is deleted on instance destruction. Depending if
-    we run jobs locally or queued, the temp dir is created in /tmp or
-    in output_dir respectively.
-
-    If you want the recipe directory in output_dir/recipe, set
-    self.delete_recipe to False (default is True)
-
-    """
-    def __init__(self, corpus_dir, output_dir, verbose=False):
-        # if True, delete the recipe_dir on instance destruction
-        self.delete_recipe = True
-
-        # setup an empty output dir
-        if os.path.isdir(output_dir):
-            raise OSError(
-                'output directory already existing: {}'
-                .format(output_dir))
-        else:
-            os.makedirs(output_dir)
-        self.output_dir = os.path.abspath(output_dir)
-
-        # setup recipe_dir as a temp dir
-        cmd = utils.config.get('kaldi', 'train-cmd')
-        recipe_dir = tempfile.mkdtemp(
-            dir=self.output_dir if 'queue' in cmd else None)
-
-        super(AbstractTmpRecipe, self).__init__(
-            corpus_dir, recipe_dir, verbose=verbose)
-
-    def export(self):
-        if not self.delete_recipe:
-            target = os.path.join(self.output_dir, 'recipe')
-            self.log.info('copying recipe to %s', target)
-            shutil.move(self.recipe_dir, target)
-
-    def __del__(self):
-        try:
-            self.log.debug(
-                'removing recipe directory {}'.format(self.recipe_dir))
-            utils.remove(self.recipe_dir, safe=True)
-        except AttributeError:  # if raised from __init__
-            pass
+    pass
