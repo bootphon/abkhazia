@@ -48,34 +48,6 @@ class TestLanguage(object):
         assert sorted(phones.keys()) == sorted(self.corpus.utts())
         assert len(phones) == len(self.corpus.text)
 
-    # def test_recipe(self):
-    #     lm = self.lm
-    #     lm.level = 'phone'
-    #     lm.order = 1
-    #     lm.delete_recipe = False
-    #     lm.create()
-    #     lm.run()
-    #     lm.export()
-
-    #     recipe = os.path.join(self.output_dir, 'recipe')
-    #     assert os.path.isdir(recipe)
-    #     for f in ('steps', 'utils'):
-    #         assert os.path.islink(os.path.join(recipe, f))
-    #         assert os.path.isdir(os.path.join(recipe, f))
-
-    # def test_no_recipe(self):
-    #     lm = self.lm
-    #     lm.level = 'phone'
-    #     lm.order = 1
-    #     lm.delete_recipe = True
-    #     lm.create()
-    #     lm.run()
-    #     lm.export()
-    #     del lm
-
-    #     recipe = os.path.join(self.output_dir, 'recipe')
-    #     assert not os.path.exists(recipe)
-
     @pytest.mark.parametrize("level, order", params)
     def test_lm(self, level, order):
         lm = self.lm
@@ -86,11 +58,10 @@ class TestLanguage(object):
         lm.export()
         check_language_model(self.output_dir)
 
-        # assert os.path.isfile(self.flog)
-
-        # error_lines = []
-        # for line in open(self.flog, 'r').readlines():
-        #     if 'ERROR' in line:
-        #         error_lines.append(line)
-        #     print error_lines
-        # assert len(error_lines) == 0
+        assert os.path.isfile(self.flog)
+        error_lines = []
+        for line in open(self.flog, 'r').readlines():
+            if 'error' in line.lower():
+                error_lines.append(line)
+            print error_lines
+        assert len(error_lines) == 0
