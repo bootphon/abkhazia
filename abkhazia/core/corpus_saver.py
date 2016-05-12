@@ -56,9 +56,6 @@ class CorpusSaver(object):
         symlinks
 
         """
-        # clean the wav subdirectory before rewriting it
-        if os.path.exists(path):
-            utils.remove(path)
         os.makedirs(path)
 
         func = shutil.copy if copy_wavs is True else os.symlink
@@ -69,7 +66,7 @@ class CorpusSaver(object):
     def save_lexicon(corpus, path):
         with utils.open_utf8(path, 'w') as out:
             for k, v in sorted(corpus.lexicon.iteritems()):
-                out.write('{} {}\n'.format(k, v))
+                out.write(u'{} {}\n'.format(k, v))
 
     @staticmethod
     def save_segments(corpus, path):
@@ -77,14 +74,14 @@ class CorpusSaver(object):
             for k, v in sorted(corpus.segments.iteritems()):
                 # different case with/without timestamps
                 v = (v[0] if v[1] is None and v[2] is None
-                     else '{} {} {}'.format(v[0], v[1], v[2]))
-                out.write('{} {}\n'.format(k, v))
+                     else u'{} {} {}'.format(v[0], v[1], v[2]))
+                out.write(u'{} {}\n'.format(k, v))
 
     @staticmethod
     def save_text(corpus, path):
         with utils.open_utf8(path, 'w') as out:
             for k, v in sorted(corpus.text.iteritems()):
-                out.write('{} {}\n'.format(k, v))
+                out.write(u'{} {}\n'.format(k, v))
 
     @staticmethod
     def save_phones(corpus, path):
@@ -95,17 +92,17 @@ class CorpusSaver(object):
     @staticmethod
     def save_silences(corpus, path):
         with utils.open_utf8(path, 'w') as out:
-            for s in corpus.silences:
-                out.write('{}\n'.format(s))
+            for s in sorted(corpus.silences):
+                out.write(u'{}\n'.format(s))
 
     @staticmethod
     def save_utt2spk(corpus, path):
         with utils.open_utf8(path, 'w') as out:
             for utt, spk in sorted(corpus.utt2spk.iteritems()):
-                out.write('{} {}\n'.format(utt, spk))
+                out.write(u'{} {}\n'.format(utt, spk))
 
     @staticmethod
     def save_variants(corpus, path):
         with utils.open_utf8(path, 'w') as out:
-            for v in corpus.variants:
-                out.write('{}\n'.format(v))
+            for v in sorted(corpus.variants):
+                out.write(u'{}\n'.format(v))

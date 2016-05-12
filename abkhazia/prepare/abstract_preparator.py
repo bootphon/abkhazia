@@ -77,7 +77,7 @@ class AbstractPreparator(object):
             return None
 
     def __init__(self, input_dir, log=utils.log2file.null_logger()):
-        self.njobs = utils.default_njobs()
+        self.njobs = utils.default_njobs(local=True)
         self.log = log
 
         # init input directory
@@ -96,8 +96,8 @@ class AbstractPreparator(object):
         ensure consistency with the abkhazia format.
 
         """
-        self.log.debug('converting {} to abkhazia'.format(self.name))
-        self.log.debug('reading from {}'.format(self.input_dir))
+        self.log.info('converting %s to abkhazia', self.name)
+        self.log.debug('reading from %s', self.input_dir)
 
         c = self.corpus
         c.wavs = self.make_wavs(wavs_dir)
@@ -129,7 +129,7 @@ class AbstractPreparator(object):
 
     def _prepare_wavs_dir(self, wavs_dir, inputs, outputs):
         """Detect outputs already present and delete any undesired file"""
-        self.log.debug('scanning {}...'.format(wavs_dir))
+        self.log.debug('scanning %s', wavs_dir)
 
         target = dict((o, i) for i, o in zip(inputs, outputs))
         found = 0
@@ -147,8 +147,8 @@ class AbstractPreparator(object):
                 utils.remove(path)
                 deleted += 1
 
-        self.log.debug('found {} files, deleted {} undesired files'
-                       .format(found, deleted))
+        self.log.debug(
+            'found %s files, deleted %s undesired files', found, deleted)
 
         # return the updated inputs and outputs
         return target.values(), target.keys()
@@ -179,11 +179,11 @@ class AbstractPreparator(object):
                 i, o = f
             except ValueError:  # not renamed
                 i = f
-                o = os.path.basename(f)
+                o = os.path.splitext(os.path.basename(f))[0] + '.wav'
             inputs.append(i)
             outputs.append(o)
 
-        self.log.info('preparing {} wav files'.format(len(inputs)))
+        self.log.info('preparing %s wav files', len(inputs))
 
         if os.path.isdir(wavs_dir):
             # the wavs directory already exists, clean it and prepare
@@ -204,8 +204,8 @@ class AbstractPreparator(object):
             # If original files are not wav, convert them. Else link or
             # copy wav files in function of self.copy_wavs. The wavs that
             # are not at 16 kHz are resampled.
-            self.log.debug('converting {} {} files to 16kHz mono wav...'
-                           .format(len(inputs), self.audio_format))
+            self.log.debug('converting %s %s files to 16kHz mono wav...',
+                           len(inputs), self.audio_format)
             utils.wav.convert(
                 inputs, outputs, self.audio_format,
                 self.njobs, verbose=5, copy=self.copy_wavs)
@@ -332,8 +332,7 @@ class AbstractPreparatorWithCMU(AbstractPreparator):
         pkg_resources.Requirement.parse('abkhazia'),
         'abkhazia/share/cmudict.0.7a')
 
-    def __init__(self, input_dir, cmu_dict=None,
-                 log=utils.null_logger()):
+    def __init__(self, input_dir, cmu_dict=None, log=utils.null_logger()):
         super(AbstractPreparatorWithCMU, self).__init__(input_dir, log)
 
         # init path to CMU dictionary
@@ -345,4 +344,4 @@ class AbstractPreparatorWithCMU(AbstractPreparator):
                 .format(cmu_dict))
 
         self.cmu_dict = cmu_dict
-        self.log.debug('CMU dictionary is {}'.format(self.cmu_dict))
+        self.log.debug('CMU dictionary is %s', self.cmu_dict)

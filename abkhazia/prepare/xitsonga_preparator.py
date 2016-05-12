@@ -35,9 +35,11 @@
 
 import os
 import re
+import tempfile
 
-from abkhazia.utils import list_files_with_extension
+import abkhazia.utils as utils
 from abkhazia.prepare import AbstractPreparator
+
 
 class XitsongaPreparator(AbstractPreparator):
     """Convert the Xitsonga corpus to the abkhazia format"""
@@ -115,48 +117,40 @@ class XitsongaPreparator(AbstractPreparator):
 
     variants = []  # could use lexical stress variants...
 
-    def __init__(self, input_dir, output_dir=None,
-                 verbose=False, njobs=1, copy_wavs=False):
-        # call the AbstractPreparator __init__
-        super(XitsongaPreparator, self).__init__(
-            input_dir, output_dir, verbose, njobs)
-
+    def __init__(self, input_dir, log=utils.null_logger(), copy_wavs=False):
+        super(XitsongaPreparator, self).__init__(input_dir, log)
         self.copy_wavs = copy_wavs
+        self._wavs = None
 
     def list_audio_files(self):
         # get the list of wav files in corpus, relative to input_dir
         inputs = [os.path.join('audio', wav) for wav in
-                  list_files_with_extension(
+                  utils.list_files_with_extension(
                       os.path.join(self.input_dir, 'audio'), '.wav')]
 
-        outputs = [os.path.basename(wav).replace('nchlt_tso_', '')
-                   for wav in inputs]
+        self._wavs = [os.path.basename(wav).replace('nchlt_tso_', '')
+                      for wav in inputs]
 
-        return inputs, outputs
+        return zip(inputs, self._wavs)
 
     def make_segment(self):
-        outfile = open(self.segments_file, "w")
-        for wav_file in list_files_with_extension(self.wavs_dir, '.wav'):
-            bname = os.path.basename(wav_file)
-            utt_id = bname.replace('.wav', '')
-            outfile.write(utt_id + ' ' + bname + '\n')
-        self.log.debug('finished creating segments file')
+        segments = dict()
+        for wav in self._wavs:
+            utt_id = os.path.splitext(os.path.basename(wav))[0]
+            segments[utt_id] = (utt_id, None, None)
+        return segments
 
     def make_speaker(self):
-        outfile = open(self.speaker_file, "w")
-        for wav_file in list_files_with_extension(self.wavs_dir, '.wav'):
-            bname = os.path.basename(wav_file)
-            utt_id = bname.replace('.wav', '')
+        utt2spk = dict()
+        for wav in self._wavs:
+            utt_id = os.path.splitext(os.path.basename(wav))[0]
             # extract the first 3 characters from filename to get speaker_ID
-            m_speaker = re.match("(.*)_(.*)", bname)
+            m_speaker = re.match("(.*)_(.*)", utt_id)
             if m_speaker:
-                speaker_id = m_speaker.group(1)
-                outfile.write(utt_id + ' ' + speaker_id + '\n')
-        self.log.debug('finished creating utt2spk file')
+                utt2spk[utt_id] = m_speaker.group(1)
+        return utt2spk
 
     def make_transcription(self):
-        outfile = open(self.transcription_file, "w")
-
         # get all the utt ID to make sure that the trs match with the
         # wav files
         list_utt = []
@@ -168,7 +162,7 @@ class XitsongaPreparator(AbstractPreparator):
 
         list_total = []
         trs_dir = os.path.join(self.input_dir, 'transcriptions')
-        for utts in list_files_with_extension(trs_dir, '.xml'):
+        for utts in utils.list_files_with_extension(trs_dir, '.xml'):
             with open(utts) as infile:
                 # store each file as one string and split by tag
                 data = ' '.join([line.replace('\n', '')
@@ -176,10 +170,10 @@ class XitsongaPreparator(AbstractPreparator):
 
                 # append the list to the main list
                 list_total.extend(data.split('</recording>'))
-        self.log.debug("finished extracting the recording tags")
 
         # Go through each recording and extract the text and utt_id
         # according to pattern
+        text = dict()
         for i in list_total:
             m_text = re.match(
                 "(.*)<recording audio=(.*).wav(.*)<orth>(.*)</orth>", i)
@@ -193,15 +187,13 @@ class XitsongaPreparator(AbstractPreparator):
                 # check that the text has the equivalent wav and write
                 # to outfile
                 if utt_id in list_utt:
-                    outfile.write(utt_id + ' ' + text + '\n')
+                    dict[utt_id] = text
                 else:
                     raise IOError('bad utterance: {}'.format(utt_id))
-        self.log.debug('finished creating text file')
-
+        return text
 
     # To do this, we need to get the mlfs for the language. Not sure
     # it is available on the NCHLT website.
- 
     def make_lexicon(self):
         list_total = []
         list_file = []
@@ -210,65 +202,65 @@ class XitsongaPreparator(AbstractPreparator):
         list_phn = []
         dict_word = {}
         os.path.join(self.input_dir, 'audio')
-        out_temp = open(os.path.join(self.output_dir, 'temp.txt'), "w")
-        out_lex = open(self.lexicon_file, "w")
-        #out_temp = open (outfile_temp, "w")
-        for mlfs in list_files_with_extension(
-            os.path.join(self.input_dir, 'mlfs_tso'),r'nchlt\.mlf'):
-            with open (mlfs) as infile_mlf:
-                #join all lines together into one string but still keeping new line character
-                data = '\n'.join([line.replace('\n', '') for line in infile_mlf.readlines()])
-                #split into a list of files ("." is the separator)
+        _, tempf = tempfile.mkstemp()
+        out_temp = open(tempf, "w")
+
+        for mlfs in utils.list_files_with_extension(
+                os.path.join(self.input_dir, 'mlfs_tso'), r'nchlt\.mlf'):
+            with open(mlfs) as infile_mlf:
+                # join all lines together into one string but still
+                # keeping new line character
+                data = '\n'.join([line.replace('\n', '')
+                                  for line in infile_mlf.readlines()])
+                # split into a list of files ("." is the separator)
                 list_file = re.split('\.\n', data)
-                #increment the total list which will be a list containing all small files
+                # increment the total list which will be a list
+                # containing all small files
                 list_total.extend(list_file)
-            infile_mlf.close()
-        #Go through each small file      
+
+        # go through each small file
         for i in list_total:
-            #split into a list of words (separator is "[0-9]+ [0-9]+ sp (.*)")
+            # split into a list of words (separator is "[0-9]+ [0-9]+ sp (.*)")
             list_word = re.split('[0-9]+ [0-9]+ sp (.*)', i)
             for w in list_word:
                 w = w.strip()
-                #split into lines
+                # split into lines
                 list_line = w.split('\n')
                 for l in list_line:
-                    #split each line into tokens
+                    # split each line into tokens
                     list_phn = l.split()
-                    #if the line contains the word, extract word + phone
+                    # if the line contains the word, extract word + phone
                     if (len(list_phn) == 5):
-                        #exclude the silence word
+                        # exclude the silence word
                         if (list_phn[4] == 'SIL-ENCE'):
                             continue
-                        #otherwise, extract just phone corresponding to word already extracted
+                        # otherwise, extract just phone corresponding
+                        # to word already extracted
                         else:
                             out_temp.write(list_phn[4] + '\t' + list_phn[2])
                     elif (len(list_phn) == 4):
                         out_temp.write(' ' + list_phn[2])
                 out_temp.write('\n')
         out_temp.close()
-        self.log.debug ('finished writing temp file')
-            
-        #open temp dictionary
-        in_temp = open(os.path.join(self.output_dir, 'temp.txt'), "r")
-        #add these 2 entries in the dict
-        out_lex.write ('<noise> NSN\n')
-        out_lex.write ('<unk> SPN\n')
+
+        # open temp dictionary
+        in_temp = open(tempf, "r")
+        # add these 2 entries in the dict
         for line in in_temp:
             line = line.strip()
             m_file = re.match("(.*)\t(.*)", line)
             if m_file:
                 word = m_file.group(1)
                 phn = m_file.group(2)
-                #if word not in the lexicon, add entry
+                # if word not in the lexicon, add entry
                 if word not in dict_word:
                     if (word == "[s]"):
                         continue
                     else:
                         dict_word[word] = phn
-        #write lexicon to file, sorted by alphabetical order
-        for w in sorted(dict_word):
-                out_lex.write (w + ' ' + dict_word[w] + '\n')
         in_temp.close()
-        self.log.debug('finished creating lexicon file')
-        #remove temp file
-        os.remove(os.path.join(self.output_dir, 'temp.txt'))
+        os.remove(tempf)
+
+        dict_word['<noise>'] = 'NSN'
+        dict_word['<unk>'] = 'SPN'
+        return dict_word

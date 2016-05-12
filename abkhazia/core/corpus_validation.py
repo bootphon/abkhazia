@@ -304,39 +304,33 @@ class CorpusValidation(object):
         return phones
 
     def _check_silences(self, phones):
-        self.log.debug('checking phones silences')
-
+        self.log.debug('checking silences')
         sils = self.corpus.silences
-        if len(sils) == 0:
-            self.log.warning(
-                "no silence symbols, adding 'SIL' and 'SPN'")
-            sils += ['SIL', 'SPN']
-        else:
-            duplicates = utils.duplicates(sils)
-            if duplicates:
-                raise IOError(
-                    "following symbols are used several times in silences: {}"
-                    .format(duplicates))
 
-            if u"SIL" not in sils:
-                self.log.debug("adding missing 'SIL' symbol to silences")
-                sils.append('SIL')
+        duplicates = utils.duplicates(sils)
+        if duplicates:
+            raise IOError(
+                "following symbols are used several times in silences: {}"
+                .format(duplicates))
 
-            if u"SPN" not in sils:
-                self.log.debug("adding missing 'SPN' symbol to silences")
-                sils.append('SPN')
+        if u"SIL" not in sils:
+            self.log.debug("adding missing 'SIL' symbol to silences")
+            sils.append('SIL')
 
-            inter = set.intersection(set(sils), set(phones))
-            if inter:
-                raise IOError(
-                    "The following symbols are used in both phones "
-                    "and silences: {}".format(inter))
+        if u"SPN" not in sils:
+            self.log.debug("adding missing 'SPN' symbol to silences")
+            sils.append('SPN')
 
-            return sils
+        inter = set.intersection(set(sils), set(phones))
+        if inter:
+            raise IOError(
+                "The following symbols are used in both phones "
+                "and silences: {}".format(inter))
+
+        return sils
 
     def _check_variants(self, phones, sils):
-        self.log.debug('checking phones variants')
-
+        self.log.debug('checking variants')
         variants = self.corpus.variants
 
         all_symbols = [symbol for group in variants for symbol in group]
@@ -354,8 +348,7 @@ class CorpusValidation(object):
                     "The following symbols are used several times "
                     "in variants: {}".format(duplicates))
 
-        inventory = set.union(set(phones), set(sils))
-        return inventory
+        return set.union(set(phones), set(sils))
 
     def validate_lexicon(self, inventory):
         self.log.debug("checking lexicon")
@@ -498,7 +491,7 @@ class CorpusValidation(object):
 
         if ooi_phones:
             raise IOError(
-                u"Phonetic dictionary uses out-of-inventory phones: {0}"
+                u"phonetic dictionary uses out-of-inventory phones: {0}"
                 .format(ooi_phones))
 
         # warning for unused phones
@@ -519,6 +512,10 @@ class CorpusValidation(object):
 
             # check all utterances are within wav boundaries
             for utt_id, start, stop in utts:
+                if start == stop:
+                    raise IOError(
+                        'utterance {} have a duration of 0'.format(utt_id))
+
                 if not (start >= 0 and stop >= 0 and start <= stop and
                         start <= duration and stop <= duration):
                     raise IOError(
@@ -554,27 +551,28 @@ class CorpusValidation(object):
                 warning = True
                 self.log.warning(
                     "The following utterances start at the same time "
-                    "in wavefile {}: {}".format(wav, same_start))
+                    "in wavefile {}: {}".format(wav, sorted(same_start)))
 
             if same_stop:
                 warning = True
                 self.log.warning(
                     "The following utterances stop at the same time "
-                    "in wavefile {}: {}".format(wav, same_stop))
+                    "in wavefile {}: {}".format(wav, sorted(same_stop)))
 
-            timestamps = list(set(wav_starts)) + list(set(wav_stops))
-            timestamps.sort()
-
-            overlapped = [
-                (utt, timestamps.index(stop) - timestamps.index(start))
-                for utt, start, stop in utts
-                if timestamps.index(stop) - timestamps.index(start) > 2]
-
-            if overlapped:
-                warning = True
-                self.log.warning(
-                    "The following utterances from file {} are "
-                    "overlapping in time: {}".format(wav, overlapped))
+            # TODO overlap checking is buggy
+            # timestamps = list(set(wav_starts)) + list(set(wav_stops))
+            # timestamps.sort()
+            #
+            # overlapped = [
+            #     (utt, timestamps.index(stop) - timestamps.index(start))
+            #     for utt, start, stop in utts
+            #     if timestamps.index(stop) - timestamps.index(start) > 2]
+            #
+            # if overlapped:
+            #     warning = True
+            #     self.log.warning(
+            #         "The following utterances from file {} are "
+            #         "overlapping in time: {}".format(wav, overlapped))
 
         return warning, short_utts
 

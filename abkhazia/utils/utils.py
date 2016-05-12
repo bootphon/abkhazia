@@ -20,11 +20,10 @@ import multiprocessing
 import os
 import re
 import shutil
-
 import config  # this is abkhazia.utils.config
 
 
-def default_njobs(nj_queue=20):
+def default_njobs(nj_queue=20, local=False):
     """Return `nj_queue` if running on a queue, ncores if running locally
 
     Default for `nj_queue` is 20, the standard number of jobs for
@@ -32,7 +31,8 @@ def default_njobs(nj_queue=20):
 
     """
     cmd = config.config.get('kaldi', 'train-cmd')
-    return nj_queue if 'queue' in cmd else multiprocessing.cpu_count()
+    return (nj_queue if not local and 'queue' in cmd
+            else multiprocessing.cpu_count())
 
 
 def str2bool(s, safe=False):

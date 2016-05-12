@@ -16,9 +16,8 @@
 
 import os
 import re
-import shutil
 
-from abkhazia.utils import list_directory, open_utf8, list_files_with_extension
+import abkhazia.utils as utils
 from abkhazia.prepare import AbstractPreparator
 
 
@@ -44,10 +43,10 @@ class AbstractGlobalPhonePreparator(AbstractPreparator):
     recording setup complement the database.'''
 
     url = [
-        'Mandarin - '
-        'http://catalog.elra.info/product_info.php?products_id=817&language=en',
-        'Vietnamese - '
-        'http://catalog.elra.info/product_info.php?products_id=1144&language=en']
+        'Mandarin - http://catalog.elra.info/product_info.php?'
+        'products_id=817&language=en',
+        'Vietnamese - http://catalog.elra.info/product_info.php?'
+        'products_id=1144&language=en']
 
     audio_format = 'shn'
 
@@ -68,10 +67,8 @@ class AbstractGlobalPhonePreparator(AbstractPreparator):
                 'Bad formatting for word or transcript: {0}'.format(expr))
         return expr[1:-1]
 
-    def __init__(self, input_dir, output_dir=None, verbose=False, njobs=1):
-        # call the AbstractPreparator __init__
-        super(AbstractGlobalPhonePreparator, self).__init__(
-            input_dir, output_dir, verbose, njobs)
+    def __init__(self, input_dir, log=utils.null_logger()):
+        super(AbstractGlobalPhonePreparator, self).__init__(input_dir, log=log)
 
         self.transcription_dir = os.path.join(
             self.input_dir, 'GlobalPhone-{0}/{0}/{1}'
@@ -83,23 +80,14 @@ class AbstractGlobalPhonePreparator(AbstractPreparator):
             '{}-GPDict.txt'.format(self.language))
 
         # init language specificities
+        self.wavs = None
         self._erase_dict = self.correct_dictionary()
         self._erase_trs = self.correct_transcription()
 
     def correct_transcription(self):
-        """Optionally correct corpus transcription in self.transcription_dir
-
-        return True if corrceted
-
-        """
         return False
 
     def correct_dictionary(self):
-        """Optionally correct corpus dictionary in self.dictionary
-
-        return True if corrceted
-
-        """
         return False
 
     def __del__(self):
@@ -107,14 +95,10 @@ class AbstractGlobalPhonePreparator(AbstractPreparator):
             # the corpus correction possibly create temporary files that
             # we delete here
             if self._erase_dict:
-                self.log.debug('removing corrected dictionay: %s',
-                               self.dictionary)
-                os.remove(self.dictionary)
+                utils.remove(self.dictionary)
 
             if self._erase_trs:
-                self.log.debug('removing corrected transcriptions: %s',
-                               self.transcription_dir)
-                shutil.rmtree(self.transcription_dir)
+                utils.remove(self.transcription_dir)
         except AttributeError:
             pass
 
@@ -129,56 +113,59 @@ class AbstractGlobalPhonePreparator(AbstractPreparator):
             self.input_dir, 'GlobalPhone-{0}/{0}/adc'.format(self.language))
 
         shns = [f for f in
-                list_files_with_extension(src_dir, '.adc.shn', abspath=True)
+                utils.list_files_with_extension(
+                    src_dir, '.adc.shn', abspath=True, realpath=True)
                 if os.path.basename(f).replace('.adc.shn', '')
                 not in self.exclude_wavs]
 
-        wavs = [os.path.basename(shn).replace('.adc.shn', '.wav')
-                for shn in shns]
+        self.wavs = [os.path.basename(shn).replace('.adc.shn', '.wav')
+                     for shn in shns]
 
-        return shns, wavs
+        return zip(shns, self.wavs)
 
     def make_segment(self):
-        with open_utf8(self.segments_file, 'w') as out:
-            for wav in list_files_with_extension(self.wavs_dir, 'wav'):
-                wav = os.path.basename(wav)
-                out.write(u'{} {}\n'.format(wav.replace('.wav', ''), wav))
+        segments = dict()
+        for wav in self.wavs:
+            wav = os.path.splitext(os.path.basename(wav))[0]
+            segments[wav] = (wav, None, None)
+        return segments
 
     def make_speaker(self):
-        with open_utf8(self.speaker_file, 'w') as out:
-            for wav in list_files_with_extension(self.wavs_dir, 'wav'):
-                wav = os.path.basename(wav)
-                out.write(u'{} {}\n'.format(wav.replace('.wav', ''), wav[:5]))
+        spk2utt = dict()
+        for wav in self.wavs:
+            wav = os.path.splitext(os.path.basename(wav))[0]
+            spk2utt[wav] = wav[:5]
+        return spk2utt
 
     def make_transcription(self):
-        with open_utf8(self.transcription_file, 'w') as out:
-            for trs in list_directory(self.transcription_dir, abspath=True):
-                spk_id = os.path.splitext(os.path.basename(trs))[0]
-                lines = open_utf8(trs, 'r').readlines()
+        text = dict()
+        for trs in utils.list_directory(self.transcription_dir, abspath=True):
+            spk_id = os.path.splitext(os.path.basename(trs))[0]
+            lines = utils.open_utf8(trs, 'r').readlines()
 
-                # add utterence id from even lines starting at line 2
-                ids = [spk_id + u'_' + re.sub(ur'\s+|:|;', u'', e)
-                       for e in lines[1::2]]
+            # add utterence id from even lines starting at line 2
+            ids = [spk_id + u'_' + re.sub(ur'\s+|:|;', u'', e)
+                   for e in lines[1::2]]
 
-                # delete linebreaks on odd lines starting at line 3
-                # (this does not take into account fancy unicode
-                # linebreaks), see
-                # http://stackoverflow.com/questions/3219014
-                transcriptions = [re.sub(ur'\r\n?|\n', u'', e)
-                                  for e in lines[2::2]]
+            # delete linebreaks on odd lines starting at line 3
+            # (this does not take into account fancy unicode
+            # linebreaks), see
+            # http://stackoverflow.com/questions/3219014
+            transcriptions = [re.sub(ur'\r\n?|\n', u'', e)
+                              for e in lines[2::2]]
 
-                for i, trs in zip(ids, transcriptions):
-                    out.write(u'{} {}\n'.format(i, trs))
+            for i, trs in zip(ids, transcriptions):
+                text[i] = trs
+        return text
 
     def make_lexicon(self):
         # parse dictionary lines
         words, transcripts = [], []
-        for line in open_utf8(self.dictionary, 'r').readlines():
+        for line in utils.open_utf8(self.dictionary, 'r').readlines():
             # suppress linebreaks (this does not take into account fancy
             # unicode linebreaks), see
             # http://stackoverflow.com/questions/3219014
             line = re.sub(u'\r\n?|\n', u'', line).split(u' ')
-            #print line
 
             # parse word
             word = self.strip_accolades(line[0])
@@ -207,7 +194,4 @@ class AbstractGlobalPhonePreparator(AbstractPreparator):
                     transcript.append(phn)
             transcripts.append(u' '.join(transcript))
 
-        # generate output file
-        with open_utf8(self.lexicon_file, 'w') as out:
-            for word, trs in zip(words, transcripts):
-                out.write(u'{} {}\n'.format(word, trs))
+        return dict(zip(words, transcripts))

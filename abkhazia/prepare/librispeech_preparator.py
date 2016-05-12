@@ -116,8 +116,6 @@ class LibriSpeechPreparator(AbstractPreparatorWithCMU):
             self.name += '-' + selection
             self.input_dir = os.path.join(input_dir, selection)
 
-        self._wavs = None
-
     def list_audio_files(self):
         flacs = utils.list_files_with_extension(
             self.input_dir, '.flac', abspath=True)

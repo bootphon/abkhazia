@@ -142,43 +142,38 @@ class AbstractFactory(object):
         return parser
 
     @classmethod
-    def _output_dir(cls, args, prep=None):
+    def _output_dir(cls, args):
         """Return the preparator output directory <output-dir>/data
 
         if the --force option have been specified, delete
         <output-dir>/data before returning it.
 
         """
-        if prep is None:
-            prep = cls.preparator
+        output_dir = os.path.join(
+            cls.default_output_dir() if args.output_dir is None
+            else args.output_dir, 'data')
 
-        output_dir = (cls.default_output_dir()
-                      if args.output_dir is None
-                      else args.output_dir)
+        if args.force and os.path.exists(output_dir):
+            print 'removing {}'.format(output_dir)
+            shutil.rmtree(output_dir)
 
-        _dir = os.path.join(output_dir, 'data')
-        if args.force and os.path.exists(_dir):
-            print 'removing {}'.format(_dir)
-            shutil.rmtree(_dir)
-
-        return _dir
-
-    @classmethod
-    def _init_log(cls, args):
-        return utils.get_log(os.path.join(
-            cls._output_dir(args),
-            'data_preparation.log'), args.verbose)
+        return output_dir
 
     @classmethod
     def init_preparator(cls, args):
         """Return an initialized preparator from parsed arguments"""
-        return cls.preparator(args.input_dir, log=cls._init_log(args))
+        return cls.preparator(args.input_dir)
 
     @classmethod
-    def _run_preparator(cls, args, preparator):
-        output_dir = os.path.join(
+    def _run_preparator(cls, args, preparator, output_dir=None):
+        output_dir = ((
             cls._output_dir(args) if args.output_dir is None
-            else args.output_dir, 'data')
+            else os.path.abspath(os.path.join(args.output_dir, 'data')))
+                      if output_dir is None else output_dir)
+
+        preparator.log = utils.get_log(
+            os.path.join(output_dir, 'data_preparation.log'), args.verbose)
+        preparator.log.debug('writing corpus to %s', output_dir)
 
         if not args.only_validation:
             # initialize corpus from raw with it's preparator
@@ -190,9 +185,12 @@ class AbstractFactory(object):
         if not args.no_validation:
             # raise if the corpus is not in correct abkhazia
             # format. Redirect the log to the preparator logger
-            corpus.validate(args.njobs, preparator.log)
+            log = utils.get_log(
+                os.path.join(output_dir, 'data_validation.log'), args.verbose)
+            corpus.validate(njobs=args.njobs, log=log)
 
         # save the corpus to the output directory
+        preparator.log.info('writing corpus to %s', output_dir)
         corpus.save(output_dir, no_wavs=True)
 
     @classmethod
@@ -217,7 +215,7 @@ class AbstractFactoryWithCMU(AbstractFactory):
     @classmethod
     def init_preparator(cls, args):
         return cls.preparator(
-            args.input_dir, cmu_dict=args.cmu_dict, log=cls._init_log(args))
+            args.input_dir, cmu_dict=args.cmu_dict)
 
 
 class BuckeyeFactory(AbstractFactory):
@@ -274,12 +272,31 @@ class LibriSpeechFactory(AbstractFactoryWithCMU):
         return parser
 
     @classmethod
+    def _selection(cls, args):
+        return (None if args.selection is None
+                else cls.selection[args.selection-1])
+
+    @classmethod
+    def _output_dir(cls, args):
+        _dir = super(LibriSpeechFactory, cls)._output_dir(args)
+        if args.output_dir is None:
+            # remove '/data' from path
+            d = os.path.dirname(_dir)
+            # append selection name to path
+            d = d if args.selection is None else d + '-' + cls._selection(args)
+            # reappend '/data'
+            return os.path.join(d, 'data')
+        else:
+            return (_dir if args.selection is None
+                    else _dir + '-' + cls._selection(args))
+
+    @classmethod
     def init_preparator(cls, args):
-        selection = (None if args.selection is None
-                     else cls.selection[args.selection-1])
         return cls.preparator(
-            args.input_dir, log=cls._init_log(args), selection=selection,
-            cmu_dict=args.cmu_dict, librispeech_dict=args.librispeech_dict)
+            args.input_dir,
+            selection=cls._selection(args),
+            cmu_dict=args.cmu_dict,
+            librispeech_dict=args.librispeech_dict)
 
 
 class WallStreetJournalFactory(AbstractFactoryWithCMU):
@@ -319,9 +336,7 @@ class WallStreetJournalFactory(AbstractFactoryWithCMU):
         # select the preparator
         preparator = (cls.preparator if args.selection is None
                       else cls.selection[args.selection-1][1])
-
-        wavs_dir, log = cls._init_wavdir_log(args)
-        return preparator(args.input_dir, args.cmu_dict, wavs_dir, log)
+        return preparator(args.input_dir, cmu_dict=args.cmu_dict)
 
 
 class GlobalPhoneFactory(AbstractFactory):
@@ -356,11 +371,18 @@ class GlobalPhoneFactory(AbstractFactory):
         preps = []
         for l in args.language:
             prep = cls.preparators[l]
-            wavs_dir, log = cls._init_wavdir_log(args)
-            p = prep(args.input_dir, wavs_dir, log)
+            p = prep(args.input_dir)
             p.njobs = args.njobs
             preps.append(p)
         return preps
+
+    @classmethod
+    def _run_preparator(cls, args, preparator):
+        lang = preparator.language.lower()
+        d = os.path.join(os.path.dirname(cls._output_dir(args)), lang, 'data')
+        preparator.log = utils.get_log(
+            os.path.join(d, 'data_preparation.log'), args.verbose)
+        super(GlobalPhoneFactory, cls)._run_preparator(args, preparator, d)
 
     @classmethod
     def run(cls, args):
