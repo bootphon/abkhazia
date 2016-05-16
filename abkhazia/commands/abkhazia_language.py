@@ -19,8 +19,8 @@ import os
 
 import abkhazia.utils as utils
 from abkhazia.commands.abstract_command import AbstractKaldiCommand
-from abkhazia.core.language_model import LanguageModel
-from abkhazia.core.corpus import Corpus
+from abkhazia.models.language_model import LanguageModel
+from abkhazia.corpus import Corpus
 
 
 class AbkhaziaLanguage(AbstractKaldiCommand):

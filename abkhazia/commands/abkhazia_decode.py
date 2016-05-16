@@ -14,11 +14,10 @@
 # along with abkhazia. If not, see <http://www.gnu.org/licenses/>.
 """Implementation of the 'abkhazia decode' command"""
 
-import multiprocessing
 import os
 
 from abkhazia.commands.abstract_command import AbstractKaldiCommand
-import abkhazia.core.decode as decode
+import abkhazia.models.decode as decode
 import abkhazia.utils as utils
 
 

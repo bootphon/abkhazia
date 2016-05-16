@@ -14,8 +14,11 @@
 # along with abkhazia. If not, see <http://www.gnu.org/licenses/>.
 """Implementation of the 'abkhazia features' command"""
 
+import os
+
 from abkhazia.commands.abstract_command import AbstractKaldiCommand
-import abkhazia.core.features as features
+from abkhazia.corpus import Corpus
+import abkhazia.models.features as features
 import abkhazia.utils as utils
 
 
@@ -27,7 +30,7 @@ class AbkhaziaFeatures(AbstractKaldiCommand):
     def add_parser(cls, subparsers):
         """Return a parser for the align command"""
         # get basic parser init from AbstractCommand
-        parser, dir_group = super(AbkhaziaFeatures, cls).add_parser(subparsers)
+        parser, _ = super(AbkhaziaFeatures, cls).add_parser(subparsers)
 
         parser.add_argument(
             '--use-pitch', metavar='<true|false>', choices=['true', 'false'],
@@ -40,9 +43,13 @@ class AbkhaziaFeatures(AbstractKaldiCommand):
     @classmethod
     def run(cls, args):
         corpus, output_dir = cls._parse_io_dirs(args)
-        recipe = features.Features(corpus, output_dir, args.verbose)
+        log = utils.get_log(
+            os.path.join(output_dir, 'features.log'), verbose=args.verbose)
+
+        recipe = features.Features(Corpus.load(corpus), output_dir, log=log)
         recipe.use_pitch = utils.str2bool(args.use_pitch)  # 'true' to True
         recipe.njobs = args.njobs
+        recipe.delete_recipe = False if args.recipe else True
         recipe.create()
         recipe.run()
         recipe.export()

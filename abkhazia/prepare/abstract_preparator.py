@@ -18,8 +18,8 @@ import ConfigParser
 import os
 import pkg_resources
 
-from abkhazia import utils
-from abkhazia.core.corpus import Corpus
+import abkhazia.utils as utils
+import abkhazia.corpus
 
 
 class AbstractPreparator(object):
@@ -87,7 +87,7 @@ class AbstractPreparator(object):
         self.input_dir = os.path.abspath(input_dir)
 
         # init empty output corpus
-        self.corpus = Corpus()
+        self.corpus = abkhazia.corpus.Corpus()
 
     def prepare(self, wavs_dir):
         """Prepare the corpus from raw distribution to abkhazia format

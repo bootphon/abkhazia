@@ -16,12 +16,12 @@
 
 import os
 
-import abkhazia.core.abstract_recipe as abstract_recipe
-import abkhazia.core.kaldi2abkhazia as k2a
+import abkhazia.models.abstract_recipe as abstract_recipe
+import abkhazia.kaldi.kaldi2abkhazia as k2a
 import abkhazia.utils as utils
-from abkhazia.core.language_model import check_language_model
-from abkhazia.core.acoustic_model import check_acoustic_model
-from abkhazia.core.features import export_features
+from abkhazia.models.language_model import check_language_model
+from abkhazia.models.acoustic_model import check_acoustic_model
+from abkhazia.models.features import export_features
 
 
 def _read_splited(f):
@@ -69,7 +69,7 @@ def _append_words_to_alignment(ftext, flexicon, falignment, foutput, log):
                     log.debug('ignoring out of lexicon word: %s', word)
 
 
-class ForceAlign(abstract_recipe.AbstractTmpRecipe):
+class ForceAlign(abstract_recipe.AbstractRecipe):
     """Compute forced alignment of an abkhazia corpus
 
     Takes a corpus in abkhazia format and instantiates a kaldi recipe

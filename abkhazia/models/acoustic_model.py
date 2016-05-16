@@ -17,9 +17,9 @@
 import os
 import shutil
 
-from abkhazia.core.features import export_features
-from abkhazia.core.language_model import check_language_model
-import abkhazia.core.abstract_recipe as abstract_recipe
+from abkhazia.models.features import export_features
+from abkhazia.models.language_model import check_language_model
+from abkhazia.models.abstract_recipe import AbstractRecipe
 import abkhazia.utils as utils
 
 
@@ -28,7 +28,7 @@ def check_acoustic_model(am_dir):
     utils.check_directory(am_dir, ['final.mdl'], name='acoustic model')
 
 
-class AcousticModel(abstract_recipe.AbstractTmpRecipe):
+class AcousticModel(AbstractRecipe):
     """Compute an acoustic model from an abkhazia corpus
 
     Instantiates and run a kaldi recipe to train a HMM-GMM model on

@@ -15,7 +15,7 @@
 """Test of the Corpus class"""
 
 import os
-from abkhazia.core.corpus import Corpus
+from abkhazia.corpus import Corpus
 
 HERE = os.path.abspath(os.path.dirname(__file__))
 corpus_dir = os.path.join(HERE, 'data')

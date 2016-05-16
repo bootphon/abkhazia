@@ -1,3 +1,5 @@
+# coding: utf-8
+
 # Copyright 2016 Thomas Schatz, Xuan Nga Cao, Mathieu Bernard
 #
 # This file is part of abkhazia: you can redistribute it and/or modify
@@ -14,17 +16,76 @@
 # along with abkhazia. If not, see <http://www.gnu.org/licenses/>.
 """Provides the Corpus class"""
 
-import abkhazia.core.corpus_validation as corpus_validation
-import abkhazia.core.corpus_loader as corpus_loader
-import abkhazia.core.corpus_saver as corpus_saver
+from abkhazia.corpus.corpus_saver import CorpusSaver
+from abkhazia.corpus.corpus_loader import CorpusLoader
+from abkhazia.corpus.corpus_validation import CorpusValidation
+from abkhazia.corpus.corpus_split import CorpusSplit
 import abkhazia.utils as utils
 
 
 class Corpus(object):
     """Speech corpus in the abkhazia format
 
-    TODO comment on attributes (exact type and content exemple)
-    TODO meta.txt with metainfo -> (name, creation date, source)
+    This class wraps a speech corpus in the abkhazia format.
+
+    TODO metainfo -> (name, creation date, source)
+
+    Attributes
+    ==========
+
+    wavs: dict(wav_id, path)
+    ------------------------
+
+    - corpus wav files
+    - wav_id is usually the file basename without extension, path is
+      the absolute path to the file
+    - exemple: ('s01', '/path/to/wavs/s01.wav')
+
+    lexicon: dict(word, phones)
+    ---------------------------
+
+    - dictionary of corpus words to phones
+    - word and phones are both str, phones are separated by ' '
+    - exemple: ('weeks', 'w iy k s')
+
+    segments: dict(utt_id, (wav_id, tbegin, tend))
+    ----------------------------------------------
+
+    - time interval in wav files mapped to each corpus utterance
+    - tbegin and tend anre None if the wav file contains a single
+      utterance, else they correspond to begin and end times in the
+      wav (in seconds, as float)
+    - exemple: ('s01u01', ('s01', 0, 0.75))
+
+    text: dict(utt_id, str)
+    -----------------------
+
+    - transcription associated to each corpus utterance
+    - exemple: ('s01u01', 'yeah <SIL> oh yeah')
+
+    utt2spk: dict(utt_id, spk_id)
+    -----------------------------
+
+    - corpus utterances mapped to their speaker
+    - exemple: ('s01u01', 's01')
+
+    phones: dict(str, str)
+    ----------------------
+
+    - corpus phones mapped to their IPA equivalent
+    - exemple: ('iy', u'iː')
+
+    silences: list(str)
+    -------------------
+
+    - corpus silence phones
+    - exemple: ['<SIL>']
+
+    variants: list(str)
+    -------------------
+
+    - alternative phones variants
+    - exemple: []
 
     """
 
@@ -32,11 +93,11 @@ class Corpus(object):
     def load(cls, corpus_dir):
         """Return a corpus initialized from `corpus_dir`
 
-        Raise IOError if corpus_dir if an invalid abkhazia corpus
-        directory.
+        Raise IOError if corpus_dir if an invalid directory, the
+        output corpus is not validated.
 
         """
-        return corpus_loader.CorpusLoader.load(cls, corpus_dir)
+        return CorpusLoader.load(cls, corpus_dir)
 
     def __init__(self):
         """Init an empty corpus"""
@@ -58,7 +119,7 @@ class Corpus(object):
         subdir)
 
         """
-        corpus_saver.CorpusSaver.save(self, path, no_wavs=no_wavs)
+        CorpusSaver.save(self, path, no_wavs=no_wavs)
 
     def validate(self,
                  njobs=utils.default_njobs(),
@@ -69,7 +130,7 @@ class Corpus(object):
         CorpusValidation class.
 
         """
-        corpus_validation.CorpusValidation(
+        CorpusValidation(
             self, njobs=njobs, log=log).validate()
 
     def is_valid(self, njobs=utils.default_njobs()):
@@ -158,3 +219,5 @@ class Corpus(object):
         if validate:
             corpus.validate()
         return corpus
+
+    # def prune(self):

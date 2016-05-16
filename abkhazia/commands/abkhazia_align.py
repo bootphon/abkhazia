@@ -18,7 +18,7 @@ import argparse
 import os
 
 from abkhazia.commands.abstract_command import AbstractKaldiCommand
-import abkhazia.core.force_align as force_align
+import abkhazia.models.force_align as force_align
 
 
 class AbkhaziaAlign(AbstractKaldiCommand):

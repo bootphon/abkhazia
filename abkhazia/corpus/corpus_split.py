@@ -12,7 +12,7 @@
 #
 # You should have received a copy of the GNU General Public License
 # along with abkhazia. If not, see <http://www.gnu.org/licenses/>.
-"""Provides the SplitCorpus class"""
+"""Provides the CorpusSplit class"""
 
 import ConfigParser
 import os
@@ -22,14 +22,13 @@ import tempfile
 
 import abkhazia.prepare.validation as validation
 import abkhazia.utils as utils
-import abkhazia.utils.basic_io as io
 
 
-class SplitCorpus(object):
+class CorpusSplit(object):
     """A class for spliting an abkhazia corpus into train and test subsets
 
-    corpus_dir : The root directory of the abkhazia corpus to
-      split. This directory must contain a validated abkhazia corpus.
+    corpus : The abkhazia corpus to split. The corpus is assumed
+      to be valid.
 
     output_dir : The output directory where to write the splits. The
       directory hierarchy 'output_dir'/{train, test}/data is
@@ -52,51 +51,18 @@ class SplitCorpus(object):
       module. See there for more documentation.
 
     """
-    def __init__(self, corpus_dir, output_dir=None,
-                 random_seed=None, prune_lexicon=False, verbose=False):
-        self.verbose = verbose
+    def __init__(self, corpus, log=utils.null_logger(),
+                 random_seed=None, prune_lexicon=False):
+        self.log = log
         self.prune_lexicon = prune_lexicon
-
-        # init the corpus directory
-        if not os.path.isdir(corpus_dir):
-            raise OSError('{} is not a directory'.format(corpus_dir))
-        self.data_dir = os.path.join(corpus_dir, 'data')
-        if not os.path.isdir(self.data_dir):
-            raise OSError('{} is not a directory'.format(self.data_dir))
-
-        # all we need from the corpus is the utt2spk.txt file
-        utt2spk_file = os.path.join(self.data_dir, 'utt2spk.txt')
-        if not os.path.exists(utt2spk_file):
-            raise OSError('{} file does not exist'.format(utt2spk_file))
-
-        # init the output directory
-        if output_dir is None:
-            output_dir = corpus_dir
-        #split_dir = os.path.join(output_dir, 'split')
-        if os.path.exists(output_dir):
-            raise OSError(
-                'output split directory already existing: {}'
-                .format(output_dir))
-
-        # init output_dir/{test, train}
-        self.test_dir = os.path.join(output_dir, 'test', 'data')
-        self.train_dir = os.path.join(output_dir, 'train', 'data')
-        for path in (self.test_dir, self.train_dir):
-            if not os.path.exists(path):
-                os.makedirs(path)
-
-        # init the log system
-        self.log = utils.log2file.get_log(
-            os.path.join(output_dir, 'split.log'), verbose)
 
         # seed the random generator
         if random_seed is not None:
             self.log.debug('random seed is %i', random_seed)
         random.seed(random_seed)
 
-        # read the utt2spk file from the input corpus
-        self.log.info('reading from %s', utt2spk_file)
-        utt_ids, utt_speakers = io.read_utt2spk(utt2spk_file)
+        # read utt2spk from the input corpus
+        utt_ids, utt_speakers = self.corpus.utt2spk.items()
         self.utts = zip(utt_ids, utt_speakers)
         self.size = len(utt_ids)
         self.speakers = set(utt_speakers)
@@ -327,7 +293,7 @@ class SplitCorpus(object):
             utils.remove(origin)
 
     def _proportions(self, test_prop, train_prop):
-        """Return 'regularized' proprotions of test and train data
+        """Return 'regularized' proportions of test and train data
 
         Return the tuple (test_prop, train_prop), ensures they are in
         [0, 1] and their sum is 1. If None, return the default values.

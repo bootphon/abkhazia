@@ -16,7 +16,6 @@
 
 from abkhazia.utils import open_utf8
 
-
 def read_kaldi_phonemap(phones_file, word_position_dependent=True):
     phonemap = {}
     for line in open_utf8(phones_file, 'r').xreadlines():

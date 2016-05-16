@@ -14,15 +14,14 @@
 # along with abkhazia. If not, see <http://www.gnu.org/licenses/>.
 """Provides the Features class"""
 
-import multiprocessing
 import os
 import shutil
 
-import abkhazia.core.abstract_recipe as abstract_recipe
+import abkhazia.models.abstract_recipe as abstract_recipe
 import abkhazia.utils as utils
 
 
-def export_features(feat_dir, target_dir, corpus_dir, copy=False):
+def export_features(feat_dir, target_dir, corpus, copy=False):
     """Export feats.scp, cmvn.scp and wav.scp from feat_dir to target_dir
 
     If copy is True, make copies instead of links. Raises IOError if
@@ -30,7 +29,7 @@ def export_features(feat_dir, target_dir, corpus_dir, copy=False):
 
     """
     # sanity checks
-    for _dir in (feat_dir, target_dir, corpus_dir):
+    for _dir in (feat_dir, target_dir):
         if not os.path.isdir(_dir):
             raise IOError('{} is not a directory'.format(_dir))
 
@@ -46,31 +45,27 @@ def export_features(feat_dir, target_dir, corpus_dir, copy=False):
         else:
             os.symlink(origin, target)
 
-    # export wav, correct paths to be relative to corpus_dir/data/wavs
+    # export wav, correct paths to be relative to corpus
     # instead of recipe_dir
     origin = os.path.join(feat_dir, 'wav.scp')
     if not os.path.isfile(origin):
         raise IOError('{} not found'.format(origin))
 
-    prefix = os.path.join(corpus_dir, 'data', 'wavs')
     with open(os.path.join(target_dir, 'wav.scp'), 'w') as scp:
         for line in open(origin, 'r').readlines():
-            line = line.strip().split(' ')
-            scp.write('{} {}\n'.format(
-                line[0], os.path.join(prefix, line[1].split('/')[-1])))
+            key = line.strip().split(' ')[0]
+            wav = corpus.wavs[key]
+            scp.write('{} {}\n'.format(key, wav))
 
 
-class Features(abstract_recipe.AbstractTmpRecipe):
+class Features(abstract_recipe.AbstractRecipe):
     """Compute MFCC features from an abkhazia corpus"""
     name = 'features'
 
-    def __init__(self, corpus_dir, output_dir=None, verbose=False):
-        super(Features, self).__init__(corpus_dir, output_dir, verbose)
-
-        self.njobs = multiprocessing.cpu_count()
-        self.use_pitch = (
-            True if utils.config.get('features', 'use-pitch') == 'true'
-            else False)
+    def __init__(self, corpus, output_dir, log=utils.null_logger()):
+        super(Features, self).__init__(corpus, output_dir, log=log)
+        self.use_pitch = utils.str2bool(
+            utils.config.get('features', 'use-pitch'))
 
     def _setup_conf_dir(self):
         """Setup the conf files for feature extraction"""
@@ -90,6 +85,7 @@ class Features(abstract_recipe.AbstractTmpRecipe):
             pass
 
     def _compute_features(self):
+        """Wrapper on steps/make_mfcc_pitch.sh or steps/make_mfcc.sh"""
         script = ('steps/make_mfcc_pitch.sh' if self.use_pitch
                   else 'steps/make_mfcc.sh')
         self.log.info('computing MFCC features%s',
@@ -104,6 +100,7 @@ class Features(abstract_recipe.AbstractTmpRecipe):
                 self.output_dir))
 
     def _compute_cmvn_stats(self):
+        """Wrapper on steps/compute_cmvn_stats.sh"""
         self.log.info('computing CMVN statistics')
         self._run_command(
             'steps/compute_cmvn_stats.sh {0} {1} {2}'.format(
@@ -120,13 +117,18 @@ class Features(abstract_recipe.AbstractTmpRecipe):
         self._compute_cmvn_stats()
 
     def export(self):
-        for scp in utils.list_files_with_extension(self.output_dir, '.scp'):
-            utils.remove(scp)
-
         export_features(
             os.path.join(self.recipe_dir, 'data', self.name),
             self.output_dir,
-            self.corpus_dir,
+            self.corpus,
             copy=True)
 
-        super(Features, self).export()
+        # delete temp scp files in output dir
+        tmp_scp = (
+            [f.replace('.ark', '.scp')
+             for f in utils.list_directory(self.output_dir, abspath=True)
+             if f[-4:] == '.ark'] +
+            [os.path.join(self.output_dir, 'cmvn_features.scp')])
+
+        for scp in tmp_scp:
+            utils.remove(scp, safe=True)

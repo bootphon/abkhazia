@@ -15,7 +15,6 @@
 """Python implementation of the share/path.sh"""
 
 import os
-
 import abkhazia.utils as utils
 
 

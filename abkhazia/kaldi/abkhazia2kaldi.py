@@ -19,36 +19,7 @@ import pkg_resources
 import shutil
 
 import abkhazia.utils as utils
-from abkhazia.core.corpus_saver import CorpusSaver
-
-# # TODO comment !
-# def add_argument(parser, section, name, type, help,
-#                  metavar=None, choices=None):
-#     if metavar is None:
-#         try:
-#             metavar = {
-#                 bool: '<true|false>',
-#                 float: '<float>',
-#                 int: '<int>'
-#             }[type]
-#         except KeyError:
-#             metavar = '<' + name + '>'
-
-#     if type is bool:
-#         parser.add_argument(
-#             '--'+name, choices=['true', 'false'], metavar=metavar,
-#             default=utils.config.get(section, name),
-#             help=help + ' (default is %(default)s)')
-#     elif choices is None:
-#         parser.add_argument(
-#             '--'+name, type=type, metavar=metavar,
-#             default=utils.config.get(section, name),
-#             help=help + ' (default is %(default)s)')
-#     else:
-#         parser.add_argument(
-#             '--'+name, type=type, choices=choices, metavar=metavar,
-#             default=utils.config.get(section, name),
-#             help=help + ' (default is %(default)s)')
+from abkhazia.corpus import CorpusSaver
 
 
 class Abkhazia2Kaldi(object):
@@ -194,7 +165,7 @@ class Abkhazia2Kaldi(object):
         target = os.path.join(self._output_path(), 'spk2utt')
         with utils.open_utf8(target, 'w') as out:
             for spk, utt in sorted(self.corpus.spk2utt().iteritems()):
-                out.write(u'{} {}\n'.format(spk, utt))
+                out.write(u'{} {}\n'.format(spk, ' '.join(sorted(utt))))
 
     def setup_segments(self,):
         """Create segments in data directory"""
@@ -206,11 +177,10 @@ class Abkhazia2Kaldi(object):
     def setup_wav(self):
         """Create wav.scp in data directory"""
         target = os.path.join(self._output_path(), 'wav.scp')
-
-        # write wav.scp
+        wavs = set(w for w, _, _ in self.corpus.segments.itervalues())
         with utils.open_utf8(target, 'w') as out:
-            for wav, path in sorted(self.corpus.wavs.iteritems()):
-                out.write(u'{} {}\n'.format(wav, path))
+            for wav in sorted(wavs):
+                out.write(u'{} {}\n'.format(wav, self.corpus.wavs[wav]))
 
     def setup_wav_folder(self):
         """using a symbolic link to avoid copying voluminous data"""

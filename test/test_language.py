@@ -18,8 +18,8 @@ import os
 import pytest
 import tempfile
 
-from abkhazia.core.corpus import Corpus
-from abkhazia.core.language_model import (
+from abkhazia.corpus import Corpus
+from abkhazia.models.language_model import (
     LanguageModel, word2phone, check_language_model)
 import abkhazia.utils as utils
 

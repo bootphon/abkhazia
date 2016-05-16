@@ -14,6 +14,9 @@
 # along with abkhazia. If not, see <http://www.gnu.org/licenses/>.
 """Implementation of the 'abkazia split' command"""
 
+# TODO update!!
+raise NotImplementedError
+
 from abkhazia.commands.abstract_command import AbstractCoreCommand
 import abkhazia.utils as utils
 import abkhazia.utils.split as split

@@ -18,8 +18,7 @@ import multiprocessing
 import os
 
 import abkhazia.utils as utils
-import abkhazia.core.abkhazia2kaldi as abkhazia2kaldi
-from abkhazia.core.kaldi_path import kaldi_path
+from abkhazia.kaldi import kaldi_path, Abkhazia2Kaldi
 
 
 class AbstractRecipe(object):
@@ -50,7 +49,7 @@ class AbstractRecipe(object):
         self.delete_recipe = True
 
         # init the abkhazia2kaldi converter
-        self.a2k = abkhazia2kaldi.Abkhazia2Kaldi(
+        self.a2k = Abkhazia2Kaldi(
             self.corpus, self.recipe_dir, name=self.name, log=self.log)
 
     def __del__(self):
@@ -127,7 +126,3 @@ class AbstractRecipe(object):
 
         """
         pass
-
-
-class AbstractTmpRecipe(AbstractRecipe):
-    pass

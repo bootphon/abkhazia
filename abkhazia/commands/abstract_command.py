@@ -154,9 +154,9 @@ class AbstractCoreCommand(AbstractCommand):
     @classmethod
     def _parse_io_dirs(cls, args):
         """Return (corpus_dir, output_dir) parsed form `args`"""
-        i = cls._parse_corpus_dir(args.corpus)
-        o = cls._parse_output_dir(args.output_dir, i, args.force)
-        return os.path.join(i, 'data'), o
+        _input = cls._parse_corpus_dir(args.corpus)
+        _output = cls._parse_output_dir(args.output_dir, _input, args.force)
+        return os.path.join(_input, 'data'), _output
 
 
 class AbstractKaldiCommand(AbstractCoreCommand):
@@ -182,7 +182,7 @@ class AbstractKaldiCommand(AbstractCoreCommand):
         parser.add_argument(
             '-j', '--njobs', type=int, metavar='<njobs>',
             default=utils.default_njobs(),
-            help="""number of jobs for parallel computation, default is to launch
-            %(default)s jobs.""")
+            help="""number of jobs for parallel computation, default is
+            to launch %(default)s jobs.""")
 
         return parser, dir_group

@@ -16,14 +16,14 @@
 
 import os
 
-import abkhazia.core.language_model as language_model
-import abkhazia.core.acoustic_model as acoustic_model
-import abkhazia.core.abstract_recipe as abstract_recipe
+import abkhazia.models.language_model as language_model
+import abkhazia.models.acoustic_model as acoustic_model
+import abkhazia.models.abstract_recipe as abstract_recipe
+from abkhazia.models.features import export_features
 import abkhazia.utils as utils
-from abkhazia.core.features import export_features
 
 
-class Decode(abstract_recipe.AbstractTmpRecipe):
+class Decode(abstract_recipe.AbstractRecipe):
     """Decode an abkhazia corpus from acoustic and language models
 
     Instantiates and run a kaldi recipe to compute either phone

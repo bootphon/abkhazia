@@ -18,7 +18,7 @@ import argparse
 import os
 
 from abkhazia.commands.abstract_command import AbstractKaldiCommand
-import abkhazia.core.acoustic_model as acoustic_model
+import abkhazia.models.acoustic_model as acoustic_model
 import abkhazia.utils as utils
 
 

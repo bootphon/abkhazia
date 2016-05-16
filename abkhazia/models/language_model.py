@@ -21,8 +21,8 @@ import shutil
 import tempfile
 
 import abkhazia.utils as utils
-import abkhazia.core.abstract_recipe as abstract_recipe
-from abkhazia.core.kaldi_path import kaldi_path
+import abkhazia.models.abstract_recipe as abstract_recipe
+from abkhazia.kaldi import kaldi_path
 
 
 def check_language_model(lm_dir):
