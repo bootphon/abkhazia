@@ -15,12 +15,7 @@
 """Provides the CorpusSplit class"""
 
 import ConfigParser
-import os
 import random
-import shutil
-import tempfile
-
-import abkhazia.prepare.validation as validation
 import abkhazia.utils as utils
 
 
@@ -51,10 +46,8 @@ class CorpusSplit(object):
       module. See there for more documentation.
 
     """
-    def __init__(self, corpus, log=utils.null_logger(),
-                 random_seed=None, prune_lexicon=False):
+    def __init__(self, corpus, log=utils.null_logger(), random_seed=None):
         self.log = log
-        self.prune_lexicon = prune_lexicon
 
         # seed the random generator
         if random_seed is not None:
@@ -127,7 +120,8 @@ class CorpusSplit(object):
             train_utt_ids += train_utts
             test_utt_ids += test_utts
 
-        self._write(train_utt_ids, test_utt_ids)
+        return (self.corpus.subcorpus(train_utt_ids),
+                self.corpus.subcorpus(test_utt_ids))
 
     def split_by_speakers(self, test_prop=None, train_prop=None):
         """Split the corpus by speakers
@@ -161,10 +155,17 @@ class CorpusSplit(object):
 
         # split from a subpart of the randomized speakers
         n_train_speakers = int(round(train_prop * len(self.speakers)))
-        self.split_from_speakers_list(speakers[:n_train_speakers])
+        return self.split_from_speakers_list(speakers[:n_train_speakers])
 
     def split_from_speakers_list(self, train_speakers):
-        """Split the corpus from a list of speakers in the train set"""
+        """Split the corpus from a list of speakers in the train set
+
+        Speakers in the list go in train set, other speakers go in
+        testing set. Unregisterd speakers raise a RuntimeError.
+
+        Return a pair (train, testing) of Corpus instances
+
+        """
 
         unknown = [spk for spk in train_speakers if spk not in self.speakers]
         if unknown != []:
@@ -188,109 +189,8 @@ class CorpusSplit(object):
                 '%i utterances from speaker %s -> %s',
                 len(spk_utts), speaker, msg)
 
-        self._write(train_utt_ids, test_utt_ids)
-
-    def validate(self):
-        """Corpus validation of the created train and test subsets"""
-        # validate the train set, get back the metainfo on wavs
-        metawavs = validation.Validation(
-            os.path.dirname(self.train_dir),
-            data_dir=os.path.basename(self.train_dir),
-            verbose=self.verbose).validate()
-
-        # validate the test set, feeding the wavs metainfo
-        validation.Validation(
-            os.path.dirname(self.test_dir),
-            data_dir=os.path.basename(self.test_dir),
-            verbose=self.verbose).validate(metawavs)
-
-    def _write(self, train_utt_ids, test_utt_ids):
-        """Write the train and test split corpora to output directory
-
-        Before writing the files, this function also sort them (with
-        respect to the first column). Prune the lexicon according to
-        self.prune_lexicon.
-
-        """
-        self.log.info(
-            'split proportions are %f for train and %f for test',
-            round(float(len(train_utt_ids))/self.size, 3),
-            round(float(len(test_utt_ids))/self.size, 3))
-
-        self.log.info(
-            'writing to %s/{train,test}',
-            os.path.abspath(os.path.join(self.test_dir, '../..')))
-
-        # symlink the wavs directory and the phones related files in
-        # test and train directories
-        for origin in (
-                'wavs', 'phones.txt', 'silences.txt', 'variants.txt'):
-            self._write_symlink(origin)
-
-        # write split subparts of utt2spk.txt, text.txt and segments.txt
-        for origin in ('utt2spk.txt', 'text.txt', 'segments.txt'):
-            self._write_subpart(origin, train_utt_ids, test_utt_ids)
-
-        # write the lexicon (must be called after train/text.txt is wrote)
-        self._write_lexicon()
-
-    def _write_subpart(self, origin, train_utt_ids, test_utt_ids):
-        for target_dir, utts in [(self.train_dir, train_utt_ids),
-                                 (self.test_dir, test_utt_ids)]:
-                target = os.path.join(target_dir, origin)
-                _origin = os.path.join(self.data_dir, origin)
-
-                self.log.debug('writing %s', target)
-                try:
-                    io.copy_first_col_matches(_origin, target, utts)
-                    io.cpp_sort(target)
-                except (OSError, ValueError):
-                    raise OSError('cannot write to {}'.format(target))
-
-    def _write_symlink(self, origin):
-        """Make 'origin' a symbolic link in train and test directories"""
-        for target_dir in (self.train_dir, self.test_dir):
-            target = os.path.join(target_dir, origin)
-            self.log.debug('writing %s', target)
-
-            _origin = os.path.abspath(os.path.join(self.data_dir, origin))
-            os.symlink(_origin, target)
-
-    def _write_lexicon(self):
-        """Write lexicon.txt, pruned if required"""
-        origin = 'lexicon.txt'
-        if not self.prune_lexicon:
-            self._write_symlink(origin)
-        else:
-            origin = os.path.join(self.data_dir, origin)
-            target = tempfile.NamedTemporaryFile(delete=False)
-
-            # get words appearing in train part
-            _, utts = io.read_text(os.path.join(self.train_dir, 'text.txt'))
-            allowed_words = set([word for utt in utts for word in utt])
-
-            # add special OOV word <unk>
-            allowed_words.add(u'<unk>')
-
-            # log a message
-            nlexicon = len(set(io.read_dictionary(origin)[0]))
-            nallowed = len(allowed_words)
-            npruned = nlexicon - nallowed
-            self.log.info(
-                'pruning %i words from %i in lexicon, %i allowed words',
-                npruned, nlexicon, nallowed)
-
-            # remove other words from the lexicon
-            allowed_words = list(allowed_words)
-            io.copy_first_col_matches(origin, target.name, allowed_words)
-
-            # copy the pruned lexicon in test and train
-            origin = target.name
-            for target_dir in (self.train_dir, self.test_dir):
-                target = os.path.join(target_dir, 'lexicon.txt')
-                self.log.debug('writing %s', target)
-                shutil.copy(origin, target)
-            utils.remove(origin)
+        return (self.corpus.subcorpus(train_utt_ids),
+                self.corpus.subcorpus(test_utt_ids))
 
     def _proportions(self, test_prop, train_prop):
         """Return 'regularized' proportions of test and train data

@@ -26,9 +26,12 @@ import abkhazia.utils as utils
 class Corpus(object):
     """Speech corpus in the abkhazia format
 
-    This class wraps a speech corpus in the abkhazia format.
+    This class wraps a speech corpus in the abkhazia format and
+    provides methods/attritutes to interact with it in a consistent
+    and safe way.
 
     TODO metainfo -> (name, creation date, source)
+    TODO logging support
 
     Attributes
     ==========
@@ -185,14 +188,28 @@ class Corpus(object):
             d[utt] = stop - start
         return d
 
+    def words(self, in_lexicon=True):
+        """Return a set of words composing the corpus
+
+        The listed words are present in both text and lexicon (if
+        `is_lexicon` is True), or in text only. The returned result is
+        a set for search efficiency.
+
+        """
+        def _in(a, b):
+            return a in b if in_lexicon else True
+
+        return set(word for utt in self.text.itervalues()
+                   for word in utt.split() if _in(word, self.lexicon))
+
     def has_several_utts_per_wav(self):
-        """Return True if there is several utterances on each wav file"""
+        """Return True if there is several utterances in at least one wav"""
         for _, start, stop in self.segments.itervalues():
             if start is not None or stop is not None:
                 return True
         return False
 
-    def subcorpus(self, utt_ids, validate=False):
+    def subcorpus(self, utt_ids, prune=True, validate=False):
         """Return a subcorpus made of utterances in `utt_ids`
 
         Each utterance in `utt_ids` is assumed to be part of self,
@@ -216,8 +233,40 @@ class Corpus(object):
             corpus.text[utt] = self.text[utt]
             corpus.utt2spk[utt] = self.utt2spk[utt]
 
+        if prune:
+            corpus.prune()
         if validate:
             corpus.validate()
         return corpus
 
-    # def prune(self):
+    def prune(self):
+        """Removes unregistered utterances from a corpus"""
+        utts = self.utts()
+
+        # prune utterance indexed dicts
+        for d in (self.segments, self.text, self.utt2spk):
+            d = {key: value for key, value in d.iteritems()
+                 if key in utts}
+
+        # prune wavs from pruned segments
+        self.wavs = {key: value for key, value in self.wavs.iteritems()
+                     if key in self.wav2utt().iterkeys()}
+
+        # prune lexicon from pruned text
+        self.lexicon = {key: value for key, value in self.lexicon.iteritems()
+                        if key in self.words(in_lexicon=False)}
+
+        # prune phones from pruned lexicon
+        # TODO
+
+    def split(self, train_prop=None, test_prop=None,
+              by_speakers=True, prune=True, random_seed=None):
+        spliter = CorpusSplit(self, random_seed=random_seed)
+        split_fun = (spliter.split if by_speakers is False
+                     else spliter.split_by_speakers)
+
+        train, testing = split_fun(train_prop, test_prop)
+        if prune:
+            train.prune()
+            testing.prune()
+        return train, testing
