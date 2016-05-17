@@ -143,11 +143,6 @@ class LanguageModel(abstract_recipe.AbstractRecipe):
         self.position_dependent_phones = utils.bool2str(
             self.position_dependent_phones)
 
-        if self.level == 'word' and self.position_dependent_phones == 'true':
-            self.log.warning(
-                'word position dependent option on word-level model, '
-                'this have no effect')
-
     def _prepare_lang(self):
         """Prepare the corpus data for language modeling"""
         # First need to do a prepare_lang in the desired folder to get

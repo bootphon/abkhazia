@@ -299,7 +299,7 @@ class WallStreetJournalPreparator(AbstractPreparatorWithCMU):
                 # supposed to be the most common and is retained
                 if not re.match(ur'(.*)\([0-9]+\)$', word):
                     # ignore stress variants of phones
-                    lexicon[word] = re.sub(u'[0-9]+', u'', phones)
+                    lexicon[word] = re.sub(u'[0-9]+', u'', phones).strip()
 
         # add special word: <noise> NSN. special word <unk> SPN
         # will be added automatically during corpus validation

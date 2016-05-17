@@ -20,6 +20,7 @@ import random
 
 import abkhazia.utils as utils
 from abkhazia.prepare import BuckeyePreparator
+from abkhazia.corpus import Corpus
 
 HERE = os.path.abspath(os.path.dirname(__file__))
 
@@ -28,25 +29,42 @@ HERE = os.path.abspath(os.path.dirname(__file__))
 def corpus():
     """Return a corpus made of 100 random utts of Buckeye
 
-    This little corpus is the base of all corpus dependant tests.
+    This little corpus is the base of all corpus dependant tests. The
+    session scope ensures the corpus is initialized only once for all
+    the tests.
 
     The fixture assumes corpus/buckeye-directory is defined in the
-    abkhazia configuration file.
+    abkhazia configuration file or, if already prepared, that
+    abkhazia/data-directory if defined and have the Buckeye corpus
+    prepared in its buckeye/data subfolder.
 
     """
-    # prepare the whole buckeye corpus
-    b = utils.config.get('corpus', 'buckeye-directory')
-    p = os.path.join(HERE, 'prepared_wavs')
-    c = BuckeyePreparator(b).prepare(p)
+    tmpdir = os.path.join(HERE, 'prepared_wavs')
 
-    # select 100 random utterances
-    u = c.utts()
-    random.shuffle(u)
+    # first try to load any prepared buckeye
+    buckeye = os.path.join(
+        utils.config.get('abkhazia', 'data-directory'),
+        'buckeye', 'data')
 
+    if os.path.isdir(buckeye):
+        corpus = Corpus.load(buckeye)
+    else:  # prepare the whole buckeye corpus
+        buckeye = utils.config.get('corpus', 'buckeye-directory')
+        corpus = BuckeyePreparator(buckeye).prepare(tmpdir)
+        corpus.validate()
+
+    # select 100 random utterances from the whole buckeye
+    utts = corpus.utts()
+    random.shuffle(utts)
+    subcorpus = corpus.subcorpus(utts[:100])
+
+    # save it to test/data
     try:
-        c.save(os.path.join(HERE, 'data'))
-    except:
+        subcorpus.save(os.path.join(HERE, 'data'))
+    except OSError:  # already existing
         pass
 
-    yield c.subcorpus(u[:100])
-    utils.remove(p, safe=True)
+    yield subcorpus
+
+    # remove any prepared wavs
+    utils.remove(tmpdir, safe=True)

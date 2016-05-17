@@ -203,6 +203,6 @@ class LibriSpeechPreparator(AbstractPreparatorWithCMU):
                         phn = phn.replace("1", "")
                         phn = phn.replace("2", "")
                         # create the combined dictionary
-                        cmu_combined[entry] = phn
+                        cmu_combined[entry] = phn.strip()
 
         return cmu_combined

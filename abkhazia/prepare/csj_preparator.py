@@ -240,12 +240,10 @@ class CSJPreparator(AbstractPreparator):
             utts[utt_id] = Utt(words, utt_start, utt_stop, channel)
         return utts
 
-
     def check_transcript_consistency(self, utts):
         pass
     # TODO check consistency of starts, stops, subsequent starts at all levels
     # and the across level consistency
-
 
     def extract_basic_transcript(self, utts, encoding=None):
         lexicon = {}

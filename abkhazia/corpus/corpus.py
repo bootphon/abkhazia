@@ -216,7 +216,7 @@ class Corpus(object):
                 return True
         return False
 
-    def subcorpus(self, utt_ids, prune=True, validate=False):
+    def subcorpus(self, utt_ids, prune=True):
         """Return a subcorpus made of utterances in `utt_ids`
 
         Each utterance in `utt_ids` is assumed to be part of self,
@@ -244,8 +244,7 @@ class Corpus(object):
 
         if prune:
             corpus.prune()
-        if validate:
-            corpus.validate()
+        corpus.validate()
         return corpus
 
     def prune(self):

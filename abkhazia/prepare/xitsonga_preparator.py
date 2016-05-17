@@ -253,7 +253,7 @@ class XitsongaPreparator(AbstractPreparator):
                     if (word == "[s]"):
                         continue
                     else:
-                        dict_word[word] = phn
+                        dict_word[word] = phn.strip()
         in_temp.close()
         os.remove(tempf)
 

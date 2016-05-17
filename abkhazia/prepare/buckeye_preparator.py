@@ -230,7 +230,7 @@ class BuckeyePreparator(AbstractPreparator):
 
                     if word_format_match:
                         word = word_format_match.group(1)
-                        phn_trs = word_format_match.group(3)
+                        phn_trs = word_format_match.group(3).strip()
                         if phn_trs == '':
                             no_trs.add(word)
                         else:
