@@ -16,6 +16,8 @@
 # along with abkhazia. If not, see <http://www.gnu.org/licenses/>.
 """Provides the Corpus class"""
 
+import os
+
 from abkhazia.corpus.corpus_saver import CorpusSaver
 from abkhazia.corpus.corpus_loader import CorpusLoader
 from abkhazia.corpus.corpus_validation import CorpusValidation
@@ -32,6 +34,7 @@ class Corpus(object):
 
     TODO metainfo -> (name, creation date, source)
     TODO logging support
+    TODO implement variants phones
 
     Attributes
     ==========
@@ -87,7 +90,7 @@ class Corpus(object):
     variants: list(str)
     -------------------
 
-    - alternative phones variants
+    - alternative phones variants (not yet implemented)
     - exemple: []
 
     """
@@ -147,6 +150,10 @@ class Corpus(object):
     def utts(self):
         """Return the list of utterance ids stored in the corpus"""
         return self.utt2spk.keys()
+
+    def spks(self):
+        """Return the list of speaker ids stored in the corpus"""
+        return self.spk2utt().keys()
 
     def spk2utt(self):
         """Return a dict of speakers mapped to an utterances list
@@ -219,11 +226,13 @@ class Corpus(object):
 
         """
         corpus = Corpus()
-        corpus.wavs = self.wavs
         corpus.lexicon = self.lexicon
         corpus.phones = self.phones
         corpus.silences = self.silences
         corpus.variants = self.variants
+
+        corpus.wavs = {k: os.path.realpath(v)
+                       for k, v in self.wavs.iteritems()}
 
         corpus.segments = dict()
         corpus.text = dict()
@@ -241,32 +250,31 @@ class Corpus(object):
 
     def prune(self):
         """Removes unregistered utterances from a corpus"""
-        utts = self.utts()
-
-        # prune utterance indexed dicts
+        # prune utterance indexed dicts from the utterances list
+        utts = set(self.utts())
         for d in (self.segments, self.text, self.utt2spk):
             d = {key: value for key, value in d.iteritems()
                  if key in utts}
 
         # prune wavs from pruned segments
+        wavs = set(self.wav2utt().iterkeys())
         self.wavs = {key: value for key, value in self.wavs.iteritems()
-                     if key in self.wav2utt().iterkeys()}
+                     if key in wavs}
 
         # prune lexicon from pruned text
+        words = self.words(in_lexicon=False)
         self.lexicon = {key: value for key, value in self.lexicon.iteritems()
-                        if key in self.words(in_lexicon=False)}
+                        if key in words}
 
         # prune phones from pruned lexicon
-        # TODO
+        phones = set(phone for phones in self.lexicon.itervalues()
+                     for phone in phones.split())
+        self.phones = {key: value for key, value in self.phones.iteritems()
+                       if key in phones}
 
     def split(self, train_prop=None, test_prop=None,
               by_speakers=True, prune=True, random_seed=None):
-        spliter = CorpusSplit(self, random_seed=random_seed)
+        spliter = CorpusSplit(self, random_seed=random_seed, prune=prune)
         split_fun = (spliter.split if by_speakers is False
                      else spliter.split_by_speakers)
-
-        train, testing = split_fun(train_prop, test_prop)
-        if prune:
-            train.prune()
-            testing.prune()
-        return train, testing
+        return split_fun(train_prop, test_prop)

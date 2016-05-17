@@ -49,13 +49,9 @@ class AbstractPreparator(object):
         of the corpus to prepare. This directory must exists on the
         filesystem.
 
-    'output_dir' : The output directory where to write the prepared
-        version of the corpus. If not specified, a default directory
-        is guessed based on the corpus name.
+    'log' : the Logger instance where to send log messages, default is
+      to disable logging.
 
-    'verbose' : If True, send all log messages to stdout, if False
-       send only info messages and above. See the log2file module for
-       more details.
 
     Methods
     -------
@@ -91,6 +87,9 @@ class AbstractPreparator(object):
 
     def prepare(self, wavs_dir):
         """Prepare the corpus from raw distribution to abkhazia format
+
+        `wavs_dir` is a directory where to store prepared wav files
+          (as links or files)
 
         This method must not be overloaded in child classes as it
         ensure consistency with the abkhazia format.

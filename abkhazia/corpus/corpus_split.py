@@ -25,29 +25,19 @@ class CorpusSplit(object):
     corpus : The abkhazia corpus to split. The corpus is assumed
       to be valid.
 
-    output_dir : The output directory where to write the splits. The
-      directory hierarchy 'output_dir'/{train, test}/data is
-      created. The log file goes in
-      'output_dir'/logs/split_corpus.log. By default use 'corpus_dir'
+    log : a logging.Logger instance to send log messages
 
-    random_seed : Seed for pseudo-random numbers generation
-      (default is None and current system time is used)
+    random_seed : Seed for pseudo-random numbers generation (default
+      is to use the current system time)
 
-    prune_lexicon: If True, remove from the lexicon all words that are
-        not present at least once in the training set. This have
-        effect on word-level language models. Could be useful when
-        using a lexicon that is tailored to the corpus to the point of
-        overfitting (i.e. only words occuring in the corpus were
-        included and many other common words weren't), which could
-        lead to overestimated performance on words from the lexicon
-        appearing in the test only.
-
-    verbose : This argument serves as initialization of the log2file
-      module. See there for more documentation.
+    prune : If True the train and testing corpora are pruned (default is True)
 
     """
-    def __init__(self, corpus, log=utils.null_logger(), random_seed=None):
+    def __init__(self, corpus, log=utils.null_logger(),
+                 random_seed=None, prune=True):
         self.log = log
+        self.prune = prune
+        self.corpus = corpus
 
         # seed the random generator
         if random_seed is not None:
@@ -55,7 +45,7 @@ class CorpusSplit(object):
         random.seed(random_seed)
 
         # read utt2spk from the input corpus
-        utt_ids, utt_speakers = self.corpus.utt2spk.items()
+        utt_ids, utt_speakers = zip(*self.corpus.utt2spk.iteritems())
         self.utts = zip(utt_ids, utt_speakers)
         self.size = len(utt_ids)
         self.speakers = set(utt_speakers)
@@ -73,7 +63,7 @@ class CorpusSplit(object):
         except ConfigParser.NoOptionError:
             return 0.5
 
-    def split(self, test_prop=None, train_prop=None):
+    def split(self, train_prop=None, test_prop=None):
         """Split the corpus by utterances regardless of the speakers
 
         Both generated subsets get speech from all the speakers with a
@@ -92,7 +82,7 @@ class CorpusSplit(object):
           complement of the test size. (default is None)
 
         """
-        test_prop, train_prop = self._proportions(test_prop, train_prop)
+        train_prop, test_prop = self._proportions(train_prop, test_prop)
 
         train_utt_ids = []
         test_utt_ids = []
@@ -101,8 +91,8 @@ class CorpusSplit(object):
                         if utt_speaker == speaker]
 
             if len(spk_utts) <= 1:
-                raise RuntimeError(
-                    'Speaker {} has only {} sentence'
+                self.log.warning(
+                    'speaker {} has only {} sentence'
                     .format(speaker, len(spk_utts)))
 
             n_train = int(round(len(spk_utts) * train_prop))
@@ -120,10 +110,10 @@ class CorpusSplit(object):
             train_utt_ids += train_utts
             test_utt_ids += test_utts
 
-        return (self.corpus.subcorpus(train_utt_ids),
-                self.corpus.subcorpus(test_utt_ids))
+        return (self.corpus.subcorpus(train_utt_ids, prune=self.prune),
+                self.corpus.subcorpus(test_utt_ids, prune=self.prune))
 
-    def split_by_speakers(self, test_prop=None, train_prop=None):
+    def split_by_speakers(self, train_prop=None, test_prop=None):
         """Split the corpus by speakers
 
         Generated train and test subsets get speech from different
@@ -147,7 +137,7 @@ class CorpusSplit(object):
           complement of the test size. (default is None)
 
         """
-        test_prop, train_prop = self._proportions(test_prop, train_prop)
+        train_prop, test_prop = self._proportions(train_prop, test_prop)
 
         # randomize the speakers
         speakers = list(self.speakers)
@@ -161,7 +151,7 @@ class CorpusSplit(object):
         """Split the corpus from a list of speakers in the train set
 
         Speakers in the list go in train set, other speakers go in
-        testing set. Unregisterd speakers raise a RuntimeError.
+        testing set. Unregistered speakers raise a RuntimeError.
 
         Return a pair (train, testing) of Corpus instances
 
@@ -189,10 +179,10 @@ class CorpusSplit(object):
                 '%i utterances from speaker %s -> %s',
                 len(spk_utts), speaker, msg)
 
-        return (self.corpus.subcorpus(train_utt_ids),
-                self.corpus.subcorpus(test_utt_ids))
+        return (self.corpus.subcorpus(train_utt_ids, prune=self.prune),
+                self.corpus.subcorpus(test_utt_ids, prune=self.prune))
 
-    def _proportions(self, test_prop, train_prop):
+    def _proportions(self, train_prop, test_prop):
         """Return 'regularized' proportions of test and train data
 
         Return the tuple (test_prop, train_prop), ensures they are in
@@ -218,4 +208,4 @@ class CorpusSplit(object):
             raise RuntimeError(
                 'sum of test and train proportion is not 1')
 
-        return test_prop, train_prop
+        return train_prop, test_prop

@@ -412,7 +412,6 @@ class CSJPreparator(AbstractPreparator):
     def list_audio_files(self):
         return [os.path.join(self.input_dir, 'Waveforms', data + '.wav')
                 for data in self.data_files]
-        return inputs
 
     def make_segment(self):
         segments = dict()
@@ -420,7 +419,7 @@ class CSJPreparator(AbstractPreparator):
             wavefile = utt_id.split("_")[1]
             start = self.all_utts[utt_id]['start']
             stop = self.all_utts[utt_id]['end']
-            segments[utt_id] = (wavefile, start, stop)
+            segments[utt_id] = (wavefile, float(start), float(stop))
         return segments
 
     def make_speaker(self):

@@ -250,7 +250,7 @@ class ChildesPreparator(AbstractPreparator):
         segments = dict()
         for k, v in self.utts.iteritems():
             segments[k] = (os.path.splitext(os.path.basename(v.wav))[0],
-                           v.tbegin, v.tend)
+                           float(v.tbegin), float(v.tend))
         return segments
 
     def make_speaker(self):

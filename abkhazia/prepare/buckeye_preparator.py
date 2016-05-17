@@ -185,7 +185,7 @@ class BuckeyePreparator(AbstractPreparator):
                 offset = match_offset.group(1)
 
                 segments[utt + '-sent' + str(n+1)] = (
-                    utt, str(onset), str(offset))
+                    utt, float(onset), float(offset))
 
                 current_index = index_offset
                 last_offset = offset

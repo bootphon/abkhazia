@@ -17,23 +17,20 @@
 import os
 from abkhazia.corpus import Corpus
 
-HERE = os.path.abspath(os.path.dirname(__file__))
-corpus_dir = os.path.join(HERE, 'data')
 
-
-def test_corpus(tmpdir):
-    c = Corpus.load(corpus_dir)
-    assert c.is_valid()
+def test_corpus(tmpdir, corpus):
+    assert corpus.is_valid()
+    assert len(corpus.utts()) == 100
 
     corpus_saved = os.path.join(str(tmpdir), 'corpus')
-    c.save(corpus_saved)
+    corpus.save(corpus_saved)
 
     d = Corpus.load(corpus_saved)
     assert d.is_valid()
-    assert c.lexicon == d.lexicon
-    assert c.wavs == d.wavs
-    assert c.segments == d.segments
-    assert c.phones == d.phones
+    assert corpus.lexicon == d.lexicon
+    assert corpus.wavs == d.wavs
+    assert corpus.segments == d.segments
+    assert corpus.phones == d.phones
 
 
 def test_empty():
@@ -43,11 +40,51 @@ def test_empty():
     assert len(c.utts()) == 0
 
 
-def test_subcorpus():
-    c = Corpus.load(corpus_dir)
-    d = c.subcorpus(c.utts()[:10])
+def test_subcorpus(corpus):
+    d = corpus.subcorpus(corpus.utts()[:10])
     assert len(d.utts()) == 10
     assert d.is_valid()
+
+    e = corpus.subcorpus(corpus.utts()[:10], prune=False)
+    assert len(e.utts()) == 10
+    assert e.is_valid()
+
+    assert len(d.wavs) <= len(e.wavs)
+    for w in d.wavs.iterkeys():
+        assert w in e.wavs
+
+
+def test_split(corpus):
+    d, e = corpus.split(0.5)
+
+    assert len(corpus.lexicon) > len(d.lexicon)
+    assert len(corpus.utts()) > len(e.utts())
+    assert len(corpus.utts()) > len(d.utts())
+    assert len(set.intersection(set(d.utts()), set(e.utts()))) == 0
+    assert len(set.intersection(set(d.spks()), set(e.spks()))) >= 0
+    assert len(set.intersection(set(corpus.utts()), set(e.utts()))) == \
+        len(e.utts())
+
+
+def test_split_no_prune(corpus):
+    d, _ = corpus.split(0.5, prune=False)
+    assert len(corpus.lexicon) == len(d.lexicon)
+
+
+def test_split_tiny_train(corpus):
+    train, testing = corpus.split(train_prop=0.1)
+    assert len(train.utts()) < len(testing.utts())
+
+
+def test_split_by_speakers(corpus):
+    d, e = corpus.split(0.5, by_speakers=True)
+
+    assert len(corpus.utts()) > len(e.utts())
+    assert len(corpus.utts()) > len(d.utts())
+    assert len(set.intersection(set(d.utts()), set(e.utts()))) == 0
+    assert len(set.intersection(set(d.spks()), set(e.spks()))) == 0
+    assert len(set.intersection(set(corpus.utts()), set(e.utts()))) == \
+        len(e.utts())
 
 
 def test_spk2utt():

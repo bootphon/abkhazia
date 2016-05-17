@@ -1,3 +1,5 @@
+# coding: utf-8
+
 # Copyright 2016 Thomas Schatz, Xuan Nga Cao, Mathieu Bernard
 #
 # This file is part of abkhazia: you can redistribute it and/or modify
@@ -18,39 +20,36 @@ import os
 import pytest
 import tempfile
 
-from abkhazia.corpus import Corpus
 from abkhazia.models.language_model import (
     LanguageModel, word2phone, check_language_model)
 import abkhazia.utils as utils
 
-HERE = os.path.abspath(os.path.dirname(__file__))
 levels = ['phone', 'word']
 orders = [1, 2, 3]
 params = [(l, o) for l in levels for o in orders]
 
 
+@pytest.mark.usefixtures('corpus')
 class TestLanguage(object):
     def setup(self):
         self.tmp_dir = tempfile.mkdtemp()
         self.output_dir = os.path.join(self.tmp_dir, 'lang')
-        self.corpus = Corpus.load(os.path.join(HERE, 'data'))
         self.flog = os.path.join(self.output_dir, 'language.log')
-        self.lm = LanguageModel(
-            self.corpus, self.output_dir, log=utils.get_log(self.flog))
 
     def teardown(self):
         utils.remove(self.tmp_dir, safe=True)
-        del self.lm
 
-    def test_word2phone(self):
-        phones = word2phone(self.corpus)
+    def test_word2phone(self, corpus):
+        phones = word2phone(corpus)
 
-        assert sorted(phones.keys()) == sorted(self.corpus.utts())
-        assert len(phones) == len(self.corpus.text)
+        assert sorted(phones.keys()) == sorted(corpus.utts())
+        assert len(phones) == len(corpus.text)
 
     @pytest.mark.parametrize("level, order", params)
-    def test_lm(self, level, order):
-        lm = self.lm
+    def test_lm(self, level, order, corpus):
+        lm = LanguageModel(
+            corpus, self.output_dir, log=utils.get_log(self.flog))
+
         lm.level = level
         lm.order = order
         lm.create()
