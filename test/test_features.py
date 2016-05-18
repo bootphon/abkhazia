@@ -12,39 +12,28 @@
 #
 # You should have received a copy of the GNU General Public License
 # along with abkhazia. If not, see <http://www.gnu.org/licenses/>.
-"""Test of language modeling"""
+"""Test of features extraction"""
 
 import os
 import pytest
 
-import abkhazia.models.language_model as language_model
+import abkhazia.models.features as features
 import abkhazia.utils as utils
 from .conftest import assert_no_error_in_log
 
 
-levels = ['phone', 'word']
-orders = [1, 2, 3]
-params = [(l, o) for l in levels for o in orders]
-
-
-def test_word2phone(corpus):
-    phones = language_model.word2phone(corpus)
-
-    assert sorted(phones.keys()) == sorted(corpus.utts())
-    assert len(phones) == len(corpus.text)
-
-
-@pytest.mark.parametrize('level, order', params)
-def test_lm(level, order, corpus, tmpdir):
-    output_dir = str(tmpdir.mkdir('lang'))
-    flog = os.path.join(output_dir, 'language.log')
+@pytest.mark.parametrize('pitch', [True, False])
+def test_features(pitch, corpus, tmpdir):
+    output_dir = str(tmpdir.mkdir('feats'))
+    flog = os.path.join(output_dir, 'feats.log')
     log = utils.get_log(flog)
 
-    lm = language_model.LanguageModel(corpus, output_dir, log=log)
-    lm.level = level
-    lm.order = order
-    lm.create()
-    lm.run()
-    lm.export()
-    language_model.check_language_model(output_dir)
+    # keep only 1 utterance for testing speed
+    subcorpus = corpus.subcorpus(corpus.utts()[:1])
+    feat = features.Features(subcorpus, output_dir, log=log)
+    feat.njobs = 1
+    feat.use_pitch = pitch
+    feat.create()
+    feat.run()
+    feat.export()
     assert_no_error_in_log(flog)

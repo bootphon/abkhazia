@@ -18,10 +18,8 @@ import os
 from abkhazia.corpus import Corpus
 
 
-def test_corpus(tmpdir, corpus):
+def test_save_corpus(tmpdir, corpus):
     assert corpus.is_valid()
-    assert len(corpus.utts()) == 100
-
     corpus_saved = os.path.join(str(tmpdir), 'corpus')
     corpus.save(corpus_saved)
 

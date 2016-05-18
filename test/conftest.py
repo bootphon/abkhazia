@@ -26,8 +26,8 @@ HERE = os.path.abspath(os.path.dirname(__file__))
 
 
 @pytest.yield_fixture(scope='session')
-def corpus():
-    """Return a corpus made of 100 random utts of Buckeye
+def corpus(n=50):
+    """Return a corpus made of `n` random utts of Buckeye
 
     This little corpus is the base of all corpus dependant tests. The
     session scope ensures the corpus is initialized only once for all
@@ -53,10 +53,10 @@ def corpus():
         corpus = BuckeyePreparator(buckeye).prepare(tmpdir)
         corpus.validate()
 
-    # select 100 random utterances from the whole buckeye
+    # select n random utterances from the whole buckeye
     utts = corpus.utts()
     random.shuffle(utts)
-    subcorpus = corpus.subcorpus(utts[:100])
+    subcorpus = corpus.subcorpus(utts[:n])
 
     # save it to test/data
     try:
@@ -68,3 +68,13 @@ def corpus():
 
     # remove any prepared wavs
     utils.remove(tmpdir, safe=True)
+
+
+def assert_no_error_in_log(flog):
+    assert os.path.isfile(flog)
+    error_lines = []
+    for line in open(flog, 'r').readlines():
+        if 'error' in line.lower():
+            error_lines.append(line)
+        print error_lines
+    assert len(error_lines) == 0
