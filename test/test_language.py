@@ -48,3 +48,19 @@ def test_lm(level, order, corpus, tmpdir):
     lm.export()
     language_model.check_language_model(output_dir)
     assert_no_error_in_log(flog)
+
+
+@pytest.mark.parametrize('prob', [0, 0.2, 0.5])
+def test_silence_probability(prob, corpus, tmpdir):
+    output_dir = str(tmpdir.mkdir('lang'))
+    flog = os.path.join(output_dir, 'language.log')
+    log = utils.get_log(flog)
+    lm = language_model.LanguageModel(corpus, output_dir, log=log)
+    lm.level = 'word'
+    lm.order = 3
+    lm.silence_probability = prob
+    lm.create()
+    lm.run()
+    lm.export()
+    language_model.check_language_model(output_dir)
+    assert_no_error_in_log(flog)

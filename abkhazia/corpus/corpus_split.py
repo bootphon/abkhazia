@@ -32,6 +32,20 @@ class CorpusSplit(object):
 
     prune : If True the train and testing corpora are pruned (default is True)
 
+    In the split and split_by_speakers methods, arguments are as follow:
+
+        test_prop : float, should be between 0.0 and 1.0 and
+          represent the proportion of the dataset to include in the
+          test split. If None, the value is automatically set to the
+          complement of the train size. If train size is also None,
+          test size is set to 0.5. (default is None)
+
+        train_prop : float, should be between 0.0 and 1.0 and
+          represent the proportion of the dataset to include in the
+          train split. If None, the value is automatically set to the
+          complement of the test size. (default is None)
+
+
     """
     def __init__(self, corpus, log=utils.null_logger(),
                  random_seed=None, prune=True):
@@ -70,16 +84,7 @@ class CorpusSplit(object):
         number of utterances by speaker in each set matching the
         number of utterances by speaker in the whole corpus.
 
-        test_prop : float, should be between 0.0 and 1.0 and
-          represent the proportion of the dataset to include in the
-          test split. If None, the value is automatically set to the
-          complement of the train size. If train size is also None,
-          test size is set to 0.5. (default is None)
-
-        train_prop : float, should be between 0.0 and 1.0 and
-          represent the proportion of the dataset to include in the
-          train split. If None, the value is automatically set to the
-          complement of the test size. (default is None)
+        Return a pair (train, testing) of Corpus instances
 
         """
         train_prop, test_prop = self._proportions(train_prop, test_prop)
@@ -90,10 +95,10 @@ class CorpusSplit(object):
             spk_utts = [utt_id for utt_id, utt_speaker in self.utts
                         if utt_speaker == speaker]
 
-            if len(spk_utts) <= 1:
-                self.log.warning(
-                    'speaker {} has only {} sentence'
-                    .format(speaker, len(spk_utts)))
+            # if len(spk_utts) <= 1:
+            #     self.log.warning(
+            #         'speaker {} has only {} sentence'
+            #         .format(speaker, len(spk_utts)))
 
             n_train = int(round(len(spk_utts) * train_prop))
 
@@ -123,18 +128,7 @@ class CorpusSplit(object):
         Note that this might not be appropriate when the amount of
         utterances available per speaker is too unbalanced.
 
-        test_prop : If float, should be between 0.0 and 1.0 and
-          represent the proportion of the dataset to include in the
-          test split. If int, represents the absolute number of test
-          samples. If None, the value is automatically set to the
-          complement of the train size. If train size is also None,
-          test size is set to 0.5. (default is None)
-
-        train_prop : If float, should be between 0.0 and 1.0 and
-          represent the proportion of the dataset to include in the
-          train split. If int, represents the absolute number of train
-          samples. If None, the value is automatically set to the
-          complement of the test size. (default is None)
+        Return a pair (train, testing) of Corpus instances
 
         """
         train_prop, test_prop = self._proportions(train_prop, test_prop)

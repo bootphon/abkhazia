@@ -29,7 +29,7 @@ class CorpusLoader(object):
     """
 
     @classmethod
-    def load(cls, corpus_cls, corpus_dir):
+    def load(cls, corpus_cls, corpus_dir, log=utils.null_logger()):
         """Return a corpus initialized from `corpus_dir`
 
         Raise IOError if corpus_dir if an invalid abkhazia corpus
@@ -41,6 +41,7 @@ class CorpusLoader(object):
 
         # init the corpus from data files
         corpus = corpus_cls()
+        corpus.log = log
         corpus.wavs = cls.load_wavs(data['wavs'])
         corpus.lexicon = cls.load_lexicon(data['lexicon'])
         corpus.segments = cls.load_segments(data['segments'])
@@ -68,12 +69,12 @@ class CorpusLoader(object):
         data['wavs'] = path
 
         # other are txt files
-        for f in ('lexicon', 'phones', 'segments', 'silences',
-                  'text', 'utt2spk', 'variants'):
-            path = os.path.join(corpus_dir, f + '.txt')
+        for _file in ('lexicon', 'phones', 'segments', 'silences',
+                      'text', 'utt2spk', 'variants'):
+            path = os.path.join(corpus_dir, _file + '.txt')
             if not os.path.isfile(path):
                 raise IOError('invalid corpus: not found {}'.format(path))
-            data[f] = path
+            data[_file] = path
 
         return data
 

@@ -133,7 +133,7 @@ class LanguageModel(abstract_recipe.AbstractRecipe):
                 .format(self.order))
 
     def _check_silence_probability(self):
-        if self.silence_probability > 1 or self.silence_probability < 0:
+        if self.silence_probability >= 1 or self.silence_probability < 0:
             raise RuntimeError(
                 'silence probability must be in [0, 1], it is {}'
                 .format(self.silence_probability))
@@ -316,7 +316,7 @@ class LanguageModel(abstract_recipe.AbstractRecipe):
         """Initialize the recipe data in `self.recipe_dir`"""
         self.check_parameters()
 
-        # setp phones
+        # setup phones
         self.a2k.setup_phones()
         self.a2k.setup_silences()
         self.a2k.setup_variants()

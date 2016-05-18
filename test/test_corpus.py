@@ -64,11 +64,6 @@ def test_split(corpus):
         len(e.utts())
 
 
-def test_split_no_prune(corpus):
-    d, _ = corpus.split(0.5, prune=False)
-    assert len(corpus.lexicon) == len(d.lexicon)
-
-
 def test_split_tiny_train(corpus):
     train, testing = corpus.split(train_prop=0.1)
     assert len(train.utts()) < len(testing.utts())

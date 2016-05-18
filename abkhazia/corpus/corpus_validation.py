@@ -52,9 +52,9 @@ class CorpusValidation(object):
     def validate(self, meta=None):
         """Validate the whole corpus
 
-        Log information about the corpus. Raise an IOError on the
-        first detected error. If the function returns without raising,
-        this means the corpus is compatible with abkhazia.
+        Raise an IOError on the first detected error. If the function
+        returns without raising, this means the corpus is compatible
+        with abkhazia.
 
         Return metainformation on the wavs (from utils.wav.scan)
 
@@ -64,7 +64,10 @@ class CorpusValidation(object):
         collection.
 
         """
-        self.log.info('validating abkhazia corpus')
+        self.log.info('validating corpus')
+
+        if len(self.corpus.utts()) == 0:
+            raise IOError('corpus is empty')
 
         if meta is None:
             meta = self.validate_wavs()
@@ -301,7 +304,19 @@ class CorpusValidation(object):
                 "following IPA symbols are used several times in phones: {}"
                 .format(duplicates))
 
+        self._check_position_dependent_phones(phones)
         return phones
+
+    def _check_position_dependent_phones(self, phones):
+        """Check if adding _I, _B, _E or _S to phones is conflict free"""
+        conflicts = [p for p in phones for e in ('_I', '_E', '_B', '_S')
+                     if p[-2:] == e]
+        if conflicts:
+            self.log.debug(
+                'the following phones are not compatible with '
+                'word position dependent models: %s', conflicts)
+            self.log.warning(
+                'corpus is not compatible with word position dependent models')
 
     def _check_silences(self, phones):
         self.log.debug('checking silences')

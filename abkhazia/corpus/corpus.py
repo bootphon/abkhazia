@@ -96,17 +96,18 @@ class Corpus(object):
     """
 
     @classmethod
-    def load(cls, corpus_dir):
+    def load(cls, corpus_dir, log=utils.null_logger()):
         """Return a corpus initialized from `corpus_dir`
 
         Raise IOError if corpus_dir if an invalid directory, the
         output corpus is not validated.
 
         """
-        return CorpusLoader.load(cls, corpus_dir)
+        return CorpusLoader.load(cls, corpus_dir, log=log)
 
-    def __init__(self):
+    def __init__(self, log=utils.null_logger()):
         """Init an empty corpus"""
+        self.log = log
         self.wavs = dict()
         self.lexicon = dict()
         self.segments = dict()
@@ -125,25 +126,23 @@ class Corpus(object):
         subdir)
 
         """
+        self.log.info('saving corpus to %s', path)
         CorpusSaver.save(self, path, no_wavs=no_wavs)
 
-    def validate(self,
-                 njobs=utils.default_njobs(),
-                 log=utils.log2file.null_logger()):
+    def validate(self, njobs=utils.default_njobs()):
         """Validate speech corpus data
 
-        Raise on the first encoutered error, relies on the
+        Raise IOError on the first encoutered error, relies on the
         CorpusValidation class.
 
         """
-        CorpusValidation(
-            self, njobs=njobs, log=log).validate()
+        CorpusValidation(self, njobs=njobs, log=self.log).validate()
 
     def is_valid(self, njobs=utils.default_njobs()):
-        """Return True if the corpus is validated, False else"""
+        """Return True if the corpus is in a valid state"""
         try:
-            self.validate()
-        except:
+            self.validate(njobs=njobs)
+        except IOError:
             return False
         return True
 
@@ -187,13 +186,17 @@ class Corpus(object):
         return wav2utt
 
     def utt2duration(self):
-        """Return a dict of utterances ids mapped to their duration (in s.)"""
-        d = dict()
+        """Return a dict of utterances ids mapped to their duration
+
+        Durations are floats expressed in second, read from wav files
+
+        """
+        utt2dur = dict()
         for utt, (wav, start, stop) in self.segments.iteritems():
             start = 0 if start is None else start
             stop = utils.wav.duration(wav) if stop is None else stop
-            d[utt] = stop - start
-        return d
+            utt2dur[utt] = stop - start
+        return utt2dur
 
     def words(self, in_lexicon=True):
         """Return a set of words composing the corpus
@@ -203,11 +206,9 @@ class Corpus(object):
         a set for search efficiency.
 
         """
-        def _in(a, b):
-            return a in b if in_lexicon else True
-
-        return set(word for utt in self.text.itervalues()
-                   for word in utt.split() if _in(word, self.lexicon))
+        return set(
+            word for utt in self.text.itervalues() for word in utt.split()
+            if (word in self.lexicon if in_lexicon else True))
 
     def has_several_utts_per_wav(self):
         """Return True if there is several utterances in at least one wav"""
@@ -219,10 +220,14 @@ class Corpus(object):
     def subcorpus(self, utt_ids, prune=True):
         """Return a subcorpus made of utterances in `utt_ids`
 
-        Each utterance in `utt_ids` is assumed to be part of self,
-        else a KeyError is raised.
+        The returned corpus is validated and pruned (except if `prune`
+        is False)
 
-        Raise if the subcorpus is not valid.
+        Raise a KeyError if one utterance in `utt_ids` is in the
+        input corpus.
+
+        Raise an IOError if the subcorpus is not valid (this should
+        not occurs if the input corpus is valid).
 
         """
         corpus = Corpus()
@@ -248,7 +253,16 @@ class Corpus(object):
         return corpus
 
     def prune(self):
-        """Removes unregistered utterances from a corpus"""
+        """Removes unregistered utterances from a corpus
+
+        This method modifies the corpus in place and return None
+
+        The pruning operation delete undesired data from utterances
+        listed in self.utts(). It removes any segment, text, wav with
+        an unknown utterance id. It prune the lexicon and phones from
+        the pruned text.
+
+        """
         # prune utterance indexed dicts from the utterances list
         utts = set(self.utts())
         for d in (self.segments, self.text, self.utt2spk):
@@ -272,8 +286,34 @@ class Corpus(object):
                        if key in phones}
 
     def split(self, train_prop=None, test_prop=None,
-              by_speakers=True, prune=True, random_seed=None):
-        spliter = CorpusSplit(self, random_seed=random_seed, prune=prune)
+              by_speakers=True, random_seed=None):
+        """Split a corpus in train and testing subcorpora
+
+        Return a pair (train, testing) of Corpus instances, validated
+        and pruned.
+
+        test_prop : float, should be between 0.0 and 1.0 and
+          represent the proportion of the dataset to include in the
+          test split. If None, the value is automatically set to the
+          complement of the train size. If train size is also None,
+          test size is set to 0.5 (default is None).
+
+        train_prop : float, should be between 0.0 and 1.0 and
+          represent the proportion of the dataset to include in the
+          train split. If None, the value is automatically set to the
+          complement of the test size (default is None).
+
+        by_speakers : bool, split the corpus by speakers if True, else
+          split by utterances (regardless of speakers distribution).
+          Note that this might not be appropriate when the amount of
+          utterances available per speaker is too unbalanced (default
+          is True).
+
+        random_seed : seed for pseudo-random numbers generation (default
+          is to use the current system time)
+
+        """
+        spliter = CorpusSplit(self, random_seed=random_seed, prune=True)
         split_fun = (spliter.split if by_speakers is False
                      else spliter.split_by_speakers)
         return split_fun(train_prop, test_prop)

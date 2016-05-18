@@ -75,14 +75,9 @@
 
 ** other
  - language
-   - [ ] test the --optional-silences option
+   - [X] test the --optional-silences option
+   - is it an error to prune lexicon when training/testing a LM on a corpus ?
  - prepare
-   - [ ] --keep-short-utts option
-     remove short utterances here instead of during lm/am
-   - [ ] word dependent position issue
-     Check in validate_corpus that adding _I, _B, _E or _S suffixes to
-     phones does not create conflicts, otherwise issue a warning to say
-     that word_position_dependent models won't be usable.
  - acoustic
    - [ ] --retrain option
      it should be possible to retrain a trained model on a new corpus
@@ -109,16 +104,13 @@
       speaker_adapt
       output: results (repertoire)
  - features
-    option to export features from ark to h5f, see
-    [[https://github.com/bootphon/features_extraction/blob/master/kaldi_features.py][kaldi_features.py]] from feature_extraction package
+   - centralize/refactor the legacy code related to features
+   - option to export features from ark to h5f, see
+     [[https://github.com/bootphon/features_extraction/blob/master/kaldi_features.py][kaldi_features.py]] from feature_extraction package
 
 * Documentation
 
   - [ ] have more detailed command description on 'abkhazia <command>
     --help'. Assume the user doesn't know abkhazia or kaldi.
-  - [ ] have a friendly error message when running a command with
-    unstasfied dependancies. For exemple, trying to train a corpus
-    which have not been prepared outputs 'please prepare the corpus'
-  - [ ] make a install page, deeper than in readme
   - [ ] improve the 'command line' page
   - [ ] improve the 'corpus format' page

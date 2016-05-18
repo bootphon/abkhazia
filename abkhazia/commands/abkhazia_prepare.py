@@ -177,12 +177,12 @@ class AbstractFactory(object):
 
         # initialize corpus from raw with it's preparator
         corpus = preparator.prepare(os.path.join(output_dir, 'wavs'))
+        corpus.log = utils.get_log(
+            os.path.join(output_dir, 'data_validation.log'), args.verbose)
 
         # raise if the corpus is not in correct abkhazia
         # format. Redirect the log to the preparator logger
-        log = utils.get_log(
-            os.path.join(output_dir, 'data_validation.log'), args.verbose)
-        corpus.validate(njobs=args.njobs, log=log)
+        corpus.validate(njobs=args.njobs)
 
         # save the corpus to the output directory
         preparator.log.info('writing corpus to %s', output_dir)
