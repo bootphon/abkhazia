@@ -26,7 +26,6 @@
    /ssh:oberon:/fhgfs/bootphon/scratch/xcao/Brent_test_abkhazia/output_brent_abkhazia/output_forced_alignment_kaldi/phone_align
    (pour les fichiers splittés) ou "forced_alignment.txt"
 ** TODO compute alignment posteriograms with Kaldi
-
 * Bugs [1/3]
 ** TODO installation on Mac
    XN -- Pour le testing sur mac, ça ne marche pas ou en tout cas, je
@@ -69,8 +68,6 @@
 
 * Functions
 ** prepare childes
-   - possible error on speaker if one_adult is True, and aldo check
-     for *MOT* and others as different speakers
    - test with others than Brent, have a subcorpus selection option?
    - strange words in trs:
      xcuse -> excuse
@@ -111,8 +108,7 @@
       output = {posteriorgrams, transcription}
       speaker_adapt
       output: results (repertoire)
-   - [ ] If no language model provided, build default flat unigram one
- - feature
+ - features
     option to export features from ark to h5f, see
     [[https://github.com/bootphon/features_extraction/blob/master/kaldi_features.py][kaldi_features.py]] from feature_extraction package
 

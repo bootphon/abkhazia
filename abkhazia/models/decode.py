@@ -37,8 +37,8 @@ class Decode(abstract_recipe.AbstractRecipe):
     """
     name = 'decode'
 
-    def __init__(self, corpus_dir, output_dir=None, verbose=False):
-        super(Decode, self).__init__(corpus_dir, output_dir, verbose)
+    def __init__(self, corpus, output_dir=None, log=utils.null_logger()):
+        super(Decode, self).__init__(corpus, output_dir, log=log)
 
         self.acoustic_scale = utils.config.get(self.name, 'acoustic-scale')
         self.feat_dir = None
@@ -90,6 +90,7 @@ class Decode(abstract_recipe.AbstractRecipe):
         super(Decode, self).check_parameters()
         language_model.check_language_model(self.lm_dir)
         acoustic_model.check_acoustic_model(self.am_dir)
+        # TODO check am is tri-sa
 
     def create(self):
         super(Decode, self).create()
@@ -97,13 +98,13 @@ class Decode(abstract_recipe.AbstractRecipe):
         export_features(
             self.feat_dir,
             os.path.join(self.recipe_dir, 'data', self.name),
-            self.corpus_dir)
+            self.corpus)
 
     def run(self):
         """Run the created recipe and decode speech data"""
         res_dir = self._mkgraph()
         res_dir = self._decode(res_dir)
-        return res_dir
+        #return res_dir
 
     def export(self):
         super(Decode, self).export()

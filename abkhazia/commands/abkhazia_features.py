@@ -42,11 +42,12 @@ class AbkhaziaFeatures(AbstractKaldiCommand):
 
     @classmethod
     def run(cls, args):
-        corpus, output_dir = cls._parse_io_dirs(args)
+        corpus_dir, output_dir = cls._parse_io_dirs(args)
         log = utils.get_log(
             os.path.join(output_dir, 'features.log'), verbose=args.verbose)
+        corpus = Corpus.load(corpus_dir)
 
-        recipe = features.Features(Corpus.load(corpus), output_dir, log=log)
+        recipe = features.Features(corpus, output_dir, log=log)
         recipe.use_pitch = utils.str2bool(args.use_pitch)  # 'true' to True
         recipe.njobs = args.njobs
         recipe.delete_recipe = False if args.recipe else True

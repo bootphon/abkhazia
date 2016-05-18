@@ -46,13 +46,13 @@ def _read_utts(f):
     yield utt_id, alignment
 
 
-def _append_words_to_alignment(ftext, flexicon, falignment, foutput, log):
+def _append_words_to_alignment(corpus, falignment, foutput, log):
     """Append words to phone lines in the final alignment file"""
     # text[utt_id] = list of words
-    text = dict((l[0], l[1:]) for l in _read_splited(ftext))
+    text = {k: v.strip().split() for k, v in corpus.text.iteritems()}
 
     # lexicon[word] = list of phones
-    lexicon = dict((l[0], l[1:]) for l in _read_splited(flexicon))
+    lexicon = {k: v.strip().split() for k, v in corpus.lexicon.iteritems()}
 
     with utils.open_utf8(foutput, 'w') as out:
         for utt_id, utt_align in _read_utts(falignment):
@@ -79,8 +79,8 @@ class ForceAlign(abstract_recipe.AbstractRecipe):
     """
     name = 'align'
 
-    def __init__(self, corpus_dir, output_dir=None, verbose=False):
-        super(ForceAlign, self).__init__(corpus_dir, output_dir, verbose)
+    def __init__(self, corpus, output_dir=None, log=utils.null_logger()):
+        super(ForceAlign, self).__init__(corpus, output_dir, log=log)
 
         # language and acoustic models directories
         self.lm_dir = None
@@ -140,7 +140,7 @@ class ForceAlign(abstract_recipe.AbstractRecipe):
         export_features(
             self.feat_dir,
             os.path.join(self.recipe_dir, 'data', self.name),
-            self.corpus_dir)
+            self.corpus)
 
     def run(self):
         self._align_fmllr()
@@ -166,8 +166,7 @@ class ForceAlign(abstract_recipe.AbstractRecipe):
         # append complete words to the list of aligned phones
         if words:
             _append_words_to_alignment(
-                os.path.join(self.corpus_dir, 'data', 'text.txt'),
-                os.path.join(self.corpus_dir, 'data', 'lexicon.txt'),
+                self.corpus,
                 tra.replace('.tra', '.tmp'),
                 target,
                 self.log)

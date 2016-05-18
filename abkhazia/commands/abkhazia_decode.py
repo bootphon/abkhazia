@@ -17,6 +17,7 @@
 import os
 
 from abkhazia.commands.abstract_command import AbstractKaldiCommand
+from abkhazia.corpus import Corpus
 import abkhazia.models.decode as decode
 import abkhazia.utils as utils
 
@@ -64,35 +65,24 @@ class AbkhaziaDecode(AbstractKaldiCommand):
 
     @classmethod
     def run(cls, args):
-        corpus, output_dir = cls._parse_io_dirs(args)
+        corpus_dir, output_dir = cls._parse_io_dirs(args)
+        log = utils.get_log(
+            os.path.join(output_dir, 'decode.log'), verbose=args.verbose)
+        corpus = Corpus.load(corpus_dir)
 
-        # get back the features directory
-        feat = (corpus if args.features is None
-                else os.path.abspath(args.features))
-        feat += '/features'
+        # get back the features, language and acoustic models directories
+        feat = cls._parse_aux_dir(corpus_dir, args.features, 'features')
+        lang = cls._parse_aux_dir(corpus_dir, args.language_model, 'language')
+        acou = cls._parse_aux_dir(corpus_dir, args.acoustic_model, 'acoustic')
 
-        # get back the language model directory
-        lang = (corpus if args.language_model is None
-                else os.path.abspath(args.language_model))
-        lang += '/language'
-
-        # get back the acoustic model directory
-        acoustic = (corpus if args.acoustic_model is None
-                    else os.path.abspath(args.acoustic_model))
-        acoustic += '/acoustic'
-
-        # instanciate the kaldi recipe
-        recipe = decode.Decode(corpus, output_dir, args.verbose)
-
-        # setup recipe parameters
+        # instanciate and run the kaldi recipe
+        recipe = decode.Decode(corpus, output_dir, log=log)
         recipe.feat_dir = feat
         recipe.lm_dir = lang
-        recipe.am_dir = acoustic
+        recipe.am_dir = acou
         recipe.acoustic_scale = args.acoustic_scale
         recipe.njobs = args.njobs
         recipe.delete_recipe = False if args.recipe else True
-
-        # finally create and/or run the recipe
         recipe.create()
         recipe.run()
         recipe.export()

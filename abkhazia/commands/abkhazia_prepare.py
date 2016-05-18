@@ -123,14 +123,14 @@ class AbstractFactory(object):
             'computations (mainly for wav conversion). '
             'Default is to launch %(default)s jobs.')
 
-        group = parser.add_argument_group('validation options')
-        group = group.add_mutually_exclusive_group()
-        group.add_argument(
-            '--no-validation', action='store_true',
-            help='disable the corpus validation step (do only preparation)')
-        group.add_argument(
-            '--only-validation', action='store_true',
-            help='disable the corpus preparation step (do only validation)')
+        # group = parser.add_argument_group('validation options')
+        # group = group.add_mutually_exclusive_group()
+        # group.add_argument(
+        #     '--no-validation', action='store_true',
+        #     help='disable the corpus validation step (do only preparation)')
+        # group.add_argument(
+        #     '--only-validation', action='store_true',
+        #     help='disable the corpus preparation step (do only validation)')
 
         if cls.preparator.audio_format == 'wav':
             parser.add_argument(
@@ -175,19 +175,14 @@ class AbstractFactory(object):
             os.path.join(output_dir, 'data_preparation.log'), args.verbose)
         preparator.log.debug('writing corpus to %s', output_dir)
 
-        if not args.only_validation:
-            # initialize corpus from raw with it's preparator
-            corpus = preparator.prepare(os.path.join(output_dir, 'wavs'))
-        else:
-            # corpus already prepared, load it
-            corpus = Corpus.load(args.corpus)
+        # initialize corpus from raw with it's preparator
+        corpus = preparator.prepare(os.path.join(output_dir, 'wavs'))
 
-        if not args.no_validation:
-            # raise if the corpus is not in correct abkhazia
-            # format. Redirect the log to the preparator logger
-            log = utils.get_log(
-                os.path.join(output_dir, 'data_validation.log'), args.verbose)
-            corpus.validate(njobs=args.njobs, log=log)
+        # raise if the corpus is not in correct abkhazia
+        # format. Redirect the log to the preparator logger
+        log = utils.get_log(
+            os.path.join(output_dir, 'data_validation.log'), args.verbose)
+        corpus.validate(njobs=args.njobs, log=log)
 
         # save the corpus to the output directory
         preparator.log.info('writing corpus to %s', output_dir)

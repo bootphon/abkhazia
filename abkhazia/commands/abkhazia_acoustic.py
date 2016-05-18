@@ -18,6 +18,7 @@ import argparse
 import os
 
 from abkhazia.commands.abstract_command import AbstractKaldiCommand
+from abkhazia.corpus import Corpus
 import abkhazia.models.acoustic_model as acoustic_model
 import abkhazia.utils as utils
 
@@ -99,20 +100,23 @@ class AbkhaziaAcoustic(AbstractKaldiCommand):
             raise NotImplementedError(
                 'neural network acoustic modeling not yet implemented')
 
-        corpus, output_dir = cls._parse_io_dirs(args)
+        corpus_dir, output_dir = cls._parse_io_dirs(args)
+        log = utils.get_log(
+            os.path.join(output_dir, 'acoustic.log'), verbose=args.verbose)
+        corpus = Corpus.load(corpus_dir)
 
         # get back the features directory
-        feat = (corpus if args.features is None
+        feat = (os.path.dirname(corpus_dir) if args.features is None
                 else os.path.abspath(args.features))
         feat += '/features'
 
         # get back the language model directory
-        lang = (corpus if args.language_model is None
+        lang = (os.path.dirname(corpus_dir) if args.language_model is None
                 else os.path.abspath(args.language_model))
         lang += '/language'
 
         # instanciate and setup the kaldi recipe from args
-        recipe = acoustic_model.AcousticModel(corpus, output_dir, args.verbose)
+        recipe = acoustic_model.AcousticModel(corpus, output_dir, log=log)
         recipe.feat = feat
         recipe.lang = lang
         recipe.model_type = args.type
@@ -126,5 +130,5 @@ class AbkhaziaAcoustic(AbstractKaldiCommand):
 
         # finally build the acoustic model
         recipe.create()
-        recipe.run()
-        recipe.export()
+        out = recipe.run()
+        recipe.export(out)

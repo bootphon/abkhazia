@@ -35,15 +35,16 @@ class AcousticModel(AbstractRecipe):
     an abkhazia corpus and a language model
 
     Parameters:
-        corpus_dir (str): path to an abkhazia corpus
-        recipe_dir (str): path to the created recipe and results
-        verbose (bool): if True send more messages to the logger
+        corpus (Corpus): abkhazia corpus to process
+        output_dir (str): path to the created recipe and results
+        log (logging.Logger): where to send log messages
 
     Attributes:
         lang (str): path to the language model directory
         feat (str): path to the features directory
         model_type (str): The type of model to train in 'mono', 'tri', 'tri-sa'
         njobs (int): Number of parallel jobs to use
+
         num_states_si (int)
         num_gauss_si (int)
         num_states_sa (int)
@@ -52,8 +53,8 @@ class AcousticModel(AbstractRecipe):
     """
     name = 'acoustic'
 
-    def __init__(self, corpus_dir, output_dir=None, verbose=False,):
-        super(AcousticModel, self).__init__(corpus_dir, output_dir, verbose)
+    def __init__(self, corpus, output_dir=None, log=utils.null_logger):
+        super(AcousticModel, self).__init__(corpus, output_dir, log=log)
 
         # setup default values for parameters from the configuration
         def config(name):
@@ -167,7 +168,7 @@ class AcousticModel(AbstractRecipe):
         export_features(
             self.feat,
             os.path.join(self.recipe_dir, 'data', self.name),
-            self.corpus_dir)
+            self.corpus)
 
     def run(self):
         """Run the created recipe and compute the acoustic model"""

@@ -158,6 +158,12 @@ class AbstractCoreCommand(AbstractCommand):
         _output = cls._parse_output_dir(args.output_dir, _input, args.force)
         return os.path.join(_input, 'data'), _output
 
+    @staticmethod
+    def _parse_aux_dir(corpus_dir, arg, name):
+        return os.path.join(
+            os.path.dirname(corpus_dir) if arg is None
+            else os.path.abspath(arg), name)
+
 
 class AbstractKaldiCommand(AbstractCoreCommand):
     """Base class for commands relying on Kaldi recipes

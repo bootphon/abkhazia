@@ -18,7 +18,9 @@ import argparse
 import os
 
 from abkhazia.commands.abstract_command import AbstractKaldiCommand
+from abkhazia.corpus import Corpus
 import abkhazia.models.force_align as force_align
+import abkhazia.utils as utils
 
 
 class AbkhaziaAlign(AbstractKaldiCommand):
@@ -63,25 +65,28 @@ class AbkhaziaAlign(AbstractKaldiCommand):
 
     @classmethod
     def run(cls, args):
-        corpus, output_dir = cls._parse_io_dirs(args)
+        corpus_dir, output_dir = cls._parse_io_dirs(args)
+        log = utils.get_log(
+            os.path.join(output_dir, 'acoustic.log'), verbose=args.verbose)
+        corpus = Corpus.load(corpus_dir)
 
         # get back the language model directory
-        lang = (corpus if args.language_model is None
+        lang = (os.path.dirname(corpus_dir) if args.language_model is None
                 else os.path.abspath(args.language_model))
         lang += '/language'
 
         # get back the acoustic model directory
-        acoustic = (corpus if args.acoustic_model is None
+        acoustic = (os.path.dirname(corpus_dir) if args.acoustic_model is None
                     else os.path.abspath(args.acoustic_model))
         acoustic += '/acoustic'
 
         # get back the features directory
-        feat = (corpus if args.features is None
+        feat = (os.path.dirname(corpus_dir) if args.features is None
                 else os.path.abspath(args.features))
         feat += '/features'
 
         # instanciate the kaldi recipe creator
-        recipe = force_align.ForceAlign(corpus, output_dir, args.verbose)
+        recipe = force_align.ForceAlign(corpus, output_dir, log=log)
         recipe.njobs = args.njobs
         recipe.lm_dir = lang
         recipe.feat_dir = feat
