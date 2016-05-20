@@ -41,9 +41,16 @@ class AbkhaziaAlign(AbstractKaldiCommand):
         parser.formatter_class = argparse.RawDescriptionHelpFormatter
         parser.description = cls.long_description()
 
-        parser.add_argument(
-            '--no-words', action='store_true',
+        out_group = parser.add_argument_group('alignment format', description=(
+            "by default the output alignement file is phone aligned and "
+            "include both words and phones"))
+        out_group = out_group.add_mutually_exclusive_group()
+        out_group.add_argument(
+            '--phones-only', action='store_true',
             help='do not write words in the final alignment file, only phones')
+        out_group.add_argument(
+            '--words-only', action='store_true',
+            help='do not write phones in the final alignment file, only words')
 
         dir_group.add_argument(
             '-l', '--language-model', metavar='<lm-dir>', default=None,
@@ -96,4 +103,11 @@ class AbkhaziaAlign(AbstractKaldiCommand):
         # finally compute the alignments
         recipe.create()
         recipe.run()
-        recipe.export(not args.no_words)
+
+        if args.words_only:
+            level = 'words'
+        elif args.phones_only:
+            level = 'phones'
+        else:
+            level = 'both'
+        recipe.export(level=level)

@@ -1,3 +1,5 @@
+# coding: utf-8
+
 # Copyright 2016 Thomas Schatz, Xuan Nga Cao, Mathieu Bernard
 #
 # This file is part of abkhazia: you can redistribute it and/or modify
@@ -16,9 +18,8 @@
 
 import os
 
-import abkhazia.models.abstract_recipe as abstract_recipe
-import abkhazia.kaldi.kaldi2abkhazia as k2a
 import abkhazia.utils as utils
+import abkhazia.models.abstract_recipe as abstract_recipe
 from abkhazia.models.language_model import check_language_model
 from abkhazia.models.acoustic_model import check_acoustic_model
 from abkhazia.models.features import export_features
@@ -26,7 +27,8 @@ from abkhazia.models.features import export_features
 
 def _read_splited(f):
     """Read lines from a file, each line being striped and split"""
-    return (l.strip().split() for l in utils.open_utf8(f, 'r'))
+    lines = f if isinstance(f, list) else utils.open_utf8(f, 'r')
+    return (l.strip().split() for l in lines)
 
 
 def _read_utts(f):
@@ -46,27 +48,54 @@ def _read_utts(f):
     yield utt_id, alignment
 
 
-def _append_words_to_alignment(corpus, falignment, foutput, log):
-    """Append words to phone lines in the final alignment file"""
-    # text[utt_id] = list of words
-    text = {k: v.strip().split() for k, v in corpus.text.iteritems()}
+def _read_words(f):
+    """Yield words alignement from a 'phone and words' alignment file"""
+    word = None
+    utt_id = None
+    start = 0
+    stop = 0
+    for line in _read_splited(f):
+        if len(line) == 5:  # new word
+            if word is not None:
+                yield ' '.join([utt_id, start, stop, word])
+            word = line[4]
+            utt_id = line[0]
+            start = line[1]
+            stop = line[2]
+        else:  # word continues
+            stop = line[2]
+    if word is not None:
+        yield ' '.join([utt_id, start, stop, word])
 
-    # lexicon[word] = list of phones
-    lexicon = {k: v.strip().split() for k, v in corpus.lexicon.iteritems()}
 
-    with utils.open_utf8(foutput, 'w') as out:
-        for utt_id, utt_align in _read_utts(falignment):
-            idx = 0
-            for word in text[utt_id]:
-                begin = True
-                try:
-                    for phone in lexicon[word]:
-                        out.write('{} {}\n'.format(
-                            utt_align[idx], word if begin else ''))
-                        idx += 1
-                        begin = False
-                except KeyError:  # the word isn't in lexicon
-                    log.debug('ignoring out of lexicon word: %s', word)
+def _read_int2phone(phone2int, word_position_dependent=True):
+    """Return int2phones from the `phone2int` file"""
+    phonemap = {}
+    for line in utils.open_utf8(phone2int, 'r').xreadlines():
+        phone, code = line.strip().split(u" ")
+        # remove word position markers
+        if word_position_dependent and phone[-2:] in ['_I', '_B', '_E', '_S']:
+            phone = phone[:-2]
+        phonemap[code] = phone
+    return phonemap
+
+
+def _read_tra_alignment(phonemap, tra):
+    # tra_file using the format on each line: utt_id [phone_code
+    # n_frames]+ this is a generator (it yields in the loop)
+    for line in utils.open_utf8(tra, 'r'):
+        sequence = line.strip().split(u" ; ")
+        utt_id, code, nframes = sequence[0].split(u" ")
+        sequence = [u" ".join([code, nframes])] + sequence[1:]
+        # this seems good enough, but I (Thomas) didn't check in the
+        # make_mfcc code of kaldi to be sure
+        start = 0.0125
+
+        for elem in sequence:
+            code, nframes = elem.split(u" ")
+            stop = start + 0.01*int(nframes)
+            yield (utt_id, str(start), str(stop), phonemap[code])
+            start = stop
 
 
 class ForceAlign(abstract_recipe.AbstractRecipe):
@@ -146,30 +175,74 @@ class ForceAlign(abstract_recipe.AbstractRecipe):
         self._align_fmllr()
         self._ali_to_phones()
 
-    def export(self, words=True):
+    # TODO check alignment: which utt have been transcribed, have silence
+    # been inserted, otherwise no difference? (maybe some did not reach
+    # final state), chronological order, grouping by utt_id etc.
+    @staticmethod
+    def _export_phones(int2phone, tra):
+        return [' '.join([utt_id, start, stop, phone])
+                for utt_id, start, stop, phone
+                in _read_tra_alignment(int2phone, tra)]
+
+    def _export_phones_and_words(self, int2phone, tra):
+        # phone level alignment
+        phones = self._export_phones(int2phone, tra)
+
+        # text[utt_id] = list of words
+        text = {k: v.strip().split()
+                for k, v in self.corpus.text.iteritems()}
+
+        # lexicon[word] = list of phones
+        lexicon = {k: v.strip().split()
+                   for k, v in self.corpus.lexicon.iteritems()}
+
+        words = []
+        for utt_id, utt_align in _read_utts(phones):
+            idx = 0
+            for word in text[utt_id]:
+                begin = True
+                try:
+                    for phone in lexicon[word]:
+                        words.append('{} {}'.format(
+                            utt_align[idx], word if begin else ''))
+                        idx += 1
+                        begin = False
+                except KeyError:  # the word isn't in lexicon
+                    self.log.debug(
+                        'ignoring out of lexicon word: %s', word)
+        return words
+
+    def _export_words(self, int2phone, tra):
+        w_and_p = self._export_phones_and_words(int2phone, tra)
+        return [w for w in _read_words(w_and_p)]
+
+    def export(self, level='both'):
         """Export the kaldi tra alignment file in abkhazia format
 
         This method reads data/lang/phones.txt and
         export/forced_aligment.tra and write
         export/forced_aligment.txt
 
-        If words is True, append entire words to the alignment.
+        level (str): level must be in ['words', 'phones', 'both'],
+          default is 'both'
 
         """
-        target = os.path.join(self.output_dir, 'alignment.txt')
+        if level not in ('both', 'words', 'phones'):
+            raise IOError('unknown alignment level {}'.format(level))
 
         tra = os.path.join(self.recipe_dir, 'export', 'forced_alignment.tra')
-        k2a.export_phone_alignment(
-            os.path.join(self.lm_dir, 'phones.txt'),
-            tra, tra.replace('.tra', '.tmp' if words else '.txt'))
+        int2phone = _read_int2phone(os.path.join(self.lm_dir, 'phones.txt'))
 
-        # append complete words to the list of aligned phones
-        if words:
-            _append_words_to_alignment(
-                self.corpus,
-                tra.replace('.tra', '.tmp'),
-                target,
-                self.log)
-            utils.remove(tra.replace('.tra', '.tmp'))
+        # retrieve the export function according to `level`
+        func = {'phones': self._export_phones,
+                'words': self._export_words,
+                'both': self._export_phones_and_words}[level]
+        aligned = func(int2phone, tra)
+
+        # write it to the target file
+        target = os.path.join(self.output_dir, 'alignment.txt')
+        with utils.open_utf8(target, 'w') as out:
+            for line in aligned:
+                out.write(line.strip() + '\n')
 
         super(ForceAlign, self).export()
