@@ -1,9 +1,10 @@
 <!-- -*-org-*- this comment force org-mode in emacs -->
 
-* for 0.3 release (pre tutorial) [1/8]
+* for 0.3 release (pre tutorial) [2/8]
 ** DONE align on words only (discard phones)
    CLOSED: [2016-05-20 ven. 17:54]
-** TODO LM optional silences by default
+** DONE LM optional silences by default
+   CLOSED: [2016-05-20 ven. 17:59]
 ** TODO prepare buckeye: strange lexicon issue
    following words have no transcription in lexicon: set(['and', 'a',
    'okay', "you're", 'i', 'of', 'it', 'uh', 'in', 'ohio', 'rough',

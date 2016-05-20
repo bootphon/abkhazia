@@ -39,17 +39,16 @@ class AbkhaziaLanguage(AbstractKaldiCommand):
             'specified in the [language] section of the configuration file')
 
         group.add_argument(
-            '-s', '--optional-silence', action='store_true',
-            help='do all computations if specified, else focus '
-            'on the main ones')
+            '-s', '--no-silence', action='store_true',
+            help='do not model silences (probability of 0, '
+            'default is a silence probability of 0.5)')
 
         group.add_argument(
             '-w', '--word-position-dependent', action='store_true',
             help='''Should be set to true or false depending on whether the
             language model produced is destined to be used with an acoustic
             model trained with or without word position dependent
-            variants of the phones. This option have no effect on word
-            level models.''')
+            variants of the phones.''')
 
         group.add_argument(
             '-n', '--model-order', type=int, metavar='<N>',
@@ -84,7 +83,7 @@ class AbkhaziaLanguage(AbstractKaldiCommand):
         recipe.order = args.model_order
         recipe.level = args.model_level
         recipe.position_dependent_phones = args.word_position_dependent
-        recipe.silence_probability = 0.5 if args.optional_silence else 0.0
+        recipe.silence_probability = 0.0 if args.no_silence else 0.5
         recipe.delete_recipe = False if args.recipe else True
 
         # finally create and/or run the recipe
