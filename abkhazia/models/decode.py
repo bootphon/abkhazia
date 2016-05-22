@@ -90,6 +90,8 @@ class Decode(abstract_recipe.AbstractRecipe):
         super(Decode, self).check_parameters()
         language_model.check_language_model(self.lm_dir)
         acoustic_model.check_acoustic_model(self.am_dir)
+        self.meta.source += (', feat = {}, lm = {}, am = {}'.format(
+            self.feat_dir, self.lm_dir, self.am_dir))
         # TODO check am is tri-sa
 
     def create(self):

@@ -21,7 +21,7 @@ import abkhazia.utils as utils
 from abkhazia.kaldi import kaldi_path, Abkhazia2Kaldi
 
 
-class AbstractRecipe(object):
+class AbstractRecipe(utils.AbkhaziaBase):
     """A base class for kaldi recipes operating on an abkhazia corpus
 
     If you want the recipe directory in output_dir/recipe, set
@@ -32,9 +32,10 @@ class AbstractRecipe(object):
     """The recipe's name"""
 
     def __init__(self, corpus, output_dir, log=utils.null_logger()):
-        self.log = log
+        super(AbstractRecipe, self).__init__(log=log)
         self.njobs = utils.default_njobs()
         self.corpus = corpus
+        self.meta.source = 'corpus = {}'.format(self.corpus.meta.source)
 
         if not os.path.isdir(output_dir):
             os.makedirs(output_dir)
@@ -121,8 +122,7 @@ class AbstractRecipe(object):
     def export(self):
         """Copy result files to self.output_dir
 
-        This method is abstract and must be implemented in child
-        classes.
+        This method must be specialized in child classes.
 
         """
-        pass
+        self.meta.save(os.path.join(self.output_dir, 'meta.txt'))

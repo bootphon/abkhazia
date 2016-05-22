@@ -37,3 +37,4 @@ def test_features(pitch, corpus, tmpdir):
     feat.run()
     feat.export()
     assert_no_error_in_log(flog)
+    assert os.path.isfile(os.path.join(output_dir, 'meta.txt'))

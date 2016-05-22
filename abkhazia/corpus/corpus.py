@@ -25,7 +25,7 @@ from abkhazia.corpus.corpus_split import CorpusSplit
 import abkhazia.utils as utils
 
 
-class Corpus(object):
+class Corpus(utils.AbkhaziaBase):
     """Speech corpus in the abkhazia format
 
     This class wraps a speech corpus in the abkhazia format and
@@ -107,7 +107,8 @@ class Corpus(object):
 
     def __init__(self, log=utils.null_logger()):
         """Init an empty corpus"""
-        self.log = log
+        super(Corpus, self).__init__(log=log)
+
         self.wavs = dict()
         self.lexicon = dict()
         self.segments = dict()
@@ -217,7 +218,7 @@ class Corpus(object):
                 return True
         return False
 
-    def subcorpus(self, utt_ids, prune=True):
+    def subcorpus(self, utt_ids, prune=True, name=None):
         """Return a subcorpus made of utterances in `utt_ids`
 
         The returned corpus is validated and pruned (except if `prune`
@@ -231,6 +232,9 @@ class Corpus(object):
 
         """
         corpus = Corpus()
+        corpus.meta.source = self.meta.source
+        corpus.meta.comment = name if name else 'subcorpus'
+
         corpus.lexicon = self.lexicon
         corpus.phones = self.phones
         corpus.silences = self.silences
