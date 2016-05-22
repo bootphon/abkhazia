@@ -160,6 +160,7 @@ class AcousticModel(AbstractRecipe):
         super(AcousticModel, self).check_parameters()
         check_language_model(self.lang)
         self._check_model_type()
+        self.meta.source += ', feat = {}, lm = {}'.format(self.feat, self.lang)
 
     def create(self):
         super(AcousticModel, self).create()

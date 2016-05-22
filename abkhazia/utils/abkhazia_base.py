@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 # Copyright 2016 Thomas Schatz, Xuan Nga Cao, Mathieu Bernard
 #
 # This file is part of abkhazia: you can redistribute it and/or modify
@@ -13,15 +12,13 @@
 #
 # You should have received a copy of the GNU General Public License
 # along with abkhazia. If not, see <http://www.gnu.org/licenses/>.
-"""This package provides various utilities to abkhazia"""
+"""Provides a base class for Abkhazia componants"""
 
-from .utils import *
-from .log2file import get_log, null_logger
-from .config import config, AbkhaziaConfig
-from .wav import convert, scan
-from .spk2utt import spk2utt
-from .abkhazia_base import AbkhaziaBase
-from .meta import Meta
+from abkhazia.utils.meta import Meta
+from abkhazia.utils import null_logger
 
-import jobs
-import cha
+
+class AbkhaziaBase(object):
+    def __init__(self, log=null_logger()):
+        self.log = log
+        self.meta = Meta()

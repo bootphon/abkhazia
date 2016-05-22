@@ -161,6 +161,9 @@ class ForceAlign(abstract_recipe.AbstractRecipe):
         check_acoustic_model(self.am_dir)
         check_language_model(self.lm_dir)
 
+        self.meta.source += (', feat = {}, lm = {}, am = {}'.format(
+            self.feat_dir, self.lm_dir, self.am_dir))
+
     def create(self):
         """Create the recipe data in `self.recipe_dir`"""
         super(ForceAlign, self).create()

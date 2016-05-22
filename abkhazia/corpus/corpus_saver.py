@@ -45,6 +45,7 @@ class CorpusSaver(object):
         cls.save_silences(corpus, _path('silences.txt'))
         cls.save_utt2spk(corpus, _path('utt2spk.txt'))
         cls.save_variants(corpus, _path('variants.txt'))
+        corpus.meta.save(_path('meta.txt'))
 
     @staticmethod
     def save_wavs(corpus, path, copy_wavs=False):

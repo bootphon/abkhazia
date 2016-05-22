@@ -117,6 +117,8 @@ class Features(abstract_recipe.AbstractRecipe):
         self._compute_cmvn_stats()
 
     def export(self):
+        super(Features, self).export()
+
         export_features(
             os.path.join(self.recipe_dir, 'data', self.name),
             self.output_dir,

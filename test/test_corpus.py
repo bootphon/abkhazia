@@ -22,6 +22,7 @@ def test_save_corpus(tmpdir, corpus):
     assert corpus.is_valid()
     corpus_saved = os.path.join(str(tmpdir), 'corpus')
     corpus.save(corpus_saved)
+    assert os.path.isfile(os.path.join(corpus_saved, 'meta.txt'))
 
     d = Corpus.load(corpus_saved)
     assert d.is_valid()

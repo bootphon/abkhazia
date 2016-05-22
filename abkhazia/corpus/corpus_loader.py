@@ -42,6 +42,7 @@ class CorpusLoader(object):
         # init the corpus from data files
         corpus = corpus_cls()
         corpus.log = log
+        corpus.meta = data['meta']
         corpus.wavs = cls.load_wavs(data['wavs'])
         corpus.lexicon = cls.load_lexicon(data['lexicon'])
         corpus.segments = cls.load_segments(data['segments'])
@@ -75,6 +76,11 @@ class CorpusLoader(object):
             if not os.path.isfile(path):
                 raise IOError('invalid corpus: not found {}'.format(path))
             data[_file] = path
+
+        # meta is optional
+        meta = os.path.join(corpus_dir, 'meta.txt')
+        data['meta'] = (utils.Meta.load(meta) if os.path.isfile(meta)
+                        else utils.Meta(source=corpus_dir))
 
         return data
 

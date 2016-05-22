@@ -360,6 +360,8 @@ class LanguageModel(abstract_recipe.AbstractRecipe):
             self._format_lm(G_arpa, G_fst)
 
     def export(self):
+        super(LanguageModel, self).export()
+
         # G.arpa.gz is needed for acoustic modeling
         origin = os.path.join(
             self.recipe_dir, 'data', 'local', self.name, 'G.arpa.gz')
