@@ -5,20 +5,20 @@
    CLOSED: [2016-05-20 ven. 17:54]
 ** DONE LM optional silences by default
    CLOSED: [2016-05-20 ven. 17:59]
+** TODO split must write {testing/train}/data
+** TODO install_kaldi unix/mac
+*** replace readlink/greadlink by a python oneliner
+*** change path in SRILM (macosx/i686)
 ** TODO prepare buckeye: strange lexicon issue
    following words have no transcription in lexicon: set(['and', 'a',
    'okay', "you're", 'i', 'of', 'it', 'uh', 'in', 'ohio', 'rough',
    'know'])
-** TODO split must write {testing/train}/data
 ** TODO features: some files not computed, issues a warning
    issue with short utterances?
-** TODO install_kaldi unix/mac
-*** replace readlink/greadlink by a python oneliner
-*** change path in SRILM (macosx/i686)
+** TODO bug in decode
 ** TODO updating abkhazia.cfg
    Need of an automated way to update new versions of the installed
    configuration file in the ./configure script.
-** TODO bug in decode
 * posteriors on Childes/Brent alignement [2/3]
 ** DONE intégrer Childes/Brent dans abkhazia
    CLOSED: [2016-04-24 dim. 23:33]
