@@ -12,11 +12,11 @@
    following words have no transcription in lexicon: set(['and', 'a',
    'okay', "you're", 'i', 'of', 'it', 'uh', 'in', 'ohio', 'rough',
    'know'])
+** TODO features: some files not computed, issues a warning
+   issue with short utterances?
 ** TODO install_kaldi unix/mac
 *** replace readlink/greadlink by a python oneliner
 *** change path in SRILM (macosx/i686)
-** TODO features: some files not computed, issues a warning
-   issue with short utterances?
 ** TODO bug in decode
 ** TODO updating abkhazia.cfg
    Need of an automated way to update new versions of the installed

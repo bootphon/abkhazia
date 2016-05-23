@@ -36,6 +36,7 @@ class AbstractRecipe(utils.AbkhaziaBase):
         self.njobs = utils.default_njobs()
         self.corpus = corpus
         self.meta.source = 'corpus = {}'.format(self.corpus.meta.source)
+        self.meta.name = self.name + ' on corpus ' + self.corpus.meta.name
 
         if not os.path.isdir(output_dir):
             os.makedirs(output_dir)

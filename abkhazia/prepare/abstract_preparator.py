@@ -84,6 +84,8 @@ class AbstractPreparator(object):
 
         # init empty output corpus
         self.corpus = abkhazia.corpus.Corpus()
+        self.corpus.meta.source = self.input_dir
+        self.corpus.meta.name = self.name
 
     def prepare(self, wavs_dir):
         """Prepare the corpus from raw distribution to abkhazia format

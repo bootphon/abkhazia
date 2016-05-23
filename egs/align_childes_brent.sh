@@ -37,5 +37,5 @@ abkhazia acoustic $data_dir -t tri-sa || exit 1
 echo 'computing forced alignment'
 abkhazia align $train_dir || exit 1
 
-echo 'symlink the result to $data_dir/forced_alignment.txt'
-ln -s -f $train_dir/align/export/forced_alignment.txt $data_dir
+# echo 'symlink the result to $data_dir/forced_alignment.txt'
+# ln -s -f $train_dir/align/export/forced_alignment.txt $data_dir

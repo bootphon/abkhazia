@@ -20,7 +20,6 @@ import shutil
 import textwrap
 
 import abkhazia.utils as utils
-from abkhazia.corpus import Corpus
 from abkhazia.commands.abstract_command import AbstractCommand
 
 # import all the corpora preparators

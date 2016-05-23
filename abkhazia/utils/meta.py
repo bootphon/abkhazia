@@ -25,13 +25,16 @@ class Meta(object):
     Attach and manage metadata to an abkhazia object, such as creation
     date, source and user.
 
+    Attached data is dumped to a meta.txt file, must be a oneline str.
+
     """
     date_format = '%b %d %Y %H:%M:%S.%f'  # May 20 2016 12:42:39.705852
 
-    def __init__(self, source='', comment=''):
+    def __init__(self, name='', source='', comment=''):
         self.date = datetime.datetime.now()
         self.user = getpass.getuser()
         self.host = socket.gethostname()
+        self.name = str(name).replace('\n', '. ')
         self.source = str(source).replace('\n', '. ')
         self.comment = str(comment).replace('\n', '. ')
 
@@ -53,6 +56,7 @@ class Meta(object):
             cls._load_token('date', lines), cls.date_format)
         _self.user = cls._load_token('user', lines)
         _self.host = cls._load_token('host', lines)
+        _self.name = cls._load_token('name', lines)
         _self.source = cls._load_token('source', lines)
         _self.comment = cls._load_token('comment', lines)
         return _self
@@ -63,6 +67,7 @@ class Meta(object):
                     'date: {}'.format(self.date.strftime(self.date_format)),
                     'user: {}'.format(self.user),
                     'host: {}'.format(self.host),
+                    'name: {}'.format(self.name),
                     'source: {}'.format(self.source),
                     'comment: {}'.format(self.comment)):
                 meta_file.write(line + '\n')
