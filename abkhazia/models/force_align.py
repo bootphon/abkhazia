@@ -202,17 +202,28 @@ class ForceAlign(abstract_recipe.AbstractRecipe):
         words = []
         for utt_id, utt_align in _read_utts(phones):
             idx = 0
+            # for each word in transcription, parse it's aligned
+            # phones and add the word after the first phone belonging
+            # to that word.
             for word in text[utt_id]:
-                begin = True
                 try:
-                    for phone in lexicon[word]:
-                        words.append('{} {}'.format(
-                            utt_align[idx], word if begin else ''))
-                        idx += 1
-                        begin = False
+                    wlen = len(lexicon[word])
                 except KeyError:  # the word isn't in lexicon
-                    self.log.debug(
+                    self.log.warning(
                         'ignoring out of lexicon word: %s', word)
+
+                # from idx, we eat wlen phones (+ any silence phone)
+                begin = True
+                while wlen > 0:
+                    aligned = utt_align[idx]
+                    if aligned.split()[-1] in self.corpus.silences:
+                        words.append('{}'.format(aligned))
+                    else:
+                        words.append('{} {}'.format(
+                            aligned, word if begin else ''))
+                        wlen -= 1
+                        begin = False
+                    idx += 1
         return words
 
     def _export_words(self, int2phone, tra):
