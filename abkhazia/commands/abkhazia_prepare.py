@@ -122,15 +122,6 @@ class AbstractFactory(object):
             'computations (mainly for wav conversion). '
             'Default is to launch %(default)s jobs.')
 
-        # group = parser.add_argument_group('validation options')
-        # group = group.add_mutually_exclusive_group()
-        # group.add_argument(
-        #     '--no-validation', action='store_true',
-        #     help='disable the corpus validation step (do only preparation)')
-        # group.add_argument(
-        #     '--only-validation', action='store_true',
-        #     help='disable the corpus preparation step (do only validation)')
-
         if cls.preparator.audio_format == 'wav':
             parser.add_argument(
                 '--copy-wavs', action='store_true',
@@ -172,7 +163,6 @@ class AbstractFactory(object):
 
         preparator.log = utils.get_log(
             os.path.join(output_dir, 'data_preparation.log'), args.verbose)
-        preparator.log.debug('writing corpus to %s', output_dir)
 
         # initialize corpus from raw with it's preparator
         corpus = preparator.prepare(os.path.join(output_dir, 'wavs'))
@@ -184,7 +174,6 @@ class AbstractFactory(object):
         corpus.validate(njobs=args.njobs)
 
         # save the corpus to the output directory
-        preparator.log.info('writing corpus to %s', output_dir)
         corpus.save(output_dir, no_wavs=True)
 
     @classmethod

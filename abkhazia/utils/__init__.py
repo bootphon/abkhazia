@@ -23,5 +23,6 @@ from .spk2utt import spk2utt
 from .abkhazia_base import AbkhaziaBase
 from .meta import Meta
 
+import wav
 import jobs
 import cha

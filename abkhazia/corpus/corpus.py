@@ -32,8 +32,6 @@ class Corpus(utils.AbkhaziaBase):
     provides methods/attritutes to interact with it in a consistent
     and safe way.
 
-    TODO metainfo -> (name, creation date, source)
-    TODO logging support
     TODO implement variants phones
 
     Attributes
@@ -181,9 +179,12 @@ class Corpus(utils.AbkhaziaBase):
         # init an empty list for all wavs
         wav2utt = {wav: [] for wav, _, _ in self.segments.itervalues()}
 
+        def _float(t):
+            return None if t is None else float(t)
+
         # populate lists with utterance ids and timestamps
         for utt, (wav, tstart, tend) in self.segments.iteritems():
-            wav2utt[wav].append((utt, float(tstart), float(tend)))
+            wav2utt[wav].append((utt, _float(tstart), _float(tend)))
         return wav2utt
 
     def utt2duration(self):
@@ -195,7 +196,7 @@ class Corpus(utils.AbkhaziaBase):
         utt2dur = dict()
         for utt, (wav, start, stop) in self.segments.iteritems():
             start = 0 if start is None else start
-            stop = utils.wav.duration(wav) if stop is None else stop
+            stop = utils.wav.duration(self.wavs[wav]) if stop is None else stop
             utt2dur[utt] = stop - start
         return utt2dur
 
@@ -233,7 +234,9 @@ class Corpus(utils.AbkhaziaBase):
         """
         corpus = Corpus()
         corpus.meta.source = self.meta.source
-        corpus.meta.comment = name if name else 'subcorpus'
+        corpus.meta.name = name if name else 'subcorpus of ' + self.meta.name
+        corpus.meta.comment = ('{} utterances from {}'
+                               .format(len(utt_ids), len(self.utts())))
 
         corpus.lexicon = self.lexicon
         corpus.phones = self.phones

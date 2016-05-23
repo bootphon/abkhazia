@@ -17,36 +17,66 @@
 ** TODO install_kaldi unix/mac
 *** replace readlink/greadlink by a python oneliner
 *** change path in SRILM (macosx/i686)
+*** test the problematic binaries in configure
 ** TODO bug in decode
 ** TODO updating abkhazia.cfg
    Need of an automated way to update new versions of the installed
    configuration file in the ./configure script.
-* posteriors on Childes/Brent alignement [2/3]
-** DONE intégrer Childes/Brent dans abkhazia
-   CLOSED: [2016-04-24 dim. 23:33]
-*** corpus original (en 16 kHz)
-    oberon:/fhgfs/bootphon/scratch/xcao/Brent_test_abkhazia/Brent_corpus_test_abkhazia
-*** From XN
-   - tous les scripts que j'ai utilisés pour générer les données
-     oberon:/fhgfs/bootphon/scratch/xcao/Brent_test_abkhazia/scripts
-   - les sorties si tu veux comparer quand tu auras écrit le script
-     oberon:/fhgfs/bootphon/scratch/xcao/Brent_test_abkhazia/ouput_brent_abkhazia
-** DONE force align HTK like
-   CLOSED: [2016-04-27 mer. 00:12]
-   on a une sortie alignment forcé des phones mais peut-on avoir un
-   alignement des mots? Le mieux serait une sortie des 2 comme le fait
-   HTK (voir pj) car je pense qu'on va en avoir besoin plus tard...
-
-   Les sorties des alignements forcés sont dans le même répertoire que
-   toutes autres données du Brent.
-
-   Tu verras que Kaldi n'a pas pu
-   aligner toutes les phrases qui sont dans text.txt mais c'est normal
-   non?
-
-   /ssh:oberon:/fhgfs/bootphon/scratch/xcao/Brent_test_abkhazia/output_brent_abkhazia/output_forced_alignment_kaldi/phone_align
-   (pour les fichiers splittés) ou "forced_alignment.txt"
 ** TODO compute alignment posteriograms with Kaldi
+* Open bugs [0/2]
+** TODO abkhazia language buckeye -v
+   gzip: stdout: Broken pipe
+   -: line 340912: warning: 13585 1-grams read, expected 13590
+   -: line 340912: warning: 98096 2-grams read, expected 98106
+   -: line 340912: warning: 229218 3-grams read, expected 229232
+** TODO abkhazia language librispeech-test-clean
+Fail in word level, regardless silences. Work on phone
+
+running utils/format_lm_sri.sh --srilm_opts "-subset -prune-lowprobs -unk" /home/mathieu/lscp/data/abkhazia/librispeech-test-clean/language /home/mathieu/lscp/data/abkhazia/librispeech-test-clean/language/recipe/data/local/language/G.arpa.gz /tmp/tmpFWGkJL
+Converting '/home/mathieu/lscp/data/abkhazia/librispeech-test-clean/language/recipe/data/local/language/G.arpa.gz' to FST
+gzip: stdout: Broken pipe
+-: line 91932: warning: 8014 1-grams read, expected 8141
+-: line 91932: warning: 35217 2-grams read, expected 35595
+-: line 91932: warning: 48688 3-grams read, expected 49258
+ngram: ../../include/LHash.cc:519: void LHashIter<KeyT, DataT>::sortKeys() [with KeyT = unsigned int; DataT = Trie<unsigned int, BOnode>]: Assertion `j == numEntries' failed.
+/home/mathieu/lscp/dev/kaldi/tools/srilm/bin/change-lm-vocab: line 78: 12596 Done                    gzip -dcf $oldlm
+12597                       | ${GAWK-gawk} '
+# read the vocab file
+NR == 1 && vocab {
+# always include sentence begin/end
+is_word["<s>"] = is_word["</s>"] = 1;
+while ((getline word < vocab) > 0) {
+is_word[to_lower ? tolower(word) : word] = 1;
+}
+close(vocab);
+}
+# process old lm
+NF==0 {
+print; next;
+}
+/^ngram *[0-9][0-9]*=/ {
+order = substr($2,1,index($2,"=")-1);
+print;
+next;
+}
+/^\\[0-9]-grams:/ {
+currorder=substr($0,2,1);
+print;
+next;
+}
+/^\\/ {
+print; next;
+}
+currorder {
+for (i = 2 ; i <= currorder + 1; i ++) {
+if (!((to_lower ? tolower($i) : $i) in is_word)) next;
+}
+print;
+next;
+}
+{ print }
+' vocab=$vocab to_lower=$tolower
+12598 Aborted                 | ngram -lm - -vocab "$ngram_vocab" -renorm -write-lm "$newlm" $options
 * Functions
  - prepare childes
    - test with others than Brent, have a subcorpus selection option?
