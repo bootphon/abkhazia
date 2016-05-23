@@ -1,18 +1,20 @@
 <!-- -*-org-*- this comment force org-mode in emacs -->
 
-* for 0.3 release (pre tutorial) [2/8]
+* for 0.3 release (pre tutorial) [4/8]
 ** DONE align on words only (discard phones)
    CLOSED: [2016-05-20 ven. 17:54]
 ** DONE LM optional silences by default
    CLOSED: [2016-05-20 ven. 17:59]
-** TODO split must write {testing/train}/data
-** TODO install_kaldi unix/mac
-*** replace readlink/greadlink by a python oneliner
-*** change path in SRILM (macosx/i686)
-** TODO prepare buckeye: strange lexicon issue
+** DONE split must write {testing/train}/data
+   CLOSED: [2016-05-23 lun. 10:41]
+** DONE prepare buckeye: strange lexicon issue
+   CLOSED: [2016-05-23 lun. 10:54]
    following words have no transcription in lexicon: set(['and', 'a',
    'okay', "you're", 'i', 'of', 'it', 'uh', 'in', 'ohio', 'rough',
    'know'])
+** TODO install_kaldi unix/mac
+*** replace readlink/greadlink by a python oneliner
+*** change path in SRILM (macosx/i686)
 ** TODO features: some files not computed, issues a warning
    issue with short utterances?
 ** TODO bug in decode
@@ -45,12 +47,12 @@
    /ssh:oberon:/fhgfs/bootphon/scratch/xcao/Brent_test_abkhazia/output_brent_abkhazia/output_forced_alignment_kaldi/phone_align
    (pour les fichiers splittés) ou "forced_alignment.txt"
 ** TODO compute alignment posteriograms with Kaldi
-** prepare childes
+* Functions
+ - prepare childes
    - test with others than Brent, have a subcorpus selection option?
    - strange words in trs:
      xcuse -> excuse
      fiin / fiin o
-* Functions
  - features
    - centralize/refactor the legacy code related to features
    - option to export features from ark to h5f, see
@@ -84,12 +86,10 @@
       speaker_adapt
       output: results (repertoire)
 * Documentation
-
   - [ ] have more detailed command description on 'abkhazia <command>
     --help'. Assume the user doesn't know abkhazia or kaldi.
   - [ ] improve the 'command line' page
   - [ ] improve the 'corpus format' page
-
 * Fixed bugs [2/2]
 ** DONE installation on Mac
    CLOSED: [2016-05-20 ven. 13:02]

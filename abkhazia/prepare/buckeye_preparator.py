@@ -230,13 +230,15 @@ class BuckeyePreparator(AbstractPreparator):
 
                     if word_format_match:
                         word = word_format_match.group(1)
-                        phn_trs = word_format_match.group(3).strip()
+                        phn_trs = word_format_match.group(3)
                         if phn_trs == '':
                             no_trs.add(word)
                         else:
                             dict_word[word] = phn_trs
-        if no_trs:
+
+        really_no_trs = [t for t in no_trs if t not in dict_word]
+        if really_no_trs:
             self.log.debug(
                 'following words have no transcription in lexicon: {}'
-                .format(no_trs))
+                .format(really_no_trs))
         return dict_word

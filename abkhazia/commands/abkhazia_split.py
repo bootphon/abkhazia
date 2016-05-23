@@ -82,11 +82,11 @@ class AbkhaziaSplit(AbstractCoreCommand):
                 1 - args.train_prop
                 if args.test_prop is None else args.test_prop)
 
-        train, testing = corpus.split(
+        train, test = corpus.split(
             train_prop=args.train_prop,
             test_prop=test_prop,
             by_speakers=args.by_speakers,
             random_seed=args.random_seed)
 
-        train.save(os.path.join(output_dir, 'train'))
-        testing.save(os.path.join(output_dir, 'testing'))
+        train.save(os.path.join(output_dir, 'train', 'data'))
+        test.save(os.path.join(output_dir, 'test', 'data'))
