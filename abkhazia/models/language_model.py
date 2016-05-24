@@ -243,7 +243,8 @@ class LanguageModel(abstract_recipe.AbstractRecipe):
 
             text_blm = os.path.join(self.a2k._local_path(), 'text_blm.gz')
             self._run_command(
-                'compile-lm -i {} --text=yes {}'.format(text_lm, text_blm))
+                # was with the -i option
+                'compile-lm {} --text=yes {}'.format(text_lm, text_blm))
 
             # gzip the compiled lm (from
             # https://docs.python.org/2/library/gzip.html#examples-of-usage)

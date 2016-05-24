@@ -22,14 +22,22 @@
 ** TODO updating abkhazia.cfg
    Need of an automated way to update new versions of the installed
    configuration file in the ./configure script.
-** TODO compute alignment posteriograms with Kaldi
+** TODO compute alignment posteriograms with Kaldi [1/4]
+*** DONE have a working beta version
+    CLOSED: [2016-05-24 mar. 21:39]
+*** TODO avoid share/align_fmllr.sh and implement it in python
+    Use steps/align_fmllr_lats.sh + posterior computation from lattice
+*** TODO refactor the align recipe
+    no more separation, use lattice for no-post alignments
+    more clear, with comments and explanation on tra/post files
+*** TODO test align
 * Open bugs [0/2]
 ** TODO abkhazia language buckeye -v
    gzip: stdout: Broken pipe
    -: line 340912: warning: 13585 1-grams read, expected 13590
    -: line 340912: warning: 98096 2-grams read, expected 98106
    -: line 340912: warning: 229218 3-grams read, expected 229232
-** TODO abkhazia language librispeech-test-clean
+** TODO abkhazia language librispeech-test-clean -n 3 -l word
 Fail in word level, regardless silences. Work on phone
 
 running utils/format_lm_sri.sh --srilm_opts "-subset -prune-lowprobs -unk" /home/mathieu/lscp/data/abkhazia/librispeech-test-clean/language /home/mathieu/lscp/data/abkhazia/librispeech-test-clean/language/recipe/data/local/language/G.arpa.gz /tmp/tmpFWGkJL

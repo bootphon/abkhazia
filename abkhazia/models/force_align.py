@@ -14,15 +14,21 @@
 #
 # You should have received a copy of the GNU General Public License
 # along with abkhazia. If not, see <http://www.gnu.org/licenses/>.
-"""Provides the ForceAlign class"""
+"""Provides the ForceAlign and ForceAlignPost classes"""
 
+import gzip
 import os
+import pkg_resources
 
 import abkhazia.utils as utils
 import abkhazia.models.abstract_recipe as abstract_recipe
 from abkhazia.models.language_model import check_language_model
 from abkhazia.models.acoustic_model import check_acoustic_model
 from abkhazia.models.features import export_features
+
+# TODO check alignment: which utt have been transcribed, have silence
+# been inserted, otherwise no difference? (maybe some did not reach
+# final state), chronological order, grouping by utt_id etc.
 
 
 def _read_splited(f):
@@ -80,24 +86,6 @@ def _read_int2phone(phone2int, word_position_dependent=True):
     return phonemap
 
 
-def _read_tra_alignment(phonemap, tra):
-    # tra_file using the format on each line: utt_id [phone_code
-    # n_frames]+ this is a generator (it yields in the loop)
-    for line in utils.open_utf8(tra, 'r'):
-        sequence = line.strip().split(u" ; ")
-        utt_id, code, nframes = sequence[0].split(u" ")
-        sequence = [u" ".join([code, nframes])] + sequence[1:]
-        # this seems good enough, but I (Thomas) didn't check in the
-        # make_mfcc code of kaldi to be sure
-        start = 0.0125
-
-        for elem in sequence:
-            code, nframes = elem.split(u" ")
-            stop = start + 0.01*int(nframes)
-            yield (utt_id, str(start), str(stop), phonemap[code])
-            start = stop
-
-
 class ForceAlign(abstract_recipe.AbstractRecipe):
     """Compute forced alignment of an abkhazia corpus
 
@@ -116,15 +104,40 @@ class ForceAlign(abstract_recipe.AbstractRecipe):
         self.feat_dir = None
         self.am_dir = None
 
+    @staticmethod
+    def _get_align_script():
+        return 'steps/align_fmllr.sh'
+
+    def _get_tra_file(self):
+        return os.path.join(self.recipe_dir, 'export', 'forced_alignment.tra')
+
+    @staticmethod
+    def _read_tra_alignment(phonemap, tra):
+        # tra_file using the format on each line: utt_id [phone_code
+        # n_frames]+ this is a generator (it yields in the loop)
+        for line in utils.open_utf8(tra, 'r'):
+            sequence = line.strip().split(u" ; ")
+            utt_id, code, nframes = sequence[0].split(u" ")
+            sequence = [u" ".join([code, nframes])] + sequence[1:]
+            # this seems good enough, but I (Thomas) didn't check in the
+            # make_mfcc code of kaldi to be sure
+            start = 0.0125
+
+            for elem in sequence:
+                code, nframes = elem.split(u" ")
+                stop = start + 0.01*int(nframes)
+                yield (utt_id, str(start), str(stop), phonemap[code])
+                start = stop
+
     def _align_fmllr(self):
         self.log.info('computing forced alignment')
 
-        target = os.path.join(self.recipe_dir, 'exp', 'ali_fmllr')
+        target = os.path.join(self.recipe_dir, 'exp', 'align_fmllr')
         if not os.path.isdir(target):
             os.makedirs(target)
 
         self._run_command(
-            'steps/align_fmllr.sh --nj {0} --cmd "{1}" {2} {3} {4} {5}'
+            self._get_align_script() + ' --nj {0} --cmd "{1}" {2} {3} {4} {5}'
             .format(
                 self.njobs,
                 utils.config.get('kaldi', 'train-cmd'),
@@ -136,8 +149,8 @@ class ForceAlign(abstract_recipe.AbstractRecipe):
     def _ali_to_phones(self):
         self.log.info('exporting to phone alignment')
 
-        export = os.path.join(self.recipe_dir, 'export')
-        target = os.path.join(export, 'forced_alignment.tra')
+        target = self._get_tra_file()
+        export = os.path.dirname(target)
         if not os.path.isdir(export):
             os.makedirs(export)
 
@@ -147,14 +160,6 @@ class ForceAlign(abstract_recipe.AbstractRecipe):
                 os.path.join(self.am_dir, 'final.mdl'),
                 os.path.join(self.recipe_dir, 'exp', 'ali_fmllr', 'ali.*.gz'),
                 target))
-
-        # if we want to use the tri2a results directly without the final
-        # forced alignment (is there any difference between the two beyond one
-        # being done using only one job?)
-        # ali-to-phones \
-        #     --write_lengths=true exp/tri2a/final.mdl \
-        #     "ark,t:gunzip -c exp/tri2a/ali.*.gz|" \
-        #     ark,t:export/forced_alignment.tra
 
     def check_parameters(self):
         super(ForceAlign, self).check_parameters()
@@ -178,14 +183,10 @@ class ForceAlign(abstract_recipe.AbstractRecipe):
         self._align_fmllr()
         self._ali_to_phones()
 
-    # TODO check alignment: which utt have been transcribed, have silence
-    # been inserted, otherwise no difference? (maybe some did not reach
-    # final state), chronological order, grouping by utt_id etc.
-    @staticmethod
-    def _export_phones(int2phone, tra):
+    def _export_phones(self, int2phone, tra):
         return [' '.join([utt_id, start, stop, phone])
                 for utt_id, start, stop, phone
-                in _read_tra_alignment(int2phone, tra)]
+                in self._read_tra_alignment(int2phone, tra)]
 
     def _export_phones_and_words(self, int2phone, tra):
         # phone level alignment
@@ -244,7 +245,7 @@ class ForceAlign(abstract_recipe.AbstractRecipe):
         if level not in ('both', 'words', 'phones'):
             raise IOError('unknown alignment level {}'.format(level))
 
-        tra = os.path.join(self.recipe_dir, 'export', 'forced_alignment.tra')
+        tra = self._get_tra_file()
         int2phone = _read_int2phone(os.path.join(self.lm_dir, 'phones.txt'))
 
         # retrieve the export function according to `level`
@@ -260,3 +261,91 @@ class ForceAlign(abstract_recipe.AbstractRecipe):
                 out.write(line.strip() + '\n')
 
         super(ForceAlign, self).export()
+
+
+class ForceAlignPost(ForceAlign):
+    """Append posterior probability to aligned phones"""
+    @staticmethod
+    def _listdir(path, start):
+        return sorted([os.path.join(path, f)
+                       for f in os.listdir(path)
+                       if f.startswith(start)])
+
+    @staticmethod
+    def _data2dict(data):
+        d = dict()
+        for line in data:
+            l = line.replace('[', '').replace(']', '').split()
+            d[l[0]] = l[1:]
+        return d
+
+    def _get_align_script(self):
+        # init the path to abkhazia/share
+        share_dir = pkg_resources.resource_filename(
+            pkg_resources.Requirement.parse('abkhazia'), 'abkhazia/share')
+        return os.path.join(share_dir, 'align_fmllr.sh')
+
+    def _write_tra_post(self, tra):
+        path = os.path.join(self.recipe_dir, 'exp', 'align_fmllr')
+
+        dtra = os.path.dirname(tra)
+        if not os.path.isdir(dtra):
+            os.makedirs(dtra)
+
+        # build dictionary ali[utt-id] -> split line
+        ali_data = []
+        for f in self._listdir(path, 'ali'):
+            ali_data += gzip.open(f, 'r').readlines()
+        with utils.open_utf8(tra, 'w') as ftra:
+            for k, v in sorted(self._data2dict(ali_data).items()):
+                ftra.write('{} {} \n'.format(k, ' '.join(v)))
+
+        post_data = []
+        for f in self._listdir(path, 'post'):
+            post_data += gzip.open(f, 'r').readlines()
+        self.post = self._data2dict(post_data)
+
+        post_file = os.path.splitext(tra)[0] + '.post'
+        with utils.open_utf8(post_file, 'w') as fpost:
+            for k, v in sorted(self.post.items()):
+                fpost.write('{} {} \n'.format(k, ' '.join(v)))
+
+    def _read_tra_post_alignment(self, phonemap, tra):
+        # tra_file using the format on each line: utt_id [phone_code
+        # n_frames]+ this is a generator (it yields in the loop)
+        for line in utils.open_utf8(tra, 'r'):
+            # this seems good enough, but I (Thomas) didn't check in the
+            # make_mfcc code of kaldi to be sure
+            start = 0.0125
+
+            sequence = line.strip().split(u" ; ")
+            utt_id, code, nframes = sequence[0].split(u" ")
+            sequence = [u" ".join([code, nframes])] + sequence[1:]
+
+            utt_post = [float(p) for p in self.post[utt_id]]
+
+            for elem in sequence:
+                code, nframes = elem.split(u" ")
+                nframes = int(nframes)
+                stop = start + 0.01*nframes
+                mpost = sum(utt_post[:nframes]) / nframes
+                utt_post = utt_post[nframes:]
+                yield (utt_id, str(start), str(stop), str(mpost), phonemap[code])
+                start = stop
+
+    def run(self):
+        self._align_fmllr()
+
+    def _export_phones(self, int2phone, tra):
+        # return super(ForceAlignPost, self)._export_phones(int2phone, tra)
+        return [' '.join([utt_id, start, stop, prob, phone])
+                for utt_id, start, stop, prob, phone
+                in self._read_tra_post_alignment(int2phone, tra)]
+
+    def export(self, level='both'):
+        # prepare aligned int phones from ali.*.gz
+        self._write_tra_post(self._get_tra_file())
+        super(ForceAlignPost, self).export(level)
+
+    # def export(self, level='both'):
+    #     pass

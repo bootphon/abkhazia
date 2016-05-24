@@ -44,6 +44,10 @@ class AbkhaziaAlign(AbstractKaldiCommand):
         out_group = parser.add_argument_group('alignment format', description=(
             "by default the output alignement file is phone aligned and "
             "include both words and phones"))
+        out_group.add_argument(
+            '--post', action='store_true',
+            help='write posterior probability of aligned phones')
+
         out_group = out_group.add_mutually_exclusive_group()
         out_group.add_argument(
             '--phones-only', action='store_true',
@@ -93,7 +97,8 @@ class AbkhaziaAlign(AbstractKaldiCommand):
         feat += '/features'
 
         # instanciate the kaldi recipe creator
-        recipe = force_align.ForceAlign(corpus, output_dir, log=log)
+        recipe = (force_align.ForceAlignPost if args.post
+                  else force_align.ForceAlign)(corpus, output_dir, log=log)
         recipe.njobs = args.njobs
         recipe.lm_dir = lang
         recipe.feat_dir = feat
