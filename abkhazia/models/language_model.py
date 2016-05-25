@@ -68,6 +68,27 @@ def word2phone(corpus):
     return phones
 
 
+def read_int2phone(lm_dir, word_position_dependent=True):
+    """Return a int to phone mapping as a dict
+
+    Kaldi internally codes phones as ints, so this method reverses the
+    mapping from ints to phones based on the phones.txt file in
+    `lm_dir`. This file is assumed to exist.
+
+    """
+    phonemap = dict()
+    for line in utils.open_utf8(os.path.join(lm_dir, 'phones.txt'), 'r'):
+        phone, code = line.strip().split(' ')
+
+        # remove word position markers
+        if word_position_dependent and phone[-2:] in ['_I', '_B', '_E', '_S']:
+            phone = phone[:-2]
+
+        phonemap[code] = phone
+    return phonemap
+
+
+
 class LanguageModel(abstract_recipe.AbstractRecipe):
     """Compute a language model from an abkhazia corpus
 
