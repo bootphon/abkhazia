@@ -16,6 +16,14 @@
 # along with abkahzia. If not, see <http://www.gnu.org/licenses/>.
 
 
+# equivalent to $(readlink -f $1) but in pure bash (compatible with
+# mac OS)
+function realpath {
+    pushd `dirname $1` > /dev/null
+    echo $(pwd -P)
+    popd > /dev/null
+}
+
 # called on kaldi building errors
 function failure { [ ! -z "$1" ] && echo $1; exit 1; }
 
@@ -25,7 +33,7 @@ ncores=$(grep -c ^processor /proc/cpuinfo)
 # absolute path to the kaldi directory (where it is/will be downloaded
 # and compiled)
 kaldi=${1:-./kaldi}
-kaldi=$(readlink -f $kaldi)
+kaldi=$(realpath $kaldi)
 
 # if the directory don't exist, clone our abkhazia kaldi fork in it,
 # else fetch any new update.
@@ -43,7 +51,7 @@ fi
 # From $kaldi/tools/extras/check_dependencies.sh. Debian systems
 # generally link /bin/sh to dash, which doesn't work with some scripts
 # as it doesn't expand x.{1,2}.y to x.1.y x.2.y
-[ $(readlink /bin/sh) == "dash" ] && \
+[ $(realpath /bin/sh) == "dash" ] && \
     failure  "failed because /bin/sh is linked to dash, and currently \
          some of the scripts will not run properly. We recommend to run: \
          sudo ln -s -f bash /bin/sh"
@@ -60,7 +68,6 @@ cd $kaldi/src
 sed -i "s/\-g # -O0 -DKALDI_PARANOID.*$/-O3 -DNDEBUG/" kaldi.mk
 make depend -j $ncores || failure "failed to setup kaldi dependencies"
 make -j $ncores || failure "failed to build kaldi"
-
 
 
 ## TODO this is commented out since this is already checked in
