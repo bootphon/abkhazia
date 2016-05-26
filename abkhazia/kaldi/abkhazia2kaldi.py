@@ -206,12 +206,10 @@ class Abkhazia2Kaldi(object):
             self._copy_template(script, template)
 
     def setup_score(self):
-        """Copy score.sh to self.recipe_dir"""
+        """Copy kaldi/egs/gp/s5/local/score.sh to self.recipe_dir"""
         local_dir = os.path.join(self.recipe_dir, 'local')
         if not os.path.isdir(local_dir):
             os.mkdir(local_dir)
 
-        shutil.copy(
-            os.path.join(
-                self.share_dir, 'kaldi_templates', 'standard_score.sh'),
-            os.path.join(local_dir, 'score.sh'))
+        target = os.path.join(self.kaldi_root, '/egs/gp/s5/local', 'score.sh')
+        shutil.copy(target, os.path.join(local_dir, 'score.sh'))

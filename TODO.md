@@ -91,6 +91,7 @@ split_data.sh: warning, #lines is (utt2spk,feats.scp) is (112865,112862); you ca
 use utils/fix_data_dir.sh data/acoustic to fix this.
 
 ** TODO abkhazia decode
+   what is the bug??
 ** TODO abkhazia align --post --with-words
    Update the probabilities estimation to be on words, not on phones
 * Functions
