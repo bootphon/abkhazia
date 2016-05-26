@@ -28,7 +28,11 @@ function realpath {
 function failure { [ ! -z "$1" ] && echo $1; exit 1; }
 
 # number of CPU cores on the machine, to do parallel compilation
-ncores=$(grep -c ^processor /proc/cpuinfo)
+if [ $(uname) == 'Darwin' ]; then
+    ncores=$(sysctl -a | grep machdep.cpu.core_count | cut -d: -f2 | tr -d ' ')
+else
+    ncores=$(grep -c ^processor /proc/cpuinfo)
+fi
 
 # absolute path to the kaldi directory (where it is/will be downloaded
 # and compiled)
