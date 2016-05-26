@@ -42,8 +42,12 @@ class AbkhaziaAlign(AbstractKaldiCommand):
         parser.formatter_class = argparse.RawDescriptionHelpFormatter
         parser.description = cls.long_description()
 
-        out_group = parser.add_argument_group('alignment type', description=(
-            'by default the alignement is computed as the lattice best path'))
+        out_group = parser.add_argument_group('alignment parameters')
+        out_group.add_argument(
+            '--acoustic-scale', default=0.1, type=float, metavar='<float>',
+            help='scaling factor for acoustic likelihoods, '
+            'default is %(default)s')
+
         out_group = out_group.add_mutually_exclusive_group()
         out_group.add_argument(
             '--post', action='store_true',
@@ -112,12 +116,17 @@ class AbkhaziaAlign(AbstractKaldiCommand):
         else:
             level = 'both'
 
+        if level == 'words' and args.post:
+            raise NotImplementedError(
+                'posteriors on words only are not yet implemented')
+
         # instanciate the kaldi recipe creator
         recipe = (align.AlignNoLattice if args.no_lattice
                   else align.Align)(corpus, output_dir, log=log)
         recipe.njobs = args.njobs
         recipe.level = level
         recipe.with_posteriors = args.post
+        recipe.acoustic_scale = args.acoustic_scale
         recipe.lm_dir = lang
         recipe.feat_dir = feat
         recipe.am_dir = acoustic

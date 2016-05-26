@@ -25,6 +25,9 @@ where the alignment is computed directly on GMM. This is faster but
 doesn't allow to retrieve posterior probabilities of the aligned
 phones.
 
+Note that some timestamps and missing/added silences can differ in the
+two alignment recipes, the Align recipe seems to add more silences.
+
 """
 
 import gzip
@@ -41,8 +44,6 @@ from abkhazia.models.features import export_features
 # been inserted, otherwise no difference? (maybe some did not reach
 # final state), chronological order, grouping by utt_id etc.
 
-# TODO Implement AlignNoLattice with the original recipe:
-# steps/align_fmllr.sh | ali-to-phones
 
 class Align(abstract_recipe.AbstractRecipe):
     """Estimate forced alignment of an abkahzia corpus"""
@@ -68,6 +69,7 @@ class Align(abstract_recipe.AbstractRecipe):
         super(Align, self).check_parameters()
         self._check_level()
         self._check_with_posteriors()
+        self._check_acoustic_scale()
 
         check_acoustic_model(self.am_dir)
         check_language_model(self.lm_dir)
@@ -101,7 +103,7 @@ class Align(abstract_recipe.AbstractRecipe):
         ali = self._read_result_utts('ali')
         post = self._read_result_utts('post') if self.with_posteriors else None
 
-       # retrieve the export function according to `level`
+        # retrieve the export function according to `level`
         func = {'phones': self._export_phones,
                 'words': self._export_words,
                 'both': self._export_phones_and_words}[self.level]
@@ -115,7 +117,6 @@ class Align(abstract_recipe.AbstractRecipe):
 
         super(Align, self).export()
 
-
     def _check_level(self):
         """Raise IOError on bad alignment level"""
         if self.level not in ['both', 'word', 'phone']:
@@ -128,6 +129,18 @@ class Align(abstract_recipe.AbstractRecipe):
             self.log.warning(
                 'alignment posteriors flag is not a bool, forcing to False')
             self.with_posteriors = False
+
+    def _check_acoustic_scale(self):
+        """Raise IOError if acoustic_scale not a float"""
+        if not isinstance(self.acoustic_scale, float):
+            raise IOError('acoustic scale must be a float, it is {}'
+                          .format(type(self.acoustic_scale)))
+
+    def _check_lm_scale(self):
+        """Raise IOError if lm_scale not a float"""
+        if not isinstance(self.lm_scale, float):
+            raise IOError('lm scale must be a float, it is {}'
+                          .format(type(self.lm_scale)))
 
     def _target_dir(self):
         """Return the directory where to put kaldi results
@@ -211,7 +224,7 @@ class Align(abstract_recipe.AbstractRecipe):
 
         self._run_command(
             '{0} JOB=1:{1} {2}/log/post-on-ali.JOB.log '
-            'lattice-to-post --acoustic-scale={3} --lm-scale={3} '
+            'lattice-to-post --acoustic-scale={3} '
             '"ark:gunzip -c {2}/lat.JOB.gz|" ark:- | '
             'post-to-phone-post {4} ark:- ark:- | '
             'get-post-on-ali ark:- "ark:gunzip -c {2}/frame_ali.JOB.gz|" '
@@ -312,8 +325,8 @@ class Align(abstract_recipe.AbstractRecipe):
     def _export_phones(self, int2phone, ali, post):
         """Export alignment at phone level"""
         if post:
-            return [' '.join([utt_id, start, stop, post, phone])
-                    for utt_id, start, stop, post, phone
+            return [' '.join([utt_id, start, stop, _post, phone])
+                    for utt_id, start, stop, _post, phone
                     in self._read_alignment(int2phone, ali, post)]
         else:
             return [' '.join([utt_id, start, stop, phone])

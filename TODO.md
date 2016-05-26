@@ -1,6 +1,6 @@
 <!-- -*-org-*- this comment force org-mode in emacs -->
 
-* for 0.3 release (pre tutorial) [4/8]
+* for 0.3 release (pre tutorial) [5/7]
 ** DONE align on words only (discard phones)
    CLOSED: [2016-05-20 ven. 17:54]
 ** DONE LM optional silences by default
@@ -12,26 +12,25 @@
    following words have no transcription in lexicon: set(['and', 'a',
    'okay', "you're", 'i', 'of', 'it', 'uh', 'in', 'ohio', 'rough',
    'know'])
-** TODO features: some files not computed, issues a warning
-   issue with short utterances?
+** DONE compute alignment posteriograms with Kaldi [3/3]
+   CLOSED: [2016-05-26 jeu. 10:50]
+*** DONE have a working beta version
+    CLOSED: [2016-05-24 mar. 21:39]
+*** DONE avoid share/align_fmllr.sh and implement it in python
+    CLOSED: [2016-05-26 jeu. 10:50]
+    Use steps/align_fmllr_lats.sh + posterior computation from lattice
+*** DONE refactor the align recipe
+    CLOSED: [2016-05-26 jeu. 10:50]
+    no more separation, use lattice for no-post alignments
+    more clear, with comments and explanation on tra/post files
 ** TODO install_kaldi unix/mac
 *** replace readlink/greadlink by a python oneliner
 *** change path in SRILM (macosx/i686)
 *** test the problematic binaries in configure
-** TODO bug in decode
 ** TODO updating abkhazia.cfg
    Need of an automated way to update new versions of the installed
    configuration file in the ./configure script.
-** TODO compute alignment posteriograms with Kaldi [1/4]
-*** DONE have a working beta version
-    CLOSED: [2016-05-24 mar. 21:39]
-*** TODO avoid share/align_fmllr.sh and implement it in python
-    Use steps/align_fmllr_lats.sh + posterior computation from lattice
-*** TODO refactor the align recipe
-    no more separation, use lattice for no-post alignments
-    more clear, with comments and explanation on tra/post files
-*** TODO test align
-* Open bugs [0/2]
+* Open bugs [0/5]
 ** TODO abkhazia language buckeye -v
    gzip: stdout: Broken pipe
    -: line 340912: warning: 13585 1-grams read, expected 13590
@@ -85,6 +84,15 @@ next;
 { print }
 ' vocab=$vocab to_lower=$tolower
 12598 Aborted                 | ngram -lm - -vocab "$ngram_vocab" -renorm -write-lm "$newlm" $options
+** TODO abkhazia features/language brent
+ldes_brent/language /home/mbernard/dev/abkhazia/egs/align_childes_brent/acoustic/recipe/exp/mono
+steps/train_mono.sh --nj 4 --cmd run.pl data/acoustic /home/mbernard/dev/abkhazia/egs/align_childes_brent/language /home/mbernard/dev/abkhazia/egs/align_childes_brent/acoustic/recipe/exp/mono
+split_data.sh: warning, #lines is (utt2spk,feats.scp) is (112865,112862); you can
+use utils/fix_data_dir.sh data/acoustic to fix this.
+
+** TODO abkhazia decode
+** TODO abkhazia align --post --with-words
+   Update the probabilities estimation to be on words, not on phones
 * Functions
  - prepare childes
    - test with others than Brent, have a subcorpus selection option?
