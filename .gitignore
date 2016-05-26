@@ -79,3 +79,4 @@ test/lm/*
 /exemple/*
 egs/align_childes_brent/
 egs/exemple_buckeye/*
+/kaldi/

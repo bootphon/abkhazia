@@ -37,20 +37,20 @@ fi
 # absolute path to the kaldi directory (where it is/will be downloaded
 # and compiled)
 kaldi=${1:-./kaldi}
-kaldi=$(realpath $kaldi)
 
 # if the directory don't exist, clone our abkhazia kaldi fork in it,
 # else fetch any new update.
 if [ ! -d $kaldi ]
 then
     git clone --branch abkhazia --single-branch \
-        git@github.com:bootphon/kaldi.git $kaldi \
+        https://github.com/bootphon/kaldi.git $kaldi \
         || failure "failed to download kaldi from github"
 else
     cd $kaldi
     git pull origin abkhazia || failure "failed to pull abkhazia branch"
     git checkout abkhazia || failure "failed to checkout to abkhazia branch"
 fi
+kaldi=$(realpath $kaldi/src)
 
 # From $kaldi/tools/extras/check_dependencies.sh. Debian systems
 # generally link /bin/sh to dash, which doesn't work with some scripts
@@ -73,9 +73,8 @@ sed -i "s/\-g # -O0 -DKALDI_PARANOID.*$/-O3 -DNDEBUG/" kaldi.mk
 make depend -j $ncores || failure "failed to setup kaldi dependencies"
 make -j $ncores || failure "failed to build kaldi"
 
-
-## TODO this is commented out since this is already checked in
-## abkhazia configure script.
+# TODO this is commented out since this is already checked in
+# abkhazia configure script.
 # # install SRILM
 # cd $kaldi/tools
 # if [ ! -d ./srilm ]; then
