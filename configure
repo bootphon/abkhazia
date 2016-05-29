@@ -28,13 +28,13 @@
 # message advising you how to fix the issue. Fix it and rerun the
 # script until it succeed.
 
-
-# absolute path to the abkhazia setup directory
-setupdir=`readlink -f .`
-
-# path to the share directory in abkhazia
-share=$setupdir/abkhazia/share
-
+# equivalent to $(readlink -f $1) but in pure bash (compatible with
+# mac OS)
+function realpath {
+    pushd `dirname $1` > /dev/null
+    echo $(pwd -P)
+    popd > /dev/null
+}
 
 # called when a configuration error occurs
 function failure {
@@ -46,6 +46,11 @@ Please fix the problem and run this script again";
     exit 1;
 }
 
+# absolute path to the abkhazia setup directory
+setupdir=$(realpath $0)
+
+# path to the share directory in abkhazia
+share=$setupdir/abkhazia/share
 
 # download the CMU pronouncing dictionary if not present
 cmu_url="http://svn.code.sf.net/p/cmusphinx/code/trunk/cmudict/cmudict.0.7a"
@@ -138,6 +143,12 @@ cp $share/kaldi_templates/path_template.sh $share/path.sh
 kaldi=`sed '/^#/d' $conf | grep kaldi-directory | sed 's/kaldi-directory: //'`
 sed -i -e "s|^\(KALDI_ROOT=\).*$|\1$kaldi|" $share/path.sh
 echo "Configured $share/path.sh"
+
+# test we can reach the ngram binary from SRILM once we sourced the
+# path.sh (problematic because it's change from Linux to Mac)
+source $share/path.sh > /dev/null
+which ngram > /dev/null || failure "Cannot reach 'ngram' binary
+from the SRILM library, ensure your path is correct"
 
 # configure and copy cmd.sh
 if [ -e $share/cmd.sh ]

@@ -16,34 +16,46 @@
 # along with abkahzia. If not, see <http://www.gnu.org/licenses/>.
 
 
+# equivalent to $(readlink -f $1) but in pure bash (compatible with
+# mac OS)
+function realpath {
+    pushd `dirname $1` > /dev/null
+    echo $(pwd -P)
+    popd > /dev/null
+}
+
 # called on kaldi building errors
 function failure { [ ! -z "$1" ] && echo $1; exit 1; }
 
 # number of CPU cores on the machine, to do parallel compilation
-ncores=$(grep -c ^processor /proc/cpuinfo)
+if [ $(uname) == 'Darwin' ]; then
+    ncores=$(sysctl -a | grep machdep.cpu.core_count | cut -d: -f2 | tr -d ' ')
+else
+    ncores=$(grep -c ^processor /proc/cpuinfo)
+fi
 
 # absolute path to the kaldi directory (where it is/will be downloaded
 # and compiled)
 kaldi=${1:-./kaldi}
-kaldi=$(readlink -f $kaldi)
 
 # if the directory don't exist, clone our abkhazia kaldi fork in it,
 # else fetch any new update.
 if [ ! -d $kaldi ]
 then
     git clone --branch abkhazia --single-branch \
-        git@github.com:bootphon/kaldi.git $kaldi \
+        https://github.com/bootphon/kaldi.git $kaldi \
         || failure "failed to download kaldi from github"
 else
     cd $kaldi
     git pull origin abkhazia || failure "failed to pull abkhazia branch"
     git checkout abkhazia || failure "failed to checkout to abkhazia branch"
 fi
+kaldi=$(realpath $kaldi/src)
 
 # From $kaldi/tools/extras/check_dependencies.sh. Debian systems
 # generally link /bin/sh to dash, which doesn't work with some scripts
 # as it doesn't expand x.{1,2}.y to x.1.y x.2.y
-[ $(readlink /bin/sh) == "dash" ] && \
+[ $(realpath /bin/sh) == "dash" ] && \
     failure  "failed because /bin/sh is linked to dash, and currently \
          some of the scripts will not run properly. We recommend to run: \
          sudo ln -s -f bash /bin/sh"
@@ -61,10 +73,8 @@ sed -i "s/\-g # -O0 -DKALDI_PARANOID.*$/-O3 -DNDEBUG/" kaldi.mk
 make depend -j $ncores || failure "failed to setup kaldi dependencies"
 make -j $ncores || failure "failed to build kaldi"
 
-
-
-## TODO this is commented out since this is already checked in
-## abkhazia configure script.
+# TODO this is commented out since this is already checked in
+# abkhazia configure script.
 # # install SRILM
 # cd $kaldi/tools
 # if [ ! -d ./srilm ]; then

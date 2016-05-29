@@ -14,10 +14,13 @@ KALDIBIN=$KALDIBIN:$KALDISRC/kwsbin:$KALDISRC/ivectorbin
 KALDIBIN=$KALDIBIN:$KALDISRC/online2bin:$KALDISRC/sgmm2bin
 
 FSTBIN=$KALDI_ROOT/tools/openfst/bin
-LMBIN=$KALDI_ROOT/tools/irstlm/bin:$KALDI_ROOT/tools/srilm/bin/i686-m64
+
+PLATFORM=i686-m64  # default path for Unix machines
+[ $(uname) == "Darwin" ] && PLATFORM=macosx
+LMBIN=$KALDI_ROOT/tools/irstlm/bin:$KALDI_ROOT/tools/srilm/bin/$PLATFORM
 LMBIN=$LMBIN:$KALDI_ROOT/tools/srilm/bin/:$KALDI_ROOT/tools/sctk/bin/
 
-[ -d $PWD/local ] || { echo "$0: 'local' subdirectory not found."; }
+#[ -d $PWD/local ] || { echo "$0: 'local' subdirectory not found."; }
 [ -d $PWD/utils ] || { echo "$0: 'utils' subdirectory not found."; }
 [ -d $PWD/steps ] || { echo "$0: 'steps' subdirectory not found."; }
 

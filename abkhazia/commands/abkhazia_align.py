@@ -19,7 +19,7 @@ import os
 
 from abkhazia.commands.abstract_command import AbstractKaldiCommand
 from abkhazia.corpus import Corpus
-import abkhazia.models.force_align as force_align
+import abkhazia.models.align as align
 import abkhazia.utils as utils
 
 
@@ -30,8 +30,9 @@ class AbkhaziaAlign(AbstractKaldiCommand):
 
     @staticmethod
     def long_description():
-        """Return the docstring of the ForceAlign class"""
-        return force_align.ForceAlign.__doc__.replace(' '*4, ' '*2).strip()
+        return ('Estimate forced alignment of a corpus based on '
+                'fMLLR transforms of a provided acoustic model. '
+                'Alignments are phone or word based and are given in seconds.')
 
     @classmethod
     def add_parser(cls, subparsers):
@@ -41,9 +42,23 @@ class AbkhaziaAlign(AbstractKaldiCommand):
         parser.formatter_class = argparse.RawDescriptionHelpFormatter
         parser.description = cls.long_description()
 
+        out_group = parser.add_argument_group('alignment parameters')
+        out_group.add_argument(
+            '--acoustic-scale', default=0.1, type=float, metavar='<float>',
+            help='scaling factor for acoustic likelihoods, '
+            'default is %(default)s')
+
+        out_group = out_group.add_mutually_exclusive_group()
+        out_group.add_argument(
+            '--post', action='store_true',
+            help='write posterior probability of aligned phones')
+        out_group.add_argument(
+            '--no-lattice', action='store_true',
+            help='do not compute lattice, faster but disallow posteriors')
+
         out_group = parser.add_argument_group('alignment format', description=(
-            "by default the output alignement file is phone aligned and "
-            "include both words and phones"))
+            'by default the output alignement file is phone aligned and '
+            'include both words and phones'))
         out_group = out_group.add_mutually_exclusive_group()
         out_group.add_argument(
             '--phones-only', action='store_true',
@@ -72,9 +87,10 @@ class AbkhaziaAlign(AbstractKaldiCommand):
 
     @classmethod
     def run(cls, args):
+        # get back the input corpus and output directory
         corpus_dir, output_dir = cls._parse_io_dirs(args)
         log = utils.get_log(
-            os.path.join(output_dir, 'acoustic.log'), verbose=args.verbose)
+            os.path.join(output_dir, 'align.log'), verbose=args.verbose)
         corpus = Corpus.load(corpus_dir)
 
         # get back the language model directory
@@ -92,9 +108,25 @@ class AbkhaziaAlign(AbstractKaldiCommand):
                 else os.path.abspath(args.features))
         feat += '/features'
 
+        # parse the alignment level
+        if args.words_only:
+            level = 'words'
+        elif args.phones_only:
+            level = 'phones'
+        else:
+            level = 'both'
+
+        if level == 'words' and args.post:
+            raise NotImplementedError(
+                'posteriors on words only are not yet implemented')
+
         # instanciate the kaldi recipe creator
-        recipe = force_align.ForceAlign(corpus, output_dir, log=log)
+        recipe = (align.AlignNoLattice if args.no_lattice
+                  else align.Align)(corpus, output_dir, log=log)
         recipe.njobs = args.njobs
+        recipe.level = level
+        recipe.with_posteriors = args.post
+        recipe.acoustic_scale = args.acoustic_scale
         recipe.lm_dir = lang
         recipe.feat_dir = feat
         recipe.am_dir = acoustic
@@ -103,11 +135,4 @@ class AbkhaziaAlign(AbstractKaldiCommand):
         # finally compute the alignments
         recipe.create()
         recipe.run()
-
-        if args.words_only:
-            level = 'words'
-        elif args.phones_only:
-            level = 'phones'
-        else:
-            level = 'both'
-        recipe.export(level=level)
+        recipe.export()

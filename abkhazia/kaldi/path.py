@@ -35,10 +35,11 @@ def kaldi_path():
 
     fstbin = os.path.join(kaldiroot, 'tools', 'openfst', 'bin')
 
+    platform = 'macosx' if os.uname()[0] is 'Darwin' else 'i686-m64'
     lmbin = ':'.join([
         os.path.join(kaldiroot, 'tools', 'irstlm', 'bin'),
         os.path.join(kaldiroot, 'tools', 'srilm', 'bin'),
-        os.path.join(kaldiroot, 'tools', 'srilm', 'bin', 'i686-m64'),
+        os.path.join(kaldiroot, 'tools', 'srilm', 'bin', platform),
         os.path.join(kaldiroot, 'tools', 'sctk', 'bin')])
 
     try:
