@@ -68,7 +68,7 @@ def _cha_cleanup(s):
     s = re.sub('&[^ ]*', '', s)
     s = re.sub('[^ ]*@sspa', '', s)
     s = re.sub('\[[^[]*\]', '', s)
-    s = re.sub('(.*)', '', s)
+    s = re.sub('\(.+\)', '', s)
     s = re.sub('^[ ]*', '', s)
 
     # delete chars
@@ -114,7 +114,7 @@ def _cha_cleanup(s):
             (' im ', " I\'m ")):
         s = s.replace(p[0], p[1])
 
-    return s
+    return s.strip()
 
 
 def clean(lines):
@@ -123,4 +123,4 @@ def clean(lines):
     This function is a wrapper on the _cha_cleanup function
 
     """
-    return [_cha_cleanup(l).strip() for l in lines]
+    return (_cha_cleanup(l) for l in lines)

@@ -1,6 +1,6 @@
 <!-- -*-org-*- this comment force org-mode in emacs -->
 
-* for 0.3 release (pre tutorial) [5/7]
+* for 0.3 release (pre tutorial) [6/7]
 ** DONE align on words only (discard phones)
    CLOSED: [2016-05-20 ven. 17:54]
 ** DONE LM optional silences by default
@@ -23,14 +23,13 @@
     CLOSED: [2016-05-26 jeu. 10:50]
     no more separation, use lattice for no-post alignments
     more clear, with comments and explanation on tra/post files
-** TODO install_kaldi unix/mac
-*** replace readlink/greadlink by a python oneliner
-*** change path in SRILM (macosx/i686)
-*** test the problematic binaries in configure
+** DONE install_kaldi unix/mac
+   CLOSED: [2016-05-26 jeu. 16:42]
 ** TODO updating abkhazia.cfg
    Need of an automated way to update new versions of the installed
    configuration file in the ./configure script.
 * Open bugs [0/5]
+** festival
 ** TODO abkhazia language buckeye -v
    gzip: stdout: Broken pipe
    -: line 340912: warning: 13585 1-grams read, expected 13590
@@ -171,6 +170,5 @@ use utils/fix_data_dir.sh data/acoustic to fix this.
  - [X] eventually write a pull request?
 
 *** solution
-
  - submited https://github.com/kaldi-asr/kaldi/pull/639
  - the bug is fixed within kaldi, see https://github.com/kaldi-asr/kaldi/issues/643

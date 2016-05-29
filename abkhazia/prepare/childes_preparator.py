@@ -218,8 +218,7 @@ class ChildesPreparator(AbstractPreparator):
             # point timestamps are the last word of each line.
             text = utils.cha.clean(
                 l.strip() for l in utils.open_utf8(cha, 'r')
-                if re.search('[0-9]+_[0-9]+', l) and
-                not re.search(exclude_spks, l))
+                if not re.search(exclude_spks, l))
 
             cha_id = os.path.splitext(os.path.basename(cha))[0]
             counter = 0

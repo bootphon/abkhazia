@@ -76,6 +76,23 @@ from various audio formats.
         make
         sudo make install
 
+#### festival
+
+* You need to install
+  [festival](http://www.cstr.ed.ac.uk/projects/festival) on your
+  system. Visit
+  [this link](http://www.festvox.org/docs/manual-2.4.0/festival_6.html#Installation)
+  for installation guidelines.
+
+* On Debian/Ubuntu simply run:
+
+        sudo apt-get install festival
+
+* On Mac OS:
+
+        brew install speech-tools
+
+
 ### Install Abkahzia
 
 First run the configuration script. It will check the dependancies for
