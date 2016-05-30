@@ -90,11 +90,11 @@ from various audio formats.
 
         sudo apt-get install festival
 
-### 2. Install Abkahzia
+### 2. Install Abkhazia
 
 First run the configuration script. It will check the dependancies for
 you and will initialize a default configuration file in
-`abkahzia/share/abkahzia.cfg`.
+`abkahzia/share/abkhazia.cfg`.
 
     ./configure
 
@@ -110,7 +110,7 @@ In case you want to modify and test the code, replace the last step by
 
 ## Licence
 
-**Copyright 2015, 2016 by Thomas Schatz, Xuan Nga Cao, Roland Thiollière, Mathieu Bernard**
+**Copyright 2015, 2016 by Mathieu Bernard, Thomas Schatz, Xuan Nga Cao, Roland Thiollière, Emmanuel Dupoux**
 
 This program is free software: you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by
