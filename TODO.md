@@ -1,6 +1,6 @@
 <!-- -*-org-*- this comment force org-mode in emacs -->
 
-* for 0.3 release (pre tutorial) [6/7]
+* for 0.3 release (pre tutorial) [6/6]
 ** DONE align on words only (discard phones)
    CLOSED: [2016-05-20 ven. 17:54]
 ** DONE LM optional silences by default
@@ -25,9 +25,6 @@
     more clear, with comments and explanation on tra/post files
 ** DONE install_kaldi unix/mac
    CLOSED: [2016-05-26 jeu. 16:42]
-** TODO updating abkhazia.cfg
-   Need of an automated way to update new versions of the installed
-   configuration file in the ./configure script.
 * Open bugs [0/5]
 ** festival
 ** TODO abkhazia language buckeye -v
@@ -93,6 +90,10 @@ use utils/fix_data_dir.sh data/acoustic to fix this.
    what is the bug??
 ** TODO abkhazia align --post --with-words
    Update the probabilities estimation to be on words, not on phones
+** TODO updating abkhazia.cfg
+   - Need of an automated way to update new versions of the installed
+     configuration file in the ./configure script.
+   - Do that along with the next update of the config file
 * Functions
  - prepare childes
    - test with others than Brent, have a subcorpus selection option?
