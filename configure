@@ -136,6 +136,10 @@ script, this is already done for you."
 
 Please do not source the tools/env.sh as indicated by that
 script, this is already done for you."
+
+    # check festival is installed
+    which festival > /dev/null && echo "Found festival" ||
+            failure "Please install festival on your system"
 fi
 
 # configure and copy path.sh

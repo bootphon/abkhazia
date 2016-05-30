@@ -9,19 +9,21 @@ Documentation **actually not up to date** can be found
 
 ## Installation
 
-### Install dependencies
+### 1. Install dependencies
 
 Before deploying abkahzia on your system, you need to install the
 following dependencies. If they are not available on your system, the
 abkhazia configuration script will fail.
 
-#### [Kaldi Speech Recognition Toolkit](http://kaldi-asr.org).
+#### 1.1. [Kaldi Speech Recognition Toolkit](http://kaldi-asr.org).
 
-* **In brief** the ``./install_kadi.sh`` will download, configure
-  and compile kaldi to ``./kaldi``. This should work on any
-  standard Unix distribution and fail on the first encoutered
-  error. If so, install kaldi manually as detailed in the
-  following steps.
+* **In brief**
+
+    the ``./install_kadi.sh`` will download, configure
+    and compile kaldi to ``./kaldi``. This should work on any
+    standard Unix distribution and fail on the first encoutered
+    error. If so, install kaldi manually as detailed in the
+    following steps.
 
 * Because Kaldi is developed under continuous integration, there is no
   published release to rely on. To ensure the abkhazia stability, we
@@ -55,7 +57,7 @@ abkhazia configuration script will fail.
   configuration.
 
 
-#### sox and shorten
+#### 1.2. sox and shorten
 
 Abkhazia relies on [sox](http://sox.sourceforge.net) with flac support
 and [shorten](http://etree.org/shnutils/shorten) for wav conversion
@@ -76,7 +78,7 @@ from various audio formats.
         make
         sudo make install
 
-#### festival
+#### 1.3. festival
 
 * You need to install
   [festival](http://www.cstr.ed.ac.uk/projects/festival) on your
@@ -88,12 +90,7 @@ from various audio formats.
 
         sudo apt-get install festival
 
-* On Mac OS:
-
-        brew install speech-tools
-
-
-### Install Abkahzia
+### 2. Install Abkahzia
 
 First run the configuration script. It will check the dependancies for
 you and will initialize a default configuration file in
