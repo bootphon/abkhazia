@@ -37,7 +37,7 @@ from abkhazia.commands import (
     AbkhaziaDecode,
     AbkhaziaAlign)
 
-__version__ = '0.2'
+__version__ = '0.3'
 
 
 class Abkhazia(object):

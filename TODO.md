@@ -1,6 +1,6 @@
 <!-- -*-org-*- this comment force org-mode in emacs -->
 
-* Open bugs [0/4]
+* Open bugs [0/3]
 ** TODO abkhazia language librispeech-test-clean -n 3 -l word
 Fail in word level, regardless silences. Work on phone
 
@@ -57,17 +57,6 @@ use utils/fix_data_dir.sh data/acoustic to fix this.
 
 ** TODO abkhazia decode
    what is the bug??
-** TODO abkhazia acoustic buckeye
-   warning issues in kaldi gmm with buckeye
-
-   WARNING (gmm-init-model:InitAmGmm():gmm-init-model.cc:55) Tree has
-   pdf-id 81 with no stats; corresponding phone list: 82
-
-   The warnings above about 'no stats' generally mean you have phones
-   (or groups of phones) in your phone set that had no corresponding
-   data.  You should probably figure out whether something went wrong,
-   or whether your data just doesn't happen to have examples of those
-   phones.
 * Feature requests
 ** TODO for a next release
  - features
@@ -97,33 +86,6 @@ use utils/fix_data_dir.sh data/acoustic to fix this.
     --help'. Assume the user doesn't know abkhazia or kaldi.
   - [ ] improve the 'command line' page
   - [ ] improve the 'corpus format' page
-** TODO for 0.3 release (pre tutorial) [10/10]
-*** DONE align on words only (discard phones)
-    CLOSED: [2016-05-20 ven. 17:54]
-*** DONE LM optional silences by default
-    CLOSED: [2016-05-20 ven. 17:59]
-*** DONE split must write {testing/train}/data
-    CLOSED: [2016-05-23 lun. 10:41]
-*** DONE prepare buckeye: strange lexicon issue
-    CLOSED: [2016-05-23 lun. 10:54]
-    following words have no transcription in lexicon: set(['and', 'a',
-    'okay', "you're", 'i', 'of', 'it', 'uh', 'in', 'ohio', 'rough',
-    'know'])
-*** DONE compute alignment posteriograms with Kaldi [3/3]
-   CLOSED: [2016-05-26 jeu. 10:50]
-*** DONE have a working beta version
-    CLOSED: [2016-05-24 mar. 21:39]
-*** DONE avoid share/align_fmllr.sh and implement it in python
-    CLOSED: [2016-05-26 jeu. 10:50]
-    Use steps/align_fmllr_lats.sh + posterior computation from lattice
-*** DONE refactor the align recipe
-    CLOSED: [2016-05-26 jeu. 10:50]
-    no more separation, use lattice for no-post alignments
-    more clear, with comments and explanation on tra/post files
-*** DONE install_kaldi unix/mac
-    CLOSED: [2016-05-26 jeu. 16:42]
-*** DONE check/time egs/align_childes_brent.sh on mac
-    CLOSED: [2016-05-31 mar. 13:07]
 ** TODO updating abkhazia.cfg
    - Need of an automated way to update new versions of the installed
      configuration file in the ./configure script.
