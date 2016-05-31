@@ -219,11 +219,11 @@ class Corpus(utils.AbkhaziaBase):
                 return True
         return False
 
-    def subcorpus(self, utt_ids, prune=True, name=None):
+    def subcorpus(self, utt_ids, prune=True, name=None, validate=True):
         """Return a subcorpus made of utterances in `utt_ids`
 
-        The returned corpus is validated and pruned (except if `prune`
-        is False)
+        The returned corpus is validated (except if `validate` is
+        False) and pruned (except if `prune` is False).
 
         Raise a KeyError if one utterance in `utt_ids` is in the
         input corpus.
@@ -256,7 +256,8 @@ class Corpus(utils.AbkhaziaBase):
 
         if prune:
             corpus.prune()
-        corpus.validate()
+        if validate:
+            corpus.validate()
         return corpus
 
     def prune(self):
@@ -324,3 +325,25 @@ class Corpus(utils.AbkhaziaBase):
         split_fun = (spliter.split if by_speakers is False
                      else spliter.split_by_speakers)
         return split_fun(train_prop, test_prop)
+
+    def phonemize_text(self):
+        """Return a phonemized version of self.text
+
+        Transcription of a corpus text directly into phones, without any
+        word boundary marker. This is used to estimate phone-level n-gram
+        language models for use with kaldi recipes.
+
+        For OOVs: just drop the word and log a warning for now.
+
+        """
+        phonemized = dict()
+        for utt_id, text in self.text.iteritems():
+            phones = []
+            for word in text.split():
+                try:
+                    phones.append(self.lexicon[word])
+                except KeyError:
+                    # OOV: for now we replace the word by <unk>
+                    phones.append(self.lexicon['<unk>'])
+            phonemized[utt_id] = ' '.join(phones)
+        return phonemized

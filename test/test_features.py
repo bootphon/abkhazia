@@ -19,7 +19,7 @@ import pytest
 
 import abkhazia.models.features as features
 import abkhazia.utils as utils
-from .conftest import assert_no_error_in_log
+from .conftest import assert_no_expr_in_log
 
 
 @pytest.mark.parametrize('pitch', [True, False])
@@ -36,5 +36,5 @@ def test_features(pitch, corpus, tmpdir):
     feat.create()
     feat.run()
     feat.export()
-    assert_no_error_in_log(flog)
+    assert_no_expr_in_log(flog, 'error')
     assert os.path.isfile(os.path.join(output_dir, 'meta.txt'))

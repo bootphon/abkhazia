@@ -46,28 +46,6 @@ def read_params(lm_dir):
     return open(params, 'r').readline().strip().split(' ')
 
 
-def word2phone(corpus):
-    """Create 'phone' version of a corpus text
-
-    Transcription of a corpus text directly into phones, without any
-    word boundary marker. This is used to estimate phone-level n-gram
-    language models for use with kaldi recipes.
-
-    For OOVs: just drop the whole sentence for now.
-
-    """
-    phones = dict()
-    for utt_id, utt in corpus.text.iteritems():
-        try:
-            phones[utt_id] = ' '.join(
-                [''.join(corpus.lexicon[word]) for word in utt.split()])
-        except KeyError:
-            # OOV: for now we just drop the sentence silently in
-            # this case (could add a warning)
-            pass
-    return phones
-
-
 def read_int2phone(lm_dir, word_position_dependent=True):
     """Return a int to phone mapping as a dict
 
@@ -86,7 +64,6 @@ def read_int2phone(lm_dir, word_position_dependent=True):
 
         phonemap[code] = phone
     return phonemap
-
 
 
 class LanguageModel(abstract_recipe.AbstractRecipe):
@@ -352,7 +329,7 @@ class LanguageModel(abstract_recipe.AbstractRecipe):
             self.a2k.setup_lexicon()
         else:  # phone level
             with utils.open_utf8(lm_text, 'w') as out:
-                for k, v in sorted(word2phone(self.corpus).iteritems()):
+                for k, v in sorted(self.corpus.phonemize_text().iteritems()):
                     out.write(u'{} {}\n'.format(k, v))
             self.a2k.setup_phone_lexicon()
 

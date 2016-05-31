@@ -19,19 +19,12 @@ import pytest
 
 import abkhazia.models.language_model as language_model
 import abkhazia.utils as utils
-from .conftest import assert_no_error_in_log
+from .conftest import assert_no_expr_in_log
 
 
 levels = ['phone', 'word']
-orders = [1, 2, 3]
+orders = range(1, 4)
 params = [(l, o) for l in levels for o in orders]
-
-
-def test_word2phone(corpus):
-    phones = language_model.word2phone(corpus)
-
-    assert sorted(phones.keys()) == sorted(corpus.utts())
-    assert len(phones) == len(corpus.text)
 
 
 @pytest.mark.parametrize('level, order', params)
@@ -39,7 +32,6 @@ def test_lm(level, order, corpus, tmpdir):
     output_dir = str(tmpdir.mkdir('lang'))
     flog = os.path.join(output_dir, 'language.log')
     log = utils.get_log(flog)
-
     lm = language_model.LanguageModel(corpus, output_dir, log=log)
     lm.level = level
     lm.order = order
@@ -47,10 +39,10 @@ def test_lm(level, order, corpus, tmpdir):
     lm.run()
     lm.export()
     language_model.check_language_model(output_dir)
-    assert_no_error_in_log(flog)
+    assert_no_expr_in_log(flog, 'error')
 
 
-@pytest.mark.parametrize('prob', [0, 0.2, 0.5])
+@pytest.mark.parametrize('prob', [0, 0.5])
 def test_silence_probability(prob, corpus, tmpdir):
     output_dir = str(tmpdir.mkdir('lang'))
     flog = os.path.join(output_dir, 'language.log')
@@ -63,4 +55,4 @@ def test_silence_probability(prob, corpus, tmpdir):
     lm.run()
     lm.export()
     language_model.check_language_model(output_dir)
-    assert_no_error_in_log(flog)
+    assert_no_expr_in_log(flog, 'error')

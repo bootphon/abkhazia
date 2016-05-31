@@ -213,6 +213,11 @@ class BuckeyePreparator(AbstractPreparator):
                     (l.strip() for l in open(utts).readlines()
                      if len(l.strip())), start=1):
                 text[utt + '-sent' + str(idx)] = line
+
+        # one utterance have "k p's" in text, where "k p" is an
+        # acronym in this context. Because "p's" is processed as OOV, we
+        # simply replace it by "p"
+        text['s2202b-sent15'] = text['s2202b-sent15'].replace("p's", "p")
         return text
 
     def make_lexicon(self):

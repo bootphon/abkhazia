@@ -17,6 +17,7 @@
 import os
 import pytest
 import random
+import re
 
 import abkhazia.utils as utils
 from abkhazia.prepare import BuckeyePreparator
@@ -45,24 +46,28 @@ def corpus(n=50):
     buckeye = os.path.join(
         utils.config.get('abkhazia', 'data-directory'),
         'buckeye', 'data')
-
     if os.path.isdir(buckeye):
         corpus = Corpus.load(buckeye)
+
     else:  # prepare the whole buckeye corpus
         buckeye = utils.config.get('corpus', 'buckeye-directory')
         corpus = BuckeyePreparator(buckeye).prepare(tmpdir)
         corpus.validate()
 
-    # select n random utterances from the whole buckeye
-    utts = corpus.utts()
-    random.shuffle(utts)
-    subcorpus = corpus.subcorpus(utts[:n])
+    # select n random utterances from the whole buckeye, take the
+    # whole if n is 0
+    if n != 0:
+        utts = corpus.utts()
+        random.shuffle(utts)
+        subcorpus = corpus.subcorpus(utts[:n])
+    else:
+        subcorpus = corpus
 
-    # save it to test/data
-    try:
-        subcorpus.save(os.path.join(HERE, 'data'))
-    except OSError:  # already existing
-        pass
+    # # save it to test/data
+    # try:
+    #     subcorpus.save(os.path.join(HERE, 'data'))
+    # except OSError:  # already existing
+    #     pass
 
     yield subcorpus
 
@@ -70,11 +75,12 @@ def corpus(n=50):
     utils.remove(tmpdir, safe=True)
 
 
-def assert_no_error_in_log(flog):
+def assert_no_expr_in_log(flog, expr='error'):
     assert os.path.isfile(flog)
-    error_lines = []
-    for line in open(flog, 'r').readlines():
-        if 'error' in line.lower():
-            error_lines.append(line)
-        print error_lines
-    assert len(error_lines) == 0
+
+    matched_lines = [line for line in open(flog, 'r')
+                     if re.search(expr, line.lower())]
+
+    if matched_lines:
+        print matched_lines
+    assert len(matched_lines) == 0

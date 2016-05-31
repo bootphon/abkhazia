@@ -44,7 +44,8 @@ class Abkhazia2Kaldi(object):
     def __init__(self, corpus, recipe_dir,
                  name='recipe', log=utils.null_logger()):
         # filter out short utterances
-        self.corpus = corpus.subcorpus(self._desired_utterances(corpus))
+        self.corpus = corpus.subcorpus(
+            self._desired_utterances(corpus), validate=True)
 
         # init the recipe directory, create it if needed
         self.recipe_dir = recipe_dir

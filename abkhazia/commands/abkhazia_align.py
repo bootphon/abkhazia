@@ -118,7 +118,8 @@ class AbkhaziaAlign(AbstractKaldiCommand):
 
         if level == 'words' and args.post:
             raise NotImplementedError(
-                'posteriors on words only are not yet implemented')
+                'incompatible options --post and --words-only, '
+                'not implemented')
 
         # instanciate the kaldi recipe creator
         recipe = (align.AlignNoLattice if args.no_lattice

@@ -19,20 +19,29 @@
 # final alignment will be in the $data_dir/align/alignment.txt
 
 data_dir=${1:-./align_childes_brent_1percent}
+rm -rf $data_dir
 
-echo 'preparing 1% of Brent corpus'
-abkhazia prepare childes -o $data_dir || exit 1
-abkhazia split -T 0.01 $data_dir || exit 1
+function large_echo {
+    echo ;
+    echo "************************************";
+    echo "***  $1";
+    echo "************************************";
+    echo ;
+}
+
+large_echo 'preparing 1% of Brent corpus'
+abkhazia prepare childes -o $data_dir -v || exit 1
+abkhazia split -T 0.01 $data_dir -v || exit 1
 data_dir=$data_dir/split/train
 
-echo 'computing MFCC features'
-abkhazia features $data_dir --use-pitch true || exit 1
+large_echo 'computing MFCC features'
+abkhazia features $data_dir --use-pitch true -v || exit 1
 
-echo 'computing language model'
-abkhazia language $data_dir -l word -n 2 || exit 1
+large_echo 'computing language model'
+abkhazia language $data_dir -l word -n 2 -v || exit 1
 
-echo 'computing acoustic model'
-abkhazia acoustic $data_dir -t tri-sa || exit 1
+large_echo 'computing acoustic model'
+abkhazia acoustic $data_dir -t tri-sa -v || exit 1
 
-echo 'computing forced alignment'
-abkhazia align $data_dir --post || exit 1
+large_echo 'computing forced alignment'
+abkhazia align $data_dir --post --recipe -v || exit 1
