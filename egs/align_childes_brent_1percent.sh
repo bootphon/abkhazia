@@ -29,19 +29,31 @@ function large_echo {
     echo ;
 }
 
-large_echo 'preparing 1% of Brent corpus'
+function step_done {
+    read -p "Hit ENTER to continue";
+}
+
+large_echo 'preparing Brent corpus'
 abkhazia prepare childes -o $data_dir -v || exit 1
+step_done
+
+large_echo 'select 1% of the corpus'
 abkhazia split -T 0.01 $data_dir -v || exit 1
 data_dir=$data_dir/split/train
+step_done
 
 large_echo 'computing MFCC features'
 abkhazia features $data_dir --use-pitch true -v || exit 1
+step_done
 
 large_echo 'computing language model'
 abkhazia language $data_dir -l word -n 2 -v || exit 1
+step_done
 
 large_echo 'computing acoustic model'
 abkhazia acoustic $data_dir -t tri-sa -v || exit 1
+step_done
 
 large_echo 'computing forced alignment'
 abkhazia align $data_dir --post --recipe -v || exit 1
+step_done
