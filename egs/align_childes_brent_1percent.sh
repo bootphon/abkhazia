@@ -21,39 +21,32 @@
 data_dir=${1:-./align_childes_brent_1percent}
 rm -rf $data_dir
 
-function large_echo {
+function run {
     echo ;
     echo "************************************";
     echo "***  $1";
+    echo "***  $2";
     echo "************************************";
     echo ;
-}
-
-function step_done {
+    $2 || exit 1;
     read -p "Hit ENTER to continue";
 }
 
-large_echo 'preparing Brent corpus'
-abkhazia prepare childes -o $data_dir -v || exit 1
-step_done
+cmd="abkhazia prepare childes -o $data_dir -v"
+run "preparing Brent corpus" "$cmd"
 
-large_echo 'select 1% of the corpus'
-abkhazia split -T 0.01 $data_dir -v || exit 1
+cmd="abkhazia split -T 0.01 $data_dir -v"
+run "select 1% of the corpus" "$cmd"
 data_dir=$data_dir/split/train
-step_done
 
-large_echo 'computing MFCC features'
-abkhazia features $data_dir --use-pitch true -v || exit 1
-step_done
+cmd="abkhazia features $data_dir --use-pitch true -v"
+run "computing MFCC features" "$cmd"
 
-large_echo 'computing language model'
-abkhazia language $data_dir -l word -n 2 -v || exit 1
-step_done
+cmd="abkhazia language $data_dir -l word -n 2 -v"
+run "computing language model" "$cmd"
 
-large_echo 'computing acoustic model'
-abkhazia acoustic $data_dir -t tri-sa -v || exit 1
-step_done
+cmd="abkhazia acoustic $data_dir -t tri-sa -v"
+run "computing acoustic model" "$cmd"
 
-large_echo 'computing forced alignment'
-abkhazia align $data_dir --post --recipe -v || exit 1
-step_done
+cmd="abkhazia align $data_dir --post --recipe -v"
+run "computing forced alignment" "$cmd"
