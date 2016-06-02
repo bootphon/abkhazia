@@ -58,12 +58,11 @@ use utils/fix_data_dir.sh data/acoustic to fix this.
 ** TODO abkhazia decode
    what is the bug??
 * Feature requests
-** TODO for a next release
- - features
+** features
    - centralize/refactor the legacy code related to features
    - option to export features from ark to h5f, see
      [[https://github.com/bootphon/features_extraction/blob/master/kaldi_features.py][kaldi_features.py]] from feature_extraction package
- - acoustic
+** acoustic
    - [ ] --retrain option
      it should be possible to retrain a trained model on a new corpus
      (for instance, specifically retrain silence models, or retrain on a
@@ -73,23 +72,23 @@ use utils/fix_data_dir.sh data/acoustic to fix this.
    - [ ] test the acoustic model
      providing WER (word error rate) for every model, eventual
      automatic parameter search ?
- - abkhazia align --post --with-words
+** align --post --with-words
    Update the probabilities estimation to be on words, not on phones
- - decode
+** decode
    options:
       evaluate(transcription, gold)
       output = {posteriorgrams, transcription}
       speaker_adapt
       output: results (repertoire)
- - documentation
+** updating abkhazia.cfg
+   - Need of an automated way to update new versions of the installed
+     configuration file in the ./configure script.
+   - Do that along with the next update of the config file
+** documentation
   - [ ] have more detailed command description on 'abkhazia <command>
     --help'. Assume the user doesn't know abkhazia or kaldi.
   - [ ] improve the 'command line' page
   - [ ] improve the 'corpus format' page
-** TODO updating abkhazia.cfg
-   - Need of an automated way to update new versions of the installed
-     configuration file in the ./configure script.
-   - Do that along with the next update of the config file
 * Fixed bugs [3/3]
 ** DONE installation on Mac
    CLOSED: [2016-05-20 ven. 13:02]

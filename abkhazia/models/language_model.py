@@ -17,6 +17,7 @@
 import gzip
 import os
 import pkg_resources
+import re
 import shutil
 import tempfile
 
@@ -108,6 +109,7 @@ class LanguageModel(abstract_recipe.AbstractRecipe):
         # the mapping between phones and acoustic state in the trained
         # model will be lost.
         def config(name):
+            """Quick access to LM configuration"""
             return utils.config.get('language', name)
         self.level = config('model-level')
         self.order = config('model-order')
@@ -183,21 +185,21 @@ class LanguageModel(abstract_recipe.AbstractRecipe):
         fstarcsort.
 
         """
-        self._log.info('compiling text FST to binary FST')
+        self.log.info('compiling text FST to binary FST')
         temp = tempfile.NamedTemporaryFile('w', delete=False)
 
         # txt to temp
         command1 = (
             'fstcompile --isymbols={0} --osymbols={0}'
             ' --keep_isymbols=false --keep_osymbols=false {1}'
-            .format(os.path.join(self._output_dir, 'words.txt'), G_txt))
-        self._log.debug('running %s > %s', command1, temp)
+            .format(os.path.join(self.output_dir, 'words.txt'), G_txt))
+        self.log.debug('running %s > %s', command1, temp)
         utils.jobs.run(command1, temp.write)
 
         # temp to fst
         command2 = (
             'fstarcsort --sort_type=ilabel {}'.format(temp.name))
-        self._log.debug('running %s > %s', command2, G_fst)
+        self.log.debug('running %s > %s', command2, G_fst)
         utils.jobs.run(command2, open(G_fst, 'w').write)
         utils.remove(temp.name)
 
@@ -212,47 +214,40 @@ class LanguageModel(abstract_recipe.AbstractRecipe):
         self.log.info(
             'computing %s %s-gram in ARPA format', self.level, self.order)
 
-        # generate ARPA/MIT n-gram with IRSTLM.
-        try:
-            # cut -d' ' -f2 lm_text > text_ready. Train need to
-            # remove utt-id on first column of text file
-            lm_text = os.path.join(self.a2k._local_path(), 'lm_text.txt')
-            text_ready = os.path.join(self.a2k._local_path(), 'text_ready.txt')
-            with utils.open_utf8(text_ready, 'w') as ready:
-                ready.write('\n'.join(
-                    [' '.join(line.split()[1:])
-                     for line in utils.open_utf8(lm_text, 'r').xreadlines()]))
+        # cut -d' ' -f2 lm_text > text_ready. Train need to
+        # remove utt-id on first column of text file
+        lm_text = os.path.join(self.a2k._local_path(), 'lm_text.txt')
+        text_ready = os.path.join(self.a2k._local_path(), 'text_ready.txt')
+        with utils.open_utf8(text_ready, 'w') as ready:
+            ready.write('\n'.join(
+                [' '.join(line.split()[1:])
+                 for line in utils.open_utf8(lm_text, 'r').xreadlines()]))
 
-            text_se = os.path.join(self.a2k._local_path(), 'text_se.txt')
-            utils.jobs.run(
-                'add-start-end.sh',
-                stdin=open(text_ready, 'r'),
-                stdout=open(text_se, 'w').write,
-                env=kaldi_path(), cwd=self.recipe_dir)
-            assert os.path.isfile(text_se), 'LM failed on add-start-end'
+        text_se = os.path.join(self.a2k._local_path(), 'text_se.txt')
+        utils.jobs.run(
+            'add-start-end.sh',
+            stdin=open(text_ready, 'r'),
+            stdout=open(text_se, 'w').write,
+            env=kaldi_path(), cwd=self.recipe_dir)
+        assert os.path.isfile(text_se), 'LM failed on add-start-end'
 
-            # k option is number of split, useful for huge text files
-            # build-lm.sh in kaldi/tools/irstlm/bin
-            text_lm = os.path.join(self.a2k._local_path(), 'text_lm.gz')
-            self._run_command(
-                'build-lm.sh -i {0} -n {1} -o {2} -k 1 -s kneser-ney'
-                .format(text_se, self.order, text_lm))
-            assert os.path.isfile(text_lm), 'LM failed on build-lm'
+        # k option is number of split, useful for huge text files
+        # build-lm.sh in kaldi/tools/irstlm/bin
+        text_lm = os.path.join(self.a2k._local_path(), 'text_lm.gz')
+        self._run_command(
+            'build-lm.sh -i {0} -n {1} -o {2} -k 1 -s kneser-ney'
+            .format(text_se, self.order, text_lm))
+        assert os.path.isfile(text_lm), 'LM failed on build-lm'
 
-            text_blm = os.path.join(self.a2k._local_path(), 'text_blm.gz')
-            self._run_command(
-                # was with the -i option
-                'compile-lm {} --text=yes {}'.format(text_lm, text_blm))
+        text_blm = os.path.join(self.a2k._local_path(), 'text_blm.gz')
+        self._run_command(
+            # was with the -i option
+            'compile-lm {} --text=yes {}'.format(text_lm, text_blm))
 
-            # gzip the compiled lm (from
-            # https://docs.python.org/2/library/gzip.html#examples-of-usage)
-            with open(text_blm, 'rb') as fin, gzip.open(G_arpa, 'wb') as fout:
-                shutil.copyfileobj(fin, fout)
-
-        finally:  # remove temp files
-            # for f in (text_ready, text_se, text_lm, text_blm):
-            #     utils.remove(f, safe=True)
-            pass
+        # gzip the compiled lm (from
+        # https://docs.python.org/2/library/gzip.html#examples-of-usage)
+        with open(text_blm, 'rb') as fin, gzip.open(G_arpa, 'wb') as fout:
+            shutil.copyfileobj(fin, fout)
 
     def _format_lm(self, G_arpa, G_fst):
         """Generate FST from ARPA language model
@@ -260,6 +255,15 @@ class LanguageModel(abstract_recipe.AbstractRecipe):
         This methods relies on Kaldi `utils/format_lm_sri.sh`, which
         use the SRILM library. It includes adapting the vocabulary to
         the corpus lexicon.
+
+        May issue a warning 'gzip: stdout: Broken pipe' but this does
+        not corrupt the computation.
+
+        May issue warnings such as '-: line 340912: warning: 13585
+        1-grams read, expected 13590', this is the effect of OOV
+        pruning in kaldi tools/srilm/bin/change-lm-vocab, so not a
+        problem nor a bug (the doesn't update ngrams count after
+        pruning).
 
         """
         self.log.info('converting ARPA to FST')
@@ -291,6 +295,7 @@ class LanguageModel(abstract_recipe.AbstractRecipe):
             utils.log2file.reopen_files(self.log)
 
     def _setup_prepare_lang_wpdpl(self):
+        """Prepare language/lang/ folder for word position dependent models"""
         local = os.path.join(self.recipe_dir, 'local')
         if not os.path.isdir(local):
             os.makedirs(local)
@@ -320,8 +325,7 @@ class LanguageModel(abstract_recipe.AbstractRecipe):
         self.a2k.setup_silences()
         self.a2k.setup_variants()
 
-        # setup the lexicon and input text depending on word/phone
-        # ngram level
+        # setup lexicon and text depending on word/phone ngram level
         text = self.a2k.setup_text()
         lm_text = os.path.join(self.a2k._local_path(), 'lm_text.txt')
         if self.level == 'word':
@@ -344,19 +348,19 @@ class LanguageModel(abstract_recipe.AbstractRecipe):
 
         def _local(f):
             return os.path.join(self.a2k._local_path(), f)
-        G_txt = _local('G.txt')
-        G_fst = _local('G.fst')
-        G_arpa = _local('G.arpa.gz')
+        g_txt = _local('G.txt')
+        g_fst = _local('G.fst')
+        g_arpa = _local('G.arpa.gz')
 
         # G.txt file is already provided (FST grammar in text format)
-        if os.path.isfile(G_txt):
-            self._compile_fst(G_txt, G_fst)
+        if os.path.isfile(g_txt):
+            self._compile_fst(g_txt, g_fst)
         else:
             # G.arpa.gz MIT/ARPA formatted n-gram is not already
             # provided in input_dir: compute it from corpus text
-            if not os.path.isfile(G_arpa):
-                self._compute_lm(G_arpa)
-            self._format_lm(G_arpa, G_fst)
+            if not os.path.isfile(g_arpa):
+                self._compute_lm(g_arpa)
+            self._format_lm(g_arpa, g_fst)
 
     def export(self):
         super(LanguageModel, self).export()
@@ -368,5 +372,108 @@ class LanguageModel(abstract_recipe.AbstractRecipe):
         shutil.copy(origin, target)
 
         # write a little file with LM parameters
-        with open(os.path.join(self.output_dir, 'params.txt'), 'w') as p:
-            p.write('{} {}\n'.format(self.level, self.order))
+        with open(os.path.join(self.output_dir, 'params.txt'), 'w') as param:
+            param.write('{} {}\n'.format(self.level, self.order))
+
+    def _change_lm_vocab(self, lm_txt, words_txt, srilm_options):
+        """Create a LM from an existing one by changing its vocabulary
+
+	All n-grams in the new vocab are retained with their original
+	probabilities. Backoff weights are recomputed and backed-off
+	unigrams for all new words are added. -subset option performs
+	subsetting of the vocabulary without adding new words.
+
+        This is reimplementation of the change-lm-vocab script from
+        SRILM, modified in 3 ways:
+
+         - no more -tolower option
+
+         - the pruning step now updates ngrams count in the header
+           (disable annoying warning)
+
+         - the call to ngram is in 2 steps (-renorm and
+           -prune-lowprobs options failed together on
+           librispeech-test-clean, need 2 calls)
+
+        """
+        words = set(w.split()[0] for w in utils.open_utf8(words_txt, 'r'))
+
+        with tempfile.TemporaryFile() as fwords:
+            for word in words:
+                fwords.write(word + '\n')
+            fwords.seek(0)
+
+
+    def _format_lm_sri(self, lang_dir, arpa_lm,
+                       srilm_options='-subset -prune-lowprobs -unk'):
+        """Converts ARPA-format language models to FSTs
+
+        Change the LM vocabulary using SRILM. This is a Python
+        implementation of Kaldi egs/wsj/s5/utils/format_lm_sri.sh,
+        with margin modifications.
+
+        Note: if you want to just convert ARPA LMs to FSTs, there is a
+        simpler way to do this that doesn't require SRILM: see
+        examples in Kaldi egs/wsj/s5/local/wsj_format_local_lms.sh
+
+        """
+        words_txt = os.path.join(lang_dir, 'words.txt')
+        for _file in (arpa_lm, words_txt):
+            if not os.path.isfile(_file):
+                raise IOError('excpected input file {} to exist'.format(_file))
+
+        if not os.path.isdir(self.output_dir):
+            os.makedirs(self.output_dir)
+
+        lm_base = os.path.splitext(os.path.basename(arpa_lm))[0]
+        tempdir = tempfile.mkdtemp()
+        try:
+            # unzip the input LM. Removing all "illegal" combinations of
+            # <s> and </s>, which are supposed to occur only at being/end
+            # of utt. These can cause determinization failures of CLG
+            # [ends up being epsilon cycles].
+            lm_txt = os.path.join(tempdir, lm_base + '.txt')
+            with utils.open_utf8(lm_txt, 'w') as f_out:
+                for line in gzip.open(arpa_lm, 'rb'):
+                    if not (re.search('<s> <s>', line) or
+                            re.search('</s> <s>', line) or
+                            re.search('</s> </s>', line)):
+                        f_out.write(line)
+
+            # finds words in the arpa LM that are not symbols in the
+            # OpenFst-format symbol table words.txt
+            oovs = os.path.join(self.output_dir, 'oovs_{}.txt'.format(lm_base))
+            utils.jobs.run(
+                'utils/find_arpa_oovs.pl {} {}'.format(words_txt, lm_txt),
+                stdout=utils.open_utf8(oovs, 'w'),
+                env=kaldi_path(),
+                cwd=self.recipe_dir)
+
+            # Change the LM vocabulary to be the intersection of the
+            # current LM vocabulary and the set of words in the
+            # pronunciation lexicon. This also renormalizes the LM by
+            # recomputing the backoff weights, and remove those ngrams
+            # whose probabilities are lower than the backed-off
+            # estimates.
+            lm_pruned = self._change_lm_vocab(lm_txt, words_txt, srilm_options)
+
+            self._run_command(
+                'utils/run.pl {0} arpa2fst {1} | fstprint | '
+                'utils/eps2disambig.pl | utils/s2eps.pl | '
+                'fstcompile --isymbols={2} --osymbols={2} '
+                '--keep_isymbols=false --keep_osymbols=false | '
+                'fstreepsilon | fstarcsort --sort_type=ilabel > {3}'.format(
+                    os.path.join(self.output_dir, 'format_lm.log'),
+                    lm_pruned,
+                    words_txt,
+                    os.path.join(self.output_dir, 'G.fst')))
+
+            # The output is like: 9.14233e-05 -0.259833. We do expect
+            # the first of these 2 numbers to be close to zero (the
+            # second is nonzero because the backoff weights make the
+            # states sum to >1).
+            self._run_command('fstisstochastic {}'.format(
+                os.path.join(self.output_dir, 'G.fst')))
+
+        finally:
+            utils.remove(tempdir)

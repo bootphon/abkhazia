@@ -73,7 +73,7 @@ class AbstractRecipe(utils.AbkhaziaBase):
             cwd=self.recipe_dir)
 
     def _check_njobs(self, local=False):
-        # if we run jobs locally, make sure we have enough cores
+        """If we run jobs locally, make sure we have enough cores"""
         ncores = multiprocessing.cpu_count()
         queued = not local or 'queue' in utils.config.get('kaldi', 'train-cmd')
         if queued and ncores < self.njobs:
