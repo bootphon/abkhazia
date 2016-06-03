@@ -266,50 +266,6 @@ class LanguageModel(abstract_recipe.AbstractRecipe):
         with open(text_blm, 'rb') as fin, gzip.open(G_arpa, 'wb') as fout:
             shutil.copyfileobj(fin, fout)
 
-    # def _format_lm(self, G_arpa, G_fst):
-    #     """Generate FST from ARPA language model
-
-    #     This methods relies on Kaldi `utils/format_lm_sri.sh`, which
-    #     use the SRILM library. It includes adapting the vocabulary to
-    #     the corpus lexicon.
-
-    #     May issue a warning 'gzip: stdout: Broken pipe' but this does
-    #     not corrupt the computation.
-
-    #     May issue warnings such as '-: line 340912: warning: 13585
-    #     1-grams read, expected 13590', this is the effect of OOV
-    #     pruning in kaldi tools/srilm/bin/change-lm-vocab, so not a
-    #     problem nor a bug (the doesn't update ngrams count after
-    #     pruning).
-
-    #     """
-    #     self.log.info('converting ARPA to FST')
-
-    #     # format_lm_sri.sh copies stuff so we need to instantiate
-    #     # another folder and then clean up (or we could do a custom
-    #     # format_lm_sri.sh with $1 and $4 == $1 and no cp)
-    #     tmp_dir = tempfile.mkdtemp()
-    #     try:
-    #         # srilm_opts: do not use -tolower by default, since we do not
-    #         # make assumption that lexicon has no meaningful
-    #         # lowercase/uppercase distinctions (and if in unicode, no idea
-    #         # what lowercasing would produce)
-    #         self._run_command(
-    #             'utils/format_lm_sri.sh '
-    #             '--srilm_opts "-subset -prune-lowprobs -unk" {0} {1} {2}'
-    #             .format(self.output_dir, G_arpa, tmp_dir))
-    #         utils.remove(self.output_dir)
-    #         shutil.move(tmp_dir, self.output_dir)
-    #     finally:
-    #         utils.remove(tmp_dir, safe=True)
-
-    #         # In this kaldi script, gzip fails with the message "gzip:
-    #         # stdout: Broken pipe". This leads the logfile to be
-    #         # closed, so we reopen it here. Actually we loose the log
-    #         # messages from arpa2fst and fstisstochastic. But thoses
-    #         # message are still readable on stdout with --verbose
-    #         utils.log2file.reopen_files(self.log)
-
     def _change_lm_vocab(self, lm_txt, words_txt):
         """Create a LM from an existing one by changing its vocabulary
 
@@ -377,7 +333,7 @@ class LanguageModel(abstract_recipe.AbstractRecipe):
                 raise IOError('excpected input file {} to exist'.format(_file))
 
         lm_base = os.path.splitext(os.path.basename(arpa_lm))[0]
-        tempdir = self.output_dir  # tempfile.mkdtemp()
+        tempdir = tempfile.mkdtemp()
         try:
             # unzip the input LM. Removing all "illegal" combinations of
             # <s> and </s>, which are supposed to occur only at being/end
@@ -430,7 +386,7 @@ class LanguageModel(abstract_recipe.AbstractRecipe):
                 pass
 
         finally:
-            pass  # utils.remove(tempdir)
+            utils.remove(tempdir, safe=True)
 
     def check_parameters(self):
         """Raise if the language modeling parameters are not correct"""
