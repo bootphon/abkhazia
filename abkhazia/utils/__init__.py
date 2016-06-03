@@ -22,6 +22,7 @@ from .wav import convert, scan
 from .abkhazia_base import AbkhaziaBase
 from .meta import Meta
 
+import arpa
 import wav
 import jobs
 import cha

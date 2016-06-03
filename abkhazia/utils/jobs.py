@@ -40,7 +40,7 @@ def run(command, stdin=None, stdout=sys.stdout.write,
 
     env : current environment for executing the command
 
-    Returns silently if the command return with 0, else raise a
+    Returns silently if the command returned with 0, else raise a
     RuntimeError
 
     """

@@ -143,6 +143,20 @@ class LanguageModel(abstract_recipe.AbstractRecipe):
         self.position_dependent_phones = utils.bool2str(
             self.position_dependent_phones)
 
+    def _setup_prepare_lang_wpdpl(self):
+        """Prepare language/lang/ folder for word position dependent models"""
+        local = os.path.join(self.recipe_dir, 'local')
+        if not os.path.isdir(local):
+            os.makedirs(local)
+
+        share = pkg_resources.resource_filename(
+            pkg_resources.Requirement.parse('abkhazia'), 'abkhazia/share')
+
+        for target in ('prepare_lang_wpdpl.sh', 'validate_lang_wpdpl.pl'):
+            shutil.copy(
+                os.path.join(share, target),
+                os.path.join(local, target))
+
     def _prepare_lang(self):
         """Prepare the corpus data for language modeling"""
         # First need to do a prepare_lang in the desired folder to get
@@ -186,22 +200,25 @@ class LanguageModel(abstract_recipe.AbstractRecipe):
 
         """
         self.log.info('compiling text FST to binary FST')
+
         temp = tempfile.NamedTemporaryFile('w', delete=False)
+        try:
+            # txt to temp
+            command1 = (
+                'fstcompile --isymbols={0} --osymbols={0}'
+                ' --keep_isymbols=false --keep_osymbols=false {1}'
+                .format(os.path.join(self.output_dir, 'words.txt'), G_txt))
+            self.log.debug('running %s > %s', command1, temp)
+            utils.jobs.run(command1, temp.write)
 
-        # txt to temp
-        command1 = (
-            'fstcompile --isymbols={0} --osymbols={0}'
-            ' --keep_isymbols=false --keep_osymbols=false {1}'
-            .format(os.path.join(self.output_dir, 'words.txt'), G_txt))
-        self.log.debug('running %s > %s', command1, temp)
-        utils.jobs.run(command1, temp.write)
+            # temp to fst
+            command2 = (
+                'fstarcsort --sort_type=ilabel {}'.format(temp.name))
+            self.log.debug('running %s > %s', command2, G_fst)
+            utils.jobs.run(command2, open(G_fst, 'w').write)
 
-        # temp to fst
-        command2 = (
-            'fstarcsort --sort_type=ilabel {}'.format(temp.name))
-        self.log.debug('running %s > %s', command2, G_fst)
-        utils.jobs.run(command2, open(G_fst, 'w').write)
-        utils.remove(temp.name)
+        finally:
+            utils.remove(temp.name, safe=True)
 
     def _compute_lm(self, G_arpa):
         """Generate an ARPA n-gram from an abkhazia corpus
@@ -249,64 +266,171 @@ class LanguageModel(abstract_recipe.AbstractRecipe):
         with open(text_blm, 'rb') as fin, gzip.open(G_arpa, 'wb') as fout:
             shutil.copyfileobj(fin, fout)
 
-    def _format_lm(self, G_arpa, G_fst):
-        """Generate FST from ARPA language model
+    # def _format_lm(self, G_arpa, G_fst):
+    #     """Generate FST from ARPA language model
 
-        This methods relies on Kaldi `utils/format_lm_sri.sh`, which
-        use the SRILM library. It includes adapting the vocabulary to
-        the corpus lexicon.
+    #     This methods relies on Kaldi `utils/format_lm_sri.sh`, which
+    #     use the SRILM library. It includes adapting the vocabulary to
+    #     the corpus lexicon.
 
-        May issue a warning 'gzip: stdout: Broken pipe' but this does
-        not corrupt the computation.
+    #     May issue a warning 'gzip: stdout: Broken pipe' but this does
+    #     not corrupt the computation.
 
-        May issue warnings such as '-: line 340912: warning: 13585
-        1-grams read, expected 13590', this is the effect of OOV
-        pruning in kaldi tools/srilm/bin/change-lm-vocab, so not a
-        problem nor a bug (the doesn't update ngrams count after
-        pruning).
+    #     May issue warnings such as '-: line 340912: warning: 13585
+    #     1-grams read, expected 13590', this is the effect of OOV
+    #     pruning in kaldi tools/srilm/bin/change-lm-vocab, so not a
+    #     problem nor a bug (the doesn't update ngrams count after
+    #     pruning).
+
+    #     """
+    #     self.log.info('converting ARPA to FST')
+
+    #     # format_lm_sri.sh copies stuff so we need to instantiate
+    #     # another folder and then clean up (or we could do a custom
+    #     # format_lm_sri.sh with $1 and $4 == $1 and no cp)
+    #     tmp_dir = tempfile.mkdtemp()
+    #     try:
+    #         # srilm_opts: do not use -tolower by default, since we do not
+    #         # make assumption that lexicon has no meaningful
+    #         # lowercase/uppercase distinctions (and if in unicode, no idea
+    #         # what lowercasing would produce)
+    #         self._run_command(
+    #             'utils/format_lm_sri.sh '
+    #             '--srilm_opts "-subset -prune-lowprobs -unk" {0} {1} {2}'
+    #             .format(self.output_dir, G_arpa, tmp_dir))
+    #         utils.remove(self.output_dir)
+    #         shutil.move(tmp_dir, self.output_dir)
+    #     finally:
+    #         utils.remove(tmp_dir, safe=True)
+
+    #         # In this kaldi script, gzip fails with the message "gzip:
+    #         # stdout: Broken pipe". This leads the logfile to be
+    #         # closed, so we reopen it here. Actually we loose the log
+    #         # messages from arpa2fst and fstisstochastic. But thoses
+    #         # message are still readable on stdout with --verbose
+    #         utils.log2file.reopen_files(self.log)
+
+    def _change_lm_vocab(self, lm_txt, words_txt):
+        """Create a LM from an existing one by changing its vocabulary
+
+        All n-grams in the new vocab are retained with their original
+        probabilities. Backoff weights are recomputed and backed-off
+        unigrams for all new words are added. -subset option performs
+        subsetting of the vocabulary without adding new words.
+
+        This is reimplementation of the change-lm-vocab script from
+        SRILM, modified in 3 ways:
+
+         - no more -tolower option
+
+         - the pruning step now updates ngrams count in the header
+           (disable annoying warning)
+
+         - the call to ngram is done in 2 steps if the 1 step failed
+           (-renorm and prune-lowprobs options failed together on
+           -librispeech-test-clean, need 2 calls)
+
+        """
+        out_lm = os.path.join(self.output_dir, 'out_lm.txt')
+        self.log.debug('pruning vocabulary in %s', out_lm)
+
+        words = set(w.split()[0] for w in utils.open_utf8(words_txt, 'r'))
+        lm = utils.arpa.ARPALanguageModel.load(lm_txt)
+        lm.prune_vocabulary(words)
+        lm_pruned = lm_txt + '.pruned'
+        lm.save(lm_pruned)
+
+        try:
+            self._run_command(
+                'ngram -lm {0} -vocab /dev/null -renorm -write-lm {1} '
+                '-prune-lowprobs -unk -order {2}'
+                .format(lm_pruned, out_lm, self.order))
+        except RuntimeError:
+            self._run_command(
+                'utils/run.pl {3} '
+                'ngram -lm {0} -vocab /dev/null -write-lm - '
+                '-prune-lowprobs -unk -order {2} | '
+                'ngram -lm - -vocab /dev/null -renorm -unk '
+                '-order {2} -write-lm {1}'
+                .format(lm_pruned, out_lm, self.order,
+                        os.path.join(self.output_dir, 'ngram.log')))
+
+        return out_lm
+
+    def _format_lm(self, arpa_lm, fst_lm):
+        """Converts ARPA-format language models to FSTs
+
+        Change the LM vocabulary using SRILM. This is a Python
+        implementation of Kaldi egs/wsj/s5/utils/format_lm_sri.sh,
+        with margin modifications.
+
+        Note: if you want to just convert ARPA LMs to FSTs, there is a
+        simpler way to do this that doesn't require SRILM: see
+        examples in Kaldi egs/wsj/s5/local/wsj_format_local_lms.sh
 
         """
         self.log.info('converting ARPA to FST')
 
-        # format_lm_sri.sh copies stuff so we need to instantiate
-        # another folder and then clean up (or we could do a custom
-        # format_lm_sri.sh with $1 and $4 == $1 and no cp)
-        tmp_dir = tempfile.mkdtemp()
+        words_txt = os.path.join(self.output_dir, 'words.txt')
+        for _file in (arpa_lm, words_txt):
+            if not os.path.isfile(_file):
+                raise IOError('excpected input file {} to exist'.format(_file))
 
+        lm_base = os.path.splitext(os.path.basename(arpa_lm))[0]
+        tempdir = self.output_dir  # tempfile.mkdtemp()
         try:
-            # srilm_opts: do not use -tolower by default, since we do not
-            # make assumption that lexicon has no meaningful
-            # lowercase/uppercase distinctions (and if in unicode, no idea
-            # what lowercasing would produce)
+            # unzip the input LM. Removing all "illegal" combinations of
+            # <s> and </s>, which are supposed to occur only at being/end
+            # of utt. These can cause determinization failures of CLG
+            # [ends up being epsilon cycles].
+            lm_txt = os.path.join(tempdir, lm_base + '.txt')
+            # self.log.debug('unzip %s to %s', arpa_lm, lm_txt)
+            with utils.open_utf8(lm_txt, 'w') as fp:
+                for line in gzip.open(arpa_lm, 'rb'):
+                    if not (re.search('<s> <s>', line) or
+                            re.search('</s> <s>', line) or
+                            re.search('</s> </s>', line)):
+                        fp.write(line)
+
+            # finds words in the arpa LM that are not symbols in the
+            # OpenFst-format symbol table words.txt
+            oovs = os.path.join(self.output_dir, 'oovs_{}.txt'.format(lm_base))
+            self.log.debug('write OOVs to %s', oovs)
+            utils.jobs.run(
+                'utils/find_arpa_oovs.pl {} {}'.format(words_txt, lm_txt),
+                stdout=utils.open_utf8(oovs, 'w').write,
+                env=kaldi_path(),
+                cwd=self.recipe_dir)
+
+            # Change the LM vocabulary to be the intersection of the
+            # current LM vocabulary and the set of words in the
+            # pronunciation lexicon. This also renormalizes the LM by
+            # recomputing the backoff weights, and remove those ngrams
+            # whose probabilities are lower than the backed-off
+            # estimates.
+            lm_pruned = self._change_lm_vocab(lm_txt, words_txt)
+
+            # convert from ARPA to FST
             self._run_command(
-                'utils/format_lm_sri.sh '
-                '--srilm_opts "-subset -prune-lowprobs -unk" {0} {1} {2}'
-                .format(self.output_dir, G_arpa, tmp_dir))
-            utils.remove(self.output_dir)
-            shutil.move(tmp_dir, self.output_dir)
+                'utils/run.pl {0} arpa2fst {1} | fstprint | '
+                'utils/eps2disambig.pl | utils/s2eps.pl | '
+                'fstcompile --isymbols={2} --osymbols={2} '
+                '--keep_isymbols=false --keep_osymbols=false | '
+                'fstrmepsilon | fstarcsort --sort_type=ilabel > {3}'.format(
+                    os.path.join(self.output_dir, 'format_lm.log'),
+                    lm_pruned, words_txt, fst_lm))
+
+            # The output is like: 9.14233e-05 -0.259833. We do expect
+            # the first of these 2 numbers to be close to zero (the
+            # second is nonzero because the backoff weights make the
+            # states sum to >1).
+            try:
+                self._run_command('fstisstochastic {}'.format(fst_lm))
+            except RuntimeError:
+                pass
+
         finally:
-            utils.remove(tmp_dir, safe=True)
-
-            # In this kaldi script, gzip fails with the message "gzip:
-            # stdout: Broken pipe". This leads the logfile to be
-            # closed, so we reopen it here. Actually we loose the log
-            # messages from arpa2fst and fstisstochastic. But thoses
-            # message are still readable on stdout with --verbose
-            utils.log2file.reopen_files(self.log)
-
-    def _setup_prepare_lang_wpdpl(self):
-        """Prepare language/lang/ folder for word position dependent models"""
-        local = os.path.join(self.recipe_dir, 'local')
-        if not os.path.isdir(local):
-            os.makedirs(local)
-
-        share = pkg_resources.resource_filename(
-            pkg_resources.Requirement.parse('abkhazia'), 'abkhazia/share')
-
-        for target in ('prepare_lang_wpdpl.sh', 'validate_lang_wpdpl.pl'):
-            shutil.copy(
-                os.path.join(share, target),
-                os.path.join(local, target))
+            pass  # utils.remove(tempdir)
 
     def check_parameters(self):
         """Raise if the language modeling parameters are not correct"""
@@ -366,114 +490,12 @@ class LanguageModel(abstract_recipe.AbstractRecipe):
         super(LanguageModel, self).export()
 
         # G.arpa.gz is needed for acoustic modeling
-        origin = os.path.join(
-            self.recipe_dir, 'data', 'local', self.name, 'G.arpa.gz')
-        target = os.path.join(self.output_dir, 'G.arpa.gz')
-        shutil.copy(origin, target)
+        for g in ('G.arpa.gz', 'G.fst'):
+            origin = os.path.join(
+                self.recipe_dir, 'data', 'local', self.name, g)
+            target = os.path.join(self.output_dir, g)
+            shutil.copy(origin, target)
 
         # write a little file with LM parameters
         with open(os.path.join(self.output_dir, 'params.txt'), 'w') as param:
             param.write('{} {}\n'.format(self.level, self.order))
-
-    def _change_lm_vocab(self, lm_txt, words_txt, srilm_options):
-        """Create a LM from an existing one by changing its vocabulary
-
-	All n-grams in the new vocab are retained with their original
-	probabilities. Backoff weights are recomputed and backed-off
-	unigrams for all new words are added. -subset option performs
-	subsetting of the vocabulary without adding new words.
-
-        This is reimplementation of the change-lm-vocab script from
-        SRILM, modified in 3 ways:
-
-         - no more -tolower option
-
-         - the pruning step now updates ngrams count in the header
-           (disable annoying warning)
-
-         - the call to ngram is in 2 steps (-renorm and
-           -prune-lowprobs options failed together on
-           librispeech-test-clean, need 2 calls)
-
-        """
-        words = set(w.split()[0] for w in utils.open_utf8(words_txt, 'r'))
-
-        with tempfile.TemporaryFile() as fwords:
-            for word in words:
-                fwords.write(word + '\n')
-            fwords.seek(0)
-
-
-    def _format_lm_sri(self, lang_dir, arpa_lm,
-                       srilm_options='-subset -prune-lowprobs -unk'):
-        """Converts ARPA-format language models to FSTs
-
-        Change the LM vocabulary using SRILM. This is a Python
-        implementation of Kaldi egs/wsj/s5/utils/format_lm_sri.sh,
-        with margin modifications.
-
-        Note: if you want to just convert ARPA LMs to FSTs, there is a
-        simpler way to do this that doesn't require SRILM: see
-        examples in Kaldi egs/wsj/s5/local/wsj_format_local_lms.sh
-
-        """
-        words_txt = os.path.join(lang_dir, 'words.txt')
-        for _file in (arpa_lm, words_txt):
-            if not os.path.isfile(_file):
-                raise IOError('excpected input file {} to exist'.format(_file))
-
-        if not os.path.isdir(self.output_dir):
-            os.makedirs(self.output_dir)
-
-        lm_base = os.path.splitext(os.path.basename(arpa_lm))[0]
-        tempdir = tempfile.mkdtemp()
-        try:
-            # unzip the input LM. Removing all "illegal" combinations of
-            # <s> and </s>, which are supposed to occur only at being/end
-            # of utt. These can cause determinization failures of CLG
-            # [ends up being epsilon cycles].
-            lm_txt = os.path.join(tempdir, lm_base + '.txt')
-            with utils.open_utf8(lm_txt, 'w') as f_out:
-                for line in gzip.open(arpa_lm, 'rb'):
-                    if not (re.search('<s> <s>', line) or
-                            re.search('</s> <s>', line) or
-                            re.search('</s> </s>', line)):
-                        f_out.write(line)
-
-            # finds words in the arpa LM that are not symbols in the
-            # OpenFst-format symbol table words.txt
-            oovs = os.path.join(self.output_dir, 'oovs_{}.txt'.format(lm_base))
-            utils.jobs.run(
-                'utils/find_arpa_oovs.pl {} {}'.format(words_txt, lm_txt),
-                stdout=utils.open_utf8(oovs, 'w'),
-                env=kaldi_path(),
-                cwd=self.recipe_dir)
-
-            # Change the LM vocabulary to be the intersection of the
-            # current LM vocabulary and the set of words in the
-            # pronunciation lexicon. This also renormalizes the LM by
-            # recomputing the backoff weights, and remove those ngrams
-            # whose probabilities are lower than the backed-off
-            # estimates.
-            lm_pruned = self._change_lm_vocab(lm_txt, words_txt, srilm_options)
-
-            self._run_command(
-                'utils/run.pl {0} arpa2fst {1} | fstprint | '
-                'utils/eps2disambig.pl | utils/s2eps.pl | '
-                'fstcompile --isymbols={2} --osymbols={2} '
-                '--keep_isymbols=false --keep_osymbols=false | '
-                'fstreepsilon | fstarcsort --sort_type=ilabel > {3}'.format(
-                    os.path.join(self.output_dir, 'format_lm.log'),
-                    lm_pruned,
-                    words_txt,
-                    os.path.join(self.output_dir, 'G.fst')))
-
-            # The output is like: 9.14233e-05 -0.259833. We do expect
-            # the first of these 2 numbers to be close to zero (the
-            # second is nonzero because the backoff weights make the
-            # states sum to >1).
-            self._run_command('fstisstochastic {}'.format(
-                os.path.join(self.output_dir, 'G.fst')))
-
-        finally:
-            utils.remove(tempdir)

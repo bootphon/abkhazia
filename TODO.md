@@ -1,54 +1,6 @@
 <!-- -*-org-*- this comment force org-mode in emacs -->
 
-* Open bugs [0/3]
-** TODO abkhazia language librispeech-test-clean -n 3 -l word
-Fail in word level, regardless silences. Work on phone
-
-running utils/format_lm_sri.sh --srilm_opts "-subset -prune-lowprobs -unk" /home/mathieu/lscp/data/abkhazia/librispeech-test-clean/language /home/mathieu/lscp/data/abkhazia/librispeech-test-clean/language/recipe/data/local/language/G.arpa.gz /tmp/tmpFWGkJL
-Converting '/home/mathieu/lscp/data/abkhazia/librispeech-test-clean/language/recipe/data/local/language/G.arpa.gz' to FST
-gzip: stdout: Broken pipe
--: line 91932: warning: 8014 1-grams read, expected 8141
--: line 91932: warning: 35217 2-grams read, expected 35595
--: line 91932: warning: 48688 3-grams read, expected 49258
-ngram: ../../include/LHash.cc:519: void LHashIter<KeyT, DataT>::sortKeys() [with KeyT = unsigned int; DataT = Trie<unsigned int, BOnode>]: Assertion `j == numEntries' failed.
-/home/mathieu/lscp/dev/kaldi/tools/srilm/bin/change-lm-vocab: line 78: 12596 Done                    gzip -dcf $oldlm
-12597                       | ${GAWK-gawk} '
-# read the vocab file
-NR == 1 && vocab {
-# always include sentence begin/end
-is_word["<s>"] = is_word["</s>"] = 1;
-while ((getline word < vocab) > 0) {
-is_word[to_lower ? tolower(word) : word] = 1;
-}
-close(vocab);
-}
-# process old lm
-NF==0 {
-print; next;
-}
-/^ngram *[0-9][0-9]*=/ {
-order = substr($2,1,index($2,"=")-1);
-print;
-next;
-}
-/^\\[0-9]-grams:/ {
-currorder=substr($0,2,1);
-print;
-next;
-}
-/^\\/ {
-print; next;
-}
-currorder {
-for (i = 2 ; i <= currorder + 1; i ++) {
-if (!((to_lower ? tolower($i) : $i) in is_word)) next;
-}
-print;
-next;
-}
-{ print }
-' vocab=$vocab to_lower=$tolower
-12598 Aborted                 | ngram -lm - -vocab "$ngram_vocab" -renorm -write-lm "$newlm" $options
+* Open bugs [0/2]
 ** TODO abkhazia features/language brent
 ldes_brent/language /home/mbernard/dev/abkhazia/egs/align_childes_brent/acoustic/recipe/exp/mono
 steps/train_mono.sh --nj 4 --cmd run.pl data/acoustic /home/mbernard/dev/abkhazia/egs/align_childes_brent/language /home/mbernard/dev/abkhazia/egs/align_childes_brent/acoustic/recipe/exp/mono
@@ -131,3 +83,54 @@ use utils/fix_data_dir.sh data/acoustic to fix this.
 *** warning on missing n-grams
     this is the effect of OOV pruning in kaldi
     tools/srilm/bin/change-lm-vocab, so not a problem nor a bug
+** DONE abkhazia language librispeech-test-clean -n 3 -l word
+   CLOSED: [2016-06-03 ven. 15:52]
+*** Fail in word level, regardless silences. Work on phone
+running utils/format_lm_sri.sh --srilm_opts "-subset -prune-lowprobs -unk" /home/mathieu/lscp/data/abkhazia/librispeech-test-clean/language /home/mathieu/lscp/data/abkhazia/librispeech-test-clean/language/recipe/data/local/language/G.arpa.gz /tmp/tmpFWGkJL
+Converting '/home/mathieu/lscp/data/abkhazia/librispeech-test-clean/language/recipe/data/local/language/G.arpa.gz' to FST
+gzip: stdout: Broken pipe
+-: line 91932: warning: 8014 1-grams read, expected 8141
+-: line 91932: warning: 35217 2-grams read, expected 35595
+-: line 91932: warning: 48688 3-grams read, expected 49258
+ngram: ../../include/LHash.cc:519: void LHashIter<KeyT, DataT>::sortKeys() [with KeyT = unsigned int; DataT = Trie<unsigned int, BOnode>]: Assertion `j == numEntries' failed.
+/home/mathieu/lscp/dev/kaldi/tools/srilm/bin/change-lm-vocab: line 78: 12596 Done                    gzip -dcf $oldlm
+12597                       | ${GAWK-gawk} '
+# read the vocab file
+NR == 1 && vocab {
+# always include sentence begin/end
+is_word["<s>"] = is_word["</s>"] = 1;
+while ((getline word < vocab) > 0) {
+is_word[to_lower ? tolower(word) : word] = 1;
+}
+close(vocab);
+}
+# process old lm
+NF==0 {
+print; next;
+}
+/^ngram *[0-9][0-9]*=/ {
+order = substr($2,1,index($2,"=")-1);
+print;
+next;
+}
+/^\\[0-9]-grams:/ {
+currorder=substr($0,2,1);
+print;
+next;
+}
+/^\\/ {
+print; next;
+}
+currorder {
+for (i = 2 ; i <= currorder + 1; i ++) {
+if (!((to_lower ? tolower($i) : $i) in is_word)) next;
+}
+print;
+next;
+}
+{ print }
+' vocab=$vocab to_lower=$tolower
+12598 Aborted                 | ngram -lm - -vocab "$ngram_vocab" -renorm -write-lm "$newlm" $options
+
+*** Solution
+reimplementation of format_lm_sri in Python

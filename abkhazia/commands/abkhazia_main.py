@@ -24,7 +24,8 @@ import subprocess
 import sys
 import textwrap
 import pkg_resources
-import argcomplete, argparse
+import argcomplete
+import argparse
 
 import abkhazia.utils as utils
 
@@ -61,8 +62,8 @@ class Abkhazia(object):
     def load_config(self):
         """Load the config file optionally given by --config argument
 
-        Return the splited argument strins taken from sys.argv, with
-        '--config <config-file>' removed
+        Return the string read from sys.argv, with '--config
+        <config-file>' removed
 
         """
         parser = argparse.ArgumentParser(add_help=False)
@@ -103,8 +104,8 @@ class Abkhazia(object):
             'defined in <config-file>, default configuration is read from\n{}'
             .format(utils.AbkhaziaConfig.default_config_file()))
 
-        # register the subcommands parsers, and list their name and
-        # descripion on --help
+        # register the subcommands parsers, and list their names and
+        # descripions on --help
         subparsers = parser.add_subparsers(
             metavar='<command>',
             help='possible commands are:\n' +
@@ -119,8 +120,8 @@ class Abkhazia(object):
 
     def __init__(self):
         # at first, we load optional config file (--config
-        # option). Values read from configuration can now be displayed
-        # as default values in --help messages
+        # option). Values read from configuration are displayed as
+        # default values in --help messages
         argv = self.load_config()
 
         # init the parser and subparsers for abkhazia

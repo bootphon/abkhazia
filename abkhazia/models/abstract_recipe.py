@@ -22,14 +22,43 @@ from abkhazia.kaldi import kaldi_path, Abkhazia2Kaldi
 
 
 class AbstractRecipe(utils.AbkhaziaBase):
-    """A base class for kaldi recipes operating on an abkhazia corpus
+    """A base class for Kaldi recipes operating on an abkhazia corpus
 
-    If you want the recipe directory in output_dir/recipe, set
-    self.delete_recipe to False (default is True)
+    This class defines standard attributes and methods shared by all
+    Kaldi recipes.
+
+    Attributes:
+    -----------
+
+    name (str): the name of the recipe
+
+    corpus (abkhazia.Corpus): the corpus on which to apply the recipe
+
+    output_dir (path): the directory where to write the recipe output
+
+    log (logging.Logger): a log system where to send messages
+
+    meta (abkhazia.utils.Meta): meta information on recipe creation
+      and execution
+
+    njobs (int): number of CPU cores to use when doing parallel
+      computation
+
+    recipe_dir (path): the directory where to write the Kaldi recipe
+      (`output_dir`/recipe by default)
+
+    delete_recipe (bool): delete the recipe directory after execution
+      (default is True)
+
+
+    Methods:
+    --------
+
+    Each concrete recipe must implmements/specializes the following
+    methods: check_parameters, create, run and export.
 
     """
     name = NotImplemented
-    """The recipe's name"""
 
     def __init__(self, corpus, output_dir, log=utils.null_logger()):
         super(AbstractRecipe, self).__init__(log=log)
@@ -62,7 +91,7 @@ class AbstractRecipe(utils.AbkhaziaBase):
             pass
 
     def _run_command(self, command, verbose=True):
-        """Run the command as a subprocess, wrapper on utils.jobs"""
+        """Run the command as a subprocess in a Kaldi environment"""
         if verbose is True:
             self.log.debug('running %s', command)
 
@@ -73,7 +102,12 @@ class AbstractRecipe(utils.AbkhaziaBase):
             cwd=self.recipe_dir)
 
     def _check_njobs(self, local=False):
-        """If we run jobs locally, make sure we have enough cores"""
+        """If we run jobs locally, make sure we have enough cores
+
+        In that case, log a warning and reduce to number of cores
+        available.
+
+        """
         ncores = multiprocessing.cpu_count()
         queued = not local or 'queue' in utils.config.get('kaldi', 'train-cmd')
         if queued and ncores < self.njobs:
@@ -83,24 +117,24 @@ class AbstractRecipe(utils.AbkhaziaBase):
             self.njobs = ncores
 
     def check_parameters(self):
-        """Perform sanity checks on recipe parameters, raise on error"""
+        """Perform sanity checks on recipe parameters, raise on error
+
+        This method must be specialized in child classes.
+
+        """
         self._check_njobs()
 
     def create(self):
-        """Create the recipe in `self.recipe_dir`
-
-        Setup Kaldi scripts and environment in self.recipe_dir
-
-        """
+        """Create the Kaldi recipe in `self.recipe_dir`"""
         self.check_parameters()
 
-        # local folder
+        # setup phones data
         self.a2k.setup_lexicon()
         self.a2k.setup_phones()
         self.a2k.setup_silences()
         self.a2k.setup_variants()
 
-        # setup data files
+        # setup text/wavs data
         self.a2k.setup_text()
         self.a2k.setup_utt2spk()
         self.a2k.setup_segments()
