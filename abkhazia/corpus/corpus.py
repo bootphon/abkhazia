@@ -271,8 +271,9 @@ class Corpus(utils.AbkhaziaBase):
         the pruned text.
 
         """
-        # prune utterance indexed dicts from the utterances list
         utts = set(self.utts())
+
+        # prune utterance indexed dicts from the utterances list
         for d in (self.segments, self.text, self.utt2spk):
             d = {key: value for key, value in d.iteritems()
                  if key in utts}

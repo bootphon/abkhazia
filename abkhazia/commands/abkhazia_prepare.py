@@ -122,6 +122,12 @@ class AbstractFactory(object):
             'computations (mainly for wav conversion). '
             'Default is to launch %(default)s jobs.')
 
+        parser.add_argument(
+            '--keep-short-utts', action='store_true',
+            help='utterances shorter than 0.1 second are removed by defaults, '
+            "as they won't be accepted by Kaldi for feature extraction. "
+            "Use this option to keep those short utterances in the corpus.")
+
         if cls.preparator.audio_format == 'wav':
             parser.add_argument(
                 '--copy-wavs', action='store_true',
@@ -165,7 +171,9 @@ class AbstractFactory(object):
             os.path.join(output_dir, 'data_preparation.log'), args.verbose)
 
         # initialize corpus from raw with it's preparator
-        corpus = preparator.prepare(os.path.join(output_dir, 'wavs'))
+        corpus = preparator.prepare(
+            os.path.join(output_dir, 'wavs'),
+            keep_short_utts=args.keep_short_utts)
         corpus.log = utils.get_log(
             os.path.join(output_dir, 'data_validation.log'), args.verbose)
 

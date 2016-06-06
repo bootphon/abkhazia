@@ -50,7 +50,7 @@ class AbstractPreparator(object):
         filesystem.
 
     'log' : the Logger instance where to send log messages, default is
-      to disable logging.
+        to disable logging.
 
 
     Methods
@@ -87,7 +87,7 @@ class AbstractPreparator(object):
         self.corpus.meta.source = self.input_dir
         self.corpus.meta.name = self.name
 
-    def prepare(self, wavs_dir):
+    def prepare(self, wavs_dir, keep_short_utts=False):
         """Prepare the corpus from raw distribution to abkhazia format
 
         `wavs_dir` is a directory where to store prepared wav files
@@ -110,6 +110,17 @@ class AbstractPreparator(object):
         c.silences = self.silences
         c.variants = self.variants
 
+        if not keep_short_utts:
+            size = len(c.utts())
+            dur = c.utt2duration()
+            c = c.subcorpus(
+                [u for u in c.utts() if dur[u] >= 0.1], validate=False)
+
+            self.log.debug(
+                'removed %s utterances shorter than 100ms',
+                size - len(c.utts()))
+
+        self.log.debug("prepared %s utterances", len(c.utts()))
         return c
 
     def _broken_wav(self, wav):

@@ -1,16 +1,11 @@
 <!-- -*-org-*- this comment force org-mode in emacs -->
 
-* Open bugs [0/2]
-** TODO abkhazia features/language brent
-ldes_brent/language /home/mbernard/dev/abkhazia/egs/align_childes_brent/acoustic/recipe/exp/mono
-steps/train_mono.sh --nj 4 --cmd run.pl data/acoustic /home/mbernard/dev/abkhazia/egs/align_childes_brent/language /home/mbernard/dev/abkhazia/egs/align_childes_brent/acoustic/recipe/exp/mono
-split_data.sh: warning, #lines is (utt2spk,feats.scp) is (112865,112862); you can
-use utils/fix_data_dir.sh data/acoustic to fix this.
-
+* Open bugs [0/1]
 ** TODO abkhazia decode
    what is the bug??
 * Feature requests
 ** features
+   - more options from Kaldi (nbc, fs, etc...)
    - centralize/refactor the legacy code related to features
    - option to export features from ark to h5f, see
      [[https://github.com/bootphon/features_extraction/blob/master/kaldi_features.py][kaldi_features.py]] from feature_extraction package
@@ -41,7 +36,7 @@ use utils/fix_data_dir.sh data/acoustic to fix this.
     --help'. Assume the user doesn't know abkhazia or kaldi.
   - [ ] improve the 'command line' page
   - [ ] improve the 'corpus format' page
-* Fixed bugs [3/3]
+* Fixed bugs [5/5]
 ** DONE installation on Mac
    CLOSED: [2016-05-20 ven. 13:02]
    XN -- Pour le testing sur mac, ça ne marche pas ou en tout cas, je
@@ -134,3 +129,16 @@ next;
 
 *** Solution
 reimplementation of format_lm_sri in Python
+** DONE abkhazia features/language brent
+   CLOSED: [2016-06-06 lun. 15:54]
+*** ldes_brent/language /home/mbernard/dev/abkhazia/egs/align_childes_brent/acoustic/recipe/exp/mono
+steps/train_mono.sh --nj 4 --cmd run.pl data/acoustic /home/mbernard/dev/abkhazia/egs/align_childes_brent/language /home/mbernard/dev/abkhazia/egs/align_childes_brent/acoustic/recipe/exp/mono
+split_data.sh: warning, #lines is (utt2spk,feats.scp) is (112865,112862); you can
+use utils/fix_data_dir.sh data/acoustic to fix this.
+
+*** problem
+features from utts shorter than 100ms cannot be computed (see
+extract-segments.c in kaldi featbin)
+*** solution
+remove those short utts from corpus in preparation step
+(--keep-short-utts option added)

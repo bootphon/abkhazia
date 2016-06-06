@@ -24,8 +24,10 @@ import abkhazia.utils as utils
 def export_features(feat_dir, target_dir, corpus, copy=False):
     """Export feats.scp, cmvn.scp and wav.scp from feat_dir to target_dir
 
+    Both `feat_dir` and `target_dir` are assumed to exist.
+
     If copy is True, make copies instead of links. Raises IOError if
-    one of the file isn't in feat_dir.
+    one of the input files isn't in feat_dir.
 
     """
     # sanity checks
@@ -33,26 +35,34 @@ def export_features(feat_dir, target_dir, corpus, copy=False):
         if not os.path.isdir(_dir):
             raise IOError('{} is not a directory'.format(_dir))
 
-    # export feats and cmvn
-    for scp in ('feats.scp', 'cmvn.scp'):
-        origin = os.path.join(feat_dir, scp)
-        if not os.path.isfile(origin):
-            raise IOError('{} not found'.format(origin))
+    # export feats.scp, keep only utterences referenced in the corpus
+    origin = os.path.join(feat_dir, 'feats.scp')
+    target = os.path.join(target_dir, os.path.basename(origin))
+    if not os.path.isfile(origin):
+        raise IOError('{} not found'.format(origin))
 
-        target = os.path.join(target_dir, scp)
-        if copy:
-            shutil.copy(origin, target)
-        else:
-            os.symlink(origin, target)
+    with open(target, 'w') as scp:
+        for line in open(origin, 'r'):
+            scp.write(line)
 
-    # export wav, correct paths to be relative to corpus
+    # export cmvn.scp
+    origin = os.path.join(feat_dir, 'cmvn.scp')
+    if not os.path.isfile(origin):
+        raise IOError('{} not found'.format(origin))
+
+    target = os.path.join(target_dir, os.path.basename(origin))
+    if copy:
+        shutil.copy(origin, target)
+    else:
+        os.symlink(origin, target)
+
+    # export wav.scp, correct paths to be relative to corpus
     # instead of recipe_dir
     origin = os.path.join(feat_dir, 'wav.scp')
     if not os.path.isfile(origin):
         raise IOError('{} not found'.format(origin))
-
     with open(os.path.join(target_dir, 'wav.scp'), 'w') as scp:
-        for line in open(origin, 'r').readlines():
+        for line in open(origin, 'r'):
             key = line.strip().split(' ')[0]
             wav = corpus.wavs[key]
             scp.write('{} {}\n'.format(key, wav))

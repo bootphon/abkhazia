@@ -43,6 +43,14 @@ class CorpusValidation(object):
     specialized validate_SOMETHING() methods.
 
     """
+    wav_min_duration = 0.1
+    """minimal duration for utterances
+
+    Kaldi cannot compute features of utterance below 0.1 s so we need
+    to remove it (or have a warning).
+
+    """
+
     def __init__(self, corpus, njobs=utils.default_njobs(),
                  log=utils.null_logger()):
         self.corpus = corpus
@@ -79,7 +87,7 @@ class CorpusValidation(object):
         inventory = self.validate_phones()
         self.validate_lexicon(inventory)
 
-        self.log.info("corpus validated: ready for use with abkhazia")
+        self.log.debug("corpus validated: ready for use with abkhazia")
         return meta
 
     def validate_wavs(self):
@@ -166,9 +174,9 @@ class CorpusValidation(object):
            all([e is None for e in stops])):
             # simple case, with one utterance per file and no explicit
             # timestamps provided just get list of files that are very
-            # short (less than 15ms)
+            # short (less than 0.1s)
             short_wavs = [utt_id for utt_id, wav in zip(utt_ids, utt_wavs)
-                          if meta[wav].duration < .015]
+                          if meta[wav].duration < self.wav_min_duration]
         else:
             # more complicated case :find all utterances (plus
             # timestamps) associated to each wavefile and for each
@@ -182,7 +190,7 @@ class CorpusValidation(object):
 
         if short_wavs:
             self.log.debug(
-                "The following utterances are less than 15ms long and "
+                "The following utterances are less than 100 ms long and "
                 "won't be used in kaldi recipes: {}".format(short_wavs))
 
     def validate_speakers(self):
@@ -548,7 +556,7 @@ class CorpusValidation(object):
                                 '[{}, {}]'.format(start, stop),
                                 '[0, {}]'.format(duration)))
 
-                if stop - start < .015:
+                if stop - start < self.wav_min_duration:  # .015:
                     short_utts.append(utt_id)
 
             # then check if there is overlap in time between the
