@@ -2,7 +2,6 @@
 
 * Open bugs [0/1]
 ** TODO abkhazia decode
-   what is the bug??
 * Feature requests
 ** features
    - more options from Kaldi (nbc, fs, etc...)
@@ -27,15 +26,20 @@
       output = {posteriorgrams, transcription}
       speaker_adapt
       output: results (repertoire)
-** updating abkhazia.cfg
-   - Need of an automated way to update new versions of the installed
-     configuration file in the ./configure script.
-   - Do that along with the next update of the config file
 ** documentation
   - [ ] have more detailed command description on 'abkhazia <command>
     --help'. Assume the user doesn't know abkhazia or kaldi.
   - [ ] improve the 'command line' page
   - [ ] improve the 'corpus format' page
+** abkhazia/share
+*** suppress share/kaldi_templates
+find a solution to generate path.sh from abkhazia.kaldi.path
+*** licence issue
+- int2sym_force_align.pl -> seems useless, suppress ?
+*** updating abkhazia.cfg
+    - Need of an automated way to update new versions of the installed
+      configuration file in the ./configure script.
+    - Do that along with the next update of the config file
 * Fixed bugs [5/5]
 ** DONE installation on Mac
    CLOSED: [2016-05-20 ven. 13:02]

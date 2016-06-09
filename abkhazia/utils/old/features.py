@@ -31,14 +31,14 @@ def segment_features(features_file, segments_file, out_file):
     """
     utt_ids, wavefiles, starts, stops = io.read_segments(segments_file)
     if all([e is None for e in starts]) and all([e is None for e in stops]):
-        #TODO use a log instead of a print statement
-        print "segment_features: segments already match wavefiles, doing nothing..."
+        # TODO use a log instead of a print statement
+        print ("segment_features: segments already match wavefiles, "
+               "doing nothing...")
     else:
         # Group utterances by wavefiles
         data = zip(utt_ids, wavefiles, starts, stops)
-        get_wav = lambda e: e[1]
-        for wav, utts in groupby(data, get_wav):
-            #TODO use a log instead of a print statement
+        for wav, utts in groupby(data, lambda e: e[1]):
+            # TODO use a log instead of a print statement
             print "Segmenting features for file {} by utterance".format(wav)
             # load features for whole wavefile
             wav_id = os.path.splitext(wav)[0]
@@ -52,9 +52,13 @@ def segment_features(features_file, segments_file, out_file):
             for utt_id, _, start, stop in utts:
                 # select features for appropriate segment
                 utt_ids.append(utt_id)
-                indices = np.where(np.logical_and(times >= start, times <= stop))[0]
+                indices = np.where(
+                    np.logical_and(times >= start, times <= stop))[0]
+
                 # get times relative to beginning of utterance
                 utt_times.append(times[indices] - start)
                 utt_features.append(features[indices, :])
+
             # write to out_file once for each wavefile
-            h5features.write(out_file, 'features', utt_ids, utt_times, utt_features)
+            h5features.write(
+                out_file, 'features', utt_ids, utt_times, utt_features)
