@@ -13,5 +13,8 @@
 # You should have received a copy of the GNU General Public License
 # along with abkhazia. If not, see <http://www.gnu.org/licenses/>.
 
-from .path import kaldi_path
-from .abkhazia2kaldi import Abkhazia2Kaldi
+from .corpus import Corpus
+from .corpus_loader import CorpusLoader
+from .corpus_saver import CorpusSaver
+from .corpus_validation import CorpusValidation
+from .corpus_split import CorpusSplit

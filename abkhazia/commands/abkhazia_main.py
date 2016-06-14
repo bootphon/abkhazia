@@ -1,4 +1,6 @@
 #!/usr/bin/env python
+# coding: utf-8
+
 # PYTHON_ARGCOMPLETE_OK
 #
 # Copyright 2016 Thomas Schatz, Xuan Nga Cao, Mathieu Bernard
@@ -22,19 +24,21 @@ import subprocess
 import sys
 import textwrap
 import pkg_resources
-import argcomplete, argparse
+import argcomplete
+import argparse
 
 import abkhazia.utils as utils
 
 from abkhazia.commands import (
     AbkhaziaPrepare,
+    AbkhaziaFeatures,
     AbkhaziaSplit,
     AbkhaziaLanguage,
     AbkhaziaAcoustic,
     AbkhaziaDecode,
     AbkhaziaAlign)
 
-__version__ = '0.2'
+__version__ = '0.3'
 
 
 class Abkhazia(object):
@@ -42,6 +46,7 @@ class Abkhazia(object):
     # the possible subcommand classes
     _command_classes = [
         AbkhaziaPrepare,
+        AbkhaziaFeatures,
         AbkhaziaSplit,
         AbkhaziaLanguage,
         AbkhaziaAcoustic,
@@ -57,8 +62,8 @@ class Abkhazia(object):
     def load_config(self):
         """Load the config file optionally given by --config argument
 
-        Return the splited argument strins taken from sys.argv, with
-        '--config <config-file>' removed
+        Return the string read from sys.argv, with '--config
+        <config-file>' removed
 
         """
         parser = argparse.ArgumentParser(add_help=False)
@@ -99,8 +104,8 @@ class Abkhazia(object):
             'defined in <config-file>, default configuration is read from\n{}'
             .format(utils.AbkhaziaConfig.default_config_file()))
 
-        # register the subcommands parsers, and list their name and
-        # descripion on --help
+        # register the subcommands parsers, and list their names and
+        # descripions on --help
         subparsers = parser.add_subparsers(
             metavar='<command>',
             help='possible commands are:\n' +
@@ -115,8 +120,8 @@ class Abkhazia(object):
 
     def __init__(self):
         # at first, we load optional config file (--config
-        # option). Values read from configuration can now be displayed
-        # as default values in --help messages
+        # option). Values read from configuration are displayed as
+        # default values in --help messages
         argv = self.load_config()
 
         # init the parser and subparsers for abkhazia
@@ -140,26 +145,26 @@ class CatchExceptions(object):
     def __init__(self, function):
         self.function = function
 
+    def _exit(self, msg):
+        sys.stderr.write(msg + '\n')
+        sys.exit(1)
+
     def __call__(self):
         try:
             self.function()
 
-        except (IOError, OSError, RuntimeError) as err:
-            print 'fatal error: {}'.format(err)
-            sys.exit(1)
+        except (IOError, OSError, RuntimeError, AssertionError) as err:
+            self._exit('fatal error: {}'.format(err))
 
         except subprocess.CalledProcessError as err:
-            print 'subprocess fatal error: {}'.format(err)
-            sys.exit(1)
+            self._exit('subprocess fatal error: {}'.format(err))
 
         except pkg_resources.DistributionNotFound:
-            print ('fatal error: abkhazia package not found\n'
-                   'please install abkhazia on your platform')
-            sys.exit(1)
+            self.exit('fatal error: abkhazia package not found\n'
+                      'please install abkhazia on your platform')
 
         except KeyboardInterrupt:
-            print 'keyboard interruption, exiting'
-            sys.exit(1)
+            self._exit('keyboard interruption, exiting')
 
 
 # when debugging the abkhazia command-line tools from a terminal, it

@@ -50,16 +50,8 @@ try:
 except ImportError:
     import xml.etree.ElementTree as ET
 
-from abkhazia.utils import open_utf8
-from abkhazia.utils.basic_io import cpp_sort
+import abkhazia.utils as utils
 from abkhazia.prepare import AbstractPreparator
-
-# from https://stackoverflow.com/questions/38987
-def merge_two_dicts(first, second):
-    '''Given two dicts, merge them into a new dict as a shallow copy'''
-    third = first.copy()
-    third.update(second)
-    return third
 
 
 Phone = namedtuple('Phone', 'id type start end')
@@ -142,18 +134,14 @@ class CSJPreparator(AbstractPreparator):
     }
 
     # phones are vowels and consonents
-    phones = merge_two_dicts(vowels, consonants)
+    phones = utils.merge_dicts(vowels, consonants)
 
     silences = ['SPN', 'NSN']
 
     variants = []
 
-    def __init__(self, input_dir, output_dir=None,
-                 verbose=False, njobs=1, copy_wavs=False):
-        # call the AbstractPreparator __init__
-        super(CSJPreparator, self).__init__(
-            input_dir, output_dir, verbose, njobs)
-
+    def __init__(self, input_dir,  log=utils.null_logger(), copy_wavs=False):
+        super(CSJPreparator, self).__init__(input_dir, log)
         self.copy_wavs = copy_wavs
 
         # load the core_CSJ.txt from the abkhazia installation path
@@ -171,7 +159,7 @@ class CSJPreparator(AbstractPreparator):
                            if f[0] == 'S' and f in core_files]
 
         # gather label data TODO parallelize
-        self.log.info('parsing {} xml files...'.format(len(self.data_files)))
+        self.log.info('parsing {} xml files'.format(len(self.data_files)))
         self.all_utts = {}
         self.lexicon = {}
         for data in progressbar.ProgressBar()(self.data_files):
@@ -185,10 +173,6 @@ class CSJPreparator(AbstractPreparator):
             for word in utt_lexicon:
                 if word not in self.lexicon:
                     self.lexicon[word] = utt_lexicon[word]
-
-        # TODO was present in Thomas's script but not used
-        # all_phones = set([phone for transcript in self.lexicon.values()
-        #                   for phone in transcript])
 
     def parse_core_xml(self, xml_file):
         """Parse raw transcript"""
@@ -238,8 +222,8 @@ class CSJPreparator(AbstractPreparator):
                     if phones:
                         phonemes.append(Phoneme(
                             phoneme_id, phones, phones[0].start, phones[-1].end))
-                    else:
-                        self.log.debug(utt_id)
+                    # else:
+                    #     self.log.debug(utt_id)
                 if phonemes:
                     words.append(Word(
                         phonemes, phonemes[0].start, phonemes[-1].end))
@@ -247,41 +231,40 @@ class CSJPreparator(AbstractPreparator):
                     try:
                         moras = [mora.attrib["MoraEntity"]
                                  for mora in suw.iter("Mora")]
-                        self.log.debug(moras)
+                        # self.log.debug(moras)
                     except:
                         pass
-                    self.log.debug(utt_id)
+                    # self.log.debug(utt_id)
                     # FIXME understand this
                     # assert u"φ" in moras, utt_id
             utts[utt_id] = Utt(words, utt_start, utt_stop, channel)
         return utts
-
 
     def check_transcript_consistency(self, utts):
         pass
     # TODO check consistency of starts, stops, subsequent starts at all levels
     # and the across level consistency
 
-
     def extract_basic_transcript(self, utts, encoding=None):
         lexicon = {}
         new_utts = {}
         for utt_id in utts:
             utt = utts[utt_id]
-            if not utt.words:
-                self.log.debug('Empty utt: ' + utt_id)
-            else:
+            # if not utt.words:
+            #     self.log.debug('Empty utt: ' + utt_id)
+            # else:
+            if utt.words:
                 # TODO correct these before this step
-                if utt.words[0].start < utt.start:
-                    self.log.debug(
-                        utt_id + ' start: ' +
-                        str(utt.start) + ' - ' +
-                        str(utt.words[0].start))
-                if utt.words[-1].end > utt.end:
-                    self.log.debug(
-                        utt_id + ' end: ' +
-                        str(utt.end) + ' - ' +
-                        str(utt.words[-1].end))
+                # if utt.words[0].start < utt.start:
+                #     self.log.debug(
+                #         utt_id + ' start: ' +
+                #         str(utt.start) + ' - ' +
+                #         str(utt.words[0].start))
+                # if utt.words[-1].end > utt.end:
+                #     self.log.debug(
+                #         utt_id + ' end: ' +
+                #         str(utt.end) + ' - ' +
+                #         str(utt.words[-1].end))
 
                 start = min(utt.words[0].start, utt.start)
                 stop = max(utt.words[-1].end, utt.end)
@@ -399,8 +382,8 @@ class CSJPreparator(AbstractPreparator):
 
         # 5 - H after vowel as long vowel
         if len(phonemes_2) <= 1:
-            if 'H' in phonemes_2:
-                self.log.debug("Isolated H: " + str(phonemes) + str(phonemes_1))
+            # if 'H' in phonemes_2:
+            #     self.log.debug("Isolated H: " + str(phonemes) + str(phonemes_1))
             phonemes_3 = phonemes_2
         else:
             phonemes_3 = []
@@ -424,44 +407,31 @@ class CSJPreparator(AbstractPreparator):
                 phonemes_3.append(previous)  # don't forget last item
         return phonemes_3
 
-
     def list_audio_files(self):
-        inputs = [os.path.join(self.input_dir, 'Waveforms', data + '.wav')
-                  for data in self.data_files]
-        outputs = [os.path.join(data + '.wav') for data in self.data_files]
-        return inputs, outputs
-
+        return [os.path.join(self.input_dir, 'Waveforms', data + '.wav')
+                for data in self.data_files]
 
     def make_segment(self):
-        with open_utf8(self.segments_file, 'w') as out:
-            for utt_id in self.all_utts:
-                wavefile = utt_id.split("_")[1] + ".wav"
-                start = self.all_utts[utt_id]['start']
-                stop = self.all_utts[utt_id]['end']
-                out.write(u"{0} {1} {2} {3}\n"
-                          .format(utt_id, wavefile, start, stop))
-        cpp_sort(self.segments_file)
-
+        segments = dict()
+        for utt_id in self.all_utts:
+            wavefile = utt_id.split("_")[1]
+            start = self.all_utts[utt_id]['start']
+            stop = self.all_utts[utt_id]['end']
+            segments[utt_id] = (wavefile, float(start), float(stop))
+        return segments
 
     def make_speaker(self):
-        with open_utf8(self.speaker_file, 'w') as out:
-            for utt_id in self.all_utts:
-                spk_id = utt_id.split("_")[0]
-                out.write(u"{0} {1}\n".format(utt_id, spk_id))
-        cpp_sort(self.speaker_file)
-
+        utt2spk = dict()
+        for utt_id in self.all_utts:
+            utt2spk[utt_id] = utt_id.split("_")[0]
+        return utt2spk
 
     def make_transcription(self):
-        with open_utf8(self.transcription_file, 'w') as out:
-            for utt_id in self.all_utts:
-                words = u" ".join(self.all_utts[utt_id]['words'])
-                out.write(u"{0} {1}\n".format(utt_id, words))
-        cpp_sort(self.transcription_file)
-
+        text = dict()
+        for utt_id in self.all_utts:
+            words = u" ".join(self.all_utts[utt_id]['words'])
+            text[utt_id] = words
+        return text
 
     def make_lexicon(self):
-        with open_utf8(self.lexicon_file, 'w') as out:
-            for word in self.lexicon:
-                transcript = u" ".join(self.lexicon[word])
-                out.write(u"{0} {1}\n".format(word, transcript))
-        cpp_sort(self.lexicon_file)
+        return {k: ' '.join(v) for k, v in self.lexicon.iteritems()}

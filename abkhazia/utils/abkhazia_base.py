@@ -1,4 +1,3 @@
-#!/usr/bin/env bash
 # Copyright 2016 Thomas Schatz, Xuan Nga Cao, Mathieu Bernard
 #
 # This file is part of abkhazia: you can redistribute it and/or modify
@@ -13,21 +12,13 @@
 #
 # You should have received a copy of the GNU General Public License
 # along with abkhazia. If not, see <http://www.gnu.org/licenses/>.
+"""Provides a base class for Abkhazia componants"""
+
+from abkhazia.utils.meta import Meta
+from abkhazia.utils import null_logger
 
 
-# Prepare 1% of the buckeye corpus as test data for abkhazia. Copy the
-# data in ./data if not specified
-
-# init an empty output data directory
-data_dir=${1:-./data}
-[ -e $data_dir ] && { echo "error: $data_dir already existing"; exit 1; }
-mkdir $data_dir
-
-# init an empty tmp directory, destroy it at exit
-tmpdir=$(mktemp -d /tmp/data.XXXX)
-trap "rm -rf $tmpdir" EXIT
-
-# prepare 1% of buckeye in the data dircetory (random by utterances)
-abkhazia prepare buckeye > /dev/null
-abkhazia split buckeye -T 0.01 -o $tmpdir > /dev/null
-mv $tmpdir/split/train/data/* $data_dir
+class AbkhaziaBase(object):
+    def __init__(self, log=null_logger()):
+        self.log = log
+        self.meta = Meta()

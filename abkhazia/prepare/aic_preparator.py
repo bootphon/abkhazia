@@ -27,7 +27,7 @@ and have administration privileges.
 import os
 import re
 
-from abkhazia.utils import list_files_with_extension
+import abkhazia.utils as utils
 from abkhazia.prepare import AbstractPreparatorWithCMU
 
 
@@ -93,182 +93,156 @@ class AICPreparator(AbstractPreparatorWithCMU):
 
     variants = []  # could use lexical stress variants...
 
-    def __init__(self, input_dir, cmu_dict=None,
-                 output_dir=None, verbose=False, njobs=1):
-        # call the AbstractPreparator __init__
+    def __init__(self, input_dir,  log=utils.null_logger(), cmu_dict=None):
         super(AICPreparator, self).__init__(
-            input_dir, cmu_dict, output_dir, verbose, njobs)
+            input_dir, log=log, cmu_dict=cmu_dict)
+
+        self.flacs = utils.list_files_with_extension(
+            self.input_dir, '.flac', abspath=True, realpath=True)
+
+        # we need to load the transcriptions here because they are
+        # used to compute the lexicon
+        normal = os.path.join(self.input_dir, 'data/text/normal.txt')
+        weird = os.path.join(self.input_dir, 'data/text/weird.txt')
+        self.text = dict()
+        for trs in (normal, weird):
+            for line in open(trs, 'r'):
+                line = line.split(' ')
+                self.text[line[0]] = ' '.join(line[1:])
 
     def list_audio_files(self):
-        flacs = list_files_with_extension(
-            self.input_dir, '.flac', abspath=True)
-        wavs = [os.path.basename(flac).replace('.flac', '.wav')
-                for flac in flacs]
-        return flacs, wavs
+        return self.flacs
 
     def make_segment(self):
-        with open(self.segments_file, 'w') as out:
-            for wav in list_files_with_extension(self.wavs_dir, '.wav'):
-                bname = os.path.basename(wav)
-                utt_id = bname.replace('.wav', '')
-                out.write(utt_id + ' ' + bname + '\n')
-
-        self.log.debug('finished creating segments file')
+        segments = dict()
+        for flac in self.flacs:
+            utt_id = os.path.splitext(os.path.basename(flac))[0]
+            segments[utt_id] = (utt_id, None, None)
+        return segments
 
     def make_speaker(self):
-        with open(self.speaker_file, 'w') as out:
-            for wav in list_files_with_extension(self.wavs_dir, '.wav'):
-                bname = os.path.basename(wav)
-                utt_id = bname.replace('.wav', '')
-                speaker_id = bname.split('_')[0]
-                out.write(utt_id + ' ' + speaker_id + '\n')
-
-        self.log.debug('finished creating utt2spk file')
+        utt2spk = dict()
+        for flac in self.flacs:
+            utt = os.path.splitext(os.path.basename(flac))[0]
+            utt2spk[utt] = utt.split('_')[0]
+        return utt2spk
 
     def make_transcription(self):
-        input_file1 = os.path.join(self.input_dir, 'data/text/normal.txt')
-        input_file2 = os.path.join(self.input_dir, 'data/text/weird.txt')
-
-        with open(self.transcription_file, 'w') as out:
-            for line in open(input_file1, 'r'):
-                out.write(line)
-
-            for line in open(input_file2, 'r'):
-                out.write(line)
-
-        self.log.debug('finished creating text file')
+        return self.text
 
     def make_lexicon(self):
-        temp_lex = os.path.join(self.logs_dir, 'temp_lexicon_cmu.txt')
-        oov = os.path.join(self.logs_dir, 'temp_OOV.txt')
-        self.temp_cmu_lexicon(temp_lex, oov)
-        self.make_lexicon_aux(temp_lex, oov)
+        lex, oov = self._temp_cmu_lexicon()
+        return self._make_lexicon_aux(lex, oov)
 
-        # remove the temp files
-        os.remove(temp_lex)
-        os.remove(oov)
+    def _load_cmu(self):
+        """Return a dict loaded from the CMU dictionay"""
+        cmu = {}
+        for line in open(self.cmu_dict, "r"):
+            match = re.match(r"(.*)\s\s(.*)", line)
+            if match:
+                entry = match.group(1)
+                phn = match.group(2)
+                # remove pronunciation variants
+                for var in ('0', '1', '2'):
+                    phn = phn.replace(var, '')
+                # create the combined dictionary
+                cmu[entry] = phn
+        return cmu
 
-    def temp_cmu_lexicon(self, out_temp_lex, out_oov):
+    def _temp_cmu_lexicon(self):
         """Create temp lexicon file and temp OOVs.
 
         No transcription for the words, we will use the CMU but will
         need to convert to the symbols used in the AIC
 
         """
+        # count word frequencies in text TODO optimize, use
+        # collections.Counter
         dict_word = {}
-        cmu_dict = {}
-        for line in open(self.cmu_dict, "r"):
-            dictionary = re.match(r"(.*)\s\s(.*)", line)
-            if dictionary:
-                entry = dictionary.group(1)
-                phn = dictionary.group(2)
-                # remove pronunciation variants
-                phn = phn.replace("0", "")
-                phn = phn.replace("1", "")
-                phn = phn.replace("2", "")
-                # create the combined dictionary
-                cmu_dict[entry] = phn
-
-        for line in open(self.transcription_file, "r"):
-            matched = re.match(r"([fm0-9]+)_([ps])_(.*?)\s(.*)", line)
+        for k, v in self.text.iteritems():
+            matched = re.match(r"([fm0-9]+)_([ps])_(.*?)", k)
             if matched:
-                for word in matched.group(4).upper().split():
-                    dict_word[word] = (1 if word not in dict_word
-                                       else dict_word[word] + 1)
+                for word in v.upper().split():
+                    try:
+                        dict_word[word] += 1
+                    except KeyError:
+                        dict_word[word] = 1
 
-        # Loop through the words in prompts by descending frequency and
         # create the lexicon by looking up in the CMU dictionary. OOVs
-        # should be the sounds and will be written in temp OOV.txt
-        outfile = open(out_temp_lex, "w")
-        outfile2 = open(out_oov, "w")
-        for word, freq in sorted(
-                dict_word.items(), key=lambda kv: kv[1], reverse=True):
-            if word in cmu_dict.viewkeys():
-                outfile.write(word + ' ' + cmu_dict[word] + '\n')
-            else:
-                outfile2.write(word + '\t' + str(freq) + '\n')
+        # should be the sounds and will be written in oov
+        lex = dict()
+        oov = dict()
+        cmu = self._load_cmu()
+        for word, freq in dict_word.iteritems():
+            try:
+                lex[word] = cmu[word]
+            except KeyError:
+                oov[word] = freq
+        return lex, oov
 
-        self.log.debug('finished creating temp lexicon file')
-
-    def make_lexicon_aux(self, temp_lex, oov):
+    def _make_lexicon_aux(self, lex, oov):
         """Create the lexicon file, convert from CMU to AC symbols"""
-        outfile = open(self.lexicon_file, "w")
+        lexicon = dict()
 
-        array_phn = []
-        for line in open(temp_lex, 'r'):
-            # non greedy match to extract phonetic transcription
-            matched = re.match(r'(.*?)\s(.*)', line)
-            if matched:
-                word = matched.group(1)
-                word = word.lower()
-
-                phn_trs = matched.group(2)
-                # convert the CMU symbols to AIC symbols
-                for cmu, aic in (
-                        ('AA', 'a'),
-                        ('AE', 'xq'),
-                        ('AH', 'xa'),
-                        ('AO', 'c'),
-                        ('AW', 'xw'),
-                        ('AY', 'xy'),
-                        ('DH', 'xd'),
-                        ('EH', 'xe'),
-                        ('ER', 'xr'),
-                        ('EY', 'e'),
-                        ('CH', 'xc'),
-                        ('HH', 'h'),
-                        ('IH', 'xi'),
-                        ('IY', 'i'),
-                        ('JH', 'xj'),
-                        ('NG', 'xg'),
-                        ('OW', 'o'),
-                        ('OY', 'xo'),
-                        ('SH', 'xs'),
-                        ('TH', 'xt'),
-                        ('UH', 'xu'),
-                        ('UW', 'u'),
-                        ('ZH', 'xz'),
-                        ('D', 'd'),
-                        ('B', 'b'),
-                        ('F', 'f'),
-                        ('G', 'g'),
-                        ('K', 'k'),
-                        ('L', 'l'),
-                        ('M', 'm'),
-                        ('N', 'n'),
-                        ('P', 'p'),
-                        ('R', 'r'),
-                        ('S', 's'),
-                        ('T', 't'),
-                        ('V', 'v'),
-                        ('W', 'w'),
-                        ('Y', 'y'),
-                        ('Z', 'z')):
-                    phn_trs = phn_trs.replace(cmu, aic)
-
-                outfile.write(word + ' ' + phn_trs + '\n')
+        for k, v in lex.iteritems():
+            word = k.lower()
+            phn_trs = self._cmu2aic(v)
+            lexicon[word] = phn_trs
 
         # for the sounds
-        for line in open(oov, 'r'):
-            matched = re.match("(.*)\t(.*)", line)
-            if matched:
-                sound = matched.group(1)
-                sound = sound.lower()
-                freq = matched.group(2)
-                freq = int(freq)
-                # discard the OOV with freq 1 because they are the
-                # typos. They will remain OOVs
-                if freq > 1:
-                    phn_trs = sound
-                    # need to split the sound into phones to have the
-                    # phonetic transcription
-                    array_phn = phn_trs.split(":")
-                    outfile.write(sound)
-                    for phn in array_phn:
-                        outfile.write(' ' + phn)
-                    outfile.write('\n')
-                else:
-                    self.log.debug(sound)
+        for k, v in oov.iteritems():
+            # discard the OOV with freq 1 because they are the
+            # typos. They will remain OOVs
+            if v > 1:
+                sound = k.lower()
+                # need to split the sound into phones to have the
+                # phonetic transcription
+                lexicon[sound] = ' '.join(sound.split(":"))
 
-        outfile.close()
-        self.log.debug('finished creating lexicon file')
+        return lexicon
+
+    @staticmethod
+    def _cmu2aic(phn):
+        """convert the CMU symbols to AIC symbols in `phn`"""
+        for cmu, aic in (
+                ('AA', 'a'),
+                ('AE', 'xq'),
+                ('AH', 'xa'),
+                ('AO', 'c'),
+                ('AW', 'xw'),
+                ('AY', 'xy'),
+                ('DH', 'xd'),
+                ('EH', 'xe'),
+                ('ER', 'xr'),
+                ('EY', 'e'),
+                ('CH', 'xc'),
+                ('HH', 'h'),
+                ('IH', 'xi'),
+                ('IY', 'i'),
+                ('JH', 'xj'),
+                ('NG', 'xg'),
+                ('OW', 'o'),
+                ('OY', 'xo'),
+                ('SH', 'xs'),
+                ('TH', 'xt'),
+                ('UH', 'xu'),
+                ('UW', 'u'),
+                ('ZH', 'xz'),
+                ('D', 'd'),
+                ('B', 'b'),
+                ('F', 'f'),
+                ('G', 'g'),
+                ('K', 'k'),
+                ('L', 'l'),
+                ('M', 'm'),
+                ('N', 'n'),
+                ('P', 'p'),
+                ('R', 'r'),
+                ('S', 's'),
+                ('T', 't'),
+                ('V', 'v'),
+                ('W', 'w'),
+                ('Y', 'y'),
+                ('Z', 'z')):
+            phn = phn.replace(cmu, aic)
+        return phn

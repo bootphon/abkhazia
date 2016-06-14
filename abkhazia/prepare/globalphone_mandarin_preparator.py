@@ -138,6 +138,7 @@ from abkhazia.utils import open_utf8
 from abkhazia.prepare.globalphone_abstract_preparator import (
     AbstractGlobalPhonePreparator)
 
+
 class MandarinPreparator(AbstractGlobalPhonePreparator):
     """Mandarin specific preprocessing for the GlobalPhone corpus"""
     language = 'Mandarin'
@@ -287,8 +288,6 @@ class MandarinPreparator(AbstractGlobalPhonePreparator):
         a temporary file
 
         """
-        self.log.debug('Correcting dictionary')
-
         # the following words are in the dictionary but are not used
         # in the transcriptions they will be dropped
         words_to_drop = [u'#fragment#', u'#noise#', u'$', u'(', u')', u'SIL']
@@ -307,6 +306,5 @@ class MandarinPreparator(AbstractGlobalPhonePreparator):
             for line in correct_lines:
                 out.write(line)
 
-        self.log.debug('Dictionary corrected, wrote in %s', filename)
         self.dictionary = filename
         return True

@@ -15,46 +15,16 @@
 """Implementation of the 'abkazia split' command"""
 
 import os
-import shutil
 
-from abkhazia.commands.abstract_command import AbstractPreparedCommand
+from abkhazia.commands.abstract_command import AbstractCoreCommand
+from abkhazia.corpus import Corpus
 import abkhazia.utils as utils
-import abkhazia.utils.split as split
 
 
-class AbkhaziaSplit(AbstractPreparedCommand):
+class AbkhaziaSplit(AbstractCoreCommand):
     '''This class implements the 'abkhazia split' command'''
     name = 'split'
     description = 'split a corpus in train and test subsets'
-
-    @classmethod
-    def run(cls, args):
-        corpus, output_dir = cls.prepare_for_run(args)
-
-        # instanciate a SplitCorpus instance
-        spliter = split.SplitCorpus(
-            corpus, output_dir,
-            args.random_seed, args.prune_lexicon, args.verbose)
-
-        # choose the split function according to --by-speakers
-        split_fun = (spliter.split_by_speakers if args.by_speakers
-                     else spliter.split)
-
-        # retrieve the test proportion
-        if args.train_prop is None:
-            test_prop = (
-                float(utils.config.get('split', 'default-test-proportion'))
-                if args.test_prop is None else args.test_prop)
-        else:
-            test_prop = (
-                1 - args.train_prop
-                if args.test_prop is None else args.test_prop)
-
-        # split the corpus and write it to the output directory
-        split_fun(test_prop, args.train_prop)
-
-        if args.with_validation:
-            spliter.validate()
 
     @classmethod
     def add_parser(cls, subparsers):
@@ -87,25 +57,36 @@ class AbkhaziaSplit(AbstractPreparedCommand):
             'data from a same speaker is randomly splited in the two subsets')
 
         group.add_argument(
-            '-p', '--prune-lexicon', action='store_true',
-            help='''if specified, remove from the lexicon all words that are not
-            present at least once in the training set. This have
-            effect on word-level language models. Could be useful when
-            using a lexicon that is tailored to the corpus to the
-            point of overfitting (i.e. only words occuring in the
-            corpus were included and many other common words weren't),
-            which could lead to overestimated performance on words
-            from the lexicon appearing in the test only.''')
-
-        group.add_argument(
             '-r', '--random-seed', default=None, type=int, metavar='<seed>',
             help='seed for pseudo-random numbers generation (default is to '
             'use the current system time). Use this option to compute a '
             'reproducible split')
 
-        parser.add_argument(
-            '--with-validation', action='store_true',
-            help='if specified, check the created train and test '
-            'subsets are valid abkhazia corpora')
-
         return parser
+
+    @classmethod
+    def run(cls, args):
+        corpus_dir, output_dir = cls._parse_io_dirs(args)
+        log = utils.get_log(
+            os.path.join(output_dir, 'split.log'), verbose=args.verbose)
+
+        corpus = Corpus.load(corpus_dir, log=log)
+
+        # retrieve the test proportion
+        if args.train_prop is None:
+            test_prop = (
+                float(utils.config.get('split', 'default-test-proportion'))
+                if args.test_prop is None else args.test_prop)
+        else:
+            test_prop = (
+                1 - args.train_prop
+                if args.test_prop is None else args.test_prop)
+
+        train, test = corpus.split(
+            train_prop=args.train_prop,
+            test_prop=test_prop,
+            by_speakers=args.by_speakers,
+            random_seed=args.random_seed)
+
+        train.save(os.path.join(output_dir, 'train', 'data'))
+        test.save(os.path.join(output_dir, 'test', 'data'))

@@ -17,54 +17,21 @@
 import argparse
 import os
 
-from abkhazia.commands.abstract_command import AbstractRecipeCommand
-import abkhazia.kaldi.acoustic_model as acoustic_model
+from abkhazia.commands.abstract_command import AbstractKaldiCommand
+from abkhazia.corpus import Corpus
+import abkhazia.models.acoustic_model as acoustic_model
 import abkhazia.utils as utils
 
 
-class AbkhaziaAcoustic(AbstractRecipeCommand):
+class AbkhaziaAcoustic(AbstractKaldiCommand):
     """This class implements the 'abkhazia acoustic' command"""
     name = 'acoustic'
-    description = 'train an acoustic model'
-
-    @classmethod
-    def run(cls, args):
-        # TODO nnet not supported
-        if args.type == 'nnet':
-            raise NotImplementedError(
-                'neural network acoustic modeling not yet implemented')
-
-        corpus, output_dir = cls.prepare_for_run(args)
-
-        # instanciate the kaldi recipe
-        recipe = acoustic_model.AcousticModel(
-            corpus, output_dir, args.verbose, args.type)
-
-        # get back the language model directory
-        lang = (corpus if args.language_model is None
-                else os.path.abspath(args.language_model))
-        lang += '/language/lang'
-        recipe.lang = lang
-
-        # setup other recipe parameters from args
-        recipe.use_pitch = args.use_pitch
-        recipe.num_states_si = args.num_states_si
-        recipe.num_gauss_si = args.num_gauss_si
-        recipe.num_states_sa = args.num_states_sa
-        recipe.num_gauss_sa = args.num_gauss_sa
-        recipe.njobs_train = args.njobs_train
-        recipe.njobs_feats = args.njobs_feats
-
-        # finally create and/or run the recipe
-        if not args.only_run:
-            recipe.create()
-        if not args.no_run:
-            recipe.run()
+    description = 'train an acoustic model on a corpus'
 
     @staticmethod
     def long_description():
-        return """Instantiates and run a kaldi recipe to train a HMM-GMM model on
-        an abkhazia corpus and a language model"""
+        return ("train an acoustic model from corpus, features and "
+                "language model")
 
     @classmethod
     def add_parser(cls, subparsers):
@@ -74,20 +41,16 @@ class AbkhaziaAcoustic(AbstractRecipeCommand):
         parser.formatter_class = argparse.RawDescriptionHelpFormatter
         parser.description = cls.long_description()
 
-        parser.add_argument(
-            '-j', '--njobs-train', type=int, default=8, metavar='<njobs>',
-            help="""number of jobs to launch for parallel training, default is to
-            launch %(default)s jobs.""")
-
-        parser.add_argument(
-            '-k', '--njobs-feats', type=int, default=20, metavar='<njobs>',
-            help="""number of jobs to launch for feature computations, default is to
-            launch %(default)s jobs.""")
-
         dir_group.add_argument(
             '-l', '--language-model', metavar='<lm-dir>', default=None,
             help='''the language model recipe directory, data is read from
-            <lm-dir>/language. If not specified, use <lm-dir>=<corpus>.''')
+            <lm-dir>/language/lang, if not specified use <lm-dir>=<corpus>.''')
+
+        dir_group.add_argument(
+            '-f', '--features', metavar='<feat-dir>', default=None,
+            help='''the features directory, data is read from
+            <feat-dir>/features/mfcc. If not specified, use
+            <feat-dir>=<corpus>.''')
 
         group = parser.add_argument_group(
             'acoustic model parameters', 'those parameters can also be '
@@ -103,12 +66,6 @@ class AbkhaziaAcoustic(AbstractRecipeCommand):
 
         def config(param):
             return utils.config.get(cls.name, param)
-
-        group.add_argument(
-            '--use-pitch', metavar='<true|false>',
-            default=config('use-pitch'), choices=['true', 'false'],
-            help="""if true, compute pitch features along with MFCCs,
-            default is %(default)s""")
 
         group.add_argument(
             '--num-states-si', metavar='<int>', type=int,
@@ -135,3 +92,43 @@ class AbkhaziaAcoustic(AbstractRecipeCommand):
             default is '%(default)s'""")
 
         return parser
+
+    @classmethod
+    def run(cls, args):
+        # TODO nnet not supported
+        if args.type == 'nnet':
+            raise NotImplementedError(
+                'neural network acoustic modeling not yet implemented')
+
+        corpus_dir, output_dir = cls._parse_io_dirs(args)
+        log = utils.get_log(
+            os.path.join(output_dir, 'acoustic.log'), verbose=args.verbose)
+        corpus = Corpus.load(corpus_dir)
+
+        # get back the features directory
+        feat = (os.path.dirname(corpus_dir) if args.features is None
+                else os.path.abspath(args.features))
+        feat += '/features'
+
+        # get back the language model directory
+        lang = (os.path.dirname(corpus_dir) if args.language_model is None
+                else os.path.abspath(args.language_model))
+        lang += '/language'
+
+        # instanciate and setup the kaldi recipe from args
+        recipe = acoustic_model.AcousticModel(corpus, output_dir, log=log)
+        recipe.feat = feat
+        recipe.lang = lang
+        recipe.model_type = args.type
+        recipe.njobs = args.njobs
+        recipe.num_states_si = args.num_states_si
+        recipe.num_gauss_si = args.num_gauss_si
+        recipe.num_states_sa = args.num_states_sa
+        recipe.num_gauss_sa = args.num_gauss_sa
+        if args.recipe:
+            recipe.delete_recipe = False
+
+        # finally build the acoustic model
+        recipe.create()
+        out = recipe.run()
+        recipe.export(out)

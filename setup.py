@@ -18,9 +18,9 @@
 import os
 from setuptools import setup, find_packages
 
+GITHUB_BOOTPHON = 'https://github.com/bootphon/'
 SETUP_DIR = os.path.dirname(os.path.abspath(__file__))
-
-VERSION = '0.2'
+VERSION = '0.3'
 
 # On Reads The Docs we don't install any package
 ON_RTD = os.environ.get('READTHEDOCS', None) == 'True'
@@ -48,11 +48,11 @@ setup(
     scripts=[],
 
     # install other dependancies
-    dependency_links=[
-        'https://github.com/bootphon/phonemizer/archive/v0.2.tar.gz#egg=phonemizer-0.2'
-        # 'https://github.com/bootphon/h5features/archive/v1.1.tar.gz#egg=h5features-1.1',
-        # 'https://github.com/bootphon/ABXpy/archive/v0.2.tar.gz#egg=ABXpy-0.2'
-    ],
+    dependency_links=[GITHUB_BOOTPHON + package for package in (
+        'phonemizer/archive/v0.2.tar.gz#egg=phonemizer-0.2',
+        # 'h5features/archive/v1.1.tar.gz#egg=h5features-1.1',
+        # 'ABXpy/archive/v0.2.tar.gz#egg=ABXpy-0.2'
+    )],
 
     # install python dependencies from PyPI
     install_requires=REQUIREMENTS,
@@ -74,7 +74,7 @@ setup(
     author_email='mmathieubernardd@gmail.com',
     description='ABX and kaldi experiments on speech corpora made easy',
     license='GPL3',
-    keywords='speech ASR kaldi ABX',
+    keywords='speech corpus ASR kaldi ABX',
     url='https://github.com/bootphon/abkhazia',
     long_description=open('README.md').read(),
 )

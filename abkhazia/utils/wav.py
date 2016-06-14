@@ -167,7 +167,7 @@ def convert(inputs, outputs, fileformat, njobs=1, verbose=0, copy=False):
 
     # convert files in parallel
     joblib.Parallel(
-        n_jobs=njobs, verbose=verbose, backend="threading")(
+        n_jobs=njobs, verbose=verbose, backend='threading')(
             joblib.delayed(fnc)(i, o) for i, o in zip(inputs, outputs))
 
 

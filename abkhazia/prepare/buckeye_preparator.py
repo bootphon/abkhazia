@@ -18,8 +18,9 @@
 import os
 import re
 
-from abkhazia.utils import list_files_with_extension
+import abkhazia.utils as utils
 from abkhazia.prepare import AbstractPreparator
+
 
 class BuckeyePreparator(AbstractPreparator):
     """Convert the Buckeye corpus to the abkhazia format"""
@@ -96,23 +97,23 @@ class BuckeyePreparator(AbstractPreparator):
         'hh': u'h',
         'el': u'l\u0329',
         'tq': u'ʔ',
-        'B': u'B',
-        'E': u'E',
-        'ahn': u'ʌ\u0329',
-        'iyn': u'iː\u0329',
-        'eyn': u'eɪ\u0329',
-        'oyn': u'ɔɪ\u0329',
-        'ehn': u'ɛ\u0329',
-        'uhn': u'ʊ\u0329',
-        'ayn': u'aɪ\u0329',
-        'own': u'oʊ\u0329',
-        'awn': u'aʊ\u0329',
-        'aon': u'ɔː\u0329',
-        'aan': u'ɑː\u0329',
-        'ihn': u'ɪ\u0329',
-        'ern': u'ɝ\u0329',
-        'uwn': u'uː\u0329',
-        'aen': u'æ\u0329',
+        # 'B': u'B',
+        # 'E': u'E',
+        # 'ahn': u'ʌ\u0329',
+        # 'iyn': u'iː\u0329',
+        # 'eyn': u'eɪ\u0329',
+        # 'oyn': u'ɔɪ\u0329',
+        # 'ehn': u'ɛ\u0329',
+        # 'uhn': u'ʊ\u0329',
+        # 'ayn': u'aɪ\u0329',
+        # 'own': u'oʊ\u0329',
+        # 'awn': u'aʊ\u0329',
+        # 'aon': u'ɔː\u0329',
+        # 'aan': u'ɑː\u0329',
+        # 'ihn': u'ɪ\u0329',
+        # 'ern': u'ɝ\u0329',
+        # 'uwn': u'uː\u0329',
+        # 'aen': u'æ\u0329',
         '{B_TRANS}': u'{B_TRANS}',
         '{E_TRANS}': u'{E_TRANS}',
         'CUTOFF': u'CUTOFF',
@@ -134,171 +135,115 @@ class BuckeyePreparator(AbstractPreparator):
 
     variants = []  # could use lexical stress variants...
 
-    def __init__(self, input_dir, output_dir=None,
-                 verbose=False, njobs=1, copy_wavs=False):
-        # call the AbstractPreparator __init__
-        super(BuckeyePreparator, self).__init__(
-            input_dir, output_dir, verbose, njobs)
-
+    def __init__(self, input_dir, log=utils.null_logger(), copy_wavs=False):
+        super(BuckeyePreparator, self).__init__(input_dir, log=log)
         self.copy_wavs = copy_wavs
 
+    def _list_files(self, ext, exclude=None, abspath=False, realpath=False):
+        files = utils.list_files_with_extension(
+            self.input_dir, ext, abspath=abspath, realpath=realpath)
+
+        if exclude is not None:
+            files = [f for f in files for e in exclude if e not in f]
+
+        return files
+
     def list_audio_files(self):
-        wavs = list_files_with_extension(self.input_dir, '.wav', abspath=True)
-        return wavs, [os.path.basename(w) for w in wavs]
+        return self._list_files('.wav', abspath=True, realpath=True)
 
     def make_segment(self):
-        outfile = open(self.segments_file, "w")
-        for utts in list_files_with_extension(self.input_dir, '.txt'):
-            length_utt = []
+        segments = dict()
+        for utts in self._list_files('.txt', exclude=['readme']):
             bname = os.path.basename(utts)
-            dir_file = os.path.dirname(utts)
-            if not bname.startswith("readme"):
-                with open(utts) as infile_txt:
-                    current_index = 0
-                    last_offset = 0
-                    bname_new = bname.replace('txt', 'words_fold')
-                    bname_wav = bname.replace('txt', 'wav')
-                    utt = bname.replace('.txt', '')
-                    length_utt = [len(line.strip().split())
-                                  for line in infile_txt.readlines()]
-                    wrd = os.path.join(dir_file, bname_new)
-                    with open(wrd) as infile_wrd:
-                        lines_2 = infile_wrd.readlines()
-                        del lines_2[:9]
-                        assert len(lines_2) == sum(length_utt),\
-                            '{} {}'.format(len(lines_2), sum(length_utt))
-                        for n in range(len(length_utt)):
-                            if n == 0:
-                                onset = '0.000'
-                                outfile.write(utt + '-sent' +
-                                              str(n+1) + ' ' +
-                                              bname_wav + ' ' +
-                                              onset + ' ')
+            utt = bname.replace('.txt', '')
+            length_utt = [
+                len(line.strip().split()) for line in
+                open(utts, 'r').readlines() if len(line.strip())]
 
-                                index_offset = length_utt[n]
-                                offset_line = lines_2[index_offset-1]
+            words = utts.replace('txt', 'words_fold')
+            lines = open(words, 'r').readlines()
+            del lines[:9]
 
-                                match_offset = re.match(
-                                    r'\s\s+(.*)\s+(121|122)\s(.*)', offset_line)
-                                if not match_offset:
-                                    raise IOError('offset line unmatched: {}'
-                                                  .format(offset_line))
+            assert len(lines) == sum(length_utt),\
+                '{} {}'.format(len(lines), sum(length_utt))
 
-                                offset = match_offset.group(1)
-                                outfile.write(str(offset))
-                                current_index = index_offset
-                                last_offset = offset
-                                outfile.write('\n')
-                            else:
-                                onset = last_offset
-                                outfile.write(utt + '-sent' +
-                                              str(n+1) + ' ' +
-                                              bname_wav + ' ' +
-                                              str(onset) + ' ')
+            last_offset = '0.000'
+            current_index = 0
+            for n in range(len(length_utt)):
+                onset = last_offset
 
-                                index_offset = length_utt[n]+current_index
-                                offset_line = lines_2[index_offset-1]
-                                match_offset = re.match(
-                                    r'\s\s+(.*)\s+(121|122)\s(.*)', offset_line)
-                                if not match_offset:
-                                    raise IOError(
-                                        'offset not matched {}'.format(offset_line))
+                index_offset = length_utt[n] + current_index
+                offset_line = lines[index_offset-1]
+                match_offset = re.match(
+                    r'\s\s+(.*)\s+(121|122)\s(.*)',
+                    offset_line)
+                if not match_offset:
+                    raise IOError(
+                        'offset not matched {}'
+                        .format(offset_line))
 
-                                offset = match_offset.group(1)
-                                outfile.write(str(offset))
-                                current_index = index_offset
-                                last_offset = offset
-                                outfile.write('\n')
+                offset = match_offset.group(1)
 
-        self.log.debug('finished creating segments file')
+                segments[utt + '-sent' + str(n+1)] = (
+                    utt, float(onset), float(offset))
+
+                current_index = index_offset
+                last_offset = offset
+
+        return segments
 
     def make_speaker(self):
-        outfile = open(self.speaker_file, "w")
-        for utts in list_files_with_extension(self.input_dir, '.txt'):
+        utt2spk = dict()
+        for utts in self._list_files('.txt', exclude=['readme']):
             bname = os.path.basename(utts)
-            if not bname.startswith("readme"):
-                with open(utts) as infile_txt:
-                    lines = infile_txt.readlines()
-                    bname = os.path.basename(utts)
-                    utt = bname.replace('.txt', '')
-                    speaker_id = re.sub(r"[0-9][0-9](a|b)\.txt", "", bname)
-                    for idx, _ in enumerate(lines, start=1):
-                        outfile.write(
-                            utt + '-sent' + str(idx) + ' ' + speaker_id + '\n')
-        self.log.debug('finished creating utt2spk file')
+            utt = bname.replace('.txt', '')
+            lines = [l.strip() for l in open(utts, 'r').readlines()
+                     if len(l.strip())]
+            speaker_id = re.sub(r"[0-9][0-9](a|b)\.txt", "", bname)
+            for idx, _ in enumerate(lines, start=1):
+                utt2spk[utt + '-sent' + str(idx)] = speaker_id
+        return utt2spk
 
     def make_transcription(self):
-        outfile = open(self.transcription_file, "w")
-        for utts in list_files_with_extension(self.input_dir, '.txt'):
+        text = dict()
+        for utts in self._list_files('.txt', exclude=['readme']):
             bname = os.path.basename(utts)
-            if not bname.startswith("readme"):
-                with open(utts) as infile_txt:
-                    lines = infile_txt.readlines()
-                    bname = os.path.basename(utts)
-                    utt = bname.replace('.txt', '')
-                    for idx, val in enumerate(lines, start=1):
-                        outfile.write(utt + '-sent' + str(idx) + ' ')
-                        words = val.split()
-                        if len(words) > 1:
-                            for word in words[:-1]:
-                                outfile.write(word + ' ')
-                            outfile.write(str(words[-1]) + '\n')
-                        else:
-                            for word in words:
-                                outfile.write(word)
-                            outfile.write('\n')
-        self.log.debug('finished creating text file')
+            utt = os.path.splitext(bname)[0]
+            for idx, line in enumerate(
+                    (l.strip() for l in open(utts).readlines()
+                     if len(l.strip())), start=1):
+                text[utt + '-sent' + str(idx)] = line
+
+        # one utterance have "k p's" in text, where "k p" is an
+        # acronym in this context. Because "p's" is processed as OOV, we
+        # simply replace it by "p"
+        text['s2202b-sent15'] = text['s2202b-sent15'].replace("p's", "p")
+        return text
 
     def make_lexicon(self):
-        dict_word = {}
-        outfile = open(self.lexicon_file, "w")
-        for utts in list_files_with_extension(self.input_dir, '.words_fold'):
-            with open(utts) as infile_txt:
-                # for each line of transcription, store the words in a
-                # dictionary and increase frequency
-                lines = infile_txt.readlines()
-                for line in lines:
-                    line.strip()
-                    format_match = re.match(
-                        r'\s\s+(.*)\s+(121|122)\s(.*)', line)
+        dict_word = dict()
+        no_trs = set()
+        for utts in self._list_files('.words_fold'):
+            for line in open(utts, 'r').readlines():
+                format_match = re.match(
+                    r'\s\s+(.*)\s+(121|122)\s(.*)', line)
 
-                    if format_match:
-                        word_trs = format_match.group(3)
-                        word_format_match = re.match(
-                            "(.*); (.*); (.*); (.*)", word_trs)
+                if format_match:
+                    word_trs = format_match.group(3)
+                    word_format_match = re.match(
+                        "(.*); (.*); (.*); (.*)", word_trs)
 
-                        if word_format_match:
-                            word = word_format_match.group(1)
-                            phn_trs = word_format_match.group(3)
-                            # TODO what is that ? a comment ? a legacy code ?
-                            # Doing some foldings for spoken noise"
-                            # pattern1 = re.compile("<UNK(.*)")
-                            # if pattern1.match(word):
-                            #     phn_trs = phn_trs.replace('UNKNOWN', 'SPN')
-                            # pattern2 = re.compile("<(CUT|cut)(.*)")
-                            # if pattern2.match(word):
-                            #     phn_trs = phn_trs.replace('CUTOFF', 'SPN')
-                            # pattern3 = re.compile("<LAU(.*)")
-                            # if pattern3.match(word):
-                            #     phn_trs = phn_trs.replace('LAUGH', 'SPN')
-                            # pattern4 = re.compile("<(EXT|EXt)(.*)")
-                            # if pattern4.match(word):
-                            #     phn_trs = phn_trs.replace('LENGTH_TAG', 'SPN')
-                            # pattern5 = re.compile("<ERR(.*)")
-                            # if pattern5.match(word):
-                            #     phn_trs = phn_trs.replace('ERROR', 'SPN')
-                            # pattern6 = re.compile("<HES(.*)")
-                            # if pattern6.match(word):
-                            # phn_trs = phn_trs.replace('HESITATION_TAG', 'SPN')
-                            # pattern7 = re.compile("<EXCL(.*)")
-                            # if pattern7.match(word):
-                            #     phn_trs = phn_trs.replace('EXCLUDE', 'SPN')
+                    if word_format_match:
+                        word = word_format_match.group(1)
+                        phn_trs = word_format_match.group(3)
+                        if phn_trs == '':
+                            no_trs.add(word)
+                        else:
+                            dict_word[word] = phn_trs
 
-                            if word not in dict_word:
-                                dict_word[word] = phn_trs
-
-        for word, freq in sorted(
-                dict_word.items(), key=lambda kv: kv[1], reverse=True):
-            outfile.write(word + ' ' + freq + '\n')
-
-        self.log.debug('finished creating lexicon file')
+        really_no_trs = [t for t in no_trs if t not in dict_word]
+        if really_no_trs:
+            self.log.debug(
+                'following words have no transcription in lexicon: {}'
+                .format(really_no_trs))
+        return dict_word

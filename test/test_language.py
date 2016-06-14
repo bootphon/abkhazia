@@ -12,76 +12,47 @@
 #
 # You should have received a copy of the GNU General Public License
 # along with abkhazia. If not, see <http://www.gnu.org/licenses/>.
-"""Test of the 'abkhazia language' command"""
+"""Test of language modeling"""
 
 import os
 import pytest
-import tempfile
-# import shutil
 
-from abkhazia.kaldi.language_model import LanguageModel
-# from abkhazia.prepare.buckeye_preparator import BuckeyePreparator
-# import abkhazia.utils.split as split
+import abkhazia.models.language_model as language_model
 import abkhazia.utils as utils
+from .conftest import assert_no_expr_in_log
 
-HERE = os.path.abspath(os.path.dirname(__file__))
+
 levels = ['phone', 'word']
-orders = [1, 2, 3, 4]
+orders = range(1, 4)
 params = [(l, o) for l in levels for o in orders]
 
 
-# def setup():
-#     """Prepare 1% of buckeye in the data directory (random by utterances)"""
-#     data_dir = os.path.join(HERE, 'data')
-#     if not os.path.isdir(data_dir):
-#         try:
-#             # fail if buckeye not defined in abkhazia.cfg
-#             raw_buckeye = BuckeyePreparator.default_input_dir()
-#             if raw_buckeye is None:
-#                 raise RuntimeError(
-#                     'buckeye-directory not defined in abkhazia.cfg')
-
-#             # prepare the buckeye corpus in default abkhazia dir
-#             prep = BuckeyePreparator(raw_buckeye, njobs=4)
-#             prep.prepare()  # we skip validation
-
-#             # split 1% of buckeye by utterances
-#             temp = tempfile.mkdtemp()
-#             spliter = split.SplitCorpus(
-#                 prep.output_dir, output_dir=temp)
-#             spliter.split(train_prop=0.01)
-
-#             shutil.move(
-#                 os.path.join(temp, 'split', 'train', 'data'),
-#                 data_dir)
-#         finally:
-#             utils.remove(temp)
+@pytest.mark.parametrize('level, order', params)
+def test_lm(level, order, corpus, tmpdir):
+    output_dir = str(tmpdir.mkdir('lang'))
+    flog = os.path.join(output_dir, 'language.log')
+    log = utils.get_log(flog)
+    lm = language_model.LanguageModel(corpus, output_dir, log=log)
+    lm.level = level
+    lm.order = order
+    lm.create()
+    lm.run()
+    lm.export()
+    language_model.check_language_model(output_dir)
+    assert_no_expr_in_log(flog, 'error')
 
 
-# def teardown():
-#     utils.remove(os.path.join(HERE, 'data'))
-
-
-@pytest.mark.parametrize("level, order", params)
-def test_lm(level, order):
-    data_dir = HERE
-    assert os.path.isdir(data_dir)
-
-    output_dir = tempfile.mkdtemp()
-    try:
-        lm = LanguageModel(data_dir, output_dir, verbose=True)
-        lm.level = level
-        lm.order = order
-        lm.create()
-        lm.run()
-        lm.export()
-
-        log = os.path.join(output_dir, 'logs', 'language.log')
-        error_lines = []
-        for line in open(log, 'r').readlines():
-            if 'ERROR' in line:
-                error_lines.append(line)
-            print error_lines
-        assert len(error_lines) == 0
-    finally:
-        utils.remove(output_dir, safe=True)
+@pytest.mark.parametrize('prob', [0, 0.5])
+def test_silence_probability(prob, corpus, tmpdir):
+    output_dir = str(tmpdir.mkdir('lang'))
+    flog = os.path.join(output_dir, 'language.log')
+    log = utils.get_log(flog)
+    lm = language_model.LanguageModel(corpus, output_dir, log=log)
+    lm.level = 'word'
+    lm.order = 3
+    lm.silence_probability = prob
+    lm.create()
+    lm.run()
+    lm.export()
+    language_model.check_language_model(output_dir)
+    assert_no_expr_in_log(flog, 'error')

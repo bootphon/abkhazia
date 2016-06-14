@@ -1,3 +1,5 @@
+# coding: utf-8
+
 # Copyright 2016 Thomas Schatz, Xuan Nga Cao, Mathieu Bernard
 #
 # This file is part of abkhazia: you can redistribute it and/or modify
@@ -14,11 +16,7 @@
 # along with abkhazia. If not, see <http://www.gnu.org/licenses/>.
 """Provides some functions to work on cha files"""
 
-import pkg_resources
 import re
-import subprocess
-import tempfile
-
 import utils  # this is abkhazia.utils
 
 
@@ -50,21 +48,79 @@ def audio(cha):
     raise IOError('no audio media found in {}'.format(cha))
 
 
+def _cha_cleanup(s):
+    """Replacements to clean up punctuation, etc.
+
+    Usually ok regardless of the corpus. We keep the timestamp in this
+    version of the script.
+
+    """
+    if not re.search('[0-9]+_[0-9]+', s):
+        return ''
+    if re.match('\[- spa\]', s):
+        return ''
+
+    # remove undesired tags
+    s = re.sub('@Media.*', '', s)
+    s = re.sub('@Date.*', '', s)
+    s = re.sub('@PID.*', '', s)
+    s = re.sub('^....:.', '', s)
+    s = re.sub('&[^ ]*', '', s)
+    s = re.sub('[^ ]*@sspa', '', s)
+    s = re.sub('\[[^[]*\]', '', s)
+    s = re.sub('\(.+\)', '', s)
+    s = re.sub('^[ ]*', '', s)
+
+    # delete chars
+    for c in (u'/".?!;<>,:\\”“'):
+        s = s.replace(c, '')
+
+    # replace by space
+    for c in ('+', "' ", '  '):
+        s = s.replace(c, ' ')
+
+    # delete some tags
+    for c in ('xxx', 'www', 'XXX', 'yyy', '@o', '@f', '@q', '@u', '@c'):
+        s = s.replace(c, '')
+
+    # NOTE check that the next set of replacements for unusual
+    # spellings is adapted to your purposes
+    for p in (
+            ('allgone', 'all gone'),
+            ('whaddaya', 'what do you'),
+            ('whadda', 'what do'),
+            ('haveto', 'have to'),
+            ('hasto', 'has to'),
+            ('outof', 'out of'),
+            ('lotsof', 'lots of'),
+            ('lotta', 'lots of'),
+            ('alotof', 'a lot of'),
+            ("wha\'s", "what's"),
+            ("this\'s", 'this is'),
+            ('chya', ' you'),
+            ('tcha', 't you'),
+            ('dya ', 'd you '),
+            ('chyou', ' you'),
+            ("dont you", "don\'t you"),
+            ('wanta', 'wanna'),
+            ("whats ", " what\'s "),
+            ("'re", " are"),
+            ("klenex", "kleenex"),
+            ('yogourt', 'yogurt'),
+            ('weee*', 'wee'),
+            ('oooo*', 'oh'),
+            (' oo ', ' oh '),
+            ('ohh', 'oh'),
+            (' im ', " I\'m ")):
+        s = s.replace(p[0], p[1])
+
+    return s.strip()
+
+
 def clean(lines):
     """Return a list of cleaned utterances from a set of raw cha lines
 
-    This function is a wrapper on the share/cha_cleanup.sh script, see
-    there for more details...
+    This function is a wrapper on the _cha_cleanup function
 
     """
-    script = pkg_resources.resource_filename(
-        pkg_resources.Requirement.parse('abkhazia'),
-        'abkhazia/share/cha_cleanup.sh')
-
-    with tempfile.TemporaryFile('w+') as tmpout:
-        with tempfile.TemporaryFile('w+') as tmpin:
-            tmpin.write('\n'.join(lines).encode('utf-8'))
-            tmpin.seek(0)
-            subprocess.call([script], stdin=tmpin, stdout=tmpout)
-        tmpout.seek(0)
-        return [l.strip() for l in tmpout.readlines()]
+    return (_cha_cleanup(l) for l in lines)

@@ -20,8 +20,9 @@
 import os
 import re
 
-from abkhazia.utils import list_directory, open_utf8
+import abkhazia.utils as utils
 from abkhazia.prepare import AbstractPreparatorWithCMU
+
 
 class WallStreetJournalPreparator(AbstractPreparatorWithCMU):
     """Convert the WSJ corpus to the abkhazia format"""
@@ -174,14 +175,9 @@ class WallStreetJournalPreparator(AbstractPreparatorWithCMU):
         # if we reached this point without returning, return w as is
         return word
 
-
-    def __init__(self, input_dir, cmu_dict=None,
-                 output_dir=None, verbose=False, njobs=1):
-
-        # call the AbstractPreparator __init__
+    def __init__(self, input_dir, log=utils.null_logger(), cmu_dict=None):
         super(WallStreetJournalPreparator, self).__init__(
-            input_dir, cmu_dict, output_dir, verbose, njobs)
-
+            input_dir, log=log, cmu_dict=cmu_dict)
         # select only a subpart of recordings and transcriptions.
         # Listing files using the following 2 criterions: 1- files are
         # nested within self.directory_pattern and 2- the 4th letter
@@ -218,13 +214,18 @@ class WallStreetJournalPreparator(AbstractPreparatorWithCMU):
         # with the associated recording (if it exists) so exclude it
         self.bad_utts = []
         for trs in self.input_transcriptions:
-            for line in open_utf8(trs, 'r').xreadlines():
+            for line in utils.open_utf8(trs, 'r').xreadlines():
                 if '[bad_recording]' in line:
                     utt_id = re.match(r'(.*) \((.*)\)', line).group(2)
                     self.bad_utts.append(utt_id)
 
         self.log.debug('found {} corrupted utterances'
                        .format(len(self.bad_utts)))
+
+        # filter out bad utterances
+        self.sphs = [sph for sph in self.input_recordings
+                     if os.path.basename(sph).replace('.wv1', '')
+                     not in self.bad_utts]
 
     def filter_files(self, dir_filter, file_filter):
         """Return a list of abspaths to relevant WSJ files"""
@@ -241,98 +242,73 @@ class WallStreetJournalPreparator(AbstractPreparatorWithCMU):
         return list(set(matched))  # was return matched
 
     def list_audio_files(self):
-        # filter out bad utterances
-        sphs = [sph for sph in self.input_recordings
-                if os.path.basename(sph).replace('.wv1', '')
-                not in self.bad_utts]
-
-        # build output wavs files
-        wavs = [os.path.basename(sph).replace('.wv1', '.wav') for sph in sphs]
-
-        return sphs, wavs
+        return self.sphs
 
     def make_segment(self):
-        with open_utf8(self.segments_file, 'w') as out:
-            for wav in list_directory(self.wavs_dir):
-                utt_id = os.path.basename(wav).replace('.wav', '')
-                out.write(u"{0} {1}\n".format(utt_id, wav))
-        self.log.debug('finished creating segments file')
+        segments = dict()
+        for sph in self.sphs:
+            utt_id = os.path.splitext(os.path.basename(sph))[0]
+            segments[utt_id] = (utt_id, None, None)
+        return segments
 
     def make_speaker(self):
-        with open_utf8(self.speaker_file, 'w') as out:
-            for wav in list_directory(self.wavs_dir):
-                utt_id = os.path.basename(wav).replace('.wav', '')
-                # speaker_id are the first 3 characters of the filename
-                out.write(u"{0} {1}\n".format(utt_id, utt_id[:3]))
-
-        self.log.debug('finished creating utt2spk file')
+        utt2spk = dict()
+        for sph in self.sphs:
+            utt_id = os.path.splitext(os.path.basename(sph))[0]
+            # speaker_id are the first 3 characters of the filename
+            utt2spk[utt_id] = utt_id[:3]
+        return utt2spk
 
     def make_transcription(self):
         # concatenate all the transcription files
         transcription = []
 
         for trs in self.input_transcriptions:
-            transcription += open_utf8(trs, 'r').readlines()
+            transcription += utils.open_utf8(trs, 'r').readlines()
 
         # parse each line and write it to output file in abkhazia format
-        with open_utf8(self.transcription_file, 'w') as out:
-            for line in transcription:
-                # parse utt_id and text
-                matches = re.match(r'(.*) \((.*)\)', line.strip())
-                text = matches.group(1)
-                utt_id = matches.group(2)
+        text = dict()
+        for line in transcription:
+            # parse utt_id and text
+            matches = re.match(r'(.*) \((.*)\)', line.strip())
+            text_utt = matches.group(1)
+            utt_id = matches.group(2)
 
-                # skip bad utterances
-                if utt_id not in self.bad_utts:
-                    # TODO is it still required ? correct some defect
-                    # in original corpus (ad hoc)
-                    # if utt_id == '400c0i2j':
-                    #     text = text.replace('  ', ' ')
+            # skip bad utterances
+            if utt_id not in self.bad_utts:
+                # re-format text and remove empty words
+                words = [self.correct_word(w) for w in text_utt.split(' ')]
 
-                    # re-format text and remove empty words
-                    words = [self.correct_word(w) for w in text.split(' ')]
-                    text = ' '.join([w for w in words if w != ''])
-
-                    # output to file
-                    out.write(u"{0} {1}\n".format(utt_id, text))
-
-        self.log.debug('finished creating text file')
+                # output to file
+                text[utt_id] = ' '.join([w for w in words if w != ''])
+        return text
 
     def make_lexicon(self):
-        with open_utf8(self.lexicon_file, 'w') as out:
-            for line in open_utf8(self.cmu_dict, 'r').readlines():
-                # remove newline and trailing spaces
-                line = line.strip()
+        lexicon = dict()
+        for line in utils.open_utf8(self.cmu_dict, 'r').readlines():
+            # remove newline and trailing spaces
+            line = line.strip()
 
-                # skip comments
-                if not (len(line) >= 3 and line[:3] == u';;;'):
-                    # parse line
-                    word, phones = line.split(u'  ')
+            # skip comments
+            if not (len(line) >= 3 and line[:3] == u';;;'):
+                # parse line
+                word, phones = line.split(u'  ')
 
-                    # skip alternative pronunciations, the first one
-                    # (with no parenthesized number at the end) is
-                    # supposed to be the most common and is retained
-                    if not re.match(ur'(.*)\([0-9]+\)$', word):
-                        # ignore stress variants of phones
-                        phones = re.sub(u'[0-9]+', u'', phones)
-                        # write to output file
-                        out.write(u"{0} {1}\n".format(word, phones))
+                # skip alternative pronunciations, the first one
+                # (with no parenthesized number at the end) is
+                # supposed to be the most common and is retained
+                if not re.match(ur'(.*)\([0-9]+\)$', word):
+                    # ignore stress variants of phones
+                    lexicon[word] = re.sub(u'[0-9]+', u'', phones).strip()
 
-            # add special word: <noise> NSN. special word <unk> SPN
-            # will be added automatically during corpus validation but
-            # it would make sense if to add it here if we used it for
-            # some particular kind of noise, but this is not the case
-            # at present
-            out.write(u"<noise> NSN\n")
-
-        self.log.debug('finished creating lexicon file')
-
+        # add special word: <noise> NSN. special word <unk> SPN
+        # will be added automatically during corpus validation
+        lexicon['<noise>'] = 'NSN'
+        return lexicon
 
 # TODO check if that's correct (in particular no sd_tr_s or l in WSJ1
 # and no si_tr_l in WSJ0 ??)
 
-# class EntireCorpusPreparator(WallStreetJournalPreparator):
-#     pass
 
 class JournalistReadPreparator(WallStreetJournalPreparator):
     """Prepare only the journalist read speech from WSJ

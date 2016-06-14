@@ -14,12 +14,13 @@
 # You should have received a copy of the GNU General Public License
 # along with abkahzia. If not, see <http://www.gnu.org/licenses/>.
 
-# This exemple script computes force alignment of a subsample of the
-# buckeye corpus. Writes to $data_dir, the final alignment will be in
-# the $data_dir/split/train/align/export directory.
+# This script computes force alignment (along with posterior
+# probabilities) on the Brent subcorpus of the Childes database. The
+# final alignment will be in the $data_dir/align/alignment.txt
 
 data_dir=${1:-./align_childes_brent}
 data_dir=$(readlink -f $data_dir)
+<<<<<<< HEAD
 #rm -rf $data_dir
 
 njobs=${2:-16}
@@ -38,3 +39,20 @@ abkhazia align $data_dir -f -j $njobs -vf || exit 1
 
 echo 'symlink the result to $data_dir/forced_alignment.txt'
 ln -s -f $train_dir/align/export/forced_alignment.txt $data_dir
+=======
+
+echo 'preparing Brent corpus'
+abkhazia prepare childes -o $data_dir || exit 1
+
+echo 'computing MFCC features'
+abkhazia features $data_dir --use-pitch true -v || exit 1
+
+echo 'computing language model'
+abkhazia language $data_dir -l word -n 2 -v || exit 1
+
+echo 'computing acoustic model'
+abkhazia acoustic $data_dir -t tri-sa -v || exit 1
+
+echo 'computing forced alignment'
+abkhazia align $data_dir --post --recipe -v || exit 1
+>>>>>>> dc6d44e25f768d65ea105653a9cf6ff9c78a6e46

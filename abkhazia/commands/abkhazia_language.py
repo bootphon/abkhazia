@@ -15,15 +15,17 @@
 """Implementation of the 'abkhazia language' command"""
 
 import argparse
+import os
 
 import abkhazia.utils as utils
-from abkhazia.commands.abstract_command import AbstractRecipeCommand
-from abkhazia.kaldi.language_model import LanguageModel
+from abkhazia.commands.abstract_command import AbstractKaldiCommand
+from abkhazia.models.language_model import LanguageModel
+from abkhazia.corpus import Corpus
 
 
-class AbkhaziaLanguage(AbstractRecipeCommand):
+class AbkhaziaLanguage(AbstractKaldiCommand):
     name = LanguageModel.name
-    description = 'compute a n-gram language model from an abkhazia corpus'
+    description = 'compute a n-gram language model on a corpus'
 
     @classmethod
     def add_parser(cls, subparsers):
@@ -37,22 +39,22 @@ class AbkhaziaLanguage(AbstractRecipeCommand):
             'specified in the [language] section of the configuration file')
 
         group.add_argument(
-            '-s', '--optional-silence', action='store_true',
-            help='do all computations if specified, else focus '
-            'on the main ones')
+            '-s', '--no-silence', action='store_true',
+            help='do not model silences (probability of 0, '
+            'default is a silence probability of 0.5)')
 
         group.add_argument(
             '-w', '--word-position-dependent', action='store_true',
             help='''Should be set to true or false depending on whether the
             language model produced is destined to be used with an acoustic
             model trained with or without word position dependent
-            variants of the phones. This option have no effect on word
-            level models.''')
+            variants of the phones.''')
 
         group.add_argument(
             '-n', '--model-order', type=int, metavar='<N>',
             default=utils.config.get('language', 'model-order'),
-            help='n in n-gram, must be a positive integer')
+            help='n in n-gram, must be a positive integer, '
+            'default is %(default)s')
 
         group.add_argument(
             '-l', '--model-level',
@@ -63,9 +65,12 @@ class AbkhaziaLanguage(AbstractRecipeCommand):
 
     @classmethod
     def run(cls, args):
-        corpus, output_dir = cls.prepare_for_run(args)
+        corpus, output_dir = cls._parse_io_dirs(args)
+        log = utils.get_log(
+            os.path.join(output_dir, 'language.log'), verbose=args.verbose)
 
-        # retrieve recipe parameters
+        # retrieve recipe parameters, if not specified in the command
+        # read them from the configuration file
         if args.word_position_dependent is None:
             args.word_position_dependent = utils.config.get(
                 'language', 'word-position-dependent')
@@ -74,15 +79,14 @@ class AbkhaziaLanguage(AbstractRecipeCommand):
             args.model_order = utils.config.get('language', 'model-order')
 
         # instanciate the lm recipe creator
-        recipe = LanguageModel(corpus, output_dir, args.verbose)
+        recipe = LanguageModel(Corpus.load(corpus), output_dir, log=log)
         recipe.order = args.model_order
         recipe.level = args.model_level
         recipe.position_dependent_phones = args.word_position_dependent
-        recipe.silence_probability = 0.5 if args.optional_silence else 0.0
+        recipe.silence_probability = 0.0 if args.no_silence else 0.5
+        recipe.delete_recipe = False if args.recipe else True
 
         # finally create and/or run the recipe
-        if not args.only_run:
-            recipe.create()
-        if not args.no_run:
-            recipe.run()
-            recipe.export()
+        recipe.create()
+        recipe.run()
+        recipe.export()

@@ -17,19 +17,22 @@
 import argparse
 import os
 
-from abkhazia.commands.abstract_command import AbstractRecipeCommand
-import abkhazia.kaldi.force_align as force_align
+from abkhazia.commands.abstract_command import AbstractKaldiCommand
+from abkhazia.corpus import Corpus
+import abkhazia.models.align as align
+import abkhazia.utils as utils
 
 
-class AbkhaziaAlign(AbstractRecipeCommand):
+class AbkhaziaAlign(AbstractKaldiCommand):
     '''This class implements the 'abkhazia align' command'''
     name = 'align'
     description = 'compute forced-aligment'
 
     @staticmethod
     def long_description():
-        """Return the docstring of the ForceAlign class"""
-        return force_align.ForceAlign.__doc__.replace(' '*4, ' '*2).strip()
+        return ('Estimate forced alignment of a corpus based on '
+                'fMLLR transforms of a provided acoustic model. '
+                'Alignments are phone or word based and are given in seconds.')
 
     @classmethod
     def add_parser(cls, subparsers):
@@ -39,19 +42,41 @@ class AbkhaziaAlign(AbstractRecipeCommand):
         parser.formatter_class = argparse.RawDescriptionHelpFormatter
         parser.description = cls.long_description()
 
-        parser.add_argument(
-            '-j', '--njobs', type=int, default=1, metavar='<njobs>',
-            help="""number of jobs to launch for parallel alignment, default is to
-            launch %(default)s jobs.""")
+        out_group = parser.add_argument_group('alignment parameters')
+        out_group.add_argument(
+            '--acoustic-scale', default=0.1, type=float, metavar='<float>',
+            help='scaling factor for acoustic likelihoods, '
+            'default is %(default)s')
 
-        parser.add_argument(
-            '--no-words', action='store_true',
+        out_group = out_group.add_mutually_exclusive_group()
+        out_group.add_argument(
+            '--post', action='store_true',
+            help='write posterior probability of aligned phones')
+        out_group.add_argument(
+            '--no-lattice', action='store_true',
+            help='do not compute lattice, faster but disallow posteriors')
+
+        out_group = parser.add_argument_group('alignment format', description=(
+            'by default the output alignement file is phone aligned and '
+            'include both words and phones'))
+        out_group = out_group.add_mutually_exclusive_group()
+        out_group.add_argument(
+            '--phones-only', action='store_true',
             help='do not write words in the final alignment file, only phones')
+        out_group.add_argument(
+            '--words-only', action='store_true',
+            help='do not write phones in the final alignment file, only words')
 
         dir_group.add_argument(
             '-l', '--language-model', metavar='<lm-dir>', default=None,
             help='''the language model recipe directory, data is read from
             <lm-dir>/language. If not specified, use <lm-dir>=<corpus>.''')
+
+        dir_group.add_argument(
+            '-f', '--features', metavar='<feat-dir>', default=None,
+            help='''the features directory, data is read from
+            <feat-dir>/features/mfcc. If not specified, use
+            <feat-dir>=<corpus>.''')
 
         dir_group.add_argument(
             '-a', '--acoustic-model', metavar='<am-dir>', default=None,
@@ -62,53 +87,53 @@ class AbkhaziaAlign(AbstractRecipeCommand):
 
     @classmethod
     def run(cls, args):
-        # TODO put the checks in the ForceAlign class
-
-        corpus, output_dir = cls.prepare_for_run(args)
+        # get back the input corpus and output directory
+        corpus_dir, output_dir = cls._parse_io_dirs(args)
+        log = utils.get_log(
+            os.path.join(output_dir, 'align.log'), verbose=args.verbose)
+        corpus = Corpus.load(corpus_dir)
 
         # get back the language model directory
-        lang = (corpus if args.language_model is None
+        lang = (os.path.dirname(corpus_dir) if args.language_model is None
                 else os.path.abspath(args.language_model))
-        lang += '/language/lang'
-
-        # ensure it's a directory and we have both oov.int and
-        # G.fst in it
-        if not os.path.isdir(lang):
-            raise IOError(
-                'language model not found: {}.\n'.format(lang) +
-                "Please provide a language model "
-                "(use 'abkhazia language <args>')")
-
-        if not (os.path.isfile(os.path.join(lang, 'oov.int')) and
-                os.path.isfile(os.path.join(lang, 'G.fst'))):
-            raise IOError('not a valid language model directory: {}'
-                          .format(lang))
+        lang += '/language'
 
         # get back the acoustic model directory
-        acoustic = (corpus if args.acoustic_model is None
+        acoustic = (os.path.dirname(corpus_dir) if args.acoustic_model is None
                     else os.path.abspath(args.acoustic_model))
-        acoustic += '/acoustic/exp/acoustic_model'
+        acoustic += '/acoustic'
 
-        # ensure it's a directory and we have final.mdl in it
-        if not os.path.isdir(lang):
-            raise IOError(
-                'acoustic model not found: {}.\n'.format(lang) +
-                "Please provide a trained acoustic model "
-                "(use 'abkhazia train <args>')")
+        # get back the features directory
+        feat = (os.path.dirname(corpus_dir) if args.features is None
+                else os.path.abspath(args.features))
+        feat += '/features'
 
-        if not os.path.isfile(os.path.join(acoustic, 'final.mdl')):
-            raise IOError('not a valid acoustic model directory: {}'
-                          .format(acoustic))
+        # parse the alignment level
+        if args.words_only:
+            level = 'words'
+        elif args.phones_only:
+            level = 'phones'
+        else:
+            level = 'both'
+
+        if level == 'words' and args.post:
+            raise NotImplementedError(
+                'incompatible options --post and --words-only, '
+                'not implemented')
 
         # instanciate the kaldi recipe creator
-        recipe = force_align.ForceAlign(corpus, output_dir, args.verbose)
+        recipe = (align.AlignNoLattice if args.no_lattice
+                  else align.Align)(corpus, output_dir, log=log)
         recipe.njobs = args.njobs
+        recipe.level = level
+        recipe.with_posteriors = args.post
+        recipe.acoustic_scale = args.acoustic_scale
         recipe.lm_dir = lang
+        recipe.feat_dir = feat
         recipe.am_dir = acoustic
+        recipe.delete_recipe = False if args.recipe else True
 
-        # finally create and/or run the recipe
-        if not args.only_run:
-            recipe.create()
-        if not args.no_run:
-            recipe.run()
-            recipe.export(not args.no_words)
+        # finally compute the alignments
+        recipe.create()
+        recipe.run()
+        recipe.export()

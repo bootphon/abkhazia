@@ -139,24 +139,19 @@ class ChildesPreparator(AbstractPreparator):
     exclude = ('SI.|BR.|CHI|TO.|ENV|BOY|NON|MAG|JEN|MAG|CEC|PAU|'
                'ANN|JOA|SAN|BRU|CAR|LEN|JEM|JOS|STV|LAR|MAD|MAR|SOP')
 
-    def __init__(self, input_dir, output_dir=None,
-                 verbose=False, njobs=1,
-                 copy_wavs=False, one_adult=True):
+    def __init__(self, input_dir,  log=utils.null_logger(), copy_wavs=False):
         """Childes preparator initialization
 
         If `copy_wavs` is True, copy the wavs file to `output_dir`,
         else symlinks them.
 
-        If `one_adult` is True, select the cha files with only one
-        adult speaking, else select all the transcriptions.
+        Select the cha files with only one adult speaking.
 
         """
         # call the AbstractPreparator __init__
-        super(ChildesPreparator, self).__init__(
-            input_dir, output_dir, verbose, njobs)
-
+        super(ChildesPreparator, self).__init__(input_dir, log=log)
         self.copy_wavs = copy_wavs
-        self.chas = self._select_chas(one_adult=one_adult)
+        self.chas = self._select_chas(one_adult=True)
         self.utts = self._parse_chas(self.chas, self.exclude)
 
     def _select_chas(self, one_adult=True):
@@ -217,14 +212,13 @@ class ChildesPreparator(AbstractPreparator):
         utts = {}
         for cha, wav in chas.iteritems():
             # duration of the wav in millisecond
-            duration = int(utils.wav.duration(wav))
+            duration = utils.wav.duration(wav)
 
             # get cleaned utterances from the raw cha file. At that
             # point timestamps are the last word of each line.
             text = utils.cha.clean(
                 l.strip() for l in utils.open_utf8(cha, 'r')
-                if re.search('[0-9]+_[0-9]+', l) and
-                not re.search(exclude_spks, l))
+                if not re.search(exclude_spks, l))
 
             cha_id = os.path.splitext(os.path.basename(cha))[0]
             counter = 0
@@ -232,8 +226,8 @@ class ChildesPreparator(AbstractPreparator):
                 if len(words) > 1:  # remove empty utterances
                     # parsing the timestamps
                     timestamp = words[-1].split('_')
-                    tbegin = int(timestamp[0])/1000
-                    tend = int(timestamp[1])/1000
+                    tbegin = int(timestamp[0])/1000.
+                    tend = int(timestamp[1])/1000.
 
                     # reject utterances with out of boundaries
                     # timestamps
@@ -249,30 +243,29 @@ class ChildesPreparator(AbstractPreparator):
         return utts
 
     def list_audio_files(self):
-        wavs = [w for w in self.chas.itervalues()]
-        return wavs, [os.path.basename(w) for w in wavs]
+        return [w for w in self.chas.itervalues()]
 
     def make_segment(self):
-        with open(self.segments_file, 'w') as outfile:
-            for key, value in self.utts.iteritems():
-                outfile.write('{} {} {} {}\n'.format(
-                    key, os.path.basename(value.wav),
-                    value.tbegin, value.tend))
+        segments = dict()
+        for k, v in self.utts.iteritems():
+            segments[k] = (os.path.splitext(os.path.basename(v.wav))[0],
+                           float(v.tbegin), float(v.tend))
+        return segments
 
     def make_speaker(self):
-        with open(self.speaker_file, 'w') as outfile:
-            for key in self.utts.iterkeys():
-                outfile.write(
-                    '{} {}\n'.format(key, re.sub('-(.*)-(.*)', '', key)))
+        utt2spk = dict()
+        for key in self.utts.iterkeys():
+            utt2spk[key] = re.sub('-(.*)-(.*)', '', key)
+        return utt2spk
 
     def make_transcription(self):
-        with open(self.transcription_file, "w") as outfile:
-            for key, value in self.utts.iteritems():
-                # separate collocations into words for the phonemizer:
-                # thank_you", delete the letter tag of childes: a@l
-                # means letter a
-                sent = re.sub('@[a-z]', '', value.text.replace('_', ' '))
-                outfile.write('{} {}\n'.format(key, sent))
+        text = dict()
+        for k, v in self.utts.iteritems():
+            # separate collocations into words for the phonemizer:
+            # thank_you", delete the letter tag of childes: a@l
+            # means letter a
+            text[k] = re.sub('@[a-z]', '', v.text.replace('_', ' '))
+        return text
 
     def make_lexicon(self):
         # retrieve all words in transcriptions. Separate collocations
@@ -290,11 +283,6 @@ class ChildesPreparator(AbstractPreparator):
         p.strip_separator = False
 
         # phonemize the words
-        self.log.info('phonemizing %s words...', len(words))
-        lexicon = dict(zip(
+        self.log.info('phonemizing %s words', len(words))
+        return dict(zip(
             words, (w.strip() for w in p.phonemize(words, njobs=self.njobs))))
-
-        # finally write the lexicon file from the lexicon dict
-        with open(self.lexicon_file, 'w') as outfile:
-            for k, v in sorted(lexicon.iteritems()):
-                outfile.write('{} {}\n'.format(k, v))

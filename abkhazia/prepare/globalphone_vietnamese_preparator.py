@@ -282,8 +282,6 @@ class VietnamesePreparator(AbstractGlobalPhonePreparator):
         a temporary file
 
         """
-        self.log.debug('Correcting dictionary')
-
         # the following words are in the dictionary but are not used
         # in the transcriptions they will be dropped
         words_to_drop = [u'$', u'(', u')']
@@ -317,8 +315,6 @@ class VietnamesePreparator(AbstractGlobalPhonePreparator):
                                       u'{\\1_\\2 WB}', line)
                         out.write(line)
 
-        self.log.debug('Dictionary corrected, wrote in {}'
-                       .format(corrected_dictionary))
         self.dictionary = corrected_dictionary
         return True
 
@@ -357,9 +353,6 @@ class VietnamesePreparator(AbstractGlobalPhonePreparator):
             with utils.open_utf8(output_file, 'w') as out:
                 for line in lines:
                     out.write(line)
-
-        self.log.debug('corrected {} transcription files in {}'
-                       .format(len(trss), corrected_transcription_dir))
 
         self.transcription_dir = corrected_transcription_dir
         return True

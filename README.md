@@ -9,19 +9,21 @@ Documentation **actually not up to date** can be found
 
 ## Installation
 
-### Install dependencies
+### 1. Install dependencies
 
 Before deploying abkahzia on your system, you need to install the
 following dependencies. If they are not available on your system, the
 abkhazia configuration script will fail.
 
-#### [Kaldi Speech Recognition Toolkit](http://kaldi-asr.org).
+#### 1.1. [Kaldi Speech Recognition Toolkit](http://kaldi-asr.org).
 
-* **In brief** the ``./install_kadi.sh`` will download, configure
-  and compile kaldi to ``./kaldi``. This should work on any
-  standard Unix distribution and fail on the first encoutered
-  error. If so, install kaldi manually as detailed in the
-  following steps.
+* **In brief**
+
+    the ``./install_kadi.sh`` will download, configure
+    and compile kaldi to ``./kaldi``. This should work on any
+    standard Unix distribution and fail on the first encoutered
+    error. If so, install kaldi manually as detailed in the
+    following steps.
 
 * Because Kaldi is developed under continuous integration, there is no
   published release to rely on. To ensure the abkhazia stability, we
@@ -55,7 +57,7 @@ abkhazia configuration script will fail.
   configuration.
 
 
-#### sox and shorten
+#### 1.2. sox and shorten
 
 Abkhazia relies on [sox](http://sox.sourceforge.net) with flac support
 and [shorten](http://etree.org/shnutils/shorten) for wav conversion
@@ -76,11 +78,23 @@ from various audio formats.
         make
         sudo make install
 
-### Install Abkahzia
+#### 1.3. festival
+
+* You need to install
+  [festival](http://www.cstr.ed.ac.uk/projects/festival) on your
+  system. Visit
+  [this link](http://www.festvox.org/docs/manual-2.4.0/festival_6.html#Installation)
+  for installation guidelines.
+
+* On Debian/Ubuntu simply run:
+
+        sudo apt-get install festival
+
+### 2. Install Abkhazia
 
 First run the configuration script. It will check the dependancies for
 you and will initialize a default configuration file in
-`abkahzia/share/abkahzia.cfg`.
+`abkahzia/share/abkhazia.cfg`.
 
     ./configure
 
@@ -96,7 +110,7 @@ In case you want to modify and test the code, replace the last step by
 
 ## Licence
 
-**Copyright 2015, 2016 by Thomas Schatz, Xuan Nga Cao, Roland Thiollière, Mathieu Bernard**
+**Copyright 2015, 2016 by Mathieu Bernard, Thomas Schatz, Xuan Nga Cao, Roland Thiollière, Emmanuel Dupoux**
 
 This program is free software: you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by

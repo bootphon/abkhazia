@@ -16,17 +16,59 @@
 
 import codecs
 import collections
+import multiprocessing
 import os
 import re
 import shutil
+import config  # this is abkhazia.utils.config
+
+
+def default_njobs(nj_queue=20, local=False):
+    """Return `nj_queue` if running on a queue, ncores if running locally
+
+    Default for `nj_queue` is 20, the standard number of jobs for
+    features computation in the kaldi WSJ recipe.
+
+    """
+    cmd = config.config.get('kaldi', 'train-cmd')
+    return (nj_queue if not local and 'queue' in cmd
+            else multiprocessing.cpu_count())
+
+
+def str2bool(s, safe=False):
+    """Return True if s=='true', False if s=='false'
+
+    If s is already a bool return it, else raise TypeError.
+    If `safe` is True, never raise but return False instead.
+
+    """
+    if isinstance(s, bool):
+        return s
+
+    if safe:
+        return True if s == 'true' else False
+    else:
+        if s == 'true':
+            return True
+        if s == 'false':
+            return False
+    raise TypeError("{} must be 'true' or 'false'".format(s))
+
+
+def bool2str(s):
+    """Return 'true' if `s` is True, else return 'false'"""
+    if s is True:
+        return 'true'
+    return 'false'
 
 
 # from https://stackoverflow.com/questions/38987
 def merge_dicts(*dict_args):
-    '''
-    Given any number of dicts, shallow copy and merge into a new dict,
-    precedence goes to key value pairs in latter dicts.
-    '''
+    """Given any number of dicts, shallow copy and merge into a new dict
+
+    Precedence goes to (key, value) pairs in latter dicts.
+
+    """
     result = {}
     for dictionary in dict_args:
         result.update(dictionary)
@@ -66,11 +108,16 @@ def list_directory(directory, abspath=False):
     return lsd
 
 
-def list_files_with_extension(directory, extension, abspath=False):
+def list_files_with_extension(
+        directory, extension, abspath=False, realpath=True):
     """Return all files of given extension in directory hierarchy
 
     The files are returned in a list with a path relative to
-    'directory' except if abspath is True
+    'directory' except if abspath or realpath is True
+
+    If `abspath` is True, return absolute path to the file/link
+
+    If `realpath` is True, return resolved links
 
     """
     # the regular expression to match in filenames
@@ -82,6 +129,8 @@ def list_files_with_extension(directory, extension, abspath=False):
         matched += [os.path.join(path, f) for f in files if re.match(expr, f)]
     if abspath:
         matched = [os.path.abspath(m) for m in matched]
+    if realpath:
+        matched = [os.path.realpath(m) for m in matched]
     return matched
 
 
@@ -107,3 +156,14 @@ def remove(path, safe=False):
 def is_empty_file(path):
     """Return True if the file `path` is empty"""
     return os.stat(path).st_size == 0
+
+
+def check_directory(dir, files, name='directory'):
+    """Raise OSError any of the `files` is not present in `dir`"""
+    if not os.path.isdir(dir):
+        raise OSError('{} not found: {}.\n'.format(name, dir))
+
+    for f in files:
+        if not os.path.isfile(os.path.join(dir, f)):
+            raise OSError(
+                'non valid {}: {} not found in {}'.format(name, f, dir))

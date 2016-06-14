@@ -29,3 +29,4 @@ from abkhazia.commands.abkhazia_language import AbkhaziaLanguage
 from abkhazia.commands.abkhazia_decode import AbkhaziaDecode
 from abkhazia.commands.abkhazia_prepare import AbkhaziaPrepare
 from abkhazia.commands.abkhazia_split import AbkhaziaSplit
+from abkhazia.commands.abkhazia_features import AbkhaziaFeatures
