@@ -1,14 +1,27 @@
 <!-- -*-org-*- this comment force org-mode in emacs -->
 
+* For the feature branch
+** objectives
+- export features from ark to h5feature
+  - utterance indexed
+  - compatibility with ABXpy
+  - see [[https://github.com/bootphon/features_extraction/blob/master/kaldi_features.py][kaldi_features.py]] from feature_extraction package
+- choice in MFCC, fbank, eventually PLP
+** tasks
+- have a FeatureProcessor and a Feature class
+  #+begin_src python
+  features = FeaturesProcessor(type='filterbank', nbins=40).compute(corpus)
+  features.save2h5f('features.h5f')
+  features2 = Features.load('features.h5f')
+  #+end_src
+- centralize/refactor the legacy code related to features
+- more options from Kaldi (nbc, fs, etc...)
+- wrap fbank and PLP executables
+
 * Open bugs [0/1]
 ** TODO abkhazia decode
    what is the bug??
 * Feature requests
-** features
-   - more options from Kaldi (nbc, fs, etc...)
-   - centralize/refactor the legacy code related to features
-   - option to export features from ark to h5f, see
-     [[https://github.com/bootphon/features_extraction/blob/master/kaldi_features.py][kaldi_features.py]] from feature_extraction package
 ** acoustic
    - [ ] --retrain option
      it should be possible to retrain a trained model on a new corpus
@@ -142,3 +155,31 @@ extract-segments.c in kaldi featbin)
 *** solution
 remove those short utts from corpus in preparation step
 (--keep-short-utts option added)
+* New specifications (0.3)
+#+begin_src python
+  corpus = BuckeyeCorpusPreparator('./buckeye').prepare()
+  corpus.speakers()
+  utt = corpus.utterances()
+
+  train, _ = corpus.split(train_prop=0.5, by_speakers=True)
+  train.save2h5('train.h5', 'buckeye-train', wavs=True)
+
+  corpus = Corpus.read('corpus.h5', 'buckeye-train')
+  lm = LanguageModelProcessor(order=3, level='word').compute(corpus)
+  lm.save('lm.fst')
+  lm.save2h5('train.h5', 'word-trigram')
+  assert lm.order == 3
+  assert lm.level == 'word'
+
+  features = FeaturesProcessor('mfcc', delta=2, pitch=True).compute(corpus)
+  f = features[utt[0]]  # np.array
+  features.write2h5('train.h5', 'features')
+  features.write2ark('/somewhere')
+#+end_src
+
+** class Corpus
+** class AbstractCorpusPreparator
+** class LanguageModel
+** class LanguageModelProcessor
+** class Feature
+** class FeatureProcessor

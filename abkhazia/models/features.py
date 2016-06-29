@@ -107,7 +107,8 @@ class Features(abstract_recipe.AbstractRecipe):
                 utils.config.get('kaldi', 'train-cmd'),
                 os.path.join('data', self.name),
                 os.path.join('exp', 'make_mfcc', self.name),
-                self.output_dir))
+                self.output_dir),
+            verbose=False)
 
     def _compute_cmvn_stats(self):
         """Wrapper on steps/compute_cmvn_stats.sh"""
@@ -116,7 +117,8 @@ class Features(abstract_recipe.AbstractRecipe):
             'steps/compute_cmvn_stats.sh {0} {1} {2}'.format(
                 os.path.join('data', self.name),
                 os.path.join('exp', 'make_mfcc', self.name),
-                self.output_dir))
+                self.output_dir),
+            verbose=False)
 
     def create(self):
         super(Features, self).create()
