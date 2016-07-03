@@ -15,9 +15,10 @@
 """Abkhazia test setup"""
 
 import os
-import pytest
 import random
 import re
+
+import pytest
 
 import abkhazia.utils as utils
 from abkhazia.prepare import BuckeyePreparator
@@ -40,39 +41,34 @@ def corpus(n=50):
     prepared in its buckeye/data subfolder.
 
     """
-    tmpdir = os.path.join(HERE, 'prepared_wavs')
+    try:
+        tmpdir = os.path.join(HERE, 'prepared_wavs')
 
-    # first try to load any prepared buckeye
-    buckeye = os.path.join(
-        utils.config.get('abkhazia', 'data-directory'),
-        'buckeye', 'data')
-    if os.path.isdir(buckeye):
-        corpus = Corpus.load(buckeye)
+        # first try to load any prepared buckeye
+        buckeye = os.path.join(
+            utils.config.get('abkhazia', 'data-directory'),
+            'buckeye', 'data')
+        if os.path.isdir(buckeye):
+            corpus = Corpus.load(buckeye)
 
-    else:  # prepare the whole buckeye corpus
-        buckeye = utils.config.get('corpus', 'buckeye-directory')
-        corpus = BuckeyePreparator(buckeye).prepare(tmpdir)
-        corpus.validate()
+        else:  # prepare the whole buckeye corpus
+            buckeye = utils.config.get('corpus', 'buckeye-directory')
+            corpus = BuckeyePreparator(buckeye).prepare(tmpdir)
+            corpus.validate()
 
-    # select n random utterances from the whole buckeye, take the
-    # whole if n is 0
-    if n != 0:
-        utts = corpus.utts()
-        random.shuffle(utts)
-        subcorpus = corpus.subcorpus(utts[:n])
-    else:
-        subcorpus = corpus
+        # select n random utterances from the whole buckeye, take the
+        # whole if n is 0
+        if n != 0:
+            utts = corpus.utts()
+            random.shuffle(utts)
+            subcorpus = corpus.subcorpus(utts[:n])
+        else:
+            subcorpus = corpus
+        yield subcorpus
 
-    # # save it to test/data
-    # try:
-    #     subcorpus.save(os.path.join(HERE, 'data'))
-    # except OSError:  # already existing
-    #     pass
-
-    yield subcorpus
-
-    # remove any prepared wavs
-    utils.remove(tmpdir, safe=True)
+    finally:
+        # remove any prepared wavs
+        utils.remove(tmpdir, safe=True)
 
 
 def assert_no_expr_in_log(flog, expr='error'):

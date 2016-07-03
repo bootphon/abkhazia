@@ -45,16 +45,14 @@ def export_features(feat_dir, target_dir, corpus, copy=False):
         for line in open(origin, 'r'):
             scp.write(line)
 
-    # export cmvn.scp
+    # export cmvn.scp if it exists
     origin = os.path.join(feat_dir, 'cmvn.scp')
-    if not os.path.isfile(origin):
-        raise IOError('{} not found'.format(origin))
-
-    target = os.path.join(target_dir, os.path.basename(origin))
-    if copy:
-        shutil.copy(origin, target)
-    else:
-        os.symlink(origin, target)
+    if os.path.isfile(origin):
+        target = os.path.join(target_dir, os.path.basename(origin))
+        if copy:
+            shutil.copy(origin, target)
+        else:
+            os.symlink(origin, target)
 
     # export wav.scp, correct paths to be relative to corpus
     # instead of recipe_dir
@@ -69,13 +67,26 @@ def export_features(feat_dir, target_dir, corpus, copy=False):
 
 
 class Features(abstract_recipe.AbstractRecipe):
-    """Compute MFCC features from an abkhazia corpus"""
+    """Compute speech features from an abkhazia corpus"""
     name = 'features'
+
+    _known_feature_types = {
+        'mfcc': 'mfcc',
+        'filterbank': 'fbank',
+        'plp': 'plp'}
 
     def __init__(self, corpus, output_dir, log=utils.null_logger()):
         super(Features, self).__init__(corpus, output_dir, log=log)
+
+        self.type = utils.config.get('features', 'type').lower()
+        if self.type not in self._known_feature_types:
+            raise IOError('unknown feature type "{}"'.format(self.type))
+
         self.use_pitch = utils.str2bool(
             utils.config.get('features', 'use-pitch'))
+
+        self.use_cmvn = utils.str2bool(
+            utils.config.get('features', 'use-cmvn'))
 
     def _setup_conf_dir(self):
         """Setup the conf files for feature extraction"""
@@ -86,19 +97,30 @@ class Features(abstract_recipe.AbstractRecipe):
 
         # create mfcc.conf file (following what seems to be commonly
         # used in other kaldi recipes)
-        with open(os.path.join(conf_dir, 'mfcc.conf'), mode='w') as out:
+        with open(os.path.join(
+                conf_dir, '{}.conf'
+                .format(self._known_feature_types[self.type])),
+                  mode='w') as out:
             out.write("--use-energy=false   # only non-default option.\n")
 
-        # create empty pitch.conf file (required when using mfcc +
-        # pitch features)
-        with open(os.path.join(conf_dir, 'pitch.conf'), mode='w') as out:
-            pass
+        # create empty pitch.conf file (required when using pitch
+        # related Kaldi scripts)
+        if self.use_pitch:
+            with open(os.path.join(conf_dir, 'pitch.conf'), mode='w') as out:
+                pass
+
+    def _get_kaldi_script(self):
+        script = 'steps/make_' + self._known_feature_types[self.type]
+        if self.use_pitch:
+            script += '_pitch'
+        script += '.sh'
+        return script
 
     def _compute_features(self):
-        """Wrapper on steps/make_mfcc_pitch.sh or steps/make_mfcc.sh"""
-        script = ('steps/make_mfcc_pitch.sh' if self.use_pitch
-                  else 'steps/make_mfcc.sh')
-        self.log.info('computing MFCC features%s',
+        """Wrapper on steps/make_**type**_pitch.sh or steps/make_**type**.sh"""
+        script = self._get_kaldi_script()
+        self.log.info('computing %s features%s',
+                      self.type,
                       ' with pitch' if self.use_pitch else '')
 
         self._run_command(
@@ -106,7 +128,7 @@ class Features(abstract_recipe.AbstractRecipe):
                 self.njobs,
                 utils.config.get('kaldi', 'train-cmd'),
                 os.path.join('data', self.name),
-                os.path.join('exp', 'make_mfcc', self.name),
+                os.path.join('exp', 'make_{}'.format(self.type), self.name),
                 self.output_dir),
             verbose=False)
 
@@ -116,7 +138,7 @@ class Features(abstract_recipe.AbstractRecipe):
         self._run_command(
             'steps/compute_cmvn_stats.sh {0} {1} {2}'.format(
                 os.path.join('data', self.name),
-                os.path.join('exp', 'make_mfcc', self.name),
+                os.path.join('exp', 'make_{}'.format(self.type), self.name),
                 self.output_dir),
             verbose=False)
 
@@ -126,7 +148,9 @@ class Features(abstract_recipe.AbstractRecipe):
 
     def run(self):
         self._compute_features()
-        self._compute_cmvn_stats()
+
+        if self.use_cmvn:
+            self._compute_cmvn_stats()
 
     def export(self):
         super(Features, self).export()
@@ -142,7 +166,8 @@ class Features(abstract_recipe.AbstractRecipe):
             [f.replace('.ark', '.scp')
              for f in utils.list_directory(self.output_dir, abspath=True)
              if f[-4:] == '.ark'] +
-            [os.path.join(self.output_dir, 'cmvn_features.scp')])
+            [os.path.join(self.output_dir, 'cmvn_features.scp')]
+            if self.use_cmvn else [])
 
         for scp in tmp_scp:
             utils.remove(scp, safe=True)

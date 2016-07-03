@@ -60,8 +60,14 @@ default-test-proportion: 0.5
 prune-lexicon: false
 
 [features]
-# Compute pitch features along with MFCCs
+# Type of features to compute, choose in mfcc, filterbank and plp
+type: mfcc
+
+# Compute pitch estimation and probability of voicing
 use-pitch: true
+
+# Compute CMVN statistics on features
+use-cmvn: true
 
 [language]
 # Should be set to true or false depending on whether the language
