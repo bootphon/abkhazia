@@ -14,7 +14,6 @@
 # along with abkhazia. If not, see <http://www.gnu.org/licenses/>.
 """Wrapper for getting/setting optional parameters of a Kaldi executable"""
 
-import collections
 import re
 import shlex
 import subprocess
@@ -22,8 +21,13 @@ import subprocess
 from abkhazia.kaldi.path import kaldi_path
 
 
-OptionEntry = collections.namedtuple('OptionEntry', 'help type default value')
-"""entry read from / send to a Kaldi executable"""
+class OptionEntry(object):
+    """Entry read from / send to a Kaldi executable"""
+    def __init__(self, help='', type=None, default=None, value=None):
+        self.help = help
+        self.type = type
+        self.default = default
+        self.value = value
 
 
 def get_options(executable):

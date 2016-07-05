@@ -109,12 +109,8 @@ class AbstractCoreCommand(AbstractCommand):
         dir_group.add_argument(
             'corpus', metavar='<corpus>', help="""
             abkhazia corpus is read from <corpus>/data. Must be an
-            existing directory, relative to the abkhazia data
-            directory ({0}) or as a path on the filesystem. If
-            <corpus> doesn't start with './' , '../', '~/' or '/', the
-            following rule applies: <corpus> is guessed as a
-            subdirectory of {0} and, if not found, as a subdirectory
-            of the current working directory."""
+            existing directory, can be relative to the abkhazia data
+            directory ({0})"""
             .format(utils.config.get('abkhazia', 'data-directory')))
 
         # add a --output-dir option
@@ -128,7 +124,14 @@ class AbstractCoreCommand(AbstractCommand):
 
     @staticmethod
     def _parse_corpus_dir(corpus):
-        """Parse the corpus input directory as specified in help message"""
+        """Parse the corpus input directory as specified in help message
+
+        If `corpus` doesn't start with './' , '../', '~/' or '/', the
+        following rule applies: `corpus` is guessed as a subdirectory
+        of 'abkhazia.data-directory' from config file and, if not
+        found, as a subdirectory of the current working directory.
+
+        """
         if not corpus.startswith(('/', '.', '../', '~/')):
             # try to find the corpus in abkhazia data directory
             _corpus = os.path.join(

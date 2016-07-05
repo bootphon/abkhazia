@@ -70,16 +70,11 @@ class Features(abstract_recipe.AbstractRecipe):
     """Compute speech features from an abkhazia corpus"""
     name = 'features'
 
-    _known_feature_types = {
-        'mfcc': 'mfcc',
-        'filterbank': 'fbank',
-        'plp': 'plp'}
-
     def __init__(self, corpus, output_dir, log=utils.null_logger()):
         super(Features, self).__init__(corpus, output_dir, log=log)
 
-        self.type = utils.config.get('features', 'type').lower()
-        if self.type not in self._known_feature_types:
+        self.type = utils.config.get('features', 'type')
+        if self.type not in ['mfcc', 'plp', 'fbank']:
             raise IOError('unknown feature type "{}"'.format(self.type))
 
         self.use_pitch = utils.str2bool(
@@ -87,6 +82,9 @@ class Features(abstract_recipe.AbstractRecipe):
 
         self.use_cmvn = utils.str2bool(
             utils.config.get('features', 'use-cmvn'))
+
+        # options sent to the Kaldi feature extractor (in a config file)
+        self.features_options = [('use-energy', 'false')]
 
     def _setup_conf_dir(self):
         """Setup the conf files for feature extraction"""
@@ -97,11 +95,11 @@ class Features(abstract_recipe.AbstractRecipe):
 
         # create mfcc.conf file (following what seems to be commonly
         # used in other kaldi recipes)
-        with open(os.path.join(
-                conf_dir, '{}.conf'
-                .format(self._known_feature_types[self.type])),
-                  mode='w') as out:
-            out.write("--use-energy=false   # only non-default option.\n")
+        with open(
+                os.path.join(conf_dir, '{}.conf'.format(self.type)),
+                mode='w') as out:
+            for o in self.features_options:
+                out.write("--{}={}\n".format(o[0], o[1]))
 
         # create empty pitch.conf file (required when using pitch
         # related Kaldi scripts)
@@ -110,7 +108,7 @@ class Features(abstract_recipe.AbstractRecipe):
                 pass
 
     def _get_kaldi_script(self):
-        script = 'steps/make_' + self._known_feature_types[self.type]
+        script = 'steps/make_' + self.type
         if self.use_pitch:
             script += '_pitch'
         script += '.sh'
