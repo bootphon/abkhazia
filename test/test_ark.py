@@ -20,7 +20,7 @@ import h5features as h5f
 import numpy as np
 import pytest
 
-import abkhazia.kaldi.io as io
+import abkhazia.kaldi.ark as io
 
 
 @pytest.yield_fixture(scope='session')
