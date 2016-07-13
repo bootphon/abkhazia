@@ -1,23 +1,10 @@
 <!-- -*-org-*- this comment force org-mode in emacs -->
 
 * For the feature branch
-** objectives
 - export features from ark to h5feature
   - utterance indexed
   - compatibility with ABXpy
   - see [[https://github.com/bootphon/features_extraction/blob/master/kaldi_features.py][kaldi_features.py]] from feature_extraction package
-- choice in MFCC, fbank, eventually PLP
-** tasks
-- have a FeatureProcessor and a Feature class
-  #+begin_src python
-  features = FeaturesProcessor(type='filterbank', nbins=40).compute(corpus)
-  features.save2h5f('features.h5f')
-  features2 = Features.load('features.h5f')
-  #+end_src
-- centralize/refactor the legacy code related to features
-- more options from Kaldi (nbc, fs, etc...)
-- wrap fbank and PLP executables
-
 * Open bugs [0/1]
 ** TODO abkhazia decode
    what is the bug??

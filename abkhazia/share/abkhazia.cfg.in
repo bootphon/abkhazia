@@ -63,6 +63,11 @@ prune-lexicon: false
 # Type of features to compute, choose in mfcc, filterbank and plp
 type: mfcc
 
+# Add deltas to the features if delta-order is non-zero. Compute
+# delatas up to the specified order (1 for delta, 2 for delta and
+# delta-delta)
+delta-order: 0
+
 # Compute pitch estimation and probability of voicing
 use-pitch: true
 

@@ -64,10 +64,7 @@ setup(
 
     # define the command-line script to use
     entry_points={
-        'console_scripts': [
-            'abkhazia = abkhazia.commands.abkhazia_main:main'
-        ]
-    },
+        'console_scripts': ['abkhazia = abkhazia.commands.abkhazia_main:main']},
 
     # metadata for upload to PyPI
     author='Thomas Schatz, Mathieu Bernard, Roland Thiolliere, Xuan Nga Cao',

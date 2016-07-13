@@ -56,6 +56,13 @@ class _FeatBase(AbstractKaldiCommand):
             help="""if true, compute CMVN statistics,
             default is %(default)s""")
 
+        parser.add_argument(
+            '--delta-order', metavar='<int>', type=int,
+            default=utils.config.getint('features', 'delta-order'),
+            help="""compute deltas on raw features, up to the specified order. If
+            delta-order is set to 0, deltas are not computed. Default
+            is %(default)s.""")
+
         opt_parser = parser.add_argument_group(
             '{} features options'.format(cls.name))
         cls.add_kaldi_options(opt_parser)
@@ -122,6 +129,7 @@ class _FeatBase(AbstractKaldiCommand):
         recipe.type = cls.name
         recipe.use_pitch = utils.str2bool(args.use_pitch)  # 'true' to True
         recipe.use_cmvn = utils.str2bool(args.use_cmvn)
+        recipe.delta_order = args.delta_order
         recipe.options = cls.parsed_options
         recipe.njobs = args.njobs
         recipe.delete_recipe = False if args.recipe else True
