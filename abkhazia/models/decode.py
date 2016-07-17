@@ -19,8 +19,9 @@ import os
 import abkhazia.models.language_model as language_model
 import abkhazia.models.acoustic_model as acoustic_model
 import abkhazia.models.abstract_recipe as abstract_recipe
-from abkhazia.models.features import export_features
 import abkhazia.utils as utils
+
+from abkhazia.models.features import Features
 
 
 class Decode(abstract_recipe.AbstractRecipe):
@@ -97,16 +98,15 @@ class Decode(abstract_recipe.AbstractRecipe):
     def create(self):
         super(Decode, self).create()
 
-        export_features(
-            self.feat_dir,
-            os.path.join(self.recipe_dir, 'data', self.name),
-            self.corpus)
+        # copy features scp files in the recipe_dir
+        Features.export_features(
+            self.feat,
+            os.path.join(self.recipe_dir, 'data', self.name))
 
     def run(self):
         """Run the created recipe and decode speech data"""
         res_dir = self._mkgraph()
         res_dir = self._decode(res_dir)
-        #return res_dir
 
     def export(self):
         super(Decode, self).export()

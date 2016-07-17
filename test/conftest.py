@@ -23,6 +23,8 @@ import pytest
 import abkhazia.utils as utils
 from abkhazia.prepare import BuckeyePreparator
 from abkhazia.corpus import Corpus
+from abkhazia.models.features import Features
+from abkhazia.models.language_model import LanguageModel
 
 HERE = os.path.abspath(os.path.dirname(__file__))
 
@@ -69,6 +71,31 @@ def corpus(n=50):
     finally:
         # remove any prepared wavs
         utils.remove(tmpdir, safe=True)
+
+
+@pytest.fixture(scope='session')
+def features(corpus, tmpdir_factory):
+    """Return a directory with MFCC features computed from the test corpus"""
+    output_dir = str(tmpdir_factory.mktemp('features'))
+    feat = Features(corpus, output_dir)
+    feat.use_pitch = False
+    feat.use_cmvn = True
+    feat.delta_order = 0
+    feat.compute()
+    return output_dir
+
+
+@pytest.fixture(scope='session')
+def language_model(corpus, tmpdir_factory):
+    """Return a directory with bigram word LM computed from the test corpus"""
+    output_dir = str(tmpdir_factory.mktemp('lm'))
+    flog = os.path.join(output_dir, 'language.log')
+    log = utils.get_log(flog)
+    lm = LanguageModel(corpus, output_dir, log=log)
+    lm.level = 'word'
+    lm.order = 2
+    lm.compute()
+    return output_dir
 
 
 def assert_no_expr_in_log(flog, expr='error'):

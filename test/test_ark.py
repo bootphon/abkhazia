@@ -40,7 +40,22 @@ def test_read_write(tmpdir, format, data):
     assert np.allclose(data['test'], data2['test'], rtol=0, atol=1e-7)
 
 
-def test_h5f(tmpdir, data):
+@pytest.mark.parametrize('name', ['a', 'a-b', 'a_b'])
+def test_h5f_name_of_utterance(tmpdir, data, name):
+    data = {name: data['test']}
+
+    ark = os.path.join(str(tmpdir), 'ark')
+    io.dict_to_ark(ark, data)
+
+    # convert it to h5features file
+    h5file = os.path.join(str(tmpdir), 'h5f')
+    io.ark_to_h5f([ark], h5file)
+
+    data2 = h5f.Reader(h5file).read()
+    assert np.allclose(data2.dict_features()[name], data[name])
+
+
+def test_h5f_twice(tmpdir, data):
     # add a 2nd item in data
     data.update({'test2': data['test']})
 
@@ -56,6 +71,7 @@ def test_h5f(tmpdir, data):
 
     # get back data from h5f
     data2 = h5f.Reader(h5file, 'test').read()
+    print data2.items()
     assert data2.items() == ['test', 'test2', 'test2_2', 'test_2']
     assert data2.dict_labels()['test'].shape[0] == data['test'].shape[0]
     assert data['test'].shape == data2.dict_features()['test'].shape

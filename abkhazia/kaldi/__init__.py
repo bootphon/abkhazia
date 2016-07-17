@@ -15,4 +15,5 @@
 
 from .path import kaldi_path
 from .abkhazia2kaldi import Abkhazia2Kaldi
-from .options import get_options
+from .options import *
+from .ark import *

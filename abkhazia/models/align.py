@@ -38,7 +38,7 @@ import abkhazia.utils as utils
 import abkhazia.models.abstract_recipe as abstract_recipe
 from abkhazia.models.language_model import check_language_model, read_int2phone
 from abkhazia.models.acoustic_model import check_acoustic_model
-from abkhazia.models.features import export_features
+from abkhazia.models.features import Features
 
 # TODO check alignment: which utt have been transcribed, have silence
 # been inserted, otherwise no difference? (maybe some did not reach
@@ -80,11 +80,10 @@ class Align(abstract_recipe.AbstractRecipe):
     def create(self):
         super(Align, self).create()
 
-        # setup scp files from the features directory in the recipe dir
-        export_features(
-            self.feat_dir,
-            os.path.join(self.recipe_dir, 'data', self.name),
-            self.corpus)
+        # copy features scp files in the recipe_dir
+        Features.export_features(
+            self.feat,
+            os.path.join(self.recipe_dir, 'data', self.name))
 
     def run(self):
         # build alignment lattice

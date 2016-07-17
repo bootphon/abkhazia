@@ -16,10 +16,12 @@
 
 import codecs
 import collections
+import itertools
 import multiprocessing
 import os
 import re
 import shutil
+
 import config  # this is abkhazia.utils.config
 
 
@@ -177,3 +179,28 @@ def check_directory(dir, files, name='directory'):
         if not os.path.isfile(os.path.join(dir, f)):
             raise OSError(
                 'non valid {}: {} not found in {}'.format(name, f, dir))
+
+
+def symlink_files(files, destdir):
+    """Create symlinks of the `files` in the directory `destdir`
+
+    `destdir` is created if non-existing, any file in `files` already
+    present in `destdir` is not linked.
+
+    """
+    if not os.path.isdir(destdir):
+        os.mkdir(destdir)
+
+    for src in files:
+        dest = os.path.join(destdir, os.path.basename(src))
+        if not os.path.isfile(dest):
+            os.symlink(src, dest)
+
+
+# def grouper(iterable, n, padvalue=None):
+#     """Split an `iterable` into `n` evenly sized chunks
+
+#     grouper(3, 'abcdefg', 'x') --> ('a','b','c'), ('d','e','f'), ('g','x','x')
+
+#     """
+#     return itertools.izip_longest(*[iter(iterable)]*n, fillvalue=padvalue)

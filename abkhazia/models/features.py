@@ -12,7 +12,7 @@
 #
 # You should have received a copy of the GNU General Public License
 # along with abkhazia. If not, see <http://www.gnu.org/licenses/>.
-"""Provides the Features class"""
+"""Provides the Features class wrapping Kaldi speech feature processors"""
 
 import os
 import shutil
@@ -22,59 +22,36 @@ import abkhazia.models.abstract_recipe as abstract_recipe
 import abkhazia.utils as utils
 
 
-def _delta_joblib_fnc(i, instance):
-    """A tweak to compute deltas inplace and in parallel using joblib
-
-    class methods are not pickable so we pass a Features instance as a
-    parameter instead of using self.
-
-    i is a 1-length tuple containing the scp to compute delta on
-
-    """
-    i = i[0]
-    o = i + '_tmp'
-    try:
-        instance._run_command(
-            'add-deltas --delta-order={0} scp:{1} ark:{2}'.format(
-                instance.delta_order, i, o), verbose=False)
-
-        instance._run_command(
-            'copy-feats ark:{} ark,scp:{},{}'.format(
-                o, i.replace('.scp', '.ark'), i),
-            verbose=False)
-    finally:
-        utils.remove(o, safe=True)
-
-
-def export_features(feat_dir, target_dir, corpus, copy=False):
-    """Export wav.scp from feat_dir to target_dir
-
-    Both `feat_dir` and `target_dir` are assumed to exist.
-
-    If copy is True, make copies instead of links. Raises IOError if
-    one of the input files isn't in feat_dir.
-
-    """
-    # sanity checks
-    for _dir in (feat_dir, target_dir):
-        if not os.path.isdir(_dir):
-            raise IOError('{} is not a directory'.format(_dir))
-
-    # export wav.scp, correct paths to be relative to corpus
-    # instead of recipe_dir
-    origin = os.path.join(feat_dir, 'wav.scp')
-    if not os.path.isfile(origin):
-        raise IOError('{} not found'.format(origin))
-    with open(os.path.join(target_dir, 'wav.scp'), 'w') as scp:
-        for line in open(origin, 'r'):
-            key = line.strip().split(' ')[0]
-            wav = corpus.wavs[key]
-            scp.write('{} {}\n'.format(key, wav))
-
-
 class Features(abstract_recipe.AbstractRecipe):
     """Compute speech features from an abkhazia corpus"""
     name = 'features'
+
+    @staticmethod
+    def check_features(directory):
+        """Raise IOError if feats.scp and wavs.scp are not in `dircetory`"""
+        for f in ('feats.scp', 'wav.scp'):
+            if not os.path.isfile(os.path.join(directory, f)):
+                raise IOError(
+                    'Invalid features directory, "{}" not found: {}'.format(
+                        f, directory))
+
+    @staticmethod
+    def export_features(srcdir, destdir):
+        """Copy scp files from `srcdir` to `destdir`
+
+        Create `destdir` if non existing
+
+        This method is used by upper models relying on features to set
+        up their own recipe.
+
+        """
+        if not os.path.isdir(destdir):
+            os.mkdir(destdir)
+
+        scps = (os.path.join(srcdir, f) for f in os.listdir(srcdir)
+                if os.path.splitext(f)[1] == '.scp')
+        for scp in scps:
+            shutil.copy(scp, os.path.join(destdir, os.path.basename(scp)))
 
     def __init__(self, corpus, output_dir, log=utils.null_logger()):
         super(Features, self).__init__(corpus, output_dir, log=log)
@@ -91,11 +68,21 @@ class Features(abstract_recipe.AbstractRecipe):
 
         self.delta_order = utils.config.getint('features', 'delta-order')
 
-        # options sent to the Kaldi feature extractor (in a config file)
         self.features_options = [('use-energy', 'false')]
 
     def _setup_conf_dir(self):
-        """Setup the conf files for feature extraction"""
+        """Setup the configurtion files for feature extraction
+
+        Create a 'conf' directory in the recipe_dir with a 'mfcc.conf'
+        file (or 'plp' or 'fbank'). That file stores the entries in
+        self.features_options in the Kaldi conig file format.
+
+        If self.use_pitch is True, an empty file 'pitch.conf' is
+        added. This is requested by the Kaldi scripts but, for now,
+        only default paramaters are used
+
+        """
+        # create an empty configuration dircetory
         conf_dir = os.path.join(self.recipe_dir, 'conf')
         if os.path.exists(conf_dir):
             shutil.rmtree(conf_dir)
@@ -116,14 +103,12 @@ class Features(abstract_recipe.AbstractRecipe):
                 pass
 
     def _get_kaldi_script(self):
-        script = 'steps/make_' + self.type
-        if self.use_pitch:
-            script += '_pitch'
-        script += '.sh'
-        return script
+        """Path to the Kaldi script according to `type` and `use_pitch`"""
+        return ('steps/make_' + self.type +
+                ('_pitch' if self.use_pitch else '') + '.sh')
 
     def _compute_features(self):
-        """Wrapper on steps/make_**type**_pitch.sh or steps/make_**type**.sh"""
+        """Wrapper on steps/make_*type*_pitch.sh or steps/make_*type*.sh"""
         script = self._get_kaldi_script()
         self.log.info('computing %s features%s',
                       self.type,
@@ -150,23 +135,13 @@ class Features(abstract_recipe.AbstractRecipe):
                 'Cannot compute deltas because order is lower than 1')
         self.log.info('computing deltas (order %s)', self.delta_order)
 
-        # get the input scp files with raw features
         inputs = [f for f in utils.list_files_with_extension(
             self.output_dir, '.scp', abspath=True, recursive=False)
-                  if 'cmvn' not in f]
+                  if 'raw_' in f]
 
         # compute deltas in parallel, one job per scp file
-        joblib.Parallel(
-            n_jobs=self.njobs, verbose=1, backend='threading')(
-                joblib.delayed(_delta_joblib_fnc)(i, self)
-                for i in zip(inputs))
-
-        # merge the output scp files into a single one, and delete them
-        output_scp = os.path.join(self.output_dir, 'feats.scp')
-        with open(output_scp, 'w') as outfile:
-            for infile in inputs:
-                outfile.write(open(infile, 'r').read())
-                utils.remove(infile)
+        joblib.Parallel(n_jobs=self.njobs, verbose=1, backend='threading')(
+            joblib.delayed(_delta_joblib_fnc)(scp, self) for scp in inputs)
 
     def _compute_cmvn_stats(self):
         """Wrapper on steps/compute_cmvn_stats.sh"""
@@ -177,6 +152,10 @@ class Features(abstract_recipe.AbstractRecipe):
                 os.path.join('exp', 'make_{}'.format(self.type), self.name),
                 self.output_dir),
             verbose=False)
+
+        src = os.path.join(self.output_dir, 'cmvn_features.scp')
+        dest = os.path.join(self.output_dir, 'cmvn.scp')
+        shutil.move(src, dest)
 
     def create(self):
         super(Features, self).create()
@@ -191,27 +170,61 @@ class Features(abstract_recipe.AbstractRecipe):
         if self.delta_order != 0:
             self._compute_delta()
 
+    # this is NOT the export_to_h5features method !
     def export(self):
         super(Features, self).export()
 
-        if self.use_cmvn:
-            shutil.move(
-                os.path.join(self.output_dir, 'cmvn_features.scp'),
-                os.path.join(self.output_dir, 'cmvn.scp'))
+        # merge the features output scp files into a single one
+        # 'feats.scp', and delete them
+        inputs = [f for f in utils.list_files_with_extension(
+            self.output_dir, '.scp', abspath=True, recursive=False)
+                  if 'raw_' in f]
 
-        export_features(
-            os.path.join(self.recipe_dir, 'data', self.name),
-            self.output_dir,
-            self.corpus,
-            copy=True)
+        output_scp = os.path.join(self.output_dir, 'feats.scp')
+        with open(output_scp, 'w') as outfile:
+            for infile in inputs:
+                outfile.write(open(infile, 'r').read())
+                utils.remove(infile)
 
-        # # delete temp scp files in output dir
-        # tmp_scp = (
-        #     [f.replace('.ark', '.scp')
-        #      for f in utils.list_directory(self.output_dir, abspath=True)
-        #      if f[-4:] == '.ark'] +
-        #     [os.path.join(self.output_dir, 'cmvn_features.scp')]
-        #     if self.use_cmvn else [])
+        # export wav.scp, correct paths to be relative to corpus
+        # instead of recipe_dir. TODO Do we really need a reference to
+        # wavs as they are already referenced in the corpus ?
+        origin = os.path.join(self.recipe_dir, 'data', self.name, 'wav.scp')
+        if not os.path.isfile(origin):
+            raise IOError('{} not found'.format(origin))
 
-        # for scp in tmp_scp:
-        #     utils.remove(scp, safe=True)
+        with open(os.path.join(self.output_dir, 'wav.scp'), 'w') as scp:
+            for line in open(origin, 'r'):
+                key = line.strip().split(' ')[0]
+                wav = self.corpus.wavs[key]
+                scp.write('{} {}\n'.format(key, wav))
+
+
+def _delta_joblib_fnc(scp, instance):
+    """A tweak to compute deltas inplace and in parallel using joblib
+
+    class methods are not pickable so we pass a Features instance as a
+    parameter instead of using self.
+
+    scp is a str or a 1-length tuple containing the scp to compute delta on
+
+    """
+    # filename of the input
+    if isinstance(scp, tuple):
+        scp = scp[0]
+
+    # temp file for pseudo-inplace operation
+    tmp = scp + '_tmp'
+
+    try:
+        # compute deltas to tmp
+        instance._run_command(
+            'add-deltas --delta-order={0} scp:{1} ark:{2}'.format(
+                instance.delta_order, scp, tmp), verbose=False)
+
+        # move tmp to scp
+        instance._run_command(
+            'copy-feats ark:{} ark,scp:{},{}'.format(
+                tmp, scp.replace('.scp', '.ark'), scp), verbose=False)
+    finally:
+        utils.remove(tmp, safe=True)

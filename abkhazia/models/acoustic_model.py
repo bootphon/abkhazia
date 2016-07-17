@@ -17,7 +17,7 @@
 import os
 import shutil
 
-from abkhazia.models.features import export_features
+from abkhazia.models.features import Features
 from abkhazia.models.language_model import check_language_model
 from abkhazia.models.abstract_recipe import AbstractRecipe
 import abkhazia.utils as utils
@@ -35,20 +35,29 @@ class AcousticModel(AbstractRecipe):
     an abkhazia corpus and a language model
 
     Parameters:
-        corpus (Corpus): abkhazia corpus to process
-        output_dir (str): path to the created recipe and results
-        log (logging.Logger): where to send log messages
+    -----------
+
+    corpus (Corpus): abkhazia corpus to process
+
+    output_dir (str): path to the created recipe and results
+
+    log (logging.Logger): where to send log messages
 
     Attributes:
-        lang (str): path to the language model directory
-        feat (str): path to the features directory
-        model_type (str): The type of model to train in 'mono', 'tri', 'tri-sa'
-        njobs (int): Number of parallel jobs to use
+    -----------
 
-        num_states_si (int)
-        num_gauss_si (int)
-        num_states_sa (int)
-        num_gauss_sa (int)
+    lang (str): path to the language model directory
+
+    feat (str): path to the features directory
+
+    model_type (str): The type of model to train in 'mono', 'tri',
+        'tri-sa'
+
+    njobs (int): Number of parallel jobs to use
+
+    num_states_si, num_gauss_si, num_states_sa, num_gauss_sa (int) :
+        Number of states/Gaussians in speaker adaptive/independant
+        models
 
     """
     name = 'acoustic'
@@ -67,6 +76,7 @@ class AcousticModel(AbstractRecipe):
 
         self.lang = None
         self.feat = None
+        self.data_dir = os.path.join(self.recipe_dir, 'data', self.name)
 
     def _check_model_type(self):
         if self.model_type not in ['mono', 'tri', 'tri-sa']:
@@ -78,7 +88,8 @@ class AcousticModel(AbstractRecipe):
         self.log.info(message)
         if not os.path.isdir(target):
             os.makedirs(target)
-        self._run_command(command)
+
+        self._run_command(command, verbose=False)
         return target
 
     def _monophone_train(self):
@@ -91,7 +102,7 @@ class AcousticModel(AbstractRecipe):
             .format(
                 self.njobs,
                 utils.config.get('kaldi', 'train-cmd'),
-                os.path.join('data', self.name),
+                self.data_dir,
                 self.lang,
                 target))
         return self._run_am_command(command, target, message)
@@ -106,7 +117,7 @@ class AcousticModel(AbstractRecipe):
             .format(
                 self.njobs,
                 utils.config.get('kaldi', 'train-cmd'),
-                os.path.join('data', self.name),
+                self.data_dir,
                 self.lang,
                 origin,
                 target))
@@ -121,7 +132,7 @@ class AcousticModel(AbstractRecipe):
                 utils.config.get('kaldi', 'train-cmd'),
                 self.num_states_si,
                 self.num_gauss_si,
-                os.path.join('data', self.name),
+                self.data_dir,
                 self.lang,
                 origin,
                 target))
@@ -135,7 +146,7 @@ class AcousticModel(AbstractRecipe):
             .format(
                 self.njobs,
                 utils.config.get('kaldi', 'train-cmd'),
-                os.path.join('data', self.name),
+                self.data_dir,
                 self.lang,
                 origin,
                 target))
@@ -150,7 +161,7 @@ class AcousticModel(AbstractRecipe):
                 utils.config.get('kaldi', 'train-cmd'),
                 self.num_states_sa,
                 self.num_gauss_sa,
-                os.path.join('data', self.name),
+                self.data_dir,
                 self.lang,
                 origin,
                 target))
@@ -165,11 +176,10 @@ class AcousticModel(AbstractRecipe):
     def create(self):
         super(AcousticModel, self).create()
 
-        # setup scp files from the features directory in the recipe dir
-        export_features(
+        # copy features scp files in the recipe_dir
+        Features.export_features(
             self.feat,
-            os.path.join(self.recipe_dir, 'data', self.name),
-            self.corpus)
+            os.path.join(self.recipe_dir, 'data', self.name))
 
     def run(self):
         """Run the created recipe and compute the acoustic model"""
@@ -203,3 +213,8 @@ class AcousticModel(AbstractRecipe):
                 shutil.copy(path, self.output_dir)
 
         super(AcousticModel, self).export()
+
+    def compute(self):
+        self.create()
+        o = self.run()
+        self.export(o)

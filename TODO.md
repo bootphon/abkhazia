@@ -1,13 +1,16 @@
 <!-- -*-org-*- this comment force org-mode in emacs -->
 
-* For the feature branch
-- export features from ark to h5feature
-  - utterance indexed
-  - compatibility with ABXpy
-  - see [[https://github.com/bootphon/features_extraction/blob/master/kaldi_features.py][kaldi_features.py]] from feature_extraction package
-* Open bugs [0/1]
-** TODO abkhazia decode
+* Open bugs [0/2]
+** TODO decode
    what is the bug??
+** TODO acoustic with delta features
+Acoustic modeling fails when built on features with deltas. This is
+caused by bad features dimension.
+
+Solution:
+ - assert no delta in features in init (get back the dim or
+ delta order from meta.txt ?)
+ - OR split deltas from raw when computing features
 * Feature requests
 ** acoustic
    - [ ] --retrain option
@@ -163,10 +166,3 @@ remove those short utts from corpus in preparation step
   features.write2h5('train.h5', 'features')
   features.write2ark('/somewhere')
 #+end_src
-
-** class Corpus
-** class AbstractCorpusPreparator
-** class LanguageModel
-** class LanguageModelProcessor
-** class Feature
-** class FeatureProcessor

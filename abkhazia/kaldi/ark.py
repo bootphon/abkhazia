@@ -24,6 +24,7 @@ from numpy arrays.
 """
 
 import os
+import re
 import struct
 import tempfile
 
@@ -60,8 +61,9 @@ def ark_to_dict(arkfile):
         return _ark_to_dict_binary_bytext(arkfile)
 
 
-def ark_to_h5f(ark_files, h5_file, h5_group='features'):
-    """Convert a sequence of kaldi ark files into a single h5feature file
+def ark_to_h5f(ark_files, h5_file, h5_group='features',
+               log=utils.null_logger()):
+    """Convert a sequence of kaldi ark files into a single h5features file
 
     Parameters:
     -----------
@@ -85,7 +87,49 @@ def ark_to_h5f(ark_files, h5_file, h5_group='features'):
 
     with h5f.Writer(h5_file) as fout:
         for ark in ark_files:
+            log.info('converting {}...'.format(os.path.basename(ark)))
             fout.write(_ark_to_data(ark), h5_group, append=True)
+
+
+def scp_to_h5f(scp_file, h5_file, h5_group='features',
+               log=utils.null_logger()):
+    """Convert ark files referenced in `scp_file` into a h5features file
+
+    Parameters:
+    -----------
+
+    scp_file (str): a scp file to be converted into a single
+        h5features file
+
+    h5_file (str): the h5features file to write in
+
+    h5_group (str): the group to write in the file, must not exist,
+        default is 'features'
+
+    log (logging.Logger): optional log for messages
+
+    Raise:
+    ------
+
+    AssertionError if the `h5_group` already exists in the `h5_file`
+
+    IOError if the scp file is badly formatted
+
+    """
+    # Extract the ark files referenced in the scp
+    ark_files = set()
+    for n, line in enumerate(open(scp_file, 'r').readlines(), 1):
+        matched = re.match('^.* (.*\.ark):[0-9]*$', line)
+        if not matched:
+            raise IOError('Bad scp file line {}: {}'.format(n, scp_file))
+        ark_files.add(matched.group(1))
+    ark_files = sorted(ark_files)
+
+    log.info('writing {} ark files to {} in group {}'.format(
+        len(ark_files), h5_file, h5_group))
+
+    # Then deleguate to ark_to_h5f
+    ark_to_h5f(ark_files, h5_file, h5_group, log)
 
 
 def dict_to_ark(arkfile, data, format='text'):
@@ -129,7 +173,7 @@ def dict_to_ark(arkfile, data, format='text'):
 
 
 def _is_binary(arkfile):
-    """Return True if the ark in binary, False if text"""
+    """Return True if the ark is binary, False if text"""
     # from https://stackoverflow.com/questions/898669
     textchars = bytearray(
         {7, 8, 9, 10, 12, 13, 27} | set(range(0x20, 0x100)) - {0x7f})
@@ -201,6 +245,7 @@ def _ark_to_dict_binary(arkfile):
 
 
 def _ark_to_dict_binary_bytext(arkfile):
+    """Convert a binary ark to text, and load it as numpy arrays"""
     try:
         # copy-feats converts binary ark to text ark
         tempdir = tempfile.mkdtemp()
@@ -216,22 +261,25 @@ def _ark_to_dict_binary_bytext(arkfile):
 
 
 def _ark_to_dict_text(arkfile):
-    res = {}
-    tmparr = []
-    utt_id = ''
-    for line in open(arkfile, 'r'):
-        splitted = line.strip().split()
-        if splitted[-1] == '[':
-            if utt_id:
-                res[utt_id] = np.array(tmparr)
-                tmparr = []
-            utt_id = splitted[0]
-        else:
-            if splitted[-1] == ']':
-                splitted = splitted[:-1]
-            tmparr.append(map(float, splitted))
-        res[utt_id] = np.array(tmparr)
-    return res
+    """Load a text ark to utterances indexed numpy arrays"""
+    return {utt: data for utt, data in _yield_utt(arkfile)}
+
+
+def _yield_utt(arkfile):
+    """Yield (utt_id, data) tuples read from `arkfile`"""
+    utts_re = re.compile(
+        r'([a-zA-Z0-9\-_]*)\s+\[\n([0-9\.\s\-]*)\]',
+        re.MULTILINE)
+
+    for utts in utts_re.finditer(open(arkfile, 'r').read()):
+        utt_id = utts.groups()[0].strip()
+
+        str_data = [d.strip() for d in utts.groups()[1].split('\n')]
+        data = np.zeros((len(str_data), len(str_data[0].split())))
+        for i, line in enumerate(str_data):
+            data[i, :] = map(float, line.split())
+
+        yield utt_id, data
 
 
 def _dict_to_txt_ark(arkfile, data, sort=True):
