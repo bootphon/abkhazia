@@ -16,7 +16,6 @@
 
 import codecs
 import collections
-import itertools
 import multiprocessing
 import os
 import re
@@ -195,12 +194,3 @@ def symlink_files(files, destdir):
         dest = os.path.join(destdir, os.path.basename(src))
         if not os.path.isfile(dest):
             os.symlink(src, dest)
-
-
-# def grouper(iterable, n, padvalue=None):
-#     """Split an `iterable` into `n` evenly sized chunks
-
-#     grouper(3, 'abcdefg', 'x') --> ('a','b','c'), ('d','e','f'), ('g','x','x')
-
-#     """
-#     return itertools.izip_longest(*[iter(iterable)]*n, fillvalue=padvalue)

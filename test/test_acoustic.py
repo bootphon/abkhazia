@@ -16,13 +16,15 @@
 
 import os
 import sys
+import pytest
 
 import abkhazia.models.acoustic_model as acoustic_model
 import abkhazia.utils as utils
 from .conftest import assert_no_expr_in_log
 
 
-def test_acoustic(corpus, features, language_model, tmpdir):
+@pytest.mark.parametrize('njobs', [1, 2, 4])
+def test_acoustic_njobs(corpus, features, language_model, njobs, tmpdir):
     output_dir = str(tmpdir.mkdir('lang'))
     flog = os.path.join(output_dir, 'language.log')
     log = utils.get_log(flog)
@@ -30,6 +32,7 @@ def test_acoustic(corpus, features, language_model, tmpdir):
 
     am.feat = features
     am.lang = language_model
+    am.njobs = njobs
     am.model_type = 'mono'
     am.num_gauss_si = 10
     am.num_states_si = 10
@@ -42,6 +45,9 @@ def test_acoustic(corpus, features, language_model, tmpdir):
         # dump the log to stdout
         sys.stdout.write('####################\n')
         sys.stdout.write(open(flog, 'r').read())
+        # log_inner = os.path.join(
+        #     output_dir, 'recipe/exp/mono/log/align.0.14.log')
+        # sys.stdout.write(open(log_inner, 'r').read())
         sys.stdout.write('####################\n')
         raise err
 
