@@ -12,7 +12,7 @@
 #
 # You should have received a copy of the GNU General Public License
 # along with abkhazia. If not, see <http://www.gnu.org/licenses/>.
-"""Test of language modeling"""
+"""Test of the abkhazia.models.language_model module"""
 
 import os
 import pytest

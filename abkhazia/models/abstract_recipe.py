@@ -161,3 +161,9 @@ class AbstractRecipe(utils.AbkhaziaBase):
 
         """
         self.meta.save(os.path.join(self.output_dir, 'meta.txt'))
+
+    def compute(self):
+        """Create, run and export the recipe"""
+        self.create()
+        self.run()
+        self.export()

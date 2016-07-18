@@ -1,14 +1,17 @@
 <!-- -*-org-*- this comment force org-mode in emacs -->
 
-* Open bugs [0/1]
-** TODO abkhazia decode
+* Open bugs [0/2]
+** TODO decode
    what is the bug??
+** TODO acoustic with delta features
+Acoustic modeling fails when built on features with deltas. This is
+caused by bad features dimension.
+
+Solution:
+ - assert no delta in features in init (get back the dim or
+ delta order from meta.txt ?)
+ - OR split deltas from raw when computing features
 * Feature requests
-** features
-   - more options from Kaldi (nbc, fs, etc...)
-   - centralize/refactor the legacy code related to features
-   - option to export features from ark to h5f, see
-     [[https://github.com/bootphon/features_extraction/blob/master/kaldi_features.py][kaldi_features.py]] from feature_extraction package
 ** acoustic
    - [ ] --retrain option
      it should be possible to retrain a trained model on a new corpus
@@ -142,3 +145,24 @@ extract-segments.c in kaldi featbin)
 *** solution
 remove those short utts from corpus in preparation step
 (--keep-short-utts option added)
+* New specifications (0.3)
+#+begin_src python
+  corpus = BuckeyeCorpusPreparator('./buckeye').prepare()
+  corpus.speakers()
+  utt = corpus.utterances()
+
+  train, _ = corpus.split(train_prop=0.5, by_speakers=True)
+  train.save2h5('train.h5', 'buckeye-train', wavs=True)
+
+  corpus = Corpus.read('corpus.h5', 'buckeye-train')
+  lm = LanguageModelProcessor(order=3, level='word').compute(corpus)
+  lm.save('lm.fst')
+  lm.save2h5('train.h5', 'word-trigram')
+  assert lm.order == 3
+  assert lm.level == 'word'
+
+  features = FeaturesProcessor('mfcc', delta=2, pitch=True).compute(corpus)
+  f = features[utt[0]]  # np.array
+  features.write2h5('train.h5', 'features')
+  features.write2ark('/somewhere')
+#+end_src

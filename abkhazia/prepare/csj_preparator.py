@@ -287,14 +287,13 @@ class CSJPreparator(AbstractPreparator):
                 new_utts[utt_id] = {'words': words, 'start': start, 'end': stop}
         return new_utts, lexicon
 
-
     def reencode(self, phonemes, encoding=None):
         vowels = ['a', 'e', 'i', 'o', 'u']
         stops = ['t', 'ty', 'b', 'by', 'g', 'gj', 'gy',
                  'k', 'ky', 'kj', 'p', 'py', 'd', 'dy']
         affricates = ['z', 'zy', 'zj', 'c', 'cy', 'cj']
         fricatives = ['s', 'sj', 'sy', 'z', 'zy', 'zj', 'h', 'F', 'hy', 'hj']
-        obstruents = affricates + fricatives  + stops
+        obstruents = affricates + fricatives + stops
 
         phonemes_1 = []
         for phoneme in phonemes:

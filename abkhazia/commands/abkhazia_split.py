@@ -24,7 +24,7 @@ import abkhazia.utils as utils
 class AbkhaziaSplit(AbstractCoreCommand):
     '''This class implements the 'abkhazia split' command'''
     name = 'split'
-    description = 'split a corpus in train and test subsets'
+    description = 'split a corpus in train and test subcorpora'
 
     @classmethod
     def add_parser(cls, subparsers):
