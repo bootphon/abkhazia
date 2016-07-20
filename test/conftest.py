@@ -15,13 +15,12 @@
 """Abkhazia test setup"""
 
 import os
-import random
 import re
 
 import pytest
 
 import abkhazia.utils as utils
-from abkhazia.prepare import BuckeyePreparator
+from abkhazia.corpus.prepare import BuckeyePreparator
 from abkhazia.corpus import Corpus
 from abkhazia.models.features import Features
 from abkhazia.models.language_model import LanguageModel
@@ -31,7 +30,7 @@ HERE = os.path.abspath(os.path.dirname(__file__))
 
 @pytest.yield_fixture(scope='session')
 def corpus(n=50):
-    """Return a corpus made of `n` random utts of Buckeye
+    """Return a corpus made of `n` first utts of Buckeye
 
     This little corpus is the base of all corpus dependant tests. The
     session scope ensures the corpus is initialized only once for all
@@ -61,9 +60,9 @@ def corpus(n=50):
         # select n random utterances from the whole buckeye, take the
         # whole if n is 0
         if n != 0:
-            utts = corpus.utts()
-            random.shuffle(utts)
-            subcorpus = corpus.subcorpus(utts[:n])
+            utts = corpus.utts()[:n]
+            #random.shuffle(utts)
+            subcorpus = corpus.subcorpus(utts)
         else:
             subcorpus = corpus
         yield subcorpus
@@ -90,7 +89,7 @@ def language_model(corpus, tmpdir_factory):
     """Return a directory with bigram word LM computed from the test corpus"""
     output_dir = str(tmpdir_factory.mktemp('lm'))
     flog = os.path.join(output_dir, 'language.log')
-    log = utils.get_log(flog)
+    log = utils.logger.get_log(flog)
     lm = LanguageModel(corpus, output_dir, log=log)
     lm.level = 'word'
     lm.order = 2

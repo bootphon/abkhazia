@@ -66,7 +66,7 @@ class AbkhaziaLanguage(AbstractKaldiCommand):
     @classmethod
     def run(cls, args):
         corpus, output_dir = cls._parse_io_dirs(args)
-        log = utils.get_log(
+        log = utils.logger.get_log(
             os.path.join(output_dir, 'language.log'), verbose=args.verbose)
 
         # retrieve recipe parameters, if not specified in the command

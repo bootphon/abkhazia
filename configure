@@ -46,6 +46,7 @@ Please fix the problem and run this script again";
     exit 1;
 }
 
+
 # absolute path to the abkhazia setup directory
 setupdir=$(realpath $0)
 
@@ -77,29 +78,33 @@ http://etree.org/shnutils/shorten/dist/src/shorten-3.6.1.tar.gz"
 [ ! -z $shorten ] && echo "Found shorten as $shorten" || failure "$shorten_failure"
 
 
-# configuring abkhazia/share/abkhazia.cfg
-conf=$share/abkhazia.cfg
+# check festival is installed
+festival=`which festival`
+festival_failure="festival not found on your system, please install it
+(see http://www.cstr.ed.ac.uk/projects/festival)"
+[ ! -z $festival ] && echo "Found festival as $festival" || failure "$festival_failure"
+
+
+# configuring abkhazia.cfg
+conf_in=$share/abkhazia.cfg.in
+conf=$setupdir/abkhazia/abkhazia.cfg
 if [ ! -e $conf ]; then
     # Init an empty configuration file if not existing
     echo "Writing $conf"
-    cp $conf.in $conf
+    cp $conf_in $conf
     failure "Please specify the path to the kaldi root directory in $conf"
 else
     echo "Found configuration file as $conf"
 
     # check all sections defined in abkhazia.cfg.in are in abkhazia.cfg
-    sec_in=$(sed '/^#/d' $conf.in | grep -e '\[.*\]' | tr -d '[]' | sort)
+    sec_in=$(sed '/^#/d' $conf_in | grep -e '\[.*\]' | tr -d '[]' | sort)
     sec_out=$(sed '/^#/d' $conf | grep -e '\[.*\]' | tr -d '[]' | sort)
-    [ ! "$sec_in" == "$sec_out" ] && failure "Some configuration sections are missing in
-$conf, please merge it from
-$conf.in"
+    [ ! "$sec_in" == "$sec_out" ] && failure "Some configuration sections are missing in $conf, please merge it from $conf_in"
 
     # check all parameters defined in abkhazia.cfg.in are in abkhazia.cfg
-    sec_in=$(sed '/^#/d' $conf.in | grep -e '^.*:' | cut -d':' -f 1 | sort)
+    sec_in=$(sed '/^#/d' $conf_in | grep -e '^.*:' | cut -d':' -f 1 | sort)
     sec_out=$(sed '/^#/d' $conf | grep -e '^.*:' | cut -d':' -f 1 | sort)
-    [ ! "$sec_in" == "$sec_out" ] && failure "Some configuration parameters are missing in
-$conf, please merge it from
-$conf.in"
+    [ ! "$sec_in" == "$sec_out" ] && failure "Some configuration parameters are missing in $conf, please merge it from $conf_in"
 
     # if existing, check if kaldi-directory is defined in it
     kaldi=$(cat $conf | sed '/^#/d' | grep kaldi-directory | cut -d: -f2 | sed 's/^ *//')
@@ -137,9 +142,6 @@ script, this is already done for you."
 Please do not source the tools/env.sh as indicated by that
 script, this is already done for you."
 
-    # check festival is installed
-    which festival > /dev/null && echo "Found festival" ||
-            failure "Please install festival on your system"
 fi
 
 # configure and copy path.sh

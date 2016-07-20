@@ -52,7 +52,7 @@ class CorpusValidation(object):
     """
 
     def __init__(self, corpus, njobs=utils.default_njobs(),
-                 log=utils.null_logger()):
+                 log=utils.logger.null_logger()):
         self.corpus = corpus
         self.njobs = njobs
         self.log = log

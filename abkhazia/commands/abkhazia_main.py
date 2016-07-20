@@ -104,7 +104,7 @@ class Abkhazia(object):
         # add a version description argument
         parser.add_argument(
             '--version', action='version',
-            version='%(prog)s ' + __version__ + '\n' +
+            version='%(prog)s ' + __version__ + '\n'*2 +
             'Copyright 2016 Thomas Schatz, Xuan-Nga Cao, Mathieu Bernard\n' +
             'Licence GPLv3+'
         )

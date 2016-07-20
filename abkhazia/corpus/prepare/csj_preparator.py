@@ -51,7 +51,7 @@ except ImportError:
     import xml.etree.ElementTree as ET
 
 import abkhazia.utils as utils
-from abkhazia.prepare import AbstractPreparator
+from abkhazia.corpus.prepare import AbstractPreparator
 
 
 Phone = namedtuple('Phone', 'id type start end')
@@ -140,7 +140,7 @@ class CSJPreparator(AbstractPreparator):
 
     variants = []
 
-    def __init__(self, input_dir,  log=utils.null_logger(), copy_wavs=False):
+    def __init__(self, input_dir,  log=utils.logger.null_logger(), copy_wavs=False):
         super(CSJPreparator, self).__init__(input_dir, log)
         self.copy_wavs = copy_wavs
 

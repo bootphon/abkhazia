@@ -21,7 +21,7 @@ abkhazia configuration script will fail.
 
     the ``./install_kadi.sh`` will download, configure
     and compile kaldi to ``./kaldi``. This should work on any
-    standard Unix distribution and fail on the first encoutered
+    standard Unix distribution and fail on the first encountered
     error. If so, install kaldi manually as detailed in the
     following steps.
 
@@ -34,13 +34,13 @@ abkhazia configuration script will fail.
         git clone git@github.com:bootphon/kaldi.git
 
 * Once cloned, you have to install Kaldi (configuration and
-  compilation ). Follow the instructions from
+  compilation). Follow the instructions from
   [here](http://kaldi-asr.org/doc/install.html). Basically, you have
   to do (from the `kaldi` directory):
 
         cd tools
         ./extras/check_dependancies.sh
-        make -j 4  # -j N do a parallel build on N CPUs
+        make -j 4  # -j N does a parallel build on N CPUs
         cd ../src
         ./configure
         make depend -j 4
@@ -102,7 +102,7 @@ you and will initialize a default configuration file in
  it succed. Then move to next step:
 
     python setup.py build
-    python setup.py install
+    sudo python setup.py install
 
 In case you want to modify and test the code, replace the last step by
 ``python setup.py develop``.

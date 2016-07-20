@@ -38,7 +38,7 @@ import re
 import tempfile
 
 import abkhazia.utils as utils
-from abkhazia.prepare import AbstractPreparator
+from abkhazia.corpus.prepare import AbstractPreparator
 
 
 class XitsongaPreparator(AbstractPreparator):
@@ -117,7 +117,7 @@ class XitsongaPreparator(AbstractPreparator):
 
     variants = []  # could use lexical stress variants...
 
-    def __init__(self, input_dir, log=utils.null_logger(), copy_wavs=False):
+    def __init__(self, input_dir, log=utils.logger.null_logger(), copy_wavs=False):
         super(XitsongaPreparator, self).__init__(input_dir, log)
         self.copy_wavs = copy_wavs
         self._wavs = None

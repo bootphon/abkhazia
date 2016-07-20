@@ -72,16 +72,3 @@ cd $kaldi/src
 sed -i "s/\-g # -O0 -DKALDI_PARANOID.*$/-O3 -DNDEBUG/" kaldi.mk
 make depend -j $ncores || failure "failed to setup kaldi dependencies"
 make -j $ncores || failure "failed to build kaldi"
-
-# TODO this is commented out since this is already checked in
-# abkhazia configure script.
-# # install SRILM
-# cd $kaldi/tools
-# if [ ! -d ./srilm ]; then
-#     ./extras/install_srilm.sh || failure "failed to install SRILM"
-# fi
-
-# # install IRSTLM
-# if [ ! -d ./irstlm ]; then
-#     ./extras/install_irstlm.sh || failure "failed to install IRSTLM"
-# fi

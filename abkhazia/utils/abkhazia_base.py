@@ -15,7 +15,7 @@
 """Provides a base class for Abkhazia componants"""
 
 from abkhazia.utils.meta import Meta
-from abkhazia.utils import null_logger
+from abkhazia.utils.logger import null_logger
 
 
 class AbkhaziaBase(object):

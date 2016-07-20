@@ -29,7 +29,8 @@ class CorpusLoader(object):
     """
 
     @classmethod
-    def load(cls, corpus_cls, corpus_dir, log=utils.null_logger()):
+    def load(cls, corpus_cls, corpus_dir,
+             log=utils.logger.null_logger()):
         """Return a corpus initialized from `corpus_dir`
 
         Raise IOError if corpus_dir if an invalid abkhazia corpus
@@ -79,8 +80,8 @@ class CorpusLoader(object):
 
         # meta is optional
         meta = os.path.join(corpus_dir, 'meta.txt')
-        data['meta'] = (utils.Meta.load(meta) if os.path.isfile(meta)
-                        else utils.Meta(source=corpus_dir))
+        data['meta'] = (utils.meta.Meta.load(meta) if os.path.isfile(meta)
+                        else utils.meta.Meta(source=corpus_dir))
 
         return data
 

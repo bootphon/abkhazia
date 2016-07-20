@@ -19,13 +19,16 @@ import os
 
 import abkhazia.models.features as features
 import abkhazia.utils as utils
-import abkhazia.kaldi
 
 from abkhazia.commands.abstract_command import AbstractKaldiCommand
 from abkhazia.corpus import Corpus
 
 
 class _FeatBase(AbstractKaldiCommand):
+    feat_name = NotImplemented
+    description = NotImplemented
+    kaldi_bin = NotImplemented
+
     ignored_options = [
         'debug-mel', 'sample-frequency', 'raw-energy', 'vtln-map',
         'output-format', 'utt2spk', 'channel', 'min-duration', 'snip-edges',
@@ -82,7 +85,7 @@ class _FeatBase(AbstractKaldiCommand):
                     cls.parsed_options.append((name, value))
             return customAction
 
-        abkhazia.kaldi.add_options_arguments(
+        utils.kaldi.add_options_arguments(
             parser, cls.kaldi_bin,
             action=action,
             ignore=cls.ignored_options,
@@ -97,7 +100,7 @@ class _FeatBase(AbstractKaldiCommand):
             cls.parsed_options.append(('use-energy', 'false'))
 
         corpus_dir, output_dir = cls._parse_io_dirs(args, 'features')
-        log = utils.get_log(
+        log = utils.logger.get_log(
             os.path.join(output_dir, 'features.log'), verbose=args.verbose)
         corpus = Corpus.load(corpus_dir)
 
@@ -106,7 +109,7 @@ class _FeatBase(AbstractKaldiCommand):
         recipe.use_pitch = utils.str2bool(args.use_pitch)  # 'true' to True
         recipe.use_cmvn = utils.str2bool(args.use_cmvn)
         recipe.delta_order = args.delta_order
-        recipe.options = cls.parsed_options
+        recipe.features_options = cls.parsed_options
         recipe.njobs = args.njobs
         recipe.delete_recipe = False if args.recipe else True
         recipe.compute()
@@ -114,7 +117,7 @@ class _FeatBase(AbstractKaldiCommand):
         # export to h5features if asked for
         if args.h5f:
             recipe.log.info('exporting Kaldi ark features to h5features...')
-            abkhazia.kaldi.scp_to_h5f(
+            utils.kaldi.scp_to_h5f(
                 os.path.join(recipe.output_dir, 'feats.scp'),
                 os.path.join(recipe.output_dir, 'feats.h5f'))
 

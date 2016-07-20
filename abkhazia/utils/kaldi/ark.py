@@ -17,9 +17,10 @@
 Read/write ark files into numpy arrays, conversion to h5features file.
 
 Provides the ark_to_dict and ark_to_h5f functions to convert Kaldi ark
-files to Python dictionaries and h5features files
-respectively. Provides the dict_to_ark function to write ark files
-from numpy arrays.
+files to Python dictionaries and h5features files respectively.
+
+Provides the dict_to_ark function to write ark files from numpy
+arrays.
 
 """
 
@@ -33,7 +34,7 @@ import h5features as h5f
 import h5py
 
 import abkhazia.utils as utils
-from abkhazia.kaldi import kaldi_path
+from abkhazia.utils.kaldi import kaldi_path
 
 
 def ark_to_dict(arkfile):
@@ -62,8 +63,13 @@ def ark_to_dict(arkfile):
 
 
 def ark_to_h5f(ark_files, h5_file, h5_group='features',
-               log=utils.null_logger()):
+               sample_frequency=100, tstart=0.0125,
+               log=utils.logger.null_logger()):
     """Convert a sequence of kaldi ark files into a single h5features file
+
+    Because Kaldi ark does not store any time information, we need
+    extra parameters for specifiying the time labels in the h5features
+    file.
 
     Parameters:
     -----------
@@ -76,6 +82,12 @@ def ark_to_h5f(ark_files, h5_file, h5_group='features',
     h5_group (str): the group to write in the file, must not exist,
         default is 'features'
 
+    sample_frequency (float): sampling rate of the features vectors
+
+    tstart (float): timestamp of the first feature vector
+
+    log (logging.Logger): optional log for messages
+
     Raise:
     ------
 
@@ -87,13 +99,20 @@ def ark_to_h5f(ark_files, h5_file, h5_group='features',
 
     with h5f.Writer(h5_file) as fout:
         for ark in ark_files:
-            log.info('converting {}...'.format(os.path.basename(ark)))
-            fout.write(_ark_to_data(ark), h5_group, append=True)
+            log.debug('converting {}...'.format(os.path.basename(ark)))
+            fout.write(_ark_to_data(
+                ark, sample_frequency=sample_frequency, tstart=tstart),
+                       h5_group, append=True)
 
 
 def scp_to_h5f(scp_file, h5_file, h5_group='features',
-               log=utils.null_logger()):
+               sample_frequency=100, tstart=0.0125,
+               log=utils.logger.null_logger()):
     """Convert ark files referenced in `scp_file` into a h5features file
+
+    Because Kaldi ark does not store any time information, we need
+    extra parameters for specifiying the time labels in the h5features
+    file.
 
     Parameters:
     -----------
@@ -105,6 +124,10 @@ def scp_to_h5f(scp_file, h5_file, h5_group='features',
 
     h5_group (str): the group to write in the file, must not exist,
         default is 'features'
+
+    sample_frequency (float): sampling rate of the features vectors
+
+    tstart (float): timestamp of the first feature vector
 
     log (logging.Logger): optional log for messages
 
@@ -119,21 +142,25 @@ def scp_to_h5f(scp_file, h5_file, h5_group='features',
     # Extract the ark files referenced in the scp
     ark_files = set()
     for n, line in enumerate(open(scp_file, 'r').readlines(), 1):
-        matched = re.match('^.* (.*\.ark):[0-9]*$', line)
+        matched = re.match('^.* (.*):[0-9]*$', line)
         if not matched:
             raise IOError('Bad scp file line {}: {}'.format(n, scp_file))
         ark_files.add(matched.group(1))
     ark_files = sorted(ark_files)
 
     log.info('writing {} ark files to {} in group {}'.format(
-        len(ark_files), h5_file, h5_group))
+        len(ark_files), os.path.basename(h5_file), h5_group))
 
     # Then deleguate to ark_to_h5f
-    ark_to_h5f(ark_files, h5_file, h5_group, log)
+    ark_to_h5f(ark_files, h5_file, h5_group,
+               sample_frequency=sample_frequency, tstart=tstart,
+               log=log)
 
 
 def dict_to_ark(arkfile, data, format='text'):
     """Write a data dictionary to a Kaldi ark file
+
+    TODO for now time information from h5f is lost in ark
 
     Parameters:
     -----------
@@ -154,7 +181,8 @@ def dict_to_ark(arkfile, data, format='text'):
     if format is 'text':
         _dict_to_txt_ark(arkfile, data)
     elif format is 'binary':
-        with tempfile.NamedTemporaryFile() as tmp:
+        with tempfile.NamedTemporaryFile(
+                dir=utils.config.get('abkhazia', 'tmp-directory')) as tmp:
             _dict_to_txt_ark(tmp.name, data)
 
             utils.jobs.run(
@@ -181,21 +209,7 @@ def _is_binary(arkfile):
 
 
 def _ark_to_data(arkfile, sample_frequency=100, tstart=0.0125):
-    """Kaldi archive (ark) to h5features.Data
-
-    Because Kaldi ark does not store time information, we need extra
-    parameters for specifiying the time labels in the h5features file.
-
-    Parameters:
-    -----------
-
-    arkfile (str) : Kaldi ark file to read from, can be text or binary
-
-    sample_frequency (float): sampling rate of the features vectors
-
-    tstart (float): timestamp of the first feature vector
-
-    """
+    """ark to h5features.Data"""
     d = ark_to_dict(arkfile)
 
     items = d.keys()
@@ -248,7 +262,8 @@ def _ark_to_dict_binary_bytext(arkfile):
     """Convert a binary ark to text, and load it as numpy arrays"""
     try:
         # copy-feats converts binary ark to text ark
-        tempdir = tempfile.mkdtemp()
+        tempdir = tempfile.mkdtemp(
+            dir=utils.config.get('abkhazia', 'tmp-directory'))
         txtfile = os.path.join(tempdir, 'txt')
         utils.jobs.run(
             'copy-feats ark:{0} ark,t:{1}'.format(arkfile, txtfile),
@@ -266,7 +281,7 @@ def _ark_to_dict_text(arkfile):
 
 
 def _yield_utt(arkfile):
-    """Yield (utt_id, data) tuples read from `arkfile`"""
+    """Yield (utt_id, data) tuples read from a text `arkfile`"""
     utts_re = re.compile(
         r'([a-zA-Z0-9\-_]*)\s+\[\n([0-9\.\s\-]*)\]',
         re.MULTILINE)

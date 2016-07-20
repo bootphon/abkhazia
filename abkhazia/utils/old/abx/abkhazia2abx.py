@@ -13,12 +13,13 @@
 # You should have received a copy of the GNU General Public License
 # along with abkhazia. If not, see <http://www.gnu.org/licenses/>.
 
-import codecs
 from itertools import groupby
 import os.path as p
 import random
 
-import abkhazia.utilities.basic_io as io
+# import abkhazia.utilities.basic_io as io
+import abkhazia.utils as utils
+
 
 # TODO this is for 'phone' or 'triphone' tasks, what about tasks on
 # whole words
@@ -44,23 +45,28 @@ def alignment2item(alignment_file, item_file, spk_id_len,
         of the 'context' column in the output file, only the
         timestamps differ.
 
+    Raise AssertionError if `segment_extension` is not
+    'single_phone', 'triphone' or 'half_triphone'
+
     """
-    assert segment_extension in ['single_phone', 'triphone', 'half_triphone']
+    assert segment_extension in ('single_phone', 'triphone', 'half_triphone')
+
     # read alignment file
-    with codecs.open(alignment_file, mode='r', encoding='UTF-8') as inp:
-        all_lines = inp.readlines()
+    all_lines = utils.open_utf8(alignment_file, mode='r').readlines()
+
     # open item_file and write to it
-    with codecs.open(item_file, mode='w', encoding='UTF-8') as out:
+    with utils.open_utf8(item_file, mode='w') as out:
         # write header
         out.write('#file onset offset #phone prev-phone next-phone talker\n')
         # gather and process each utterance independently
 
         # group by utt_id
-        for utt_id, lines in groupby(all_lines,
-                                     lambda line: line.split()[0]):
+        for utt_id, lines in groupby(
+                all_lines, lambda line: line.split()[0]):
 
             lines = list(lines)  # convert itertools object into list
             speaker = utt_id[:spk_id_len]
+
             # use the first phone only in 'single_phone' case
             # FIXME what if the first phone is a SIL
             if segment_extension == 'single_phone':
@@ -71,6 +77,7 @@ def alignment2item(alignment_file, item_file, spk_id_len,
                     next = lines[1].split()[3]
                 info = [utt_id, start, stop, phone, 'SIL', next, speaker]
                 out.write(u" ".join(info) + u"\n")
+
             # middle lines
             for prev_l, line, next_l in zip(
                             lines[:-2], lines[1:-1], lines[2:]):
@@ -85,6 +92,7 @@ def alignment2item(alignment_file, item_file, spk_id_len,
                     seg_start, seg_stop = start, stop
                 info = [utt_id, seg_start, seg_stop, phone, prev_phone, next_phone, speaker]
                 out.write(u" ".join(info) + u"\n")
+
             # use the last line only in 'single_phone' case
             # FIXME what if the last phone is a SIL
             if segment_extension == 'single_phone':
@@ -97,8 +105,9 @@ def alignment2item(alignment_file, item_file, spk_id_len,
                     out.write(u" ".join(info) + u"\n")
 
 
-#TODO put filter_alignment with the functions used for exporting
-# results from kaldi to abkhazia ? Or rather as a generic abkhazia utility
+# TODO put filter_alignment with the functions used for exporting
+# results from kaldi to abkhazia ? Or rather as a generic abkhazia
+# utility
 def filter_alignment(alignment_file, output_file, segment_file):
     """ Keep alignment tokens if and only if there is an entry
     for the corresponding utterance in the file provided """
@@ -203,26 +212,12 @@ def get_item_file(root, corpus, spk_id_len,
 
     item_file = p.join(root, corpus + '_phone.item')
     alignment2item(test_alignment, item_file, spk_id_len, 'single_phone')
-    if not(bad_phones is None):
+
+    if bad_phones is not None:
         remove_bad_phones(bad_phones, item_file, item_file)
-    if not(segment_info_file is None):
+    if segment_info_file is not None:
         add_segment_info(segment_info_file, item_file, item_file)
 
-# """
-# root='/Users/thomas/Documents/PhD/Recherche/test/'
-# item_file = p.join(root, 'WSJ_phone_threshold_1_5.item')
-# sample_talkers(item_file, 5, p.join(root, 'WSJ_phone_threshold_1_5-small.item'))
-# """
 
-root = '/Users/thomas/Documents/PhD/Recherche/test/'
-corpus = 'BUC'
-# TODO get this from spk2utt and replace explicitly given segment file
-# by path to an abkhazia split
-spk_id_len = 3
-
-get_item_file(root, corpus, spk_id_len, p.join(
-        root, 'segment_info_' + corpus + '.txt'))
-
-# get_item_file(root, corpus, spk_id_len, p.join(root, 'segment_info_'
-#     + corpus + '.txt'), ['zy:', 'F:', 'd:', 'g:', 's:'])
-#     get_item_file(root, 'CSJ', 5) get_item_file(root, 'WSJ', 3)
+# get_item_file(root, corpus, spk_id_len, p.join(
+#         root, 'segment_info_' + corpus + '.txt'))

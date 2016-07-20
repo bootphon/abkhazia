@@ -135,7 +135,7 @@ import tempfile
 import os
 
 from abkhazia.utils import open_utf8
-from abkhazia.prepare.globalphone_abstract_preparator import (
+from abkhazia.corpus.prepare.globalphone_abstract_preparator import (
     AbstractGlobalPhonePreparator)
 
 

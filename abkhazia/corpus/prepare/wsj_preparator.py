@@ -21,7 +21,7 @@ import os
 import re
 
 import abkhazia.utils as utils
-from abkhazia.prepare import AbstractPreparatorWithCMU
+from abkhazia.corpus.prepare import AbstractPreparatorWithCMU
 
 
 class WallStreetJournalPreparator(AbstractPreparatorWithCMU):
@@ -175,9 +175,13 @@ class WallStreetJournalPreparator(AbstractPreparatorWithCMU):
         # if we reached this point without returning, return w as is
         return word
 
-    def __init__(self, input_dir, log=utils.null_logger(), cmu_dict=None):
+    def __init__(self, input_dir,
+                 log=utils.logger.null_logger(),
+                 cmu_dict=None):
+
         super(WallStreetJournalPreparator, self).__init__(
             input_dir, log=log, cmu_dict=cmu_dict)
+
         # select only a subpart of recordings and transcriptions.
         # Listing files using the following 2 criterions: 1- files are
         # nested within self.directory_pattern and 2- the 4th letter

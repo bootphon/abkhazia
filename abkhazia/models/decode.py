@@ -38,7 +38,7 @@ class Decode(abstract_recipe.AbstractRecipe):
     """
     name = 'decode'
 
-    def __init__(self, corpus, output_dir=None, log=utils.null_logger()):
+    def __init__(self, corpus, output_dir=None, log=utils.logger.null_logger()):
         super(Decode, self).__init__(corpus, output_dir, log=log)
 
         self.acoustic_scale = utils.config.get(self.name, 'acoustic-scale')
@@ -100,7 +100,7 @@ class Decode(abstract_recipe.AbstractRecipe):
 
         # copy features scp files in the recipe_dir
         Features.export_features(
-            self.feat,
+            self.feat_dir,
             os.path.join(self.recipe_dir, 'data', self.name))
 
     def run(self):

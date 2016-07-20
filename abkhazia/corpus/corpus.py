@@ -25,7 +25,7 @@ from abkhazia.corpus.corpus_split import CorpusSplit
 import abkhazia.utils as utils
 
 
-class Corpus(utils.AbkhaziaBase):
+class Corpus(utils.abkhazia_base.AbkhaziaBase):
     """Speech corpus in the abkhazia format
 
     This class wraps a speech corpus in the abkhazia format and
@@ -94,7 +94,7 @@ class Corpus(utils.AbkhaziaBase):
     """
 
     @classmethod
-    def load(cls, corpus_dir, log=utils.null_logger()):
+    def load(cls, corpus_dir, log=utils.logger.null_logger()):
         """Return a corpus initialized from `corpus_dir`
 
         Raise IOError if corpus_dir if an invalid directory, the
@@ -103,7 +103,7 @@ class Corpus(utils.AbkhaziaBase):
         """
         return CorpusLoader.load(cls, corpus_dir, log=log)
 
-    def __init__(self, log=utils.null_logger()):
+    def __init__(self, log=utils.logger.null_logger()):
         """Init an empty corpus"""
         super(Corpus, self).__init__(log=log)
 

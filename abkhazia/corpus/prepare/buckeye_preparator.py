@@ -19,7 +19,7 @@ import os
 import re
 
 import abkhazia.utils as utils
-from abkhazia.prepare import AbstractPreparator
+from abkhazia.corpus.prepare import AbstractPreparator
 
 
 class BuckeyePreparator(AbstractPreparator):
@@ -135,7 +135,7 @@ class BuckeyePreparator(AbstractPreparator):
 
     variants = []  # could use lexical stress variants...
 
-    def __init__(self, input_dir, log=utils.null_logger(), copy_wavs=False):
+    def __init__(self, input_dir, log=utils.logger.null_logger(), copy_wavs=False):
         super(BuckeyePreparator, self).__init__(input_dir, log=log)
         self.copy_wavs = copy_wavs
 

@@ -88,14 +88,6 @@ def test_spk2utt():
 
 
 def test_phonemize_text(corpus, tmpdir):
-    # import abkhazia.utils
-    # output_dir = str(tmpdir.mkdir('lang'))
-    # flog = os.path.join(output_dir, 'language.log')
-    # corpus.log = abkhazia.utils.get_log(flog)
-
     phones = corpus.phonemize_text()
     assert sorted(phones.keys()) == sorted(corpus.utts())
     assert len(phones) == len(corpus.text)
-
-    # import conftest
-    # conftest.assert_no_expr_in_log(flog, 'warning')

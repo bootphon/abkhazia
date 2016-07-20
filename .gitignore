@@ -7,7 +7,7 @@
 test/language/*
 
 # Ignore files generated during configuration
-/abkhazia/share/abkhazia.cfg
+/abkhazia/abkhazia.cfg
 /abkhazia/share/cmudict.0.7a
 /abkhazia/share/cmd.sh
 /abkhazia/share/path.sh
@@ -78,5 +78,6 @@ lm_test/*
 test/lm/*
 /exemple/*
 egs/align_childes_brent/
+egs/align_childes_brent_1percent/
 egs/exemple_buckeye/*
 /kaldi/

@@ -18,7 +18,7 @@ import os
 import re
 
 import abkhazia.utils as utils
-from abkhazia.prepare import AbstractPreparator
+from abkhazia.corpus.prepare import AbstractPreparator
 
 
 class AbstractGlobalPhonePreparator(AbstractPreparator):
@@ -67,7 +67,7 @@ class AbstractGlobalPhonePreparator(AbstractPreparator):
                 'Bad formatting for word or transcript: {0}'.format(expr))
         return expr[1:-1]
 
-    def __init__(self, input_dir, log=utils.null_logger()):
+    def __init__(self, input_dir, log=utils.logger.null_logger()):
         super(AbstractGlobalPhonePreparator, self).__init__(input_dir, log=log)
 
         self.transcription_dir = os.path.join(

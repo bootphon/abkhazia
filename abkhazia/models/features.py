@@ -53,7 +53,7 @@ class Features(abstract_recipe.AbstractRecipe):
         for scp in scps:
             shutil.copy(scp, os.path.join(destdir, os.path.basename(scp)))
 
-    def __init__(self, corpus, output_dir, log=utils.null_logger()):
+    def __init__(self, corpus, output_dir, log=utils.logger.null_logger()):
         super(Features, self).__init__(corpus, output_dir, log=log)
 
         self.type = utils.config.get('features', 'type')

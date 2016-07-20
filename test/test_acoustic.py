@@ -23,11 +23,11 @@ import abkhazia.utils as utils
 from .conftest import assert_no_expr_in_log
 
 
-@pytest.mark.parametrize('njobs', [1, 2, 4])
+@pytest.mark.parametrize('njobs', [1, 4])
 def test_acoustic_njobs(corpus, features, language_model, njobs, tmpdir):
     output_dir = str(tmpdir.mkdir('lang'))
     flog = os.path.join(output_dir, 'language.log')
-    log = utils.get_log(flog)
+    log = utils.logger.get_log(flog)
     am = acoustic_model.AcousticModel(corpus, output_dir, log)
 
     am.feat = features

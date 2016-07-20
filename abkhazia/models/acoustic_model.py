@@ -62,7 +62,7 @@ class AcousticModel(AbstractRecipe):
     """
     name = 'acoustic'
 
-    def __init__(self, corpus, output_dir=None, log=utils.null_logger):
+    def __init__(self, corpus, output_dir=None, log=utils.logger.null_logger):
         super(AcousticModel, self).__init__(corpus, output_dir, log=log)
 
         # setup default values for parameters from the configuration

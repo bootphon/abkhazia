@@ -13,14 +13,15 @@
 #
 # You should have received a copy of the GNU General Public License
 # along with abkhazia. If not, see <http://www.gnu.org/licenses/>.
-"""
-Created on Fri Nov 28 03:11:30 2014
+"""Created on Fri Nov 28 03:11:30 2014
 
 @author: Thomas Schatz
 
 Plot summary statistics about a standard .item file in a pdf file.
 
-Should probably be merged at least partially with corpus_statistics.py...
+Should probably be merged at least partially with
+corpus_statistics.py...
+
 """
 
 #TODO need to finish adaptation of this file to abkhazia

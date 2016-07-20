@@ -18,7 +18,7 @@ import re
 import shlex
 import subprocess
 
-from abkhazia.kaldi.path import kaldi_path
+from abkhazia.utils.kaldi.path import kaldi_path
 
 
 class OptionEntry(object):

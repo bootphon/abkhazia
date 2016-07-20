@@ -28,7 +28,7 @@ import os
 import re
 
 import abkhazia.utils as utils
-from abkhazia.prepare import AbstractPreparatorWithCMU
+from abkhazia.corpus.prepare import AbstractPreparatorWithCMU
 
 
 class LibriSpeechPreparator(AbstractPreparatorWithCMU):
@@ -93,7 +93,7 @@ class LibriSpeechPreparator(AbstractPreparatorWithCMU):
 
     variants = []  # could use lexical stress variants...
 
-    def __init__(self, input_dir, log=utils.null_logger(),
+    def __init__(self, input_dir, log=utils.logger.null_logger(),
                  cmu_dict=None, selection=None, librispeech_dict=None):
         super(LibriSpeechPreparator, self).__init__(input_dir, log=log)
 

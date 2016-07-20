@@ -42,8 +42,8 @@ def run(command, stdin=None, stdout=sys.stdout.write,
 
     returncode : expected return code of the command
 
-    Returns silently if the command returned with `returncode`, else raise a
-    RuntimeError
+    Returns silently if the command returned with `returncode`, else
+    raise a RuntimeError
 
     """
     job = subprocess.Popen(
