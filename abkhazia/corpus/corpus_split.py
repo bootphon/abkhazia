@@ -47,7 +47,7 @@ class CorpusSplit(object):
 
 
     """
-    def __init__(self, corpus, log=utils.null_logger(),
+    def __init__(self, corpus, log=utils.logger.null_logger(),
                  random_seed=None, prune=True):
         self.log = log
         self.prune = prune

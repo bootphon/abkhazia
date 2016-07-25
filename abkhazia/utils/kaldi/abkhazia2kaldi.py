@@ -19,7 +19,7 @@ import pkg_resources
 import shutil
 
 import abkhazia.utils as utils
-from abkhazia.corpus import CorpusSaver
+from abkhazia.corpus.corpus_saver import CorpusSaver
 
 
 class Abkhazia2Kaldi(object):
@@ -42,7 +42,7 @@ class Abkhazia2Kaldi(object):
 
     '''
     def __init__(self, corpus, recipe_dir,
-                 name='recipe', log=utils.null_logger()):
+                 name='recipe', log=utils.logger.null_logger()):
         # filter out short utterances
         self.corpus = corpus.subcorpus(
             self._desired_utterances(corpus), validate=True)

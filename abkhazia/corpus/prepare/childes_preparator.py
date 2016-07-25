@@ -32,7 +32,7 @@ import re
 
 import phonemizer
 import abkhazia.utils as utils
-from abkhazia.prepare import AbstractPreparator
+from abkhazia.corpus.prepare import AbstractPreparator
 
 
 # TODO extend this preparator to other copora than Brent. The corpora
@@ -139,7 +139,7 @@ class ChildesPreparator(AbstractPreparator):
     exclude = ('SI.|BR.|CHI|TO.|ENV|BOY|NON|MAG|JEN|MAG|CEC|PAU|'
                'ANN|JOA|SAN|BRU|CAR|LEN|JEM|JOS|STV|LAR|MAD|MAR|SOP')
 
-    def __init__(self, input_dir,  log=utils.null_logger(), copy_wavs=False):
+    def __init__(self, input_dir,  log=utils.logger.null_logger(), copy_wavs=False):
         """Childes preparator initialization
 
         If `copy_wavs` is True, copy the wavs file to `output_dir`,

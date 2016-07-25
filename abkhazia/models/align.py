@@ -38,13 +38,11 @@ import abkhazia.utils as utils
 import abkhazia.models.abstract_recipe as abstract_recipe
 from abkhazia.models.language_model import check_language_model, read_int2phone
 from abkhazia.models.acoustic_model import check_acoustic_model
-from abkhazia.models.features import export_features
+from abkhazia.models.features import Features
 
 # TODO check alignment: which utt have been transcribed, have silence
 # been inserted, otherwise no difference? (maybe some did not reach
 # final state), chronological order, grouping by utt_id etc.
-
-
 class Align(abstract_recipe.AbstractRecipe):
     """Estimate forced alignment of an abkahzia corpus"""
     name = 'align'
@@ -52,12 +50,13 @@ class Align(abstract_recipe.AbstractRecipe):
     _align_script = 'steps/align_fmllr_lats.sh'
     """The alignment recipe in Kaldi"""
 
-    def __init__(self, corpus, output_dir=None, log=utils.null_logger()):
+    def __init__(self, corpus, output_dir=None,
+                 log=utils.logger.null_logger()):
         super(Align, self).__init__(corpus, output_dir, log=log)
 
-        # language and acoustic models directories
-        self.lm_dir = None
+        # features, language and acoustic models directories
         self.feat_dir = None
+        self.lm_dir = None
         self.am_dir = None
 
         # alignment parameters
@@ -80,11 +79,10 @@ class Align(abstract_recipe.AbstractRecipe):
     def create(self):
         super(Align, self).create()
 
-        # setup scp files from the features directory in the recipe dir
-        export_features(
+        # copy features scp files in the recipe_dir
+        Features.export_features(
             self.feat_dir,
-            os.path.join(self.recipe_dir, 'data', self.name),
-            self.corpus)
+            os.path.join(self.recipe_dir, 'data', self.name))
 
     def run(self):
         # build alignment lattice
@@ -136,11 +134,11 @@ class Align(abstract_recipe.AbstractRecipe):
             raise IOError('acoustic scale must be a float, it is {}'
                           .format(type(self.acoustic_scale)))
 
-    def _check_lm_scale(self):
-        """Raise IOError if lm_scale not a float"""
-        if not isinstance(self.lm_scale, float):
-            raise IOError('lm scale must be a float, it is {}'
-                          .format(type(self.lm_scale)))
+    # def _check_lm_scale(self):
+    #     """Raise IOError if lm_scale not a float"""
+    #     if not isinstance(self.lm_scale, float):
+    #         raise IOError('lm scale must be a float, it is {}'
+    #                       .format(type(self.lm_scale)))
 
     def _target_dir(self):
         """Return the directory where to put kaldi results

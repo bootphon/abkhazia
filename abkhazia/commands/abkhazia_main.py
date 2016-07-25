@@ -38,6 +38,7 @@ from abkhazia.commands import (
     AbkhaziaDecode,
     AbkhaziaAlign)
 
+# TODO get that from setup.py
 __version__ = '0.3'
 
 
@@ -46,12 +47,12 @@ class Abkhazia(object):
     # the possible subcommand classes
     _command_classes = [
         AbkhaziaPrepare,
-        AbkhaziaFeatures,
         AbkhaziaSplit,
+        AbkhaziaFeatures,
         AbkhaziaLanguage,
         AbkhaziaAcoustic,
-        AbkhaziaDecode,
-        AbkhaziaAlign
+        AbkhaziaAlign,
+        AbkhaziaDecode
     ]
 
     # a string describing abkhazia and its subcommands
@@ -91,10 +92,6 @@ class Abkhazia(object):
             formatter_class=argparse.RawTextHelpFormatter,
             description=textwrap.dedent(self.description))
 
-        # add a version description argument
-        parser.add_argument(
-            '--version', action='version', version='%(prog)s-' + __version__)
-
         # this is a fake argument, as --config has been parsed in
         # self.load_config(). But we need it to have the option
         # documented on 'abkhazia --help'
@@ -103,6 +100,14 @@ class Abkhazia(object):
             help='overload default abkhazia configuration with parameters\n'
             'defined in <config-file>, default configuration is read from\n{}'
             .format(utils.AbkhaziaConfig.default_config_file()))
+
+        # add a version description argument
+        parser.add_argument(
+            '--version', action='version',
+            version='%(prog)s ' + __version__ + '\n'*2 +
+            'Copyright 2016 Thomas Schatz, Xuan-Nga Cao, Mathieu Bernard\n' +
+            'Licence GPLv3+'
+        )
 
         # register the subcommands parsers, and list their names and
         # descripions on --help
@@ -139,7 +144,7 @@ class CatchExceptions(object):
     """A decorator wrapping 'function' in a try/except block
 
     When an exception occurs, display a user friendly message before
-    exiting.
+    exiting with error code 1.
 
     """
     def __init__(self, function):
@@ -160,8 +165,8 @@ class CatchExceptions(object):
             self._exit('subprocess fatal error: {}'.format(err))
 
         except pkg_resources.DistributionNotFound:
-            self.exit('fatal error: abkhazia package not found\n'
-                      'please install abkhazia on your platform')
+            self._exit('fatal error: abkhazia package not found\n'
+                       'please install abkhazia on your platform')
 
         except KeyboardInterrupt:
             self._exit('keyboard interruption, exiting')

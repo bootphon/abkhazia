@@ -12,7 +12,7 @@
 #
 # You should have received a copy of the GNU General Public License
 # along with abkhazia. If not, see <http://www.gnu.org/licenses/>.
-"""Test of language modeling"""
+"""Test of the abkhazia.models.language_model module"""
 
 import os
 import pytest
@@ -31,7 +31,7 @@ params = [(l, o) for l in levels for o in orders]
 def test_lm(level, order, corpus, tmpdir):
     output_dir = str(tmpdir.mkdir('lang'))
     flog = os.path.join(output_dir, 'language.log')
-    log = utils.get_log(flog)
+    log = utils.logger.get_log(flog)
     lm = language_model.LanguageModel(corpus, output_dir, log=log)
     lm.level = level
     lm.order = order
@@ -46,7 +46,7 @@ def test_lm(level, order, corpus, tmpdir):
 def test_silence_probability(prob, corpus, tmpdir):
     output_dir = str(tmpdir.mkdir('lang'))
     flog = os.path.join(output_dir, 'language.log')
-    log = utils.get_log(flog)
+    log = utils.logger.get_log(flog)
     lm = language_model.LanguageModel(corpus, output_dir, log=log)
     lm.level = 'word'
     lm.order = 3

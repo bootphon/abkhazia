@@ -20,6 +20,7 @@ import multiprocessing
 import os
 import re
 import shutil
+
 import config  # this is abkhazia.utils.config
 
 
@@ -109,15 +110,19 @@ def list_directory(directory, abspath=False):
 
 
 def list_files_with_extension(
-        directory, extension, abspath=False, realpath=True):
+        directory, extension,
+        abspath=False, realpath=True, recursive=True):
     """Return all files of given extension in directory hierarchy
 
-    The files are returned in a list with a path relative to
-    'directory' except if abspath or realpath is True
+    The files are returned in a sorted list with a path relative to
+    'directory', except if abspath or realpath is True
 
     If `abspath` is True, return absolute path to the file/link
 
     If `realpath` is True, return resolved links
+
+    If `recursive` is True, list files in the whole subdirectories
+        structure, if False just list the top-level deirectory
 
     """
     # the regular expression to match in filenames
@@ -125,13 +130,19 @@ def list_files_with_extension(
 
     # build the list of matching files
     matched = []
-    for path, _, files in os.walk(directory):
-        matched += [os.path.join(path, f) for f in files if re.match(expr, f)]
+    if recursive:
+        for path, _, files in os.walk(directory):
+            matched += [os.path.join(path, f)
+                        for f in files if re.match(expr, f)]
+    else:
+        matched = [os.path.join(directory, f)
+                   for f in os.listdir(directory) if re.match(expr, f)]
+
     if abspath:
         matched = [os.path.abspath(m) for m in matched]
     if realpath:
         matched = [os.path.realpath(m) for m in matched]
-    return matched
+    return sorted(matched)
 
 
 def remove(path, safe=False):
@@ -167,3 +178,19 @@ def check_directory(dir, files, name='directory'):
         if not os.path.isfile(os.path.join(dir, f)):
             raise OSError(
                 'non valid {}: {} not found in {}'.format(name, f, dir))
+
+
+def symlink_files(files, destdir):
+    """Create symlinks of the `files` in the directory `destdir`
+
+    `destdir` is created if non-existing, any file in `files` already
+    present in `destdir` is not linked.
+
+    """
+    if not os.path.isdir(destdir):
+        os.mkdir(destdir)
+
+    for src in files:
+        dest = os.path.join(destdir, os.path.basename(src))
+        if not os.path.isfile(dest):
+            os.symlink(src, dest)

@@ -22,7 +22,7 @@ import threading
 
 
 def run(command, stdin=None, stdout=sys.stdout.write,
-        cwd=None, env=os.environ):
+        cwd=None, env=os.environ, returncode=0):
     """Run 'command' as a subprocess
 
     command : string to be executed as a subprocess
@@ -36,12 +36,14 @@ def run(command, stdin=None, stdout=sys.stdout.write,
     stdin : standard input redirection, can be a file or any readable
         stream.
 
-    cwd : current working dircetory for executing the command
+    cwd : current working directory for executing the command
 
     env : current environment for executing the command
 
-    Returns silently if the command returned with 0, else raise a
-    RuntimeError
+    returncode : expected return code of the command
+
+    Returns silently if the command returned with `returncode`, else
+    raise a RuntimeError
 
     """
     job = subprocess.Popen(
@@ -66,6 +68,6 @@ def run(command, stdin=None, stdout=sys.stdout.write,
 
     job.wait()
 
-    if job.returncode != 0:
+    if job.returncode != returncode:
         raise RuntimeError('command "{}" returned with {}'
                            .format(command, job.returncode))

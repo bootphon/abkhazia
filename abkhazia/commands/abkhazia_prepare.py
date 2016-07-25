@@ -23,7 +23,7 @@ import abkhazia.utils as utils
 from abkhazia.commands.abstract_command import AbstractCommand
 
 # import all the corpora preparators
-from abkhazia.prepare import (
+from abkhazia.corpus.prepare import (
     AICPreparator, BuckeyePreparator, ChildesPreparator,
     CSJPreparator, LibriSpeechPreparator, XitsongaPreparator,
     AbstractGlobalPhonePreparator, MandarinPreparator, VietnamesePreparator,
@@ -167,14 +167,14 @@ class AbstractFactory(object):
             else os.path.abspath(os.path.join(args.output_dir, 'data')))
                       if output_dir is None else output_dir)
 
-        preparator.log = utils.get_log(
+        preparator.log = utils.logger.get_log(
             os.path.join(output_dir, 'data_preparation.log'), args.verbose)
 
         # initialize corpus from raw with it's preparator
         corpus = preparator.prepare(
             os.path.join(output_dir, 'wavs'),
             keep_short_utts=args.keep_short_utts)
-        corpus.log = utils.get_log(
+        corpus.log = utils.logger.get_log(
             os.path.join(output_dir, 'data_validation.log'), args.verbose)
 
         # raise if the corpus is not in correct abkhazia
@@ -386,7 +386,7 @@ class GlobalPhoneFactory(AbstractFactory):
     def _run_preparator(cls, args, preparator):
         lang = preparator.language.lower()
         d = os.path.join(os.path.dirname(cls._output_dir(args)), lang, 'data')
-        preparator.log = utils.get_log(
+        preparator.log = utils.logger.get_log(
             os.path.join(d, 'data_preparation.log'), args.verbose)
         super(GlobalPhoneFactory, cls)._run_preparator(args, preparator, d)
 

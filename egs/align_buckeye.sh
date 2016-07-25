@@ -28,7 +28,11 @@ mkdir -p $data_dir
 # prepare the corpus. Here we assume you have a raw buckeye
 # distribution and the 'buckeye-directory' is set in the abkhazia
 # configuration file.
+<<<<<<< HEAD
+abkhazia prepare buckeye -o $data_dir -v || exit 1
+=======
 abkhazia prepare buckeye -o $data_dir || exit 1
+>>>>>>> dc6d44e25f768d65ea105653a9cf6ff9c78a6e46
 
 # split the prepared corpus in train and test sets. We keep only 5%
 # for training and split by utterances (this is an exemple, in real
@@ -40,11 +44,24 @@ train_dir=$data_dir/split/train
 abkhazia language $train_dir -l word -n 3 -v || exit 1
 exit 0
 
+<<<<<<< HEAD
+# Step 4 : compute an acoustic model on the train set (a speaker
+# adapted triphone model by default). The test.cfg file comes with
+# very small parameters for triphone modeling, it overloads the
+# default values. In this exemple it is used to reduce computation
+# time (no matter the model quality).
+abkhazia -c ../test/test.cfg acoustic $train_dir -t tri-sa -vf || exit 1
+
+# Step 5 : compute forced-alignment from the trained language and
+# acoustic models.
+abkhazia align $train_dir -vf || exit 1
+=======
 # compute MFCC features
 abkhazia features $train_dir || exit 1
 
 # compute a speaker-adapted triphone HMM-GMM acoustic model
 abkhazia acoustic $train_dir -t tri-sa --recipe || exit 1
+>>>>>>> dc6d44e25f768d65ea105653a9cf6ff9c78a6e46
 
 # compute alignment (should be done on the test set)
 abkhazia align $train_dir || exit 1

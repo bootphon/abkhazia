@@ -18,10 +18,10 @@ import multiprocessing
 import os
 
 import abkhazia.utils as utils
-from abkhazia.kaldi import kaldi_path, Abkhazia2Kaldi
+from abkhazia.utils.kaldi import kaldi_path, Abkhazia2Kaldi
 
 
-class AbstractRecipe(utils.AbkhaziaBase):
+class AbstractRecipe(utils.abkhazia_base.AbkhaziaBase):
     """A base class for Kaldi recipes operating on an abkhazia corpus
 
     This class defines standard attributes and methods shared by all
@@ -60,7 +60,7 @@ class AbstractRecipe(utils.AbkhaziaBase):
     """
     name = NotImplemented
 
-    def __init__(self, corpus, output_dir, log=utils.null_logger()):
+    def __init__(self, corpus, output_dir, log=utils.logger.null_logger()):
         super(AbstractRecipe, self).__init__(log=log)
         self.njobs = utils.default_njobs()
         self.corpus = corpus
@@ -71,7 +71,7 @@ class AbstractRecipe(utils.AbkhaziaBase):
             os.makedirs(output_dir)
         self.output_dir = os.path.abspath(output_dir)
 
-        # init the recipe dir  as a subdirectory of output_dir
+        # init the recipe dir as a subdirectory of output_dir
         self.recipe_dir = os.path.join(self.output_dir, 'recipe')
         if not os.path.isdir(self.recipe_dir):
             os.makedirs(self.recipe_dir)
@@ -161,3 +161,9 @@ class AbstractRecipe(utils.AbkhaziaBase):
 
         """
         self.meta.save(os.path.join(self.output_dir, 'meta.txt'))
+
+    def compute(self):
+        """Create, run and export the recipe"""
+        self.create()
+        self.run()
+        self.export()

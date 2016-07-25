@@ -15,7 +15,7 @@
 """Python implementation of the share/path.sh"""
 
 import os
-import abkhazia.utils as utils
+from abkhazia.utils import config
 
 
 def kaldi_path():
@@ -24,7 +24,7 @@ def kaldi_path():
 
     env['LC_ALL'] = 'C'  # for expected sorting and joining behaviour
 
-    kaldiroot = utils.config.get('kaldi', 'kaldi-directory')
+    kaldiroot = config.get('kaldi', 'kaldi-directory')
     kaldisrc = os.path.join(kaldiroot, 'src')
 
     targets = ('bin', 'featbin', 'fgmmbin', 'fstbin', 'gmmbin',

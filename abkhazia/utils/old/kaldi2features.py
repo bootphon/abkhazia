@@ -43,24 +43,27 @@ def get_phone_order(phonemap):
 
 def transcription2features(phones_file, tra_file, out_file,
                            word_position_dependent=True):
-    """
-    Kaldi 1-best aligned transcription to h5features
-    format in h5features is frame by frame, as this allows
-    both frame-to-frame DTW distance and edit distance to be used
-    (for edit_distance the first step would be extracting the phone-level
-    sequence from the frame-level sequence, discarding segments that have
-    too few frames)
+    """Kaldi 1-best aligned transcription to h5features
 
-    This avoids problems with long phones if coding only the centerpoint
-    of a phone (a long time interval within the phone, but that does not
-    include the centerpoint will have empty representation). Allowing
-    representations indexed by time intervals instead of time points could
-    be more elegant when one wants to use edit_distance but this would require
-    some (substantial but not huge) recoding in h5features and ABXpy.distances.
-    One would need to check that the time-intervals have no overlap and are
-    consecutive and one would need to adapt the features reading to provide the
-    sequence of consecutive feature vectors with their durations and for the first
-    and last their degree of overlap with the required time segment.
+    format in h5features is frame by frame, as this allows both
+    frame-to-frame DTW distance and edit distance to be used (for
+    edit_distance the first step would be extracting the phone-level
+    sequence from the frame-level sequence, discarding segments that
+    have too few frames)
+
+    This avoids problems with long phones if coding only the
+    centerpoint of a phone (a long time interval within the phone, but
+    that does not include the centerpoint will have empty
+    representation). Allowing representations indexed by time
+    intervals instead of time points could be more elegant when one
+    wants to use edit_distance but this would require some
+    (substantial but not huge) recoding in h5features and
+    ABXpy.distances.  One would need to check that the time-intervals
+    have no overlap and are consecutive and one would need to adapt
+    the features reading to provide the sequence of consecutive
+    feature vectors with their durations and for the first and last
+    their degree of overlap with the required time segment.
+
     """
     phonemap = k2a.read_kaldi_phonemap(phones_file, word_position_dependent)
     # get order used to encode the phones as integer in the features files
@@ -72,7 +75,8 @@ def transcription2features(phones_file, tra_file, out_file,
     utt_times = []
     utt_features = []
     i = 1
-    for utt_id, start, stop, phone in k2a.read_kaldi_alignment(phonemap, tra_file):
+    for utt_id, start, stop, phone in k2a.read_kaldi_alignment(
+            phonemap, tra_file):
         print i
         i = i+1
         if current_utt is None:
@@ -99,22 +103,27 @@ def transcription2features(phones_file, tra_file, out_file,
     h5features.write(out_file, 'features', utt_ids, times, features)
 
 
-def lattice2features(phones_file, post_file, out_file, word_position_dependent=True):
+def lattice2features(phones_file, post_file, out_file,
+                     word_position_dependent=True):
     """
     kaldi lattice posteriors to h5features
     this loads everything into memory, but it would be easy to write
     an incremental version if this poses a problem
     """
     phonemap = k2a.read_kaldi_phonemap(phones_file, word_position_dependent)
-    # get order in which phones will be represented in the dimensions of the posteriorgram
+
+    # get order in which phones will be represented in the dimensions
+    # of the posteriorgram
     phone_order = get_phone_order(phonemap)
     d = len(phone_order)  # posteriorgram dimension
     # below is basically a parser for kaldi matrix format for each line
     # parse input text file
     with codecs.open(post_file, mode='r', encoding='UTF-8') as inp:
-        lines = inp.readlines()  # xreadlines supposed to be more efficient for large files?
-    # here would be nice to use sparse feature format (need to have it in h5features though)
-    # might want to begin by using sparse numpy matrix format
+        lines = inp.xreadlines()
+
+    # here would be nice to use sparse feature format (need to have it
+    # in h5features though) might want to begin by using sparse numpy
+    # matrix format
     features = []
     utt_ids = []
     times = []
@@ -141,22 +150,33 @@ def lattice2features(phones_file, post_file, out_file, word_position_dependent=T
             assert len(frame) % 2 == 0
             probas = [float(p) for p in frame[1::2]]
             phones = [phonemap[code] for code in frame[::2]]
-            # optimisation 1 would be mapping directly a given code to a given posterior dim
+
+            # optimisation 1 would be mapping directly a given code to
+            # a given posterior dim
             for phone, proba in zip(phones, probas):
                 i = phone_order.index(phone)
-                # add to previous proba since different variants of a same phone will map to
-                # the same dimension i of the posteriorgram
+                # add to previous proba since different variants of a
+                # same phone will map to the same dimension i of the
+                # posteriorgram
                 utt_features[f, i] = utt_features[f, i] + proba
-        # normalize posteriorgrams to correct for rounding or thresholding errors
-        # by rescaling globally
+
+        # normalize posteriorgrams to correct for rounding or
+        # thresholding errors by rescaling globally
         total_proba = np.sum(utt_features, axis=1)
-        if np.max(np.abs(total_proba-1)) >= 1e-5:  # ad hoc numerical tolerance...
-            raise IOError("In utterance {0}, frame {1}: posteriorgram does not sum to one, difference is {2}: ".format(utt_id, f, np.max(np.abs(total_proba-1))))
+        if np.max(np.abs(total_proba-1)) >= 1e-5:  # ad hoc numerical tolerance
+            raise IOError(
+                "In utterance {0}, frame {1}: posteriorgram does not sum "
+                "to one, difference is {2}: ".format(
+                    utt_id, f, np.max(np.abs(total_proba-1))))
+
         utt_features = utt_features/np.tile(total_proba, (d, 1)).T
         features.append(utt_features)
         utt_ids.append(utt_id)
-        # as in kaldi2abkhazia, this is ad hoc and has not been checked formally
+
+        # as in kaldi2abkhazia, this is ad hoc and has not been
+        # checked formally
         times.append(0.0125 + 0.01*np.arange(len(frames)))
+
     h5features.write(out_file, 'features', utt_ids, times, features)
 
 
@@ -176,10 +196,15 @@ def features2features(in_file, out_file):
     times = []
     with codecs.open(in_file, mode='r', encoding='UTF-8') as inp:
         for index, line in enumerate(inp):
-            print("Processing line {0}".format(index+1))  # / {1}".format(index+1, len(lines)))
+            print("Processing line {0}".format(index+1))
+            # / {1}".format(index+1, len(lines)))
+
             tokens = line.strip().split(u" ")
             if outside_utt:
-                assert len(tokens) == 3 and tokens[1] == u"" and tokens[2] == u"["
+                assert (len(tokens) == 3 and
+                        tokens[1] == u"" and
+                        tokens[2] == u"[")
+
                 utt_id = tokens[0]
                 outside_utt = False
                 frames = []
@@ -192,7 +217,9 @@ def features2features(in_file, out_file):
                 if outside_utt:
                     # end of utterance, continued
                     features.append(np.row_stack(frames))
-                    # as in kaldi2abkhazia, this is ad hoc and has not been checked formally
+
+                    # as in kaldi2abkhazia, this is ad hoc and has not
+                    # been checked formally
                     times.append(0.0125 + 0.01*np.arange(len(frames)))
                     utt_ids.append(utt_id)
     h5features.write(out_file, 'features', utt_ids, times, features)

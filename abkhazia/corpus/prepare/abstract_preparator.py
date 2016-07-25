@@ -72,7 +72,7 @@ class AbstractPreparator(object):
         except ConfigParser.NoOptionError:
             return None
 
-    def __init__(self, input_dir, log=utils.log2file.null_logger()):
+    def __init__(self, input_dir, log=utils.logger.null_logger()):
         self.njobs = utils.default_njobs(local=True)
         self.log = log
 
@@ -344,7 +344,8 @@ class AbstractPreparatorWithCMU(AbstractPreparator):
         pkg_resources.Requirement.parse('abkhazia'),
         'abkhazia/share/cmudict.0.7a')
 
-    def __init__(self, input_dir, cmu_dict=None, log=utils.null_logger()):
+    def __init__(self, input_dir, cmu_dict=None,
+                 log=utils.logger.null_logger()):
         super(AbstractPreparatorWithCMU, self).__init__(input_dir, log)
 
         # init path to CMU dictionary

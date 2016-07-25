@@ -126,7 +126,7 @@ import os
 import re
 
 from abkhazia import utils
-from abkhazia.prepare.globalphone_abstract_preparator import (
+from abkhazia.corpus.prepare.globalphone_abstract_preparator import (
     AbstractGlobalPhonePreparator)
 
 

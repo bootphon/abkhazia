@@ -51,7 +51,7 @@ except ImportError:
     import xml.etree.ElementTree as ET
 
 import abkhazia.utils as utils
-from abkhazia.prepare import AbstractPreparator
+from abkhazia.corpus.prepare import AbstractPreparator
 
 
 Phone = namedtuple('Phone', 'id type start end')
@@ -140,7 +140,7 @@ class CSJPreparator(AbstractPreparator):
 
     variants = []
 
-    def __init__(self, input_dir,  log=utils.null_logger(), copy_wavs=False):
+    def __init__(self, input_dir,  log=utils.logger.null_logger(), copy_wavs=False):
         super(CSJPreparator, self).__init__(input_dir, log)
         self.copy_wavs = copy_wavs
 
@@ -287,14 +287,13 @@ class CSJPreparator(AbstractPreparator):
                 new_utts[utt_id] = {'words': words, 'start': start, 'end': stop}
         return new_utts, lexicon
 
-
     def reencode(self, phonemes, encoding=None):
         vowels = ['a', 'e', 'i', 'o', 'u']
         stops = ['t', 'ty', 'b', 'by', 'g', 'gj', 'gy',
                  'k', 'ky', 'kj', 'p', 'py', 'd', 'dy']
         affricates = ['z', 'zy', 'zj', 'c', 'cy', 'cj']
         fricatives = ['s', 'sj', 'sy', 'z', 'zy', 'zj', 'h', 'F', 'hy', 'hj']
-        obstruents = affricates + fricatives  + stops
+        obstruents = affricates + fricatives + stops
 
         phonemes_1 = []
         for phoneme in phonemes:

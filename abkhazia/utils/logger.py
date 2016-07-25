@@ -13,7 +13,7 @@
 #
 # You should have received a copy of the GNU General Public License
 # along with abkhazia. If not, see <http://www.gnu.org/licenses/>.
-"""Utility for logging to a specified file.
+"""Utility for logging to a specified file and stdout.
 
 This uses the 'logging' module from Python standard library. In the
 'logging module', a 'level' is associated to each message. The
@@ -87,7 +87,7 @@ class NoLocalSubdirNotFound(logging.Filter):
         return "'local' subdirectory not found." not in record.getMessage()
 
 
-def get_log(log_file, verbose=False):
+def get_log(log_file=os.devnull, verbose=False):
     """Configure and return a logger instance"""
     log = logging.getLogger()
     log.addFilter(NoEmptyMessageFilter())

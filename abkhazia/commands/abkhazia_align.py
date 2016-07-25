@@ -89,7 +89,7 @@ class AbkhaziaAlign(AbstractKaldiCommand):
     def run(cls, args):
         # get back the input corpus and output directory
         corpus_dir, output_dir = cls._parse_io_dirs(args)
-        log = utils.get_log(
+        log = utils.logger.get_log(
             os.path.join(output_dir, 'align.log'), verbose=args.verbose)
         corpus = Corpus.load(corpus_dir)
 

@@ -44,16 +44,21 @@ class AbstractCommand(object):
     """A command description"""
 
     @classmethod
-    def add_parser(cls, subparsers):
+    def add_parser(cls, subparsers, name=None):
         """Add the command's parser to the `subparsers`
 
         This method implements only minimal parsing and should be
         overloaded in child classes. Basically you may want to add
         some parameters and options to your command.
 
+        If name is None, take cls.name
+
         """
+        if name is None:
+            name = cls.name
+
         # add a new subparser for the command
-        parser = subparsers.add_parser(cls.name)
+        parser = subparsers.add_parser(name)
         parser.formatter_class = argparse.RawDescriptionHelpFormatter
 
         # link args.command to the run() method
@@ -71,7 +76,7 @@ class AbstractCommand(object):
         parser.add_argument(
             '--log', default=None, metavar='<file>',
             help='file to write log messages, default is {} '
-            'in the output directory'.format(cls.name + '.log'))
+            'in the output directory'.format(name + '.log'))
 
         return parser
 
@@ -93,9 +98,13 @@ class AbstractCoreCommand(AbstractCommand):
 
     """
     @classmethod
-    def add_parser(cls, subparsers):
+    def add_parser(cls, subparsers, name=None):
+        if name is None:
+            name = cls.name
+
         # get basic parser init from AbstractCommand
-        parser = super(AbstractCoreCommand, cls).add_parser(subparsers)
+        parser = super(AbstractCoreCommand, cls).add_parser(
+            subparsers, name=name)
 
         # add a --force option to all commands
         parser.add_argument(
@@ -109,12 +118,8 @@ class AbstractCoreCommand(AbstractCommand):
         dir_group.add_argument(
             'corpus', metavar='<corpus>', help="""
             abkhazia corpus is read from <corpus>/data. Must be an
-            existing directory, relative to the abkhazia data
-            directory ({0}) or as a path on the filesystem. If
-            <corpus> doesn't start with './' , '../', '~/' or '/', the
-            following rule applies: <corpus> is guessed as a
-            subdirectory of {0} and, if not found, as a subdirectory
-            of the current working directory."""
+            existing directory, can be relative to the abkhazia data
+            directory ({0})"""
             .format(utils.config.get('abkhazia', 'data-directory')))
 
         # add a --output-dir option
@@ -122,13 +127,20 @@ class AbstractCoreCommand(AbstractCommand):
             '-o', '--output-dir', default=None, metavar='<output-dir>',
             help='output directory, the output data is wrote to '
             '<output-dir>/{}, if not specified use <output-dir>=<corpus>.'
-            .format(cls.name))
+            .format(name))
 
         return parser, dir_group
 
     @staticmethod
     def _parse_corpus_dir(corpus):
-        """Parse the corpus input directory as specified in help message"""
+        """Parse the corpus input directory as specified in help message
+
+        If `corpus` doesn't start with './' , '../', '~/' or '/', the
+        following rule applies: `corpus` is guessed as a subdirectory
+        of 'abkhazia.data-directory' from config file and, if not
+        found, as a subdirectory of the current working directory.
+
+        """
         if not corpus.startswith(('/', '.', '../', '~/')):
             # try to find the corpus in abkhazia data directory
             _corpus = os.path.join(
@@ -138,11 +150,14 @@ class AbstractCoreCommand(AbstractCommand):
         return os.path.abspath(corpus)
 
     @classmethod
-    def _parse_output_dir(cls, output, corpus, force=False):
+    def _parse_output_dir(cls, output, corpus, name=None, force=False):
         """Parse the output directory as specified in help message"""
+        if name is None:
+            name = cls.name
+
         # append the command name
         output = os.path.abspath(os.path.join(
-            corpus if output is None else output, cls.name))
+            corpus if output is None else output, name))
 
         # if --force, remove any existing output_dir
         if force and os.path.exists(output):
@@ -152,14 +167,21 @@ class AbstractCoreCommand(AbstractCommand):
         return output
 
     @classmethod
-    def _parse_io_dirs(cls, args):
+    def _parse_io_dirs(cls, args, name=None):
         """Return (corpus_dir, output_dir) parsed form `args`"""
+        if name is None:
+            name = cls.name
+
         _input = cls._parse_corpus_dir(args.corpus)
-        _output = cls._parse_output_dir(args.output_dir, _input, args.force)
+        _output = cls._parse_output_dir(
+            args.output_dir, _input, name, args.force)
         return os.path.join(_input, 'data'), _output
 
-    @staticmethod
-    def _parse_aux_dir(corpus_dir, arg, name):
+    @classmethod
+    def _parse_aux_dir(cls, corpus_dir, arg, name=None):
+        if name is None:
+            name = cls.name
+
         return os.path.join(
             os.path.dirname(corpus_dir) if arg is None
             else os.path.abspath(arg), name)
@@ -173,10 +195,13 @@ class AbstractKaldiCommand(AbstractCoreCommand):
 
     """
     @classmethod
-    def add_parser(cls, subparsers):
+    def add_parser(cls, subparsers, name=None):
+        if name is None:
+            name = cls.name
+
         # get basic parser init from AbstractCommand
         parser, dir_group = super(
-            AbstractKaldiCommand, cls).add_parser(subparsers)
+            AbstractKaldiCommand, cls).add_parser(subparsers, name)
 
         # add a --recipe option
         parser.add_argument(

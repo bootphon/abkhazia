@@ -15,20 +15,22 @@
 """Abkhazia test setup"""
 
 import os
-import pytest
-import random
 import re
 
+import pytest
+
 import abkhazia.utils as utils
-from abkhazia.prepare import BuckeyePreparator
+from abkhazia.corpus.prepare import BuckeyePreparator
 from abkhazia.corpus import Corpus
+from abkhazia.models.features import Features
+from abkhazia.models.language_model import LanguageModel
 
 HERE = os.path.abspath(os.path.dirname(__file__))
 
 
 @pytest.yield_fixture(scope='session')
 def corpus(n=50):
-    """Return a corpus made of `n` random utts of Buckeye
+    """Return a corpus made of `n` first utts of Buckeye
 
     This little corpus is the base of all corpus dependant tests. The
     session scope ensures the corpus is initialized only once for all
@@ -40,39 +42,59 @@ def corpus(n=50):
     prepared in its buckeye/data subfolder.
 
     """
-    tmpdir = os.path.join(HERE, 'prepared_wavs')
+    try:
+        tmpdir = os.path.join(HERE, 'prepared_wavs')
 
-    # first try to load any prepared buckeye
-    buckeye = os.path.join(
-        utils.config.get('abkhazia', 'data-directory'),
-        'buckeye', 'data')
-    if os.path.isdir(buckeye):
-        corpus = Corpus.load(buckeye)
+        # first try to load any prepared buckeye
+        buckeye = os.path.join(
+            utils.config.get('abkhazia', 'data-directory'),
+            'buckeye', 'data')
+        if os.path.isdir(buckeye):
+            corpus = Corpus.load(buckeye)
 
-    else:  # prepare the whole buckeye corpus
-        buckeye = utils.config.get('corpus', 'buckeye-directory')
-        corpus = BuckeyePreparator(buckeye).prepare(tmpdir)
-        corpus.validate()
+        else:  # prepare the whole buckeye corpus
+            buckeye = utils.config.get('corpus', 'buckeye-directory')
+            corpus = BuckeyePreparator(buckeye).prepare(tmpdir)
+            corpus.validate()
 
-    # select n random utterances from the whole buckeye, take the
-    # whole if n is 0
-    if n != 0:
-        utts = corpus.utts()
-        random.shuffle(utts)
-        subcorpus = corpus.subcorpus(utts[:n])
-    else:
-        subcorpus = corpus
+        # select n random utterances from the whole buckeye, take the
+        # whole if n is 0
+        if n != 0:
+            utts = corpus.utts()[:n]
+            #random.shuffle(utts)
+            subcorpus = corpus.subcorpus(utts)
+        else:
+            subcorpus = corpus
+        yield subcorpus
 
-    # # save it to test/data
-    # try:
-    #     subcorpus.save(os.path.join(HERE, 'data'))
-    # except OSError:  # already existing
-    #     pass
+    finally:
+        # remove any prepared wavs
+        utils.remove(tmpdir, safe=True)
 
-    yield subcorpus
 
-    # remove any prepared wavs
-    utils.remove(tmpdir, safe=True)
+@pytest.fixture(scope='session')
+def features(corpus, tmpdir_factory):
+    """Return a directory with MFCC features computed from the test corpus"""
+    output_dir = str(tmpdir_factory.mktemp('features'))
+    feat = Features(corpus, output_dir)
+    feat.use_pitch = False
+    feat.use_cmvn = True
+    feat.delta_order = 0
+    feat.compute()
+    return output_dir
+
+
+@pytest.fixture(scope='session')
+def language_model(corpus, tmpdir_factory):
+    """Return a directory with bigram word LM computed from the test corpus"""
+    output_dir = str(tmpdir_factory.mktemp('lm'))
+    flog = os.path.join(output_dir, 'language.log')
+    log = utils.logger.get_log(flog)
+    lm = LanguageModel(corpus, output_dir, log=log)
+    lm.level = 'word'
+    lm.order = 2
+    lm.compute()
+    return output_dir
 
 
 def assert_no_expr_in_log(flog, expr='error'):

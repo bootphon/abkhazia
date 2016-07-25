@@ -28,7 +28,6 @@ REQUIREMENTS = [] if ON_RTD else [
     # 'abnet',
     # 'ABXpy',
     # 'cpickle',
-    # 'h5features',
     # 'matplotlib',
     # 'pandas',
     # 'yaafelib',
@@ -37,7 +36,8 @@ REQUIREMENTS = [] if ON_RTD else [
     'joblib',
     'argcomplete',
     'pytest',
-    'phonemizer'
+    'h5features>=1.1',
+    'phonemizer>=0.2'
 ]
 
 setup(
@@ -47,32 +47,29 @@ setup(
     zip_safe=False,
     scripts=[],
 
-    # install other dependancies
+    # install dependancies from bootphon github
     dependency_links=[GITHUB_BOOTPHON + package for package in (
         'phonemizer/archive/v0.2.tar.gz#egg=phonemizer-0.2',
-        # 'h5features/archive/v1.1.tar.gz#egg=h5features-1.1',
+        'h5features/archive/v1.1.tar.gz#egg=h5features-1.1',
         # 'ABXpy/archive/v0.2.tar.gz#egg=ABXpy-0.2'
     )],
 
     # install python dependencies from PyPI
     install_requires=REQUIREMENTS,
 
-    # include any files in abkhazia/share
+    # include any files in abkhazia/share and abkhazia.cfg
     package_data={
-        'abkhazia': ['share/*.*', 'share/kaldi_templates/*']
+        'abkhazia': ['share/*.*', 'share/kaldi_templates/*', 'abkhazia.cfg']
     },
 
     # define the command-line script to use
     entry_points={
-        'console_scripts': [
-            'abkhazia = abkhazia.commands.abkhazia_main:main'
-        ]
-    },
+        'console_scripts': ['abkhazia = abkhazia.commands.abkhazia_main:main']},
 
     # metadata for upload to PyPI
-    author='Thomas Schatz, Mathieu Bernard, Roland Thiolliere, Xuan Nga Cao',
+    author='Thomas Schatz, Mathieu Bernard, Roland Thiolliere, Xuan-Nga Cao',
     author_email='mmathieubernardd@gmail.com',
-    description='ABX and kaldi experiments on speech corpora made easy',
+    description='ABX and Kaldi experiments on speech corpora made easy',
     license='GPL3',
     keywords='speech corpus ASR kaldi ABX',
     url='https://github.com/bootphon/abkhazia',

@@ -28,7 +28,7 @@ import os
 import re
 
 import abkhazia.utils as utils
-from abkhazia.prepare import AbstractPreparatorWithCMU
+from abkhazia.corpus.prepare import AbstractPreparatorWithCMU
 
 
 class AICPreparator(AbstractPreparatorWithCMU):
@@ -93,7 +93,7 @@ class AICPreparator(AbstractPreparatorWithCMU):
 
     variants = []  # could use lexical stress variants...
 
-    def __init__(self, input_dir,  log=utils.null_logger(), cmu_dict=None):
+    def __init__(self, input_dir,  log=utils.logger.null_logger(), cmu_dict=None):
         super(AICPreparator, self).__init__(
             input_dir, log=log, cmu_dict=cmu_dict)
 

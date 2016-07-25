@@ -23,7 +23,7 @@ import tempfile
 
 import abkhazia.utils as utils
 import abkhazia.models.abstract_recipe as abstract_recipe
-from abkhazia.kaldi import kaldi_path
+from abkhazia.utils.kaldi import kaldi_path
 
 
 def check_language_model(lm_dir):
@@ -97,7 +97,7 @@ class LanguageModel(abstract_recipe.AbstractRecipe):
 
     name = 'language'
 
-    def __init__(self, corpus, output_dir, log=utils.null_logger()):
+    def __init__(self, corpus, output_dir, log=utils.logger.null_logger()):
         super(LanguageModel, self).__init__(corpus, output_dir, log=log)
 
         # setup default values for parameters from the configuration

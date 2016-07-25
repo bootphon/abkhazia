@@ -6,17 +6,18 @@
 # The absolute path to the output data directory of abkhazia.
 data-directory:
 
+# The directory where abkhazia write temporary data (usually /tmp or
+# /dev/shm).
+tmp-directory: /tmp
+
 [kaldi]
 # The absolute path to the kaldi distribution directory
 # YOU MUST SPECIFY THIS PATH MANUALLY.
 kaldi-directory:
 
-# "queue.pl" uses qsub.  The options to it are
-# options to qsub.  If you have GridEngine installed,
-# change this to a queue you have access to.
-# Otherwise, use "run.pl", which will run jobs locally
-# (make sure your --num-jobs options are no more than
-# the number of cpus on your machine.
+# "queue.pl" uses qsub. The options to it are options to qsub.  If you
+# have GridEngine installed, change this to a queue you have access
+# to.  Otherwise, use "run.pl", which will run jobs locally
 
 # On Oberon use:
 # train-cmd: queue.pl -q all.q@puck*.cm.cluster
@@ -60,8 +61,19 @@ default-test-proportion: 0.5
 prune-lexicon: false
 
 [features]
-# Compute pitch features along with MFCCs
+# Type of features to compute, choose in mfcc, filterbank and plp
+type: mfcc
+
+# Add deltas to the features if delta-order is non-zero. Compute
+# delatas up to the specified order (1 for delta, 2 for delta and
+# delta-delta)
+delta-order: 0
+
+# Compute pitch estimation and probability of voicing
 use-pitch: true
+
+# Compute CMVN statistics on features
+use-cmvn: true
 
 [language]
 # Should be set to true or false depending on whether the language
