@@ -39,7 +39,7 @@ cmd="abkhazia split -T 0.01 $data_dir -v"
 run "select 1% of the corpus" "$cmd"
 data_dir=$data_dir/split/train
 
-cmd="abkhazia features $data_dir --use-pitch true -v"
+cmd="abkhazia features mfcc $data_dir --use-pitch true -v"
 run "computing MFCC features" "$cmd"
 
 cmd="abkhazia language $data_dir -l word -n 2 -v"
