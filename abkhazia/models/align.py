@@ -40,6 +40,7 @@ from abkhazia.models.language_model import check_language_model, read_int2phone
 from abkhazia.models.acoustic_model import check_acoustic_model
 from abkhazia.models.features import Features
 
+
 # TODO check alignment: which utt have been transcribed, have silence
 # been inserted, otherwise no difference? (maybe some did not reach
 # final state), chronological order, grouping by utt_id etc.
@@ -92,7 +93,7 @@ class Align(abstract_recipe.AbstractRecipe):
         self._best_path()
         self._ali_to_phones()
 
-        # extract posteriors as asked
+        # extract posteriors if asked
         if self.with_posteriors:
             self._post_to_phones()
 

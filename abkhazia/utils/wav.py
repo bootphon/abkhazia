@@ -135,9 +135,14 @@ def convert(inputs, outputs, fileformat, njobs=1, verbose=0, copy=False):
     """Convert a range of audio files to the wav format
 
     inputs: list of input files to convert
+
     outputs: list of the converted wav files
-    fileformat: audio format of the input files, must be in {flac, sph, shn}
+
+    fileformat: audio format of the input files, must be in
+        {wav, flac, sph, shn}
+
     njobs: the number of parallel conversions
+
     copy: only for wavs input, see wav2wav
 
     We must have len(inputs) == len(wavs), all files in inputs must
