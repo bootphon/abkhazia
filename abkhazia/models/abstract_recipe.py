@@ -102,19 +102,36 @@ class AbstractRecipe(utils.abkhazia_base.AbkhaziaBase):
             cwd=self.recipe_dir)
 
     def _check_njobs(self, local=False):
-        """If we run jobs locally, make sure we have enough cores
+        """Garanties a valid njobs parameter
 
-        In that case, log a warning and reduce to number of cores
-        available.
+        If we run jobs locally, make sure we have enough cores. In all
+        case setup njobs = min(njobs, number of speakers in the
+        corpus), because Kaldi does not support to have more jobs than
+        speakers.
+
+        In case njobs is corrected, log a warning and reduce to number
+        of cores available.
 
         """
+        old_njobs = self.njobs
+
+        # number of CPUs on the system
         ncores = multiprocessing.cpu_count()
+
+        # True if we run through qsub
         queued = not local or 'queue' in utils.config.get('kaldi', 'train-cmd')
-        if queued and ncores < self.njobs:
-            self.log.warning(
-                'asking {0} cores but {1} available, reducing {0} -> {1}'
-                .format(self.njobs, ncores))
+
+        # number of speakers in the corpus
+        nspks = len(self.corpus.spks())
+
+        if not queued and ncores < self.njobs:
             self.njobs = ncores
+
+        self.njobs = min(nspks, self.njobs)
+
+        if old_njobs != self.njobs:
+            self.log.warning(
+                'asking %s cores but reduced to %s', old_njobs, self.njobs)
 
     def check_parameters(self):
         """Perform sanity checks on recipe parameters, raise on error
