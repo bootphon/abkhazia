@@ -334,7 +334,7 @@ class Corpus(utils.abkhazia_base.AbkhaziaBase):
         word boundary marker. This is used to estimate phone-level n-gram
         language models for use with kaldi recipes.
 
-        For OOVs: just drop the word and log a warning for now.
+        For OOVs: replace it by <unk>
 
         """
         phonemized = dict()

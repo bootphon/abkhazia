@@ -3,7 +3,8 @@ import os
 from abkhazia2abx import alignment2item
 from abkhazia.corpus import Corpus
 
-data_dir = '/home/mbernard/dev/abkhazia/egs/align_childes_brent'
+corpus_dir = '/home/mathieu/lscp/dev/abkhazia/egs/align_childes_brent'
+data_dir = os.path.dirname(__file__)
 corpus = Corpus.load(os.path.join(data_dir, 'data'))
 alignment = os.path.join(data_dir, 'align', 'alignment2.txt')
 items = os.path.join(data_dir, 'items.txt')

@@ -15,14 +15,14 @@
 """Provides the Align and AlignNoLattice classes
 
 Compute phone or word level forced alignment on an abkhazia corpus,
-given features, language model and acoutic model.
+given features, a language model and an acoutic model.
 
 The Align class lies on the 'wsj/steps/align_fmllr_lats.sh' kaldi
 recipe, alignment is the 1best path on the generated lattice.
 
 The AlignNolattice lies on the 'wsj/steps/align_fmllr.sh' kaldi recipe
-where the alignment is computed directly on GMM. This is faster but
-doesn't allow to retrieve posterior probabilities of the aligned
+where the alignment is computed directly on the GMM. This is faster
+but doesn't allow to retrieve posterior probabilities of the aligned
 phones.
 
 Note that some timestamps and missing/added silences can differ in the
@@ -118,7 +118,7 @@ class Align(abstract_recipe.AbstractRecipe):
 
     def _check_level(self):
         """Raise IOError on bad alignment level"""
-        if self.level not in ['both', 'word', 'phone']:
+        if self.level not in ['both', 'words', 'phones']:
             raise IOError("alignment level must be in 'phone', 'word' or "
                           "'both', it is '{}'".format(self.level))
 
@@ -134,12 +134,6 @@ class Align(abstract_recipe.AbstractRecipe):
         if not isinstance(self.acoustic_scale, float):
             raise IOError('acoustic scale must be a float, it is {}'
                           .format(type(self.acoustic_scale)))
-
-    # def _check_lm_scale(self):
-    #     """Raise IOError if lm_scale not a float"""
-    #     if not isinstance(self.lm_scale, float):
-    #         raise IOError('lm scale must be a float, it is {}'
-    #                       .format(type(self.lm_scale)))
 
     def _target_dir(self):
         """Return the directory where to put kaldi results
@@ -255,8 +249,7 @@ class Align(abstract_recipe.AbstractRecipe):
     def _read_alignment(phonemap, ali, post):
         """Tokenize raw kaldi alignment output"""
         for utt_id, line in ali.iteritems():
-            # this seems good enough, but I (Thomas) didn't check in the
-            # make_mfcc code of kaldi to be sure
+            # TODO make this a parameter (with the 0.01 above)
             start = 0.0125
 
             if post:
@@ -323,14 +316,8 @@ class Align(abstract_recipe.AbstractRecipe):
 
     def _export_phones(self, int2phone, ali, post):
         """Export alignment at phone level"""
-        if post:
-            return [' '.join([utt_id, start, stop, _post, phone])
-                    for utt_id, start, stop, _post, phone
-                    in self._read_alignment(int2phone, ali, post)]
-        else:
-            return [' '.join([utt_id, start, stop, phone])
-                    for utt_id, start, stop, phone
-                    in self._read_alignment(int2phone, ali, post)]
+        return [' '.join(seq) for seq
+                in self._read_alignment(int2phone, ali, post)]
 
     def _export_phones_and_words(self, int2phone, ali, post):
         """Export alignment at both phone and word levels"""
@@ -360,16 +347,23 @@ class Align(abstract_recipe.AbstractRecipe):
 
                 # from idx, we eat wlen phones (+ any silence phone)
                 begin = True
-                while wlen > 0:
-                    aligned = utt_align[idx]
-                    if aligned.split()[-1] in self.corpus.silences:
-                        words.append('{}'.format(aligned))
-                    else:
-                        words.append('{} {}'.format(
-                            aligned, word if begin else ''))
-                        wlen -= 1
-                        begin = False
-                    idx += 1
+                try:
+                    while wlen > 0:
+                        aligned = utt_align[idx]
+                        if aligned.split()[-1] in self.corpus.silences:
+                            words.append('{}'.format(aligned))
+                        else:
+                            words.append('{} {}'.format(
+                                aligned, word if begin else ''))
+                            wlen -= 1
+                            begin = False
+                        idx += 1
+                except IndexError as err:
+                    print len(utt_align), idx, begin, wlen, word, lexicon[word]
+                    print self.corpus.silences
+                    for w in words:
+                        print w
+                    raise err
         return words
 
     def _export_words(self, int2phone, ali, post):
