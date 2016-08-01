@@ -14,7 +14,7 @@
 # along with abkhazia. If not, see <http://www.gnu.org/licenses/>.
 """Create ABXpy item files from abkhazia corpora"""
 
-from itertools import groupby
+from itertools import groupby, chain
 
 import abkhazia.utils as utils
 import joblib
@@ -27,7 +27,10 @@ def alignment2item(corpus, alignment_file, item_file,
 
     * Input is an abkhazia formatted alignment file for a given corpus.
 
-    * Output is a .item file suitable for use with ABXpy.
+    * Output is a .item file suitable for use with ABXpy. Lines on the
+      generated file have the following structure:
+
+          #file onset offset #phone prev-phone next-phone speaker
 
     * Features for use with this item file should be in h5features
       format with one internal file by utterance (using the
@@ -48,7 +51,7 @@ def alignment2item(corpus, alignment_file, item_file,
     alignment_file (path): the alignment to read from. Must be in the
         abkhazia format: each line as follow:
 
-           utt_id tstart tstop posterior phone [word]
+           utt_id tstart tstop phone
 
         Any utterance in the alignments not registered in the corpus is ignored
 
@@ -82,7 +85,7 @@ def alignment2item(corpus, alignment_file, item_file,
     assert segment_extension in ('single_phone', 'triphone', 'half_triphone')
 
     # gather and process each aligned utterance in parallel
-    items = joblib.Parallel(n_jobs=njobs, verbose=verbose)(
+    items = joblib.Parallel(n_jobs=njobs, verbose=verbose, backend='threading')(
         joblib.delayed(_utt2item)
         (utt_id, corpus, list(lines), segment_extension, exclude_phones)
         for utt_id, lines in groupby(
@@ -91,14 +94,12 @@ def alignment2item(corpus, alignment_file, item_file,
 
     # open output file and write items to it
     with utils.open_utf8(item_file, mode='w') as fout:
-        fout.write('#file onset offset #phone prev-phone next-phone talker\n')
-        fout.write('\n'.join(item for item in items) + '\n')
+        fout.write('#file onset offset #phone prev-phone next-phone speaker\n')
+        fout.write('\n'.join(item for item in chain(*items)) + '\n')
 
 
 def _utt2item(utt_id, corpus, lines, segment_extension, exclude_phones):
     items = []
-
-    print utt_id
 
     # ensure the utterance is registered in the corpus
     if utt_id not in corpus.utts():
@@ -109,9 +110,9 @@ def _utt2item(utt_id, corpus, lines, segment_extension, exclude_phones):
 
     # use the first phone only in 'single_phone' case
     if segment_extension == 'single_phone':
-        start, stop, _, phone = lines[0].split()[1:5]
+        start, stop, phone = lines[0].split()[1:]
         prev_phone = 'SIL'
-        next_phone = 'SIL' if len(lines) == 1 else lines[1].split()[4]
+        next_phone = 'SIL' if len(lines) == 1 else lines[1].split()[3]
 
         _append_item(
             items, utt_id, start, stop, phone, 'SIL',
@@ -120,9 +121,9 @@ def _utt2item(utt_id, corpus, lines, segment_extension, exclude_phones):
     # middle lines
     for prev_line, line, next_line in zip(
             lines[:-2], lines[1:-1], lines[2:]):
-        prev_start, prev_stop, _, prev_phone = prev_line.split()[1:5]
-        start, stop, _, phone = line.split()[1:5]
-        next_start, next_stop, _, next_phone = next_line.split()[1:5]
+        prev_start, prev_stop, prev_phone = prev_line.split()[1:]
+        start, stop, phone = line.split()[1:]
+        next_start, next_stop, next_phone = next_line.split()[1:]
 
         # setup start and stop according to the segment
         # extension
@@ -140,8 +141,8 @@ def _utt2item(utt_id, corpus, lines, segment_extension, exclude_phones):
     # use the last line only in 'single_phone' case (dont process
     # twice the same line as first and last line)
     if segment_extension == 'single_phone' and len(lines) > 1:
-        start, stop, _, phone = lines[-1].split()[1:5]
-        prev_phone = lines[-2].split()[4]
+        start, stop, phone = lines[-1].split()[1:]
+        prev_phone = lines[-2].split()[3]
 
         _append_item(
             items, utt_id, start, stop, phone, prev_phone,

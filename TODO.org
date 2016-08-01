@@ -119,6 +119,9 @@ extract-segments.c in kaldi featbin)
 remove those short utts from corpus in preparation step
 (--keep-short-utts option added)
 * Feature requests
+** features
+   convertion ark to h5f is slow, can we do parallel ark to RAM, and
+   sequential RAM to h5features?
 ** acoustic
    - [ ] --retrain option
      it should be possible to retrain a trained model on a new corpus
