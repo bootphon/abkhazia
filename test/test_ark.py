@@ -23,10 +23,11 @@ import pytest
 import abkhazia.utils.kaldi.ark as io
 
 
-@pytest.yield_fixture(scope='session')
+@pytest.fixture(scope='session')
 def data(shape=(100, 5)):
     """Return a random numpy array given its shape"""
-    yield {'test': np.random.random_sample(shape)}
+    return {'test': np.random.random_sample(shape),
+            'test2': np.random.random_sample(shape)}
 
 
 @pytest.mark.parametrize('format', ['text', 'binary'])
@@ -37,7 +38,8 @@ def test_read_write(tmpdir, format, data):
     data2 = io.ark_to_dict(ark)
 
     assert data.keys() == data2.keys()
-    assert np.allclose(data['test'], data2['test'], rtol=0, atol=1e-7)
+    for k in data.keys():
+        assert np.allclose(data[k], data2[k], rtol=0, atol=1e-7)
 
 
 @pytest.mark.parametrize('name', ['a', 'a-b', 'a_b'])
@@ -56,9 +58,6 @@ def test_h5f_name_of_utterance(tmpdir, data, name):
 
 
 def test_h5f_twice(tmpdir, data):
-    # add a 2nd item in data
-    data.update({'test2': data['test']})
-
     # write the array as an ark file
     ark = os.path.join(str(tmpdir), 'ark')
     ark2 = os.path.join(str(tmpdir), 'ark2')
@@ -77,7 +76,7 @@ def test_h5f_twice(tmpdir, data):
     assert data['test'].shape == data2.dict_features()['test'].shape
     assert data['test'].shape == data2.dict_features()['test2_2'].shape
     assert np.allclose(data2.dict_features()['test'], data['test'])
-    assert np.allclose(data2.dict_features()['test2_2'], data['test'])
+    assert np.allclose(data2.dict_features()['test2_2'], data['test2'])
 
     # test writing in an existing group
     with pytest.raises(AssertionError):

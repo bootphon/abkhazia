@@ -58,7 +58,7 @@ def ark_to_dict(arkfile):
 
     try:
         return _ark_to_dict_binary(arkfile)
-    except AssertionError:  # binary read failed
+    except AssertionError:
         return _ark_to_dict_binary_bytext(arkfile)
 
 
@@ -280,21 +280,36 @@ def _ark_to_dict_text(arkfile):
     return {utt: data for utt, data in _yield_utt(arkfile)}
 
 
+def _str2np(data):
+    """Convert a list of str to a np.array of float"""
+    npdata = np.zeros((len(data), len(data[0].split())))
+    for i, line in enumerate(data):
+        try:
+            npdata[i, :] = map(float, line.split())
+        except ValueError:
+            raise ValueError(
+                'error converting str to float in:', line.strip())
+    return npdata
+
+
 def _yield_utt(arkfile):
     """Yield (utt_id, data) tuples read from a text `arkfile`"""
-    utts_re = re.compile(
-        r'([a-zA-Z0-9\-_]*)\s+\[\n([0-9\.\s\-]*)\]',
-        re.MULTILINE)
+    utt_id = None
+    data = []
 
-    for utts in utts_re.finditer(open(arkfile, 'r').read()):
-        utt_id = utts.groups()[0].strip()
+    for line in open(arkfile, 'r'):
+        # a new utterance is starting, yield the previous utt if any
+        if not line.startswith('  '):
+            if utt_id:
+                yield utt_id, _str2np(data)
+                utt_id, data = None, []
+            utt_id = line[:-2].strip()
+        else:  # line of floats
+            data.append(line.replace(']', '').strip())
 
-        str_data = [d.strip() for d in utts.groups()[1].split('\n')]
-        data = np.zeros((len(str_data), len(str_data[0].split())))
-        for i, line in enumerate(str_data):
-            data[i, :] = map(float, line.split())
-
-        yield utt_id, data
+    # yield the final utt
+    if utt_id:
+        yield utt_id, _str2np(data)
 
 
 def _dict_to_txt_ark(arkfile, data, sort=True):
