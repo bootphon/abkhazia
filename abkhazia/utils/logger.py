@@ -13,7 +13,7 @@
 #
 # You should have received a copy of the GNU General Public License
 # along with abkhazia. If not, see <http://www.gnu.org/licenses/>.
-"""Utility for logging to a specified file and stdout.
+"""Utility for logging to stdout and an optional log file.
 
 This uses the 'logging' module from Python standard library. In the
 'logging module', a 'level' is associated to each message. The
@@ -21,7 +21,7 @@ possible levels are:
 
     CRITICAL, ERROR, WARNING, INFO, DEBUG or NOTSET.
 
-The log2file module implements the following behavior:
+This module implements the following behavior:
 
   - NOTSET messages are ignored
   - all other messages are logged to the specified file
@@ -29,6 +29,9 @@ The log2file module implements the following behavior:
     sys.stdout, if verbose is False, the DEBUG message are not printed
 
 The log file is UTF-8 encoded.
+
+The logs are postprocessed to have a nice log formatting from Kaldi
+logs (stripping messages, deleting empty ones, etc.)
 
 """
 
@@ -87,8 +90,23 @@ class NoLocalSubdirNotFound(logging.Filter):
         return "'local' subdirectory not found." not in record.getMessage()
 
 
-def get_log(log_file=os.devnull, verbose=False):
-    """Configure and return a logger instance"""
+def get_log(log_file=os.devnull, verbose=False, header_in_stdout=False):
+    """Return a configured logger
+
+    Parameters:
+    -----------
+
+    log_file (filename): log file to write, default is to not write
+        any file
+
+    verbose (bool): if True, send the DEBUG messages to stdout,
+        default is False
+
+    header_in_stdout (bool): if True, format the stdout messages as
+        "time - level - message", if False display only "message"
+        (default is False)
+
+    """
     log = logging.getLogger()
     log.addFilter(NoEmptyMessageFilter())
     log.addFilter(NoLocalSubdirNotFound())
@@ -117,18 +135,18 @@ def get_log(log_file=os.devnull, verbose=False):
 
     # log to standard output
     std_handler = logging.StreamHandler(sys.stdout)
-    formatter = WhitespaceRemovingFormatter('%(message)s')
+    formatter = WhitespaceRemovingFormatter(
+        '%(asctime)s - %(levelname)s - %(message)s'
+        if header_in_stdout else '%(message)s')
     std_handler.setFormatter(formatter)
     std_handler.setLevel(logging.DEBUG)
 
+    level_list = [
+        logging.INFO, logging.WARNING, logging.ERROR, logging.CRITICAL]
     if verbose:
-        log_filter = LevelFilter(
-            [logging.DEBUG, logging.INFO,
-             logging.WARNING, logging.ERROR, logging.CRITICAL])
-    else:
-        log_filter = LevelFilter(
-            [logging.INFO, logging.WARNING,
-             logging.ERROR, logging.CRITICAL])
+        level_list = [logging.DEBUG] + level_list
+
+    log_filter = LevelFilter(level_list)
     std_handler.addFilter(log_filter)
     log.addHandler(std_handler)
 
@@ -146,6 +164,7 @@ def reopen_files(log, mode='a+'):
 
 
 def null_logger():
+    """Return a logger going to nowhere, disable logging"""
     log = logging.getLogger()
     log.addHandler(logging.NullHandler())
     return log
