@@ -25,39 +25,41 @@ def alignment2item(corpus, alignment_file, item_file,
                    exclude_phones=[], njobs=1, verbose=0):
     """Creates an item file suitable for most standard ABX tasks on speech corpora
 
-    * Input is an abkhazia formatted alignment file for a given corpus.
-
-    * Output is a .item file suitable for use with ABXpy. Lines on the
-      generated file have the following structure:
+    * The item file is computed from a corpus and an alignmetn
+      file. Each line of the item file have the following structure:
 
           #file onset offset #phone prev-phone next-phone speaker
+
+    * Onset and offset times are relative to the beginning of the
+      utterance, not relative to the times in the wav file.
 
     * Features for use with this item file should be in h5features
       format with one internal file by utterance (using the
       utterance-id as filename) and times given relative to the
-      beginning of the utterance.  Given features computed with
-      abkhazia, export them in h5features using
-      abkhazia.utils.kaldi.scp_to_h5f('features_dir/feats.scp', ...)
+      beginning of the utterance. Given features computed with
+      abkhazia (and summarized in a Kaldi scp file), export them in
+      h5features using the function abkhazia.utils.kaldi.scp_to_h5f
 
     TODO this is for 'phone' or 'triphone' tasks, what about tasks on
-    whole words
+    whole words?
 
     Parameters:
     -----------
 
-    corpus (abkhazia.coorpus.Corpus): the speech corpus from which the
+    corpus (abkhazia.corpus.Corpus): the speech corpus from which the
         alignment have been computed
 
-    alignment_file (path): the alignment to read from. Must be in the
-        abkhazia format: each line as follow:
+    alignment_file (filename): the alignment to read from. Must be in the
+        abkhazia format, with each line formatted as:
 
            utt_id tstart tstop phone
 
-        Any utterance in the alignments not registered in the corpus is ignored
+        Any utterance present in the alignment but not registered in
+        the corpus is ignored
 
-    item_file (path): the item file to write
+    item_file (filename): the item file to write
 
-    segment_extension (string): can be 'single_phone' (each item
+    segment_extension (str): can be 'single_phone' (each item
         correspond to a portion of signal corresponding to a single
         phone), 'triphone' (each item correspond to a portion of
         signal corresponding to three consecutive phones),
@@ -85,7 +87,8 @@ def alignment2item(corpus, alignment_file, item_file,
     assert segment_extension in ('single_phone', 'triphone', 'half_triphone')
 
     # gather and process each aligned utterance in parallel
-    items = joblib.Parallel(n_jobs=njobs, verbose=verbose, backend='threading')(
+    items = joblib.Parallel(
+        n_jobs=njobs, verbose=verbose, backend='threading')(
         joblib.delayed(_utt2item)
         (utt_id, corpus, list(lines), segment_extension, exclude_phones)
         for utt_id, lines in groupby(
@@ -99,6 +102,7 @@ def alignment2item(corpus, alignment_file, item_file,
 
 
 def _utt2item(utt_id, corpus, lines, segment_extension, exclude_phones):
+    """Convert an utterance alignment to a list of items"""
     items = []
 
     # ensure the utterance is registered in the corpus
@@ -114,9 +118,8 @@ def _utt2item(utt_id, corpus, lines, segment_extension, exclude_phones):
         prev_phone = 'SIL'
         next_phone = 'SIL' if len(lines) == 1 else lines[1].split()[3]
 
-        _append_item(
-            items, utt_id, start, stop, phone, 'SIL',
-            next_phone, speaker, exclude_phones)
+        _append_item(items, corpus, utt_id, start, stop, phone,
+                     'SIL', next_phone, speaker, exclude_phones)
 
     # middle lines
     for prev_line, line, next_line in zip(
@@ -134,9 +137,8 @@ def _utt2item(utt_id, corpus, lines, segment_extension, exclude_phones):
             start = (prev_start + start)/2.
             stop = (stop + next_stop)/2.
 
-        _append_item(
-            items, utt_id, start, stop, phone, prev_phone,
-            next_phone, speaker, exclude_phones)
+        _append_item(items, corpus, utt_id, start, stop, phone,
+                     prev_phone, next_phone, speaker, exclude_phones)
 
     # use the last line only in 'single_phone' case (dont process
     # twice the same line as first and last line)
@@ -144,20 +146,30 @@ def _utt2item(utt_id, corpus, lines, segment_extension, exclude_phones):
         start, stop, phone = lines[-1].split()[1:]
         prev_phone = lines[-2].split()[3]
 
-        _append_item(
-            items, utt_id, start, stop, phone, prev_phone,
-            'SIL', speaker, exclude_phones)
+        _append_item(items, corpus, utt_id, start, stop, phone,
+                     prev_phone, 'SIL', speaker, exclude_phones)
 
     return items
 
 
-def _append_item(items, utt_id, start, stop,
-                 phone, prev_phone, next_phone,
-                 speaker, exclude_phones):
+def _append_item(items, corpus, utt_id, start, stop, phone,
+                 prev_phone, next_phone, speaker, exclude_phones):
     """Append a new item to items if its phones are not excluded"""
     if exclude_phones is [] or all(
             p not in exclude_phones
             for p in (prev_phone, phone, next_phone)):
+        # get the start time of the utterance in its wav
+        _, utt_tstart, _ = corpus.segments[utt_id]
+        if utt_tstart is None:
+            utt_tstart = 0
+
+        # make phone times relative to utterance (was relative to wav)
+        start = str(float(start) - utt_tstart)
+        # TODO this is a bug on buckeye manual alignments
+        assert float(start) >= 0
+        stop = str(float(stop) - utt_tstart)
+
+        # add the new item
         items.append(' '.join(
             [utt_id, start, stop, phone,
              prev_phone, next_phone, speaker]))

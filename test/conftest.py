@@ -57,11 +57,10 @@ def corpus(n=50):
             corpus = BuckeyePreparator(buckeye).prepare(tmpdir)
             corpus.validate()
 
-        # select n random utterances from the whole buckeye, take the
+        # select utterances from 1 to n from the whole buckeye, take the
         # whole if n is 0
         if n != 0:
             utts = corpus.utts()[:n]
-            #random.shuffle(utts)
             subcorpus = corpus.subcorpus(utts)
         else:
             subcorpus = corpus

@@ -56,7 +56,7 @@ class Corpus(utils.abkhazia_base.AbkhaziaBase):
     ----------------------------------------------
 
     - time interval in wav files mapped to each corpus utterance
-    - tbegin and tend anre None if the wav file contains a single
+    - tbegin and tend are None if the wav file contains a single
       utterance, else they correspond to begin and end times in the
       wav (in seconds, as float)
     - exemple: ('s01u01', ('s01', 0, 0.75))
