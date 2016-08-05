@@ -28,9 +28,8 @@ class AbstractPreparator(object):
     The AbstractPreparator class provides the basic functionalities
     all preparators rely on for the conversion of a specific corpus to
     the abkhazia format. It also proposes a set of abstract methods
-    (ie an interface) that each specialized prepartor must
-    implement. Those methods correspond to the corpus preparation
-    successive steps.
+    that each specialized prepartor must implement. Those methods
+    correspond to the successive steps in corpus preparation.
 
     This class is not to be used directly and must be inherited by
     specialized preparators.
@@ -64,7 +63,7 @@ class AbstractPreparator(object):
     """
     @classmethod
     def default_input_dir(cls):
-        """Return the input directory specified the conf file, or None"""
+        """Return the input directory specified in the conf file, or None"""
         try:
             name = cls.name.split('-')[0] + '-directory'
             res = utils.config.get('corpus', name)
@@ -92,6 +91,9 @@ class AbstractPreparator(object):
 
         `wavs_dir` is a directory where to store prepared wav files
           (as links or files)
+
+        If `keep_short_utts` is True remove from the corpus all the
+        utterances shorter than 100 ms
 
         This method must not be overloaded in child classes as it
         ensure consistency with the abkhazia format.
@@ -245,7 +247,7 @@ class AbstractPreparator(object):
     """The format of audio files in the corpus
 
     This format must be 'wav' or a format supported by the
-    abkhazia.utils.convert2wav.convert function.
+    abkhazia.utils.wav.convert function.
 
     """
 
