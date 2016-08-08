@@ -72,3 +72,7 @@ cd $kaldi/src
 sed -i "s/\-g # -O0 -DKALDI_PARANOID.*$/-O3 -DNDEBUG/" kaldi.mk
 make depend -j $ncores || failure "failed to setup kaldi dependencies"
 make -j $ncores || failure "failed to build kaldi"
+
+# compile irstlm
+cd $kaldi/tools
+./extras/install_irstlm.sh || failure "failed to install IRSTLM"
