@@ -34,14 +34,12 @@ def test_features(pitch, ftype, corpus, tmpdir):
     flog = os.path.join(output_dir, 'feats.log')
     log = utils.logger.get_log(flog)
 
-    # keep only 1 utterance for testing speed TODO unsolved bug
-    # here... if we take utts()[0:1] instead (duration=17s), raise
-    # when writing h5 with 'data is empty'
-    subcorpus = corpus.subcorpus(corpus.utts()[1:2])
-    assert len(subcorpus.utts()) == 1
+    # keep only 3 utterances for testing speed
+    subcorpus = corpus.subcorpus(corpus.utts()[0:3])
+    assert len(subcorpus.utts()) == 3
 
-    # mfcc with 10 channels
-    nbc = 10
+    # mfcc with few channels
+    nbc = 3
     feat = features.Features(subcorpus, output_dir, log=log)
     feat.type = ftype
     feat.njobs = 1
@@ -70,13 +68,18 @@ def test_features(pitch, ftype, corpus, tmpdir):
     assert os.path.isfile(os.path.join(output_dir, 'meta.txt'))
     features.Features.check_features(output_dir)
 
-    # convert to h5features
+    # convert to h5features and read it back
     h5 = os.path.join(output_dir, 'feats.h5')
     ark.scp_to_h5f(os.path.join(output_dir, 'feats.scp'), h5)
+    data = h5features.Reader(h5, 'features').read()
 
     # check we have nbc or nbc+3 channels
-    with h5features.Reader(h5, 'features') as reader:
-        data = reader.read()
-        dim = data.features()[0].shape[1]
-        exp = nbc + 3 if pitch else nbc
-        assert dim == exp, 'bad dim: {}, expected {}'.format(dim, exp)
+    dim = data.features()[0].shape[1]
+    exp = nbc + 3 if pitch else nbc
+    assert dim == exp, 'bad dim: {}, expected {}'.format(dim, exp)
+
+    # check utt_ids in h5f are consistent with corpus
+    times = data.dict_labels()
+    assert len(times.keys()) == len(subcorpus.utts())
+    for t, c in zip(times.keys(), subcorpus.utts()):
+        assert t == c

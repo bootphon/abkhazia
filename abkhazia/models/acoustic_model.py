@@ -216,5 +216,4 @@ class AcousticModel(AbstractRecipe):
 
     def compute(self):
         self.create()
-        o = self.run()
-        self.export(o)
+        self.export(self.run())

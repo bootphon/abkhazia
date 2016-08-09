@@ -76,6 +76,7 @@ target/
 *~
 lm_test/*
 test/lm/*
+/tmpdir/
 /exemple/*
 egs/align_childes_brent/
 egs/align_childes_brent_1percent/

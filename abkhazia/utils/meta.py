@@ -52,13 +52,20 @@ class Meta(object):
         lines = [l.split('#')[0].strip() for l in open(meta, 'r').readlines()]
 
         _self = cls()
-        _self.date = datetime.datetime.strptime(
-            cls._load_token('date', lines), cls.date_format)
         _self.user = cls._load_token('user', lines)
         _self.host = cls._load_token('host', lines)
         _self.name = cls._load_token('name', lines)
         _self.source = cls._load_token('source', lines)
         _self.comment = cls._load_token('comment', lines)
+
+        # parsing date string to datetime object can fail (because of
+        # internationalization ?)
+        try:
+            _self.date = datetime.datetime.strptime(
+                cls._load_token('date', lines), cls.date_format)
+        except ValueError:
+            _self.date = cls._load_token('date', lines)
+
         return _self
 
     def save(self, meta):
