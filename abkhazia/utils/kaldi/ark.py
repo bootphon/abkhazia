@@ -139,14 +139,19 @@ def scp_to_h5f(scp_file, h5_file, h5_group='features',
     IOError if the scp file is badly formatted
 
     """
-    # Extract the ark files referenced in the scp
+    # extract the ark files referenced in the scp
     ark_files = set()
     for n, line in enumerate(open(scp_file, 'r').readlines(), 1):
         matched = re.match('^.* (.*):[0-9]*$', line)
         if not matched:
             raise IOError('Bad scp file line {}: {}'.format(n, scp_file))
         ark_files.add(matched.group(1))
-    ark_files = sorted(ark_files)
+
+    # sort them in natural order to have f.10.ark > f.9.ark. This is
+    # important to concatenate features in order because some Kaldi
+    # scripts assumes ordered features (with the rspecifier ark,s,cs).
+    ark_files = list(ark_files)
+    ark_files.sort(key=utils.natural_sort_keys)
 
     log.info('writing {} ark files to {} in group {}'.format(
         len(ark_files), os.path.basename(h5_file), h5_group))

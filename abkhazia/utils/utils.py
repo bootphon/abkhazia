@@ -194,3 +194,14 @@ def symlink_files(files, destdir):
         dest = os.path.join(destdir, os.path.basename(src))
         if not os.path.isfile(dest):
             os.symlink(src, dest)
+
+
+def natural_sort_keys(text):
+    """list.sort(key=natural_sort_keys) sorts in human order
+
+    See https://stackoverflow.com/questions/5967500
+
+    """
+    def atoi(text):
+        return int(text) if text.isdigit() else text
+    return [atoi(c) for c in re.split('(\d+)', text)]
