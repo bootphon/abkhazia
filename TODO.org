@@ -1,3 +1,5 @@
+* DNN branch
+Implement dnn recipe ion top of triphone speaker-adapted acoustic models
 * Open bugs [0/3]
 ** TODO decode
    what is the bug??
@@ -7,11 +9,10 @@ caused by bad features dimension.
 
 Solution:
  - assert no delta in features in init (get back the dim or
- delta order from meta.txt ?)
+ delta order from feat-to-dim ?)
  - OR split deltas from raw when computing features
-** TODO features failure on few utterances
-   see the todo in test/test_features.py
->>>>>>> features:TODO.org
+** TODO acoustic fails with -j too high on qsub
+WIP on investigation
 * Fixed bugs [5/5]
 ** DONE installation on Mac
    CLOSED: [2016-05-20 ven. 13:02]
@@ -128,10 +129,8 @@ remove those short utts from corpus in preparation step
      (for instance, specifically retrain silence models, or retrain on a
      bunch of new corpus)
    - [ ] questions vs data-driven option
-   - [ ] neural nets training (RT)
    - [ ] test the acoustic model
-     providing WER (word error rate) for every model, eventual
-     automatic parameter search ?
+     providing WER for every model, eventual automatic parameter search ?
 ** align --post --with-words
    Update the probabilities estimation to be on words, not on phones
 ** decode
@@ -157,12 +156,12 @@ remove those short utts from corpus in preparation step
   utt = corpus.utterances()
 
   train, _ = corpus.split(train_prop=0.5, by_speakers=True)
-  train.save2h5('train.h5', 'buckeye-train', wavs=True)
+  train.save2h5('train.h5', group='corpus', wavs=True)
+  corpus = Corpus.read('train.h5', group='corpus')
 
-  corpus = Corpus.read('corpus.h5', 'buckeye-train')
   lm = LanguageModelProcessor(order=3, level='word').compute(corpus)
   lm.save('lm.fst')
-  lm.save2h5('train.h5', 'word-trigram')
+  lm.save2h5('train.h5', group='word-trigram')
   assert lm.order == 3
   assert lm.level == 'word'
 
