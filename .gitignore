@@ -82,3 +82,4 @@ egs/align_childes_brent/
 egs/align_childes_brent_1percent/
 egs/exemple_buckeye/*
 /kaldi/
+debug/

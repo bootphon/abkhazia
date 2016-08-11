@@ -180,7 +180,7 @@ class Features(abstract_recipe.AbstractRecipe):
         inputs = [f for f in utils.list_files_with_extension(
             self.output_dir, '.scp', abspath=True, recursive=False)
                   if 'raw_' in f]
-        inputs.sort(keys=utils.natural_sort_keys)
+        inputs.sort(key=utils.natural_sort_keys)
 
         output_scp = os.path.join(self.output_dir, 'feats.scp')
         with open(output_scp, 'w') as outfile:
