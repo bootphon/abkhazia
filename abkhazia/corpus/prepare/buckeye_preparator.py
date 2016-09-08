@@ -247,3 +247,98 @@ class BuckeyePreparator(AbstractPreparator):
                 'following words have no transcription in lexicon: {}'
                 .format(really_no_trs))
         return dict_word
+
+
+#
+# TODO The following code is dedicated to manual alignments. It should
+# be more integrated with abkhazia (mayebe have a
+# BuckeyeAlignedPreparator child class?). See also
+# abkhazia/egs/triphones_buckeye.py for an exemple of how to use the
+# GetAlignment class
+#
+# For now the preparator works on word alignments to extract segments
+# (utterances boundaries). But there is a lot of little differences in
+# words/phones levels alignments in Buckeye, about 1/3 of utterances
+# are concerned.  2 solutions: update the buckeye preparator to read
+# segments from phones_fold (also provide alignments ?), or harmonize
+# the phones/words timestamps in the raw buckeye distribution...
+#
+
+class GetAlignment(object):
+    """Function wrapper to extract Buckeye alignments at utterance level"""
+    def __init__(self, buckeye_dir):
+        self.alignment = {}
+        self.buckeye_dir = buckeye_dir
+
+    def __call__(self, record, tstart, tstop):
+        """Return phones alignment for a given record interval"""
+        if record not in self.alignment:
+            self._load_record(record)
+
+        return list(self._yield_utt(record, tstart, tstop))
+
+    def _load_record(self, record):
+        """Init self.alignment with a given record, load the file"""
+        record_file = os.path.join(
+            self.buckeye_dir, record[:3], record, record + '.phones_fold')
+
+        self.alignment[record] = [a for a in self._yield_file(record_file)]
+
+    def _yield_file(self, record_file):
+        """Yield (tstart, tstop, phone) from a phones alignment file"""
+        tstart = 0.0
+        for line in (
+                l[2:] for l in open(record_file, 'r') if l.startswith('  ')):
+            tstop, _, phone = line.split()
+            yield float(tstart), float(tstop), phone
+            tstart = tstop
+
+    def _yield_utt(self, record, tstart, tstop):
+        """Yield (tstart, tstop, phone) for a given record interval"""
+        for begin, end, phone in self.alignment[record]:
+            if end >= tstop:
+                yield begin, end, phone
+                break
+            if begin >= tstart:
+                yield begin, end, phone
+
+
+def validate_phone_alignment(corpus, alignment, log=utils.logger.get_log()):
+    """Return True if the phone alignment is coherent with the corpus
+
+    Return False on any other case, send a log message for all
+    suspicious alignments.
+
+    """
+    error_utts = set()
+
+    # check all utterances one by one
+    for utt in corpus.utts():
+        # corpus side
+        _, utt_tstart, utt_tstop = corpus.segments[utt]
+
+        # alignment side
+        ali_tstart = alignment[utt][0][0]
+        ali_tstop = alignment[utt][-1][1]
+
+        # validation
+        if utt_tstart != ali_tstart:
+            error_utts.add(utt)
+            log.warn(
+                '%s tstart error in corpus and alignment (%s != %s)',
+                utt, utt_tstart, ali_tstart)
+
+        if utt_tstop != ali_tstop:
+            error_utts.add(utt)
+            log.warn(
+                '%s : tstop error in corpus and alignment: %s != %s',
+                utt, utt_tstop, ali_tstop)
+
+    if error_utts:
+        log.error(
+            'timestamps are not valid for %s/%s utterances',
+            len(error_utts), len(corpus.utts()))
+        return False
+
+    log.info('alignment is valid for all utterances')
+    return True
