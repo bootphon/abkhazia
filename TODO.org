@@ -1,5 +1,15 @@
 * DNN branch
-Implement dnn recipe ion top of triphone speaker-adapted acoustic models
+Implement dnn recipe on top of triphone speaker-adapted acoustic models
+- [ ] une classe AlignedCorpus ?
+- [ ] voir avec XN pour la préparation de buckeye: si on veut sortir
+  l'alignment manuel il faut les segments au phone et non au
+  word. Soit on corrige la version raw de Buckeye en alignant words on
+  phones dans les fichiers words_fold.
+- [ ] tester decode et sortir PER sur les étapes du tri-sa
+- [ ] étendre tri-sa vers dnn
+- [ ] revoir l'architecture de abkhazia acoustic pour avoir une classe par
+  modèle, avoir une méthode eval(corpus) serait chouette.
+
 * Open bugs [0/3]
 ** TODO decode
    what is the bug??
@@ -120,6 +130,8 @@ extract-segments.c in kaldi featbin)
 remove those short utts from corpus in preparation step
 (--keep-short-utts option added)
 * Feature requests
+** corpus
+- [ ] des méthodes de stats sur les corpus (duration, per spks, etc)
 ** features
    convertion ark to h5f is slow, can we do parallel ark to RAM, and
    sequential RAM to h5features?
