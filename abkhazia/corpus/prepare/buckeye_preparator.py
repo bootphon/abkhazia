@@ -259,9 +259,7 @@ class BuckeyePreparator(AbstractPreparator):
 # For now the preparator works on word alignments to extract segments
 # (utterances boundaries). But there is a lot of little differences in
 # words/phones levels alignments in Buckeye, about 1/3 of utterances
-# are concerned.  2 solutions: update the buckeye preparator to read
-# segments from phones_fold (also provide alignments ?), or harmonize
-# the phones/words timestamps in the raw buckeye distribution...
+# are concerned.
 #
 
 class GetAlignment(object):
