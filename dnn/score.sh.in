@@ -1,0 +1,124 @@
+#!/bin/bash -u
+# Copyright 2015, 2016 Thomas Schatz, Xuan Nga Cao, Mathieu Bernard
+#
+# This file is part of abkhazia: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+# Abkhazia is distributed in the hope that it will be useful, but
+# WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+# General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with abkahzia. If not, see <http://www.gnu.org/licenses/>.
+
+# This is a kaldi recipe template for use with the abkhazia library.
+# Its object is to:
+#
+# - prepare the data from an abkhazia/kaldi corpus
+# - compute MFCC features
+# - decode using a previously calculated language model and
+# acoustic model
+# - compute word error rate (WER)
+
+###### Parameters ######
+
+# data directory in the recipe, specified by the --name option of
+# the command 'abkhazia score'
+name=@@@@
+acoustic_model=@@@@
+language_model=@@@@
+output_dir=@@@@
+
+# feature parameters
+use_pitch=@@@@
+
+
+###### Recipe ######
+nj=3
+decode_train=false
+monophone_option=''  #(='--mono' for monophone acoustic models, else assume triphone)
+
+[ -f cmd.sh ] && source ./cmd.sh \
+        || echo "cmd.sh not found. Jobs may not execute properly."
+
+. path.sh || { echo "Cannot source path.sh"; exit 1; }
+
+
+# Finish preparing data
+
+utils/utt2spk_to_spk2utt.pl data/$name/utt2spk > data/$name/spk2utt || exit 1
+
+# Features
+
+mfccdir=mfcc
+if [ "$use_pitch" = true ]
+then
+    make_feats="steps/make_mfcc_pitch.sh"
+else
+    make_feats="steps/make_mfcc.sh"
+fi
+
+echo "running $make_feats"
+for x in $name
+do
+    (
+        $make_feats \
+            --nj "$nj" --cmd "$train_cmd" data/$x \
+            exp/make_mfcc/$x $mfccdir;
+        steps/compute_cmvn_stats.sh \
+            data/$x exp/make_mfcc/$x $mfccdir;
+    ) &
+done
+wait;
+
+
+# Decoding
+
+echo -n "decoding..."
+
+exp_dir=$acoustic_model
+lm=$language_model
+# first instantiate full decoding graph (HCLG)
+graph_dir="$dir"/graph
+mkdir -p $graph_dir
+$highmem_cmd $graph_dir/mkgraph.log \
+	     utils/mkgraph.sh $monophone_option $lm "$exp_dir" \
+	     $graph_dir
+# decode and compute WER on test set
+decode_dir_test="$output_dir"
+mkdir -p $decode_dir_test
+steps/decode.sh --nj "$nj" --cmd "$decode_cmd" $graph_dir data \
+		$decode_dir_test
+echo " done"
+#TODO
+# # if full computations: decode and compute WER on train set too
+# if [ "$decode_train" = true ] ; then
+#     decode_dir_train="$exp_dir"/decode_train_"$lm_name"
+#     mkdir -p $decode_dir_train
+#     steps/decode.sh --nj 8 --cmd "$decode_cmd" $graph_dir data/train \
+# 		    $decode_dir_train
+# fi
+
+
+echo -n "compute WER..."
+LMWT=10  # LM weights
+wip=0.0  # word insertion penalty
+symtab=$lm/words.txt
+dir=$decode_dir_test
+
+#TODO remove non speech
+cat data/text | sed 's:<NOISE>::g' | sed 's:<SPOKEN_NOISE>::g' > $dir/scoring/test_filt.txt
+
+lattice-scale --inv-acoustic-scale=LMWT "ark:gunzip -c $dir/lat.*.gz|" ark:- \| \
+	      lattice-add-penalty --word-ins-penalty=$wip ark:- ark:- \| \
+	      lattice-best-path --word-symbol-table=$symtab \
+	      ark:- ark,t:$dir/scoring/LMWT.$wip.tra || exit 1;
+
+cat $dir/scoring/LMWT.$wip.tra \| \
+    utils/int2sym.pl -f 2- $symtab \| sed 's:\<UNK\>::g' \| \
+    compute-wer --text --mode=present \
+    ark:$dir/scoring/test_filt.txt  ark,p:- ">&" $dir/wer_LMWT_$wip || exit 1;
+echo " done"
