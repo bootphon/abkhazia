@@ -25,7 +25,7 @@ def alignment2item(corpus, alignment_file, item_file,
                    exclude_phones=[], njobs=1, verbose=0):
     """Creates an item file suitable for most standard ABX tasks on speech corpora
 
-    * The item file is computed from a corpus and an alignmetn
+    * The item file is computed from a corpus and an alignment
       file. Each line of the item file have the following structure:
 
           #file onset offset #phone prev-phone next-phone speaker
