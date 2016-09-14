@@ -16,6 +16,7 @@
 # along with this program. If not, see <http://www.gnu.org/licenses/>.
 import argparse
 import os
+import sys
 import tempfile
 
 import abkhazia.utils as utils
@@ -88,4 +89,4 @@ def main():
 
 
 if __name__ == '__main__':
-    main()
+    sys.exit(main())

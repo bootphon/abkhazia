@@ -71,6 +71,7 @@ class AbstractPreparator(object):
         except ConfigParser.NoOptionError:
             return None
 
+    # TODO njobs as parameter,
     def __init__(self, input_dir, log=utils.logger.null_logger()):
         self.njobs = utils.default_njobs(local=True)
         self.log = log
@@ -86,6 +87,7 @@ class AbstractPreparator(object):
         self.corpus.meta.source = self.input_dir
         self.corpus.meta.name = self.name
 
+    # TODO wavs_dir not a good argument?
     def prepare(self, wavs_dir, keep_short_utts=False):
         """Prepare the corpus from raw distribution to abkhazia format
 
