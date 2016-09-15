@@ -3,7 +3,7 @@
 Tools for performing standard ABX and kaldi experiments on speech
 corpora in a unified way
 
-Documentation **actually not up to date** can be found
+Documentation **ACTUALLY NOT UP TO DATE** can be found
 [here](https://github.com/bootphon/abkhazia/wiki)
 
 
@@ -17,7 +17,7 @@ abkhazia configuration script will fail.
 
 #### 1.1. [Kaldi Speech Recognition Toolkit](http://kaldi-asr.org).
 
-* **In brief**
+* **In brief: install_kaldi.sh**
 
     the ``./install_kadi.sh`` will download, configure
     and compile kaldi to ``./kaldi``. This should work on any
@@ -25,43 +25,44 @@ abkhazia configuration script will fail.
     error. If so, install kaldi manually as detailed in the
     following steps.
 
-* Because Kaldi is developed under continuous integration, there is no
-  published release to rely on. To ensure the abkhazia stability, we
-  therefore maintain a Kaldi fork that is guaranteed to work. Clone it
-  in a directory of your choice and ensure the active branch is
-  *abkhazia* (this should be the default):
+* **If install_kaldi.sh failed**
 
-        git clone git@github.com:bootphon/kaldi.git
+    Install it by hand, with the following steps
 
-* Once cloned, you have to install Kaldi (configuration and
-  compilation). Follow the instructions from
-  [here](http://kaldi-asr.org/doc/install.html). Basically, you have
-  to do (from the `kaldi` directory):
+    * Because Kaldi is developed under continuous integration, there is no
+      published release to rely on. To ensure the abkhazia stability, we
+      therefore maintain a Kaldi fork that is guaranteed to work. Clone it
+      in a directory of your choice and ensure the active branch is
+      *abkhazia* (this should be the default):
 
-        cd tools
-        ./extras/check_dependancies.sh
-        make -j 4  # -j N does a parallel build on N CPUs
-        cd ../src
-        ./configure
-        make depend -j 4
-        make -j 4
+            git clone git@github.com:bootphon/kaldi.git
 
-* Install kaldi extras tools (SRILM and IRSTLM librairies)
-  required by abkhazia. From your local kaldi directory, type:
+    * Once cloned, you have to install Kaldi (configuration and
+      compilation). Follow the instructions from
+      [here](http://kaldi-asr.org/doc/install.html). Basically, you have
+      to do (from the `kaldi` directory):
 
-        cd ./tools
-        ./extras/install_irstlm.sh
-        ./extras/install_srilm.sh
+            cd tools
+            ./extras/check_dependancies.sh
+            make -j 4  # -j N does a parallel build on N CPUs
+            cd ../src
+            ./configure
+            make depend -j 4
+            make -j 4
 
-* You will have to provide the `kaldi` directory to abkhazia during
-  configuration.
+    * Install kaldi extras tools (SRILM and IRSTLM librairies)
+      required by abkhazia. From your local kaldi directory, type:
 
+            cd ./tools
+            ./extras/install_irstlm.sh
+            ./extras/install_srilm.sh
 
-#### 1.2. sox and shorten
+#### 1.2. flac, sox and shorten
 
-Abkhazia relies on [sox](http://sox.sourceforge.net) with flac support
-and [shorten](http://etree.org/shnutils/shorten) for wav conversion
-from various audio formats.
+Abkhazia relies on [flac](https://xiph.org/flac),
+[sox](http://sox.sourceforge.net) and
+[shorten](http://etree.org/shnutils/shorten) for wav conversion from
+various audio formats.
 
 * sox and flac should be in repositories of every standard Unix
   distribution, for exemple in Debian/Ubuntu:
@@ -76,7 +77,7 @@ from various audio formats.
         cd shorten-3.6.1
         ./configure
         make
-        sudo make install
+        [sudo] make install
 
 #### 1.3. festival
 
@@ -88,24 +89,27 @@ from various audio formats.
 
 * On Debian/Ubuntu simply run:
 
-        sudo apt-get install festival
+        [sudo] apt-get install festival
 
 ### 2. Install Abkhazia
 
-First run the configuration script. It will check the dependancies for
-you and will initialize a default configuration file in
-`abkahzia/share/abkhazia.cfg`.
+* First run the configuration script. It will check the dependancies for
+  you and will initialize a default configuration file in
+  `abkahzia/abkhazia.cfg`.
 
-    ./configure
+        ./configure
 
- Rerun this script and correct the prompted configuration errors until
- it succed. Then move to next step:
+  Rerun this script and correct the prompted configuration errors
+  until it succed. At least you are asked to specify the path to kaldi
+  (from step 1.1) in the configuration file.
 
-    python setup.py build
-    sudo python setup.py install
+* Then install abkhazia
 
-In case you want to modify and test the code, replace the last step by
-``python setup.py develop``.
+        python setup.py build
+        [sudo] python setup.py install
+
+* In case you want to modify and test the code, replace the last step by
+  ``python setup.py develop``.
 
 
 ## Licence
