@@ -16,7 +16,7 @@
 """Data preparation for the CID corpus"""
 
 import os
-import re
+import sys
 
 import abkhazia.utils as utils
 from abkhazia.corpus.prepare import AbstractPreparator
@@ -51,72 +51,45 @@ class CIDPreparator(AbstractPreparator):
         super(CIDPreparator, self).__init__(input_dir, log=log)
         self.copy_wavs = copy_wavs
 
-    # def _list_files(self, ext, exclude=None, abspath=False, realpath=False):
-    #     files = utils.list_files_with_extension(
-    #         self.input_dir, ext, abspath=abspath, realpath=realpath)
+    def _yield_transcription(self, trs_file):
+        """Yield (utt, wav, text, tstart, tstop) read from transcription"""
+        # speaker id are the first 2 letters of the file
+        spk = os.path.basename(trs_file)[:2]
 
-    #     if exclude is not None:
-    #         files = [f for f in files for e in exclude if e not in f]
+        utt, tstart, tstop, text = None, None, None, None
+        for line in (l.strip() for l in utils.open_utf8(trs_file, 'r')):
+            if line.startswith('intervals ['):
+                utt = spk + '_' + line.split('[')[1][:-2]
+                tstart, tstop = None, None
+            elif line.startswith('xmin'):
+                tstart = float(line.split(' = ')[1])
+            elif line.startswith('xmax'):
+                tstop = float(line.split(' = ')[1])
+            elif line.startswith('text'):
+                text = line.split(' = ')[1]
 
-    #     return files
+            if utt and tstart and tstop:
+                yield utt, spk + '-anonym', text, tstart, tstop
+                utt, tstart, tstop, text = None, None, None, None
 
     def list_audio_files(self):
-        pass
-        # return self._list_files('.wav', abspath=True, realpath=True)
+        return utils.list_files_with_extension(
+            os.path.join(self.input_dir, 'wav'), '.wav', abspath=True)
 
     def make_segment(self):
-        # segments = dict()
-        # for utts in self._list_files('.txt', exclude=['readme']):
-        #     bname = os.path.basename(utts)
-        #     utt = bname.replace('.txt', '')
-        #     length_utt = [
-        #         len(line.strip().split()) for line in
-        #         open(utts, 'r').readlines() if len(line.strip())]
+        segments = dict()
 
-        #     words = utts.replace('txt', 'words_fold')
-        #     lines = open(words, 'r').readlines()
-        #     del lines[:9]
-
-        #     assert len(lines) == sum(length_utt),\
-        #         '{} {}'.format(len(lines), sum(length_utt))
-
-        #     last_offset = '0.000'
-        #     current_index = 0
-        #     for n in range(len(length_utt)):
-        #         onset = last_offset
-
-        #         index_offset = length_utt[n] + current_index
-        #         offset_line = lines[index_offset-1]
-        #         match_offset = re.match(
-        #             r'\s\s+(.*)\s+(121|122)\s(.*)',
-        #             offset_line)
-        #         if not match_offset:
-        #             raise IOError(
-        #                 'offset not matched {}'
-        #                 .format(offset_line))
-
-        #         offset = match_offset.group(1)
-
-        #         segments[utt + '-sent' + str(n+1)] = (
-        #             utt, float(onset), float(offset))
-
-        #         current_index = index_offset
-        #         last_offset = offset
-
-        # return segments
+        # transcription files are CID/TextGrid/*transcription*.TextGrid
+        trs_files = (t for t in utils.list_directory(
+            os.path.join(self.input_dir, 'TextGrid'), abspath=True)
+                     if 'transcription' in os.path.basename(t))
+        for trs_file in trs_files:
+            for utt, wav, _, tstart, tstop in self._yield_transcription(trs_file):
+                segments[utt] = (wav, tstart, tstop)
+        return segments
 
     def make_speaker(self):
-        pass
-        # utt2spk = dict()
-        # for utts in self._list_files('.txt', exclude=['readme']):
-        #     bname = os.path.basename(utts)
-        #     utt = bname.replace('.txt', '')
-        #     lines = [l.strip() for l in open(utts, 'r').readlines()
-        #              if len(l.strip())]
-        #     speaker_id = re.sub(r"[0-9][0-9](a|b)\.txt", "", bname)
-        #     for idx, _ in enumerate(lines, start=1):
-        #         utt2spk[utt + '-sent' + str(idx)] = speaker_id
-        # return utt2spk
+        return {k: k[:2] for k in self.make_segment().iterkeys()}
 
     def make_transcription(self):
         pass
