@@ -40,6 +40,36 @@ class CIDPreparator(AbstractPreparator):
     # u'B', u'E', u'uhn', u'aon', u'awn', u'uwn', u'aan', u'ern', u'aen'])
     # Reason: we already collapsed them in the foldings_version
     phones = {
+        '@': u'ə',
+        'a~': u'ɑ̃',
+        'A': u'a',
+        'b': u'b',
+        'd': u'd',
+        'e': u'e',
+        'f': u'f',
+        'g': u'g',
+        'H': u'ɥ',
+        'i': u'i',
+        'j': u'j',
+        'k': u'k',
+        'l': u'l',
+        'm': u'm',
+        'n': u'n',
+        'o~': u'ɔ̃',
+        'o': u'o',
+        'p': u'p',
+        'R': u'ʁ',
+        's': u's',
+        'S': u'ʃ',
+        't': u't',
+        'u': u'u',
+        'U~': u'ɛ̃',
+        'v': u'v',
+        'w': u'w',
+        'y': u'y',
+        'z': u'z',
+        'Z': u'ʒ',
+
     }
 
     silences = [u"SIL_WW", u"NSN"]  # SPN and SIL will be added automatically
