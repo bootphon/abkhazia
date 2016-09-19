@@ -28,17 +28,20 @@ class CIDPreparator(AbstractPreparator):
     name = 'cid'
     description = 'Corpus of Interactional Data'
 
-    long_description = '''
+    long_description = '''8 French dialogues involving 2 participants, with the following data:
+    - a wav file for each speaker
+    - the inter-pausals units (IPU) annotation aligned with audio signal
+    - enriched orthographic transcription (TOE) aligned with audio signal
+    - phones aligned with audio signal
+    - syllables aligned with audio signal
+    - tokens aligned with audio signal
+    - syntax aligned with the signal at the level of tokens
     '''
 
-    url = ''
+    url = 'http://sldr.org/sldr000720'
     audio_format = 'wav'
 
-    # IPA transcriptions for all phones in the Buckeye corpus. The
-    # following phones are never found in the transcriptions: set([u'own',
-    # u'ahn', u'ihn', u'ayn', u'NSN', u'eyn', u'oyn', u'ehn', u'iyn',
-    # u'B', u'E', u'uhn', u'aon', u'awn', u'uwn', u'aan', u'ern', u'aen'])
-    # Reason: we already collapsed them in the foldings_version
+    # IPA transcriptions for all phones in the CID corpus. 
     phones = {
         '@': u'ə',
         'a~': u'ɑ̃',
@@ -139,6 +142,11 @@ class CIDPreparator(AbstractPreparator):
         # return text
 
     def make_lexicon(self):
+        # Retrieve utterances
+        yield_transcription(self, trs_file)
+
+
+
         pass
         # dict_word = dict()
         # no_trs = set()
