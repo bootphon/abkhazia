@@ -98,13 +98,14 @@ local/prepare_lm.sh $lm_name
   graph_dir="$exp_dir"/graph_"$lm_name"
   mkdir -p $graph_dir
   $highmem_cmd $graph_dir/mkgraph.log \
-    utils/mkgraph.sh --mono $lm "$exp_dir" \
-    $graph_dir
+    utils/mkgraph.sh --mono $lm "$exp_dir" $graph_dir
+
   # decode and compute WER on test set
   decode_dir_test="$exp_dir"/decode_test_"$lm_name"
   mkdir -p $decode_dir_test
   steps/decode.sh --nj 8 --cmd "$decode_cmd" $graph_dir data/test \
     $decode_dir_test
+
   # if full computations: decode and compute WER on train set too
   if [ "$decode_train" = true ] ; then
     decode_dir_train="$exp_dir"/decode_train_"$lm_name"
