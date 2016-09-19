@@ -25,6 +25,7 @@ from .abstract_preparator import AbstractPreparator, AbstractPreparatorWithCMU
 from .aic_preparator import AICPreparator
 from .buckeye_preparator import BuckeyePreparator
 from .childes_preparator import ChildesPreparator
+from .cid_preparator import CIDPreparator
 from .csj_preparator import CSJPreparator
 from .librispeech_preparator import LibriSpeechPreparator
 from .xitsonga_preparator import XitsongaPreparator

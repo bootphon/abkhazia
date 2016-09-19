@@ -24,7 +24,7 @@ from abkhazia.commands.abstract_command import AbstractCommand
 
 # import all the corpora preparators
 from abkhazia.corpus.prepare import (
-    AICPreparator, BuckeyePreparator, ChildesPreparator,
+    AICPreparator, BuckeyePreparator, ChildesPreparator, CIDPreparator,
     CSJPreparator, LibriSpeechPreparator, XitsongaPreparator,
     AbstractGlobalPhonePreparator, MandarinPreparator, VietnamesePreparator,
     WallStreetJournalPreparator, JournalistReadPreparator,
@@ -219,6 +219,10 @@ class XitsongaFactory(AbstractFactory):
 
 class CSJFactory(AbstractFactory):
     preparator = CSJPreparator
+
+
+class CIDFactory(AbstractFactory):
+    preparator = CIDPreparator
 
 
 class ChildesFactory(AbstractFactory):
