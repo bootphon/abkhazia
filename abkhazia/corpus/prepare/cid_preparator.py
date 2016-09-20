@@ -13,7 +13,13 @@
 #
 # You should have received a copy of the GNU General Public License
 # along with abkhazia. If not, see <http://www.gnu.org/licenses/>.
-"""Data preparation for the CID corpus"""
+"""Data preparation for the CID corpus
+
+For testing
+abkhazia prepare cid -v -o ./test_cid
+
+
+"""
 
 import os
 
@@ -78,7 +84,14 @@ class CIDPreparator(AbstractPreparator):
         super(CIDPreparator, self).__init__(input_dir, log=log)
         self.copy_wavs = copy_wavs
 
-    def _yield_transcription(self, trs_file):
+    def _yield_files(self, pattern):
+        """Return files in CID/TextGrid containing 'pattern' in basename"""
+        return (t for t in utils.list_directory(
+            os.path.join(self.input_dir, 'TextGrid'), abspath=True)
+                if pattern in os.path.basename(t))
+
+    @staticmethod
+    def _yield_transcription(trs_file):
         """Yield (utt, wav, text, tstart, tstop) read from transcription
 
         Utterances containing only gpf_* are ignored as they contain
@@ -105,18 +118,46 @@ class CIDPreparator(AbstractPreparator):
                     yield utt, spk + '-anonym', text, tstart, tstop
                     utt, tstart, tstop, text = None, None, None, None
 
+    @staticmethod
+    def _yield_data(data_file, exclude=[]):
+        """Yield (data, tstart, tstop) read from a data file
+
+        data is a string, tstart and tstop are floats.
+
+        The data file can be a 'tokens' or 'phonemes' file, as they
+        share the same format, 'data' being a speech token (~ word) or a
+        phoneme accordingly.
+
+        The lines before (including) the first occurence of 'dummy'
+        are ignored.
+
+        """
+        started = False
+        data, tstart, tstop = None, None, None
+        for line in utils.open_utf8(data_file, 'r'):
+            # consume lines before the first 'dummy'
+            if not started and 'dummy' in line:
+                started = True
+                continue
+            if started:
+                if not tstart:
+                    tstart = float(line)
+                elif not tstop:
+                    tstop = float(line)
+                else:
+                    data = line.replace('"', '').strip()
+                    if data not in exclude:
+                        yield (data, tstart, tstop)
+                    data, tstart, tstop = None, None, None
+
     def list_audio_files(self):
         return utils.list_files_with_extension(
             os.path.join(self.input_dir, 'wav'), '.wav', abspath=True)
 
     def make_segment(self):
         segments = dict()
-
         # transcription files are CID/TextGrid/*transcription*.TextGrid
-        trs_files = (t for t in utils.list_directory(
-            os.path.join(self.input_dir, 'TextGrid'), abspath=True)
-                     if 'transcription' in os.path.basename(t))
-        for trs in trs_files:
+        for trs in self._yield_files('transcription'):
             for utt, wav, _, tstart, tstop in self._yield_transcription(trs):
                 segments[utt] = (wav, tstart, tstop)
         return segments
@@ -128,34 +169,58 @@ class CIDPreparator(AbstractPreparator):
         text = dict()
 
         # transcription files are CID/TextGrid/*transcription*.TextGrid
-        trs_files = (t for t in utils.list_directory(
-            os.path.join(self.input_dir, 'TextGrid'), abspath=True)
-                     if 'transcription' in os.path.basename(t))
-        for trs_file in trs_files:
+        for trs_file in self._yield_files('transcription'):
             for utt, _, txt, _, _ in self._yield_transcription(trs_file):
                 text[utt] = txt
         return text
 
-  
-    def make_lexicon(self):        ## TODO: fix "spelling" to account for speech errors, etc
+    def make_lexicon(self):
+        dict_words = dict()
+        # iterate on speaker data files
+        for ftokens, fphonemes in zip(
+                sorted(self._yield_files('tokens')),
+                sorted(self._yield_files('phonemes'))):
+            yphonemes = self._yield_data(fphonemes)
+            for word, wstart, wstop in self._yield_data(ftokens, exclude=['+', '#']):
+                if word not in dict_words:
+                    dict_words[word] = []
+
+                phoneme, pstart, pstop = yphonemes.next()
+                # if wstart != pstart:
+                #     print ("tstart in phonemes and tokens differ in {}: {} {} {} {}"
+                #            .format(os.path.basename(ftokens)[:2],
+                #                    str(word), str(phoneme), wstart, pstart))
+
+
+                l = list(phoneme)
+                while pstop < wstop:
+                    phoneme, pstart, pstop = yphonemes.next()
+                    l.append(phoneme)
+                dict_words[word].append(l)
+        print '\n'.join(str(i) for i in dict_words.iteritems())
+        import sys
+        sys.exit(0)
+        return dict_words
+
+    # TODO: fix "spelling" to account for speech errors, etc
+    def make_lexicon_old(self):
         dict_word = dict()
-        ## word files are CID/TextGrid/*tokens*.TextGrid
-        tok_files = (t for t in utils.list_directory(
-            os.path.join(self.input_dir, 'TextGrid'), abspath=True)
-                     if 'tokens' in os.path.basename(t))
-        for tok_file in tok_files:
+
+        # word files are CID/TextGrid/*tokens*.TextGrid
+        for tok_file in self._yield_files('tokens'):
             spk = os.path.basename(tok_file)[:2]
-            phon_file = os.path.join(self.input_dir, 'TextGrid', spk + "-phonemes.TextGrid")
+            phon_file = os.path.join(
+                self.input_dir, 'TextGrid', spk + "-phonemes.TextGrid")
             token, tstart, tstop = None, None, None
             t1, t2 = 0, 0
-            
+
             dummy = False
             wd = list()
             phn = list()
 
-            ## get word and time intervals
+            # get word and time intervals
             for line in (l.strip() for l in utils.open_utf8(tok_file, 'r')):
-                if dummy == True:
+                if dummy is True:
                     line = line.replace('"', '')
                     wd.append(line.encode("utf-8"))
                     if len(wd) == 3:
@@ -163,9 +228,10 @@ class CIDPreparator(AbstractPreparator):
                         tstart, tstop = float(tstart), float(tstop)
                         wd = list()
 
-                        ## find phonetic transcription in phonemes file
+                        # find phonetic transcription in phonemes file
                         cnt = 0
-                        for pline in (pl.strip() for pl in utils.open_utf8(phon_file, 'r')):
+                        for pline in (pl.strip() for pl in
+                                      utils.open_utf8(phon_file, 'r')):
                             cnt += 1
                             pline = pline.encode("utf-8")
                             if (cnt + 2) % 3 == 0:
@@ -173,18 +239,18 @@ class CIDPreparator(AbstractPreparator):
                             if (cnt + 1) % 3 == 0:
                                 t2 = pline
                             if cnt % 3 == 0:
-                                if str.isdigit(t1.replace(".", "")) == True and str.isdigit(t2.replace(".", "")) == True:
-                                    if tstart <= float(t1) < tstop and tstart < float(t2) <= tstop:
+                                if (str.isdigit(t1.replace(".", "")) and
+                                    str.isdigit(t2.replace(".", ""))):
+                                    if (tstart <= float(t1) < tstop and
+                                        tstart < float(t2) <= tstop):
                                         phn.append(pline.replace('"', ''))
-                                        
                                 else:
                                     phn = list()
                         if token != "#":
-                            dict_word[token] = phn #' '.join(phn)
-                            #print tstart, tstop, token, phn
-                            #cnt = 0
+                            dict_word[token] = phn  #' '.join(phn)
+                            # print tstart, tstop, token, phn
+                            # cnt = 0
                 else:
                     if '\"dummy\"' in line:
                         dummy = True
-        return dict_word     
-
+        return dict_word

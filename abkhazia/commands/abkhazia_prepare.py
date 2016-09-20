@@ -407,6 +407,7 @@ class AbkhaziaPrepare(AbstractCommand):
     supported_corpora = {c.preparator.name: c for c in (
         AICFactory,
         BuckeyeFactory,
+        CIDFactory,
         ChildesFactory,
         CSJFactory,
         GlobalPhoneFactory,

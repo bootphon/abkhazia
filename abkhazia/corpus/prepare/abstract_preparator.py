@@ -104,10 +104,16 @@ class AbstractPreparator(object):
 
         c = self.corpus
         c.wavs = self.make_wavs(wavs_dir)
+
+        self.log.debug('preparing segments')
         c.segments = self.make_segment()
+        self.log.debug('preparing lexicon')
         c.lexicon = self.make_lexicon()
+        self.log.debug('preparing transcriptions')
         c.text = self.make_transcription()
+        self.log.debug('preparing speakers')
         c.utt2spk = self.make_speaker()
+        self.log.debug('preparing phones, silences and variants')
         c.phones = self.phones
         c.silences = self.silences
         c.variants = self.variants
