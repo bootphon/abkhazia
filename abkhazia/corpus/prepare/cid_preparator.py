@@ -197,7 +197,9 @@ class CIDPreparator(AbstractPreparator):
                     phoneme, pstart, pstop = yphonemes.next()
                     l.append(phoneme)
                 dict_words[word].append(l)
-        print '\n'.join(str(i) for i in dict_words.iteritems())
+        for i in dict_words.keys():
+            dict_words[i] = map(list, set(map(tuple, dict_words[i])))
+        #print '\n'.join(str(i) for i in dict_words.iteritems())
         import sys
         sys.exit(0)
         return dict_words
