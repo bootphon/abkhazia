@@ -135,8 +135,7 @@ class CIDPreparator(AbstractPreparator):
         """
         started = False
         data, tstart, tstop = None, None, None
-        combined = "(" + ")|(".join(exclude) + ")"
-        
+                
         for line in utils.open_utf8(data_file, 'r'):
             # consume lines before the first 'dummy'
             if not started and 'dummy' in line:
