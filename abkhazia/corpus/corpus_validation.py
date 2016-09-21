@@ -407,7 +407,7 @@ class CorpusValidation(object):
                 raise IOError(
                     "'<unk>' word is reserved for mapping "
                     "OOV items and should always be transcribed "
-                    "as 'SPN' (vocal) noise'")
+                    "as 'SPN' (spoken noise)'")
         # TODO should we log a warning for all words containing silence phones?
 
         # unused words
