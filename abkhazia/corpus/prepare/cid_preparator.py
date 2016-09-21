@@ -80,7 +80,7 @@ class CIDPreparator(AbstractPreparator):
         '~': u'~'
     }
 
-    silences = [u"SIL_WW", u"NSN", '#', 'buzz']  # SPN and SIL will be added automatically
+    silences = [u"SIL_WW", u"NSN", '#']  # SPN and SIL will be added automatically
 
     variants = []  # could use lexical stress variants...
 
@@ -139,6 +139,7 @@ class CIDPreparator(AbstractPreparator):
         """
         started = False
         data, tstart, tstop = None, None, None
+
         for line in utils.open_utf8(data_file, 'r'):
             # consume lines before the first 'dummy'
             if not started and 'dummy' in line:
@@ -151,7 +152,7 @@ class CIDPreparator(AbstractPreparator):
                     tstop = float(line)
                 else:
                     data = line.replace('"', '').strip()
-                    if data not in exclude:
+                    if data not in exclude and not any([r in data for r in exclude]):
                         yield (data, tstart, tstop)
                     data, tstart, tstop = None, None, None
 
@@ -203,9 +204,10 @@ class CIDPreparator(AbstractPreparator):
         for ftokens, fphonemes in zip(
                 sorted(self._yield_files('tokens')),
                 sorted(self._yield_files('phonemes'))):
-            yphonemes = self._yield_data(fphonemes)
-            for word, wstart, wstop in self._yield_data(
-                    ftokens, exclude=['+', '#']):
+
+            yphonemes = self._yield_data(fphonemes, exclude=['+', '#', 'buzz'])
+            for word, wstart, wstop in self._yield_data(ftokens, exclude=['+', '#', 'BUZZ', 'buzz']):
+
                 if word not in dict_words:
                     dict_words[word] = []
 
