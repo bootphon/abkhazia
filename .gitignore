@@ -74,6 +74,7 @@ target/
 # emacs
 \#*
 *~
+# various data directories to ignore
 lm_test/*
 test/lm/*
 /tmpdir/
@@ -83,3 +84,4 @@ egs/align_childes_brent_1percent/
 egs/exemple_buckeye/*
 /kaldi/
 debug/
+/tmp/*
