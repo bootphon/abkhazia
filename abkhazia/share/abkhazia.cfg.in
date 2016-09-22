@@ -42,6 +42,7 @@ highmem-cmd: run.pl
 aic-directory:
 buckeye-directory:
 childes-directory:
+cid-directory:
 csj-directory:
 globalphone-directory:
 librispeech-directory:

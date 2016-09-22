@@ -206,8 +206,8 @@ class CIDPreparator(AbstractPreparator):
                 sorted(self._yield_files('phonemes'))):
 
             yphonemes = self._yield_data(fphonemes, exclude=['+', '#', 'buzz'])
-            for word, wstart, wstop in self._yield_data(ftokens, exclude=['+', '#', 'BUZZ', 'buzz']):
-
+            for word, wstart, wstop in self._yield_data(
+                    ftokens, exclude=['+', '#', 'BUZZ', 'buzz']):
                 if word not in dict_words:
                     dict_words[word] = []
 
@@ -218,12 +218,6 @@ class CIDPreparator(AbstractPreparator):
                     l.append(phoneme)
                 dict_words[word].append(l)
 
-        # for i in dict_words.keys():
-        #     dict_words[i] = map(list, set(map(tuple, dict_words[i])))
-        # #print '\n'.join(str(i) for i in dict_words.iteritems())
-        # import sys
-        # sys.exit(0)
-
         # TODO for now we consider all the transcriptions found for a
         # given word, and retain only the fisrt one (v[0]
         # below). Instead we can take the most frequent (or retain all
@@ -232,56 +226,3 @@ class CIDPreparator(AbstractPreparator):
         dict_words = {k: ' '.join(v[0]) for k, v in dict_words.iteritems()}
         dict_words['@'] = 'SIL'
         return dict_words
-
-    # # TODO: fix "spelling" to account for speech errors, etc
-    # def make_lexicon_old(self):
-    #     dict_word = dict()
-
-    #     # word files are CID/TextGrid/*tokens*.TextGrid
-    #     for tok_file in self._yield_files('tokens'):
-    #         spk = os.path.basename(tok_file)[:2]
-    #         phon_file = os.path.join(
-    #             self.input_dir, 'TextGrid', spk + "-phonemes.TextGrid")
-    #         token, tstart, tstop = None, None, None
-    #         t1, t2 = 0, 0
-
-    #         dummy = False
-    #         wd = list()
-    #         phn = list()
-
-    #         # get word and time intervals
-    #         for line in (l.strip() for l in utils.open_utf8(tok_file, 'r')):
-    #             if dummy is True:
-    #                 line = line.replace('"', '')
-    #                 wd.append(line.encode("utf-8"))
-    #                 if len(wd) == 3:
-    #                     tstart, tstop, token = wd
-    #                     tstart, tstop = float(tstart), float(tstop)
-    #                     wd = list()
-
-    #                     # find phonetic transcription in phonemes file
-    #                     cnt = 0
-    #                     for pline in (pl.strip() for pl in
-    #                                   utils.open_utf8(phon_file, 'r')):
-    #                         cnt += 1
-    #                         pline = pline.encode("utf-8")
-    #                         if (cnt + 2) % 3 == 0:
-    #                             t1 = pline
-    #                         if (cnt + 1) % 3 == 0:
-    #                             t2 = pline
-    #                         if cnt % 3 == 0:
-    #                             if (str.isdigit(t1.replace(".", "")) and
-    #                                 str.isdigit(t2.replace(".", ""))):
-    #                                 if (tstart <= float(t1) < tstop and
-    #                                     tstart < float(t2) <= tstop):
-    #                                     phn.append(pline.replace('"', ''))
-    #                             else:
-    #                                 phn = list()
-    #                     if token != "#":
-    #                         dict_word[token] = phn  #' '.join(phn)
-    #                         # print tstart, tstop, token, phn
-    #                         # cnt = 0
-    #             else:
-    #                 if '\"dummy\"' in line:
-    #                     dummy = True
-    #     return dict_word
