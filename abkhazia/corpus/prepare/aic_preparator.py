@@ -93,7 +93,8 @@ class AICPreparator(AbstractPreparatorWithCMU):
 
     variants = []  # could use lexical stress variants...
 
-    def __init__(self, input_dir,  log=utils.logger.null_logger(), cmu_dict=None):
+    def __init__(self, input_dir,
+                 log=utils.logger.null_logger(), cmu_dict=None):
         super(AICPreparator, self).__init__(
             input_dir, log=log, cmu_dict=cmu_dict)
 
@@ -107,7 +108,7 @@ class AICPreparator(AbstractPreparatorWithCMU):
         self.text = dict()
         for trs in (normal, weird):
             for line in open(trs, 'r'):
-                line = line.split(' ')
+                line = line.strip().split(' ')
                 self.text[line[0]] = ' '.join(line[1:])
 
     def list_audio_files(self):
