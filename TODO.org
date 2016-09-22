@@ -139,16 +139,20 @@ remove those short utts from corpus in preparation step
       output = {posteriorgrams, transcription}
       speaker_adapt
       output: results (repertoire)
-** updating abkhazia.cfg
+** installation
+*** auto setup of kaldi-root in config
+*** install shorten in ./configure ?
+*** updating abkhazia.cfg
    - Need of an automated way to update new versions of the installed
      configuration file in the ./configure script.
    - Do that along with the next update of the config file
    - rewrite configure as a python execution
 ** documentation
   - [ ] have more detailed command description on 'abkhazia <command>
-    --help'. Assume the user doesn't know abkhazia or kaldi.
+    --help'. Assume the user doesn't know abkhazia nor kaldi
   - [ ] improve the 'command line' page
   - [ ] improve the 'corpus format' page
+  - [ ] release doc on rtfd
 * New specifications (0.3)
 #+begin_src python
   corpus = BuckeyeCorpusPreparator('./buckeye').prepare()
