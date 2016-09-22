@@ -17,6 +17,7 @@
 """Provides the Corpus class"""
 
 import os
+import types
 
 from abkhazia.corpus.corpus_saver import CorpusSaver
 from abkhazia.corpus.corpus_loader import CorpusLoader
@@ -222,16 +223,40 @@ class Corpus(utils.abkhazia_base.AbkhaziaBase):
     def subcorpus(self, utt_ids, prune=True, name=None, validate=True):
         """Return a subcorpus made of utterances in `utt_ids`
 
-        The returned corpus is validated (except if `validate` is
-        False) and pruned (except if `prune` is False).
+        Build a subcorpus from a corpus instance, given a list of
+        utterances. The returned subcorpus is an instance of the
+        Corpus class and can saved/loaded/manipulated as usual. The
+        returned corpus is validated (except if `validate` is False)
+        and pruned (except if `prune` is False).
 
-        Raise a KeyError if one utterance in `utt_ids` is in the
+        Parameters:
+        -----------
+
+        utt_ids (sequence of str): the utterances being part of the subcorpus
+
+        prune (bool): remove suppressed utterances from lexicon, text,
+            etc..., default to True
+
+        name (str): name of the created subcorpus in meta, default
+            to 'subcorpus of self.meta.name'
+
+        validate (bool): validation of the created subcorpus, default
+            to True
+
+        Raise:
+        ------
+
+        Raise a KeyError if one utterance in `utt_ids` is not in the
         input corpus.
 
         Raise an IOError if the subcorpus is not valid (this should
         not occurs if the input corpus is valid).
 
         """
+        # if utt_ids is a generator, convert it to list...
+        if isinstance(utt_ids, types.GeneratorType):
+            utt_ids = list(utt_ids)
+
         corpus = Corpus()
         corpus.meta.source = self.meta.source
         corpus.meta.name = name if name else 'subcorpus of ' + self.meta.name

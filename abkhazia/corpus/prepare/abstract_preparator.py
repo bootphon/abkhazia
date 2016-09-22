@@ -113,12 +113,13 @@ class AbstractPreparator(object):
         c.text = self.make_transcription()
         self.log.debug('preparing speakers')
         c.utt2spk = self.make_speaker()
-        self.log.debug('preparing phones, silences and variants')
+        self.log.debug('preparing phones, silences and variants (if any)')
         c.phones = self.phones
         c.silences = self.silences
         c.variants = self.variants
 
         if not keep_short_utts:
+            self.log.debug('removing utterances shorter than 100ms')
             size = len(c.utts())
             dur = c.utt2duration()
             c = c.subcorpus(
