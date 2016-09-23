@@ -79,9 +79,10 @@ following dependencies: Kaldi, sox, shorten and festival.
 
 #### 1.2. Sox and shorten
 
-Abkhazia relies on [sox](http://sox.sourceforge.net) with flac support
-and [shorten](http://etree.org/shnutils/shorten) for wav conversion
-from various audio formats.
+Abkhazia relies on [flac](https://xiph.org/flac),
+[sox](http://sox.sourceforge.net) and
+[shorten](http://etree.org/shnutils/shorten) for wav conversion from
+various audio formats.
 
 * sox and flac should be in repositories of every standard Unix
   distribution, for exemple in Debian/Ubuntu:
@@ -96,7 +97,7 @@ from various audio formats.
         cd shorten-3.6.1
         ./configure
         make
-        sudo make install
+        [sudo] make install
 
 #### 1.3. Festival
 
@@ -108,26 +109,28 @@ from various audio formats.
 
 * On Debian/Ubuntu simply run:
 
-        sudo apt-get install festival
+        [sudo] apt-get install festival
 
 ### 2. Install Abkhazia
 
-First run the configuration script. It will check the dependancies for
-you and will initialize a default configuration file in
-`abkahzia/share/abkhazia.cfg`.
+* First run the configuration script. It will check the dependancies for
+  you and will initialize a default configuration file in
+  `abkahzia/abkhazia.cfg`.
 
-    ./configure
+        ./configure
 
- Rerun this script and correct the prompted configuration errors until
- it succeed.
+  Rerun this script and correct the prompted configuration errors
+  until it succed. At least you are asked to specify the path to kaldi
+  (from step 1.1) in the configuration file.
 
- Then move to next step:
 
-    python setup.py build
-    sudo python setup.py install
+* Then install abkhazia
 
-In case you want to modify and test the code, replace the last step by
-``python setup.py develop``.
+        python setup.py build
+        [sudo] python setup.py install
+
+* In case you want to modify and test the code, replace the last step by
+  ``python setup.py develop``.
 
 
 ## Test

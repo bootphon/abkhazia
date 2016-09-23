@@ -29,7 +29,7 @@ class Decode(abstract_recipe.AbstractRecipe):
 
     Instantiates and run a kaldi recipe to compute either phone
     posteriograms or a transcription estimation from an abkhazia
-    corpus, a language model an dan acoustic model.
+    corpus, a language model and an acoustic model.
 
     The language model an acoustic model should be computed from a
     train set, while the decoding should be estimated from a test set
@@ -38,7 +38,7 @@ class Decode(abstract_recipe.AbstractRecipe):
     """
     name = 'decode'
 
-    def __init__(self, corpus, output_dir=None, log=utils.logger.null_logger()):
+    def __init__(self, corpus, output_dir, log=utils.logger.null_logger()):
         super(Decode, self).__init__(corpus, output_dir, log=log)
 
         self.acoustic_scale = utils.config.get(self.name, 'acoustic-scale')

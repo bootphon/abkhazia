@@ -112,7 +112,7 @@ class LanguageModel(abstract_recipe.AbstractRecipe):
             """Quick access to LM configuration"""
             return utils.config.get('language', name)
         self.level = config('model-level')
-        self.order = config('model-order')
+        self.order = int(config('model-order'))
 
         # 0.5 is the default from kaldi wsj/utils/prepare_lang.sh
         self.silence_probability = (

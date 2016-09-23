@@ -26,8 +26,9 @@ class BuckeyePreparator(AbstractPreparator):
     """Convert the Buckeye corpus to the abkhazia format"""
 
     name = 'buckeye'
+    url = 'http://buckeyecorpus.osu.edu'
+    audio_format = 'wav'
     description = 'Buckeye Corpus of conversational speech'
-
     long_description = '''
     The Buckeye Corpus of conversational speech contains high-quality
     recordings from 40 speakers in Columbus OH conversing freely with
@@ -41,9 +42,6 @@ class BuckeyePreparator(AbstractPreparator):
     This project is funded by the National Institute on Deafness and
     other Communication Disorders and the Office of Research at Ohio
     State University.'''
-
-    url = 'http://buckeyecorpus.osu.edu'
-    audio_format = 'wav'
 
     # IPA transcriptions for all phones in the Buckeye corpus. The
     # following phones are never found in the transcriptions: set([u'own',
@@ -97,6 +95,21 @@ class BuckeyePreparator(AbstractPreparator):
         'hh': u'h',
         'el': u'l\u0329',
         'tq': u'ʔ',
+        '{B_TRANS}': u'{B_TRANS}',
+        '{E_TRANS}': u'{E_TRANS}',
+        'CUTOFF': u'CUTOFF',
+        'ERROR': u'ERROR',
+        'EXCLUDE': u'EXCLUDE',
+        'UNKNOWN_WW': u'UNKNOWN_WW',
+        'UNKNOWN': u'UNKNOWN',
+        'VOCNOISE': u'VOCNOISE',
+        'HESITATION_TAG': u'HESITATION_TAG',
+        'LENGTH_TAG': u'LENGTH_TAG',
+        'VOCNOISE_WW': u'VOCNOISE_WW',
+        'NOISE': u'NOISE',
+        'NOISE_WW': u'NOISE_WW',
+        'IVER': u'IVER',
+        'LAUGH': u'LAUGH',
         # 'B': u'B',
         # 'E': u'E',
         # 'ahn': u'ʌ\u0329',
@@ -114,28 +127,14 @@ class BuckeyePreparator(AbstractPreparator):
         # 'ern': u'ɝ\u0329',
         # 'uwn': u'uː\u0329',
         # 'aen': u'æ\u0329',
-        '{B_TRANS}': u'{B_TRANS}',
-        '{E_TRANS}': u'{E_TRANS}',
-        'CUTOFF': u'CUTOFF',
-        'ERROR': u'ERROR',
-        'EXCLUDE': u'EXCLUDE',
-        'UNKNOWN_WW': u'UNKNOWN_WW',
-        'UNKNOWN': u'UNKNOWN',
-        'VOCNOISE': u'VOCNOISE',
-        'HESITATION_TAG': u'HESITATION_TAG',
-        'LENGTH_TAG': u'LENGTH_TAG',
-        'VOCNOISE_WW': u'VOCNOISE_WW',
-        'NOISE': u'NOISE',
-        'NOISE_WW': u'NOISE_WW',
-        'IVER': u'IVER',
-        'LAUGH': u'LAUGH',
     }
 
     silences = [u"SIL_WW", u"NSN"]  # SPN and SIL will be added automatically
 
     variants = []  # could use lexical stress variants...
 
-    def __init__(self, input_dir, log=utils.logger.null_logger(), copy_wavs=False):
+    def __init__(self, input_dir, log=utils.logger.null_logger(),
+                 copy_wavs=False):
         super(BuckeyePreparator, self).__init__(input_dir, log=log)
         self.copy_wavs = copy_wavs
 
