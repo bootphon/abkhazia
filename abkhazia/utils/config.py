@@ -15,7 +15,7 @@
 """Provides the AbkhaziaConfig class and the config global variable
 
 The `config` variable store the default abkhazia configuration and is
-accessible from anywhere in the sources. It is designed to be
+accessible from anywhere in the abkhazia package. It is designed to be
 instanciated once and only once, the first time this module is
 imported.
 

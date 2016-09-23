@@ -1,5 +1,5 @@
 * DNN branch
-Implement dnn recipe ion top of triphone speaker-adapted acoustic models
+Implement dnn recipe on top of triphone speaker-adapted acoustic models
 * Open bugs [0/3]
 ** TODO decode
    what is the bug??

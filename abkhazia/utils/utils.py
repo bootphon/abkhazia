@@ -58,9 +58,7 @@ def str2bool(s, safe=False):
 
 def bool2str(s):
     """Return 'true' if `s` is True, else return 'false'"""
-    if s is True:
-        return 'true'
-    return 'false'
+    return 'true' if s else 'false'
 
 
 # from https://stackoverflow.com/questions/38987
@@ -122,7 +120,7 @@ def list_files_with_extension(
     If `realpath` is True, return resolved links
 
     If `recursive` is True, list files in the whole subdirectories
-        structure, if False just list the top-level deirectory
+        structure, if False just list the top-level directory
 
     """
     # the regular expression to match in filenames

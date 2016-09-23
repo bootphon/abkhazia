@@ -14,7 +14,13 @@
 #
 # You should have received a copy of the GNU General Public License
 # along with abkhazia. If not, see <http://www.gnu.org/licenses/>.
-"""Provides some functions to work on cha files"""
+"""Provides some functions to work on cha files
+
+Cha format is used by some corpora abkhazia have preparators for. See
+http://childes.psy.cmu.edu/manuals/CHAT.pdf for detailed info on thaht
+format.
+
+"""
 
 import re
 import utils  # this is abkhazia.utils
@@ -83,8 +89,9 @@ def _cha_cleanup(s):
     for c in ('xxx', 'www', 'XXX', 'yyy', '@o', '@f', '@q', '@u', '@c'):
         s = s.replace(c, '')
 
-    # NOTE check that the next set of replacements for unusual
-    # spellings is adapted to your purposes
+    # TODO This should be outside the cha module and goes in the
+    # preparator code directly...  NOTE check that the next set of
+    # replacements for unusual spellings is adapted to your purposes
     for p in (
             ('allgone', 'all gone'),
             ('whaddaya', 'what do you'),

@@ -16,7 +16,7 @@
 """Utility for logging to stdout and an optional log file.
 
 This uses the 'logging' module from Python standard library. In the
-'logging module', a 'level' is associated to each message. The
+logging module, a 'level' is associated to each message. The
 possible levels are:
 
     CRITICAL, ERROR, WARNING, INFO, DEBUG or NOTSET.
