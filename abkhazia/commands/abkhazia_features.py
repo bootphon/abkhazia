@@ -85,7 +85,7 @@ class _FeatBase(AbstractKaldiCommand):
                     cls.parsed_options.append((name, value))
             return customAction
 
-        utils.kaldi.add_options_arguments(
+        utils.kaldi.add_options_executable(
             parser, cls.kaldi_bin,
             action=action,
             ignore=cls.ignored_options,

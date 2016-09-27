@@ -7,7 +7,7 @@ Implement dnn recipe on top of triphone speaker-adapted acoustic models
   phones dans les fichiers words_fold.
 - [ ] tester decode et sortir PER sur les étapes du tri-sa
 - [ ] étendre tri-sa vers dnn
-- [ ] revoir l'architecture de abkhazia acoustic pour avoir une classe par
+- [X] revoir l'architecture de abkhazia acoustic pour avoir une classe par
   modèle, avoir une méthode eval(corpus) serait chouette.
 * Open bugs [0/2]
 ** TODO decode
@@ -28,8 +28,10 @@ WIP on investigation
      (for instance, specifically retrain silence models, or retrain on a
      bunch of new corpus)
    - [ ] questions vs data-driven option
-   - [ ] test the acoustic model
+   - [ ] test the acoustic model (this is the decode command)
      providing WER for every model, eventual automatic parameter search ?
+   - [X] expose in Kaldi parameters (e.g. in steps/train_mono.sh) to
+     the abkhazia interface
 ** decode
    options:
       evaluate(transcription, gold)
@@ -38,9 +40,10 @@ WIP on investigation
       output: results (repertoire)
 ** corpus
 - [ ] des méthodes de stats sur les corpus (duration, per spks, etc)
+- [ ] split with (p_train + p_test) < 1 (by now only =1 supported)
 ** features
-   convertion ark to h5f is slow, can we do parallel ark to RAM, and
-   sequential RAM to h5features?
+- [ ] convertion ark to h5f is slow, can we do parallel ark to RAM, and
+  sequential RAM to h5features?
 ** align --post --with-words
    Update the probabilities estimation to be on words, not on phones
 ** updating abkhazia.cfg
@@ -188,58 +191,3 @@ resulted features was not naturally ordered but as 1, 10, 2, ...
 *** solution
 obvious natural sort of features files
 =======
-* Feature requests
-** features
-   convertion ark to h5f is slow, can we do parallel ark to RAM, and
-   sequential RAM to h5features?
-** acoustic
-   - [ ] --retrain option
-     it should be possible to retrain a trained model on a new corpus
-     (for instance, specifically retrain silence models, or retrain on a
-     bunch of new corpus)
-   - [ ] questions vs data-driven option
-   - [ ] test the acoustic model
-     providing WER for every model, eventual automatic parameter search ?
-** align --post --with-words
-   Update the probabilities estimation to be on words, not on phones
-** decode
-   options:
-      evaluate(transcription, gold)
-      output = {posteriorgrams, transcription}
-      speaker_adapt
-      output: results (repertoire)
-** installation
-*** auto setup of kaldi-root in config
-*** install shorten in ./configure ?
-*** updating abkhazia.cfg
-   - Need of an automated way to update new versions of the installed
-     configuration file in the ./configure script.
-   - Do that along with the next update of the config file
-   - rewrite configure as a python execution
-** documentation
-  - [ ] have more detailed command description on 'abkhazia <command>
-    --help'. Assume the user doesn't know abkhazia nor kaldi
-  - [ ] improve the 'command line' page
-  - [ ] improve the 'corpus format' page
-  - [ ] release doc on rtfd
-* New specifications (0.3)
-#+begin_src python
-  corpus = BuckeyeCorpusPreparator('./buckeye').prepare()
-  corpus.speakers()
-  utt = corpus.utterances()
-
-  train, _ = corpus.split(train_prop=0.5, by_speakers=True)
-  train.save2h5('train.h5', group='corpus', wavs=True)
-  corpus = Corpus.read('train.h5', group='corpus')
-
-  lm = LanguageModelProcessor(order=3, level='word').compute(corpus)
-  lm.save('lm.fst')
-  lm.save2h5('train.h5', group='word-trigram')
-  assert lm.order == 3
-  assert lm.level == 'word'
-
-  features = FeaturesProcessor('mfcc', delta=2, pitch=True).compute(corpus)
-  f = features[utt[0]]  # np.array
-  features.write2h5('train.h5', 'features')
-  features.write2ark('/somewhere')
-#+end_src

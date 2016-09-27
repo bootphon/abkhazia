@@ -121,6 +121,13 @@ class LanguageModel(abstract_recipe.AbstractRecipe):
 
     def _check_level(self):
         level_choices = ['word', 'phone']
+
+        # remove any plural on the level type
+        if self.level == 'phones':
+            self.level = 'phone'
+        if self.level == 'words':
+            self.level = 'word'
+
         if self.level not in level_choices:
             raise RuntimeError(
                 'language model level must be in {}, it is {}'

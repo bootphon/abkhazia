@@ -27,7 +27,12 @@ class OptionEntry(object):
         self.help = help
         self.type = type
         self.default = default
-        self.value = value
+        self.value = value if value else default
+
+
+def make_option(name, help='', type=None, default=None, value=None):
+    """Return a tuple (name, OptionEntry)"""
+    return (name, OptionEntry(help, type, default, value))
 
 
 def _get_default(name, entry, overload):
@@ -46,7 +51,8 @@ _type_dict = {
     'bool': bool,
     'int': int,
     'float': float,
-    'string': str}
+    'string': str,
+    'list': list}
 
 
 def get_options(executable):
@@ -85,7 +91,53 @@ def get_options(executable):
     return options
 
 
-def add_options_arguments(
+def add_options(parser, options,
+                action=lambda n: 'store', ignore=[], overload={}):
+    """Add the arguments from `options` to the given `parser`
+
+    This method calls the add_argument method of the parser for each
+    optional argument read from a dictionary of (name, OptionEntry).
+
+    Parameters:
+    -----------
+
+    parser: any object with a add_argument method (typically from the
+        argparse module)
+
+    options (dict): the options as (name, OptionEntry) in a dictionary
+
+    action: a function(name) wich result is forwarded as the 'action'
+        argument of the argparse add_argument function, optional
+
+    ignore: list of option names to ignore in the executable options
+
+    overload: dict of (option_name, default_value) to overload the
+        default values from the executable    """
+    opt_iter = ((name, entry) for name, entry in sorted(options.iteritems())
+                if name not in ignore)
+
+    for name, entry in opt_iter:
+        if entry.type == 'bool':
+            parser.add_argument(
+                '--{}'.format(name),
+                metavar='<true|false>',
+                choices=['true', 'false'],
+                default=_get_default(name, entry, overload),
+                help=(entry.help[:-1] if entry.help[-1] == '.'
+                      else entry.help) + ', default is %(default)s',
+                action=action(name))
+        else:
+            parser.add_argument(
+                '--{}'.format(name),
+                metavar='<{}>'.format(entry.type),
+                type=_type_dict[entry.type],
+                default=_get_default(name, entry, overload),
+                help=(entry.help[:-1] if entry.help[-1] == '.'
+                      else entry.help) + ', default is %(default)s',
+                action=action(name))
+
+
+def add_options_executable(
         parser, executable, action=lambda n: 'store', ignore=[], overload={}):
     """Add the arguments from `executable` to the given `parser`
 
@@ -111,25 +163,4 @@ def add_options_arguments(
     """
     # iterate on the executable options while ignoring those who have to
     options = get_options(executable)
-    opt_iter = ((name, entry) for name, entry in sorted(options.iteritems())
-                if name not in ignore)
-
-    for name, entry in opt_iter:
-        if entry.type == 'bool':
-            parser.add_argument(
-                '--{}'.format(name),
-                metavar='<true|false>',
-                choices=['true', 'false'],
-                default=_get_default(name, entry, overload),
-                help=(entry.help[:-1] if entry.help[-1] == '.'
-                      else entry.help) + ', default is %(default)s',
-                action=action(name))
-        else:
-            parser.add_argument(
-                '--{}'.format(name),
-                metavar='<{}>'.format(entry.type),
-                type=_type_dict[entry.type],
-                default=_get_default(name, entry, overload),
-                help=(entry.help[:-1] if entry.help[-1] == '.'
-                      else entry.help) + ', default is %(default)s',
-                action=action(name))
+    add_options(options)

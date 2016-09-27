@@ -84,3 +84,4 @@ egs/exemple_buckeye/*
 /kaldi/
 debug/
 /egs/acoustic_model_buckeye/*
+/egs/triphones.item
