@@ -54,5 +54,6 @@ Access to the list of available options
 
 from abkhazia.models.acoustic.monophone import Monophone
 from abkhazia.models.acoustic.triphone import Triphone
-from abkhazia.models.acoustic.triphone_speaker_adapted import (
-    TriphoneSpeakerAdapted)
+from abkhazia.models.acoustic.triphone_speaker_adaptive import (
+    TriphoneSpeakerAdaptive)
+from abkhazia.models.acoustic.neural_network import NeuralNetwork

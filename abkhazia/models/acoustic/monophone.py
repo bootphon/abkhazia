@@ -24,53 +24,54 @@ from abkhazia.models.acoustic.abstract_acoustic_model import (
 class Monophone(AbstractAcousticModel):
     """Wrapper on Kaldi egs/wsj/s5/steps/train_mono.sh
 
+    Training is done on an abkhazia corpus, from computed features.
+
     The following options are not forwarded from Kaldi to
     Abkhazia: power, cmvn_opts.
 
     """
     model_type = 'mono'
 
+    options = {k: v for k, v in (
+        utils.kaldi.options.make_option(
+            'transition-scale', default=1.0, type=float,
+            help='Transition-probability scale (relative to acoustics)'),
+        utils.kaldi.options.make_option(
+            'self-loop-scale', default=0.1, type=float,
+            help=('Scale of self-loop versus non-self-loop log probs '
+                  '(relative to acoustics)')),
+        utils.kaldi.options.make_option(
+            'acoustic-scale', default=0.1, type=float,
+            help='Scaling factor for acoustic likelihoods'),
+        utils.kaldi.options.make_option(
+            'num-iterations', default=40, type=int,
+            help='Number of iterations for training'),
+        utils.kaldi.options.make_option(
+            'max-iteration-increase', default=30, type=int,
+            help='Last iteration to increase number of Gaussians on'),
+        utils.kaldi.options.make_option(
+            'total-gaussians', default=1000, type=int,
+            help='Target number of Gaussians at the end of training'),
+        utils.kaldi.options.make_option(
+            'careful', default=False, type=bool,
+            help=('If true, do careful alignment, which is better at '
+                  'detecting alignment failure (involves loop to start '
+                  'of decoding graph)')),
+        utils.kaldi.options.make_option(
+            'boost-silence', default=1.0, type=float,
+            help=('Factor by which to boost silence likelihoods '
+                  'in alignment')),
+        utils.kaldi.options.make_option(
+            'realign-iterations', type=list,
+            default=[1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 12,
+                     14, 16, 18, 20, 23, 26, 29, 32, 35, 38],
+            help='Iterations on which to align features on the model'),
+        )}
+
     def __init__(self, corpus, lm_dir, feats_dir,
                  output_dir, log=utils.logger.null_logger):
         super(Monophone, self).__init__(
             corpus, lm_dir, feats_dir, output_dir, log=log)
-
-        # forward the Kaldi options in train_mono.sh to Abkhazia
-        self.options = {k: v for k, v in (
-            utils.kaldi.options.make_option(
-                'transition-scale', default=1.0, type=float,
-                help='Transition-probability scale (relative to acoustics)'),
-            utils.kaldi.options.make_option(
-                'self-loop-scale', default=0.1, type=float,
-                help=('Scale of self-loop versus non-self-loop log probs '
-                      '(relative to acoustics)')),
-            utils.kaldi.options.make_option(
-                'acoustic-scale', default=0.1, type=float,
-                help='Scaling factor for acoustic likelihoods'),
-            utils.kaldi.options.make_option(
-                'num-iterations', default=40, type=int,
-                help='Number of iterations for training'),
-            utils.kaldi.options.make_option(
-                'max-iteration-increase', default=30, type=int,
-                help='Last iteration to increase number of Gaussians on'),
-            utils.kaldi.options.make_option(
-                'total-gaussians', default=1000, type=int,
-                help='Target number of Gaussians at the end of training'),
-            utils.kaldi.options.make_option(
-                'careful', default=False, type=bool,
-                help=('If true, do careful alignment, which is better at '
-                      'detecting alignment failure (involves loop to start '
-                      'of decoding graph)')),
-            utils.kaldi.options.make_option(
-                'boost-silence', default=1.0, type=float,
-                help=('Factor by which to boost silence likelihoods '
-                      'in alignment')),
-            utils.kaldi.options.make_option(
-                'realign-iterations', type=list,
-                default=[1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 12,
-                         14, 16, 18, 20, 23, 26, 29, 32, 35, 38],
-                help='Iterations on which to align features on the model'),
-        )}
 
     def run(self):
         self._train_mono()

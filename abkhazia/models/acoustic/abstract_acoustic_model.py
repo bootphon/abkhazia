@@ -52,12 +52,12 @@ class AbstractAcousticModel(AbstractRecipe):
 
     options = NotImplemented
 
-    def __init__(self, corpus, lm_dir, feats_dir,
+    def __init__(self, corpus, lm_dir, input_dir,
                  output_dir, log=utils.logger.null_logger):
         super(AbstractAcousticModel, self).__init__(
             corpus, output_dir, log=log)
 
-        self.feats_dir = os.path.abspath(feats_dir)
+        self.input_dir = os.path.abspath(input_dir)
         self.lm_dir = os.path.abspath(lm_dir)
         self.data_dir = os.path.join(self.recipe_dir, 'data', 'acoustic')
 
@@ -67,7 +67,7 @@ class AbstractAcousticModel(AbstractRecipe):
         check_language_model(self.lm_dir)
 
         self.meta.source += '\n'.join((
-            'features directory:\t{}'.format(self.feats_dir),
+            'input directory:\t{}'.format(self.input_dir),
             'language model directory:\t{}'.format(self.lm_dir)))
 
     def set_option(self, name, value):
@@ -83,8 +83,7 @@ class AbstractAcousticModel(AbstractRecipe):
         super(AbstractAcousticModel, self).create()
 
         # copy features scp files in the recipe_dir
-        Features.export_features(
-            self.feats_dir, self.data_dir)
+        Features.export_features(self.input_dir, self.data_dir)
 
     def export(self):
         """Copy model files to output_dir"""
@@ -118,7 +117,6 @@ class AbstractAcousticModel(AbstractRecipe):
         """Return the value of an option given its name
 
         The returned value is converted to string according to its type.
-
         Lookup in self.options, raise KeyError on unknown option
 
         TODO This method must be part of utils.options

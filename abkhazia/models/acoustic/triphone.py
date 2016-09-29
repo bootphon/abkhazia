@@ -42,6 +42,49 @@ class Triphone(AbstractAcousticModel):
     """
     model_type = 'tri'
 
+    options = {k: v for k, v in (
+        utils.kaldi.options.make_option(
+            'transition-scale', default=1.0, type=float,
+            help='Transition-probability scale (relative to acoustics)'),
+        utils.kaldi.options.make_option(
+                'self-loop-scale', default=0.1, type=float,
+            help=('Scale of self-loop versus non-self-loop log probs '
+                  '(relative to acoustics)')),
+        utils.kaldi.options.make_option(
+            'acoustic-scale', default=0.1, type=float,
+            help='Scaling factor for acoustic likelihoods'),
+        utils.kaldi.options.make_option(
+            'num-iterations', default=35, type=int,
+            help='Number of iterations for training'),
+        utils.kaldi.options.make_option(
+            'max-iteration-increase', default=25, type=int,
+            help='Last iteration to increase number of Gaussians on'),
+        utils.kaldi.options.make_option(
+            'careful', default=False, type=bool,
+            help=('If true, do careful alignment, which is better at '
+                  'detecting alignment failure (involves loop to start '
+                  'of decoding graph)')),
+        utils.kaldi.options.make_option(
+            'boost-silence', default=1.0, type=float,
+            help=('Factor by which to boost silence likelihoods '
+                  'in alignment')),
+        utils.kaldi.options.make_option(
+            'realign-iterations', type=list, default=[10, 20, 30],
+            help='Iterations on which to align features on the model'),
+        utils.kaldi.options.make_option(
+            'beam', default=10, type=int,
+            help='Decoding beam used in alignment'),
+        utils.kaldi.options.make_option(
+            'retry-beam', default=40, type=int,
+            help='Decoding beam for second try at alignment'),
+        utils.kaldi.options.make_option(
+            'num-leaves', default=2500, type=int,
+            help='Maximum number of leaves to be used in tree-buliding'),
+        utils.kaldi.options.make_option(
+            'total-gaussians', default=15000, type=int,
+            help='Target number of Gaussians at the end of training'),
+    )}
+
     def __init__(self, corpus, lm_dir, feats_dir, mono_dir,
                  output_dir, log=utils.logger.null_logger):
         super(Triphone, self).__init__(
@@ -50,49 +93,6 @@ class Triphone(AbstractAcousticModel):
         self.mono_dir = os.path.abspath(mono_dir)
         utils.check_directory(
             self.mono_dir, ['tree', 'final.mdl', 'final.occs'])
-
-        self.options = {k: v for k, v in (
-            utils.kaldi.options.make_option(
-                'transition-scale', default=1.0, type=float,
-                help='Transition-probability scale (relative to acoustics)'),
-            utils.kaldi.options.make_option(
-                'self-loop-scale', default=0.1, type=float,
-                help=('Scale of self-loop versus non-self-loop log probs '
-                      '(relative to acoustics)')),
-            utils.kaldi.options.make_option(
-                'acoustic-scale', default=0.1, type=float,
-                help='Scaling factor for acoustic likelihoods'),
-            utils.kaldi.options.make_option(
-                'num-iterations', default=35, type=int,
-                help='Number of iterations for training'),
-            utils.kaldi.options.make_option(
-                'max-iteration-increase', default=25, type=int,
-                help='Last iteration to increase number of Gaussians on'),
-            utils.kaldi.options.make_option(
-                'careful', default=False, type=bool,
-                help=('If true, do careful alignment, which is better at '
-                      'detecting alignment failure (involves loop to start '
-                      'of decoding graph)')),
-            utils.kaldi.options.make_option(
-                'boost-silence', default=1.0, type=float,
-                help=('Factor by which to boost silence likelihoods '
-                      'in alignment')),
-            utils.kaldi.options.make_option(
-                'realign-iterations', type=list, default=[10, 20, 30],
-                help='Iterations on which to align features on the model'),
-            utils.kaldi.options.make_option(
-                'beam', default=10, type=int,
-                help='Decoding beam used in alignment'),
-            utils.kaldi.options.make_option(
-                'retry-beam', default=40, type=int,
-                help='Decoding beam for second try at alignment'),
-            utils.kaldi.options.make_option(
-                'num-leaves', default=2500, type=int,
-                help='Maximum number of leaves to be used in tree-buliding'),
-            utils.kaldi.options.make_option(
-                'total-gaussians', default=15000, type=int,
-                help='Target number of Gaussians at the end of training'),
-        )}
 
     def run(self):
         align_dir = os.path.join(self.recipe_dir, 'exp', 'mono_ali')

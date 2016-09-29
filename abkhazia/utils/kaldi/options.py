@@ -12,12 +12,13 @@
 #
 # You should have received a copy of the GNU General Public License
 # along with abkhazia. If not, see <http://www.gnu.org/licenses/>.
-"""Wrapper for getting/setting optional parameters of a Kaldi executable"""
+"""Wrapper for getting/setting Kaldi optional parameters"""
 
 import re
 import shlex
 import subprocess
 
+import abkhazia.utils as utils
 from abkhazia.utils.kaldi.path import kaldi_path
 
 
@@ -47,16 +48,35 @@ def _get_default(name, entry, overload):
         return entry.default
 
 
-_type_dict = {
-    'bool': bool,
-    'int': int,
-    'float': float,
-    'string': str,
-    'list': list}
+def _str2type(t):
+    if not isinstance(t, str):
+        return t
+    # raise on unknown type
+    return {'bool': bool,
+            'int': int,
+            'float': float,
+            'string': str,
+            'list': list}[t]
+
+
+def _type2str(t):
+    if isinstance(t, str):
+        return t
+    # raise on unknown type
+    return {bool: 'bool',
+            int: 'int',
+            float: 'float',
+            str: 'string',
+            list: 'list'}[t]
 
 
 def get_options(executable):
-    """Return the options taken by `executable` as a dictionary of entries"""
+    """Return the options taken by `executable` as a dictionary of entries
+
+    This function execute `executable --help` and parse the help
+    message to build and return a dictionary of options[name] -> OptionEntry
+
+    """
     try:
         # help message displayed on stderr with --help argument
         helpmsg = subprocess.Popen(
@@ -113,27 +133,42 @@ def add_options(parser, options,
 
     overload: dict of (option_name, default_value) to overload the
         default values from the executable    """
+
+    def _format_help(entry, default):
+        if isinstance(default, bool):
+            default = utils.bool2str(default)
+        elif isinstance(default, list):
+            default = '"' + ' '.join(str(i) for i in default) + '"'
+        return (entry.help[:-1] if entry.help[-1] == '.'
+                else entry.help) + ', default is {}'.format(default)
+
+
     opt_iter = ((name, entry) for name, entry in sorted(options.iteritems())
                 if name not in ignore)
-
     for name, entry in opt_iter:
-        if entry.type == 'bool':
+        _type = _str2type(entry.type)
+        _default = _get_default(name, entry, overload)
+        if _type == bool:
             parser.add_argument(
                 '--{}'.format(name),
                 metavar='<true|false>',
                 choices=['true', 'false'],
-                default=_get_default(name, entry, overload),
-                help=(entry.help[:-1] if entry.help[-1] == '.'
-                      else entry.help) + ', default is %(default)s',
+                default=_default,
+                help=_format_help(entry, _default),
+                action=action(name))
+        elif _type == list:
+            parser.add_argument(
+                '--{}'.format(name),
+                metavar='<int>',
+                type=str, nargs='+', default=_default,
+                help=_format_help(entry, _default),
                 action=action(name))
         else:
             parser.add_argument(
                 '--{}'.format(name),
-                metavar='<{}>'.format(entry.type),
-                type=_type_dict[entry.type],
-                default=_get_default(name, entry, overload),
-                help=(entry.help[:-1] if entry.help[-1] == '.'
-                      else entry.help) + ', default is %(default)s',
+                metavar='<{}>'.format(_type2str(entry.type)),
+                type=_type, default=_default,
+                help=_format_help(entry, _default),
                 action=action(name))
 
 
@@ -163,4 +198,5 @@ def add_options_executable(
     """
     # iterate on the executable options while ignoring those who have to
     options = get_options(executable)
-    add_options(options)
+    add_options(parser, options,
+                action=action, ignore=ignore, overload=overload)

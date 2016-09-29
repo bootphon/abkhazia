@@ -148,9 +148,10 @@ class AbkhaziaFeatures(object):
 
     @classmethod
     def add_parser(cls, subparsers):
-        """Return a parser for the features command
+        """Return a parser for the 'abkhazia features' command
 
-        add a subparser with 'mfcc', 'fbank' and 'plp' entries
+        Add a subparser and help message for 'mfcc', 'fbank' and 'plp'
+        subcommands.
 
         """
         parser = subparsers.add_parser(cls.name)
