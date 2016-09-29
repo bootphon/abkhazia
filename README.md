@@ -152,7 +152,7 @@ filesystem with ``py.test ./test --basetemp=mydir``.
 
 ## Licence
 
-**Copyright 2015, 2016 by Mathieu Bernard, Thomas Schatz, Xuan Nga Cao, Roland Thiollière, Emmanuel Dupoux**
+**Copyright 2015, 2016 by Mathieu Bernard, Thomas Schatz, Xuan-Nga Cao, Roland Thiollière, Emmanuel Dupoux**
 
 This program is free software: you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by

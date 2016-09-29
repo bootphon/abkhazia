@@ -3,7 +3,7 @@
 
 # PYTHON_ARGCOMPLETE_OK
 #
-# Copyright 2016 Thomas Schatz, Xuan Nga Cao, Mathieu Bernard
+# Copyright 2016 Thomas Schatz, Xuan-Nga Cao, Mathieu Bernard
 #
 # This file is part of abkhazia: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -176,7 +176,7 @@ class CatchExceptions(object):
 # can be usefull to don't catch any exception, so the full error
 # traceback error is printed. To do so, just comment the following
 # line
-@CatchExceptions
+#@CatchExceptions
 def main():
     """abkhazia main entry point in command line"""
     Abkhazia()
