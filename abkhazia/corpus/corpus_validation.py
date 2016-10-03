@@ -15,6 +15,7 @@
 """Provides the CorpusValidation class"""
 
 import collections
+import datetime
 import os
 
 import abkhazia.utils as utils
@@ -88,6 +89,9 @@ class CorpusValidation(object):
         self.validate_lexicon(inventory)
 
         self.log.debug("corpus validated: ready for use with abkhazia")
+        self.log.info("corpus total duration: %s from %s speakers",
+                      self.corpus.duration(format='datetime'),
+                      len(self.corpus.spks()))
         return meta
 
     def validate_wavs(self):

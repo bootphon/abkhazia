@@ -200,6 +200,26 @@ class Corpus(utils.abkhazia_base.AbkhaziaBase):
             utt2dur[utt] = stop - start
         return utt2dur
 
+    def duration(self, format='seconds'):
+        """Return the total duration of the corpus
+
+        If `format` is 'second', returns the corpus duration in
+        seconds as a float. If `format` is 'datetime', returns the
+        corpus duration as a string in the 'hh:mm:ss' format.
+
+        Raise IOError if `format` is not 'seconds' or 'datetime'
+
+        """
+        total = sum(self.utt2duration().itervalues())
+        if format == 'seconds':
+            return total
+        elif format == 'datetime':
+            import datetime
+            # format as hh:mm:ss, skipping subseconds
+            return str(datetime.timedelta(seconds=total)).split('.')[0]
+        else:
+            raise IOError('Unknow format for corpus duration (%s)', format)
+
     def words(self, in_lexicon=True):
         """Return a set of words composing the corpus
 
