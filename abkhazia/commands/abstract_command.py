@@ -112,6 +112,12 @@ class AbstractCoreCommand(AbstractCommand):
             help='if specified, overwrite the output directory. '
             'If not specified but the directory exists, exit with error')
 
+        # add a --validate option
+        parser.add_argument(
+            '--validate', action='store_true',
+            help=('''if specified, validate the corpus before any
+            other processing, ensure corpus data are consistent'''))
+
         dir_group = parser.add_argument_group('directories')
 
         # add a <corpus> mandatory parameter
@@ -182,9 +188,8 @@ class AbstractCoreCommand(AbstractCommand):
         if name is None:
             name = cls.name
 
-        return os.path.join(
-            os.path.dirname(corpus_dir) if arg is None
-            else os.path.abspath(arg), name)
+        return (os.path.join(os.path.dirname(corpus_dir), name)
+                if arg is None else os.path.abspath(arg))
 
 
 class AbstractKaldiCommand(AbstractCoreCommand):
