@@ -307,6 +307,8 @@ class Corpus(utils.abkhazia_base.AbkhaziaBase):
         words = self.words(in_lexicon=False)
         self.lexicon = {key: value for key, value in self.lexicon.iteritems()
                         if key in words}
+        # make sure <unk> is still here (needed by Kaldi programs)
+        self.lexicon['<unk>'] = 'SPN'
 
         # prune phones from pruned lexicon
         phones = set(phone for phones in self.lexicon.itervalues()

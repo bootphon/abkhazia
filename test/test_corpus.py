@@ -41,6 +41,7 @@ def test_empty():
 
 def test_subcorpus(corpus):
     d = corpus.subcorpus(corpus.utts()[:10])
+    assert '<unk>' in d.lexicon
     assert len(d.utts()) == 10
     assert d.is_valid()
 
@@ -55,6 +56,8 @@ def test_subcorpus(corpus):
 
 def test_split(corpus):
     d, e = corpus.split(0.5)
+    assert '<unk>' in d.lexicon
+    assert '<unk>' in e.lexicon
 
     assert len(corpus.lexicon) > len(d.lexicon)
     assert len(corpus.utts()) > len(e.utts())
