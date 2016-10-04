@@ -21,6 +21,32 @@ from abkhazia.models.acoustic.abstract_acoustic_model import (
     AbstractAcousticModel)
 
 
+def is_monophone(am_dir):
+    """Return True if the acoustic model is monophone
+
+    Retrieve that information from meta.txt (TODO could be parsed from
+    final.mdl ?)
+
+    Raise IOError if `am_dir` doesn't contains final.mdl or meta.txt
+
+    """
+    final = os.path.join(am_dir, 'final.mdl')
+    meta = os.path.join(am_dir, 'meta.txt')
+
+    if not os.path.isfile(final):
+        raise IOError('file not found: {}'.format(final))
+
+    if not os.path.isfile(meta):
+        raise IOError('file not found: {}'.format(meta))
+
+    for line in utils.open_utf8(meta, 'r'):
+        if (
+                line.startswith('acoustic model type') and
+                line.split(':')[1].strip() == 'monophone'):
+            return True
+    return False
+
+
 class Monophone(AbstractAcousticModel):
     """Wrapper on Kaldi egs/wsj/s5/steps/train_mono.sh
 

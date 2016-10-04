@@ -45,7 +45,7 @@ class Abkhazia2Kaldi(object):
                  name='recipe', log=utils.logger.null_logger()):
         # filter out short utterances
         self.corpus = corpus.subcorpus(
-            self._desired_utterances(corpus), validate=True)
+            self._desired_utterances(corpus), validate=False)
 
         # init the recipe directory, create it if needed
         self.recipe_dir = recipe_dir
@@ -207,10 +207,14 @@ class Abkhazia2Kaldi(object):
             self._copy_template(script, template)
 
     def setup_score(self):
-        """Copy kaldi/egs/gp/s5/local/score.sh to self.recipe_dir"""
+        """Copy kaldi/egs/wsj/s5/local/score.sh to self.recipe_dir"""
         local_dir = os.path.join(self.recipe_dir, 'local')
         if not os.path.isdir(local_dir):
             os.mkdir(local_dir)
 
-        target = os.path.join(self.kaldi_root, '/egs/gp/s5/local', 'score.sh')
-        shutil.copy(target, os.path.join(local_dir, 'score.sh'))
+        origin = os.path.join(
+            self.kaldi_root, 'egs', 'wsj', 's5', 'local', 'score.sh')
+        assert os.path.isfile(origin), 'no such file {}'.format(origin)
+
+        target = os.path.join(local_dir, 'score.sh')
+        shutil.copy(origin, target)

@@ -17,7 +17,7 @@
 import os
 
 import abkhazia.models.language_model as language_model
-import abkhazia.models.acoustic_model as acoustic_model
+import abkhazia.models.acoustic as acoustic
 import abkhazia.models.abstract_recipe as abstract_recipe
 import abkhazia.utils as utils
 
@@ -31,9 +31,8 @@ class Decode(abstract_recipe.AbstractRecipe):
     posteriograms or a transcription estimation from an abkhazia
     corpus, a language model and an acoustic model.
 
-    The language model an acoustic model should be computed from a
-    train set, while the decoding should be estimated from a test set
-    (use the SplitCorpus class)
+    The language model and acoustic model should be computed from a
+    train set, while the decoding should be estimated from a test set.
 
     """
     name = 'decode'
@@ -54,13 +53,12 @@ class Decode(abstract_recipe.AbstractRecipe):
         if not os.path.isdir(target):
             os.makedirs(target)
 
-        _, lm_order = language_model.read_params(self.lm_dir)
         self._run_command(
             '{0} {1} utils/mkgraph.sh {2} {3} {4} {5}'.format(
                 os.path.join(
                     'utils', utils.config.get('kaldi', 'highmem-cmd')),
                 os.path.join(target, 'mkgraph.log'),
-                '--mono' if lm_order == 1 else '',
+                '--mono' if acoustic.is_monophone(self.am_dir) else '',
                 self.lm_dir,
                 self.am_dir,
                 target))
@@ -90,13 +88,15 @@ class Decode(abstract_recipe.AbstractRecipe):
         """Raise if the decoding parameters are not correct"""
         super(Decode, self).check_parameters()
         language_model.check_language_model(self.lm_dir)
-        acoustic_model.check_acoustic_model(self.am_dir)
+        acoustic.check_acoustic_model(self.am_dir)
         self.meta.source += (', feat = {}, lm = {}, am = {}'.format(
             self.feat_dir, self.lm_dir, self.am_dir))
-        # TODO check am is tri-sa
 
     def create(self):
         super(Decode, self).create()
+
+        # setup local/score.sh
+        self.a2k.setup_score()
 
         # copy features scp files in the recipe_dir
         Features.export_features(
@@ -108,5 +108,6 @@ class Decode(abstract_recipe.AbstractRecipe):
         res_dir = self._mkgraph()
         res_dir = self._decode(res_dir)
 
+    # TODO export WER et al
     def export(self):
         super(Decode, self).export()
