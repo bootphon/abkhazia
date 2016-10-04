@@ -25,7 +25,7 @@ echo 'preparing Brent corpus'
 abkhazia prepare childes -o $data_dir || exit 1
 
 echo 'computing MFCC features'
-abkhazia features $data_dir --use-pitch true -v || exit 1
+abkhazia features mfcc $data_dir --use-pitch true -v || exit 1
 
 echo 'computing language model'
 abkhazia language $data_dir -l word -n 2 -v || exit 1
