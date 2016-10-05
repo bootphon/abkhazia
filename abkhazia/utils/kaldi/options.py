@@ -139,9 +139,16 @@ def add_options(parser, options,
             default = utils.bool2str(default)
         elif isinstance(default, list):
             default = '"' + ' '.join(str(i) for i in default) + '"'
-        return (entry.help[:-1] if entry.help[-1] == '.'
-                else entry.help) + ', default is {}'.format(default)
+        default = 'default is {}'.format(default)
 
+        try:
+            helpmsg = (entry.help[:-1] if entry.help[-1] == '.'
+                       else entry.help) + ', '
+        except IndexError:
+            # entry.help is empty
+            helpmsg = ''
+
+        return ''.join((helpmsg, default))
 
     opt_iter = ((name, entry) for name, entry in sorted(options.iteritems())
                 if name not in ignore)

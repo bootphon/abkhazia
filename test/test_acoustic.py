@@ -18,7 +18,7 @@ import os
 import sys
 import pytest
 
-import abkhazia.models.acoustic_model as acoustic_model
+import abkhazia.models.acoustic as acoustic
 import abkhazia.utils as utils
 from .conftest import assert_no_expr_in_log
 
@@ -28,16 +28,9 @@ def test_acoustic_njobs(corpus, features, language_model, njobs, tmpdir):
     output_dir = str(tmpdir.mkdir('lang'))
     flog = os.path.join(output_dir, 'language.log')
     log = utils.logger.get_log(flog)
-    am = acoustic_model.AcousticModel(corpus, output_dir, log)
+    am = acoustic.Monophone(corpus, language_model, features, output_dir, log)
 
-    am.feat = features
-    am.lang = language_model
     am.njobs = njobs
-    am.model_type = 'mono'
-    am.num_gauss_si = 10
-    am.num_states_si = 10
-    am.num_gauss_sa = 10
-    am.num_states_sa = 10
 
     try:
         am.compute()
@@ -51,5 +44,6 @@ def test_acoustic_njobs(corpus, features, language_model, njobs, tmpdir):
         sys.stdout.write('####################\n')
         raise err
 
-    acoustic_model.check_acoustic_model(output_dir)
+    acoustic.check_acoustic_model(output_dir)
+    assert acoustic.is_monophone(output_dir)
     assert_no_expr_in_log(flog, 'error')

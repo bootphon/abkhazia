@@ -97,7 +97,7 @@ class TriphoneSpeakerAdaptive(AbstractAcousticModel):
 
     def __init__(self, corpus, lm_dir, feats_dir, tri_dir,
                  output_dir, log=utils.logger.null_logger):
-        super(TriphoneSpeakerAdapted, self).__init__(
+        super(TriphoneSpeakerAdaptive, self).__init__(
             corpus, lm_dir, feats_dir, output_dir, log=log)
 
         self.tri_dir = os.path.abspath(tri_dir)
@@ -173,7 +173,7 @@ class TriphoneSpeakerAdaptive(AbstractAcousticModel):
             '--realign-iters {realign} --num-iters {niters} '
             '--careful {careful} --boost-silence {boost} '
             '--fmllr-update-type {fmllr} --silence-weight {silence} '
-            '--fmllr-iters "{fmllriters}" '
+            '--fmllr-iters {fmllriters} '
             '--max-iter-inc {maxiter} --beam {beam} --retry-beam {retrybeam} '
             '{numleaves} {totgauss} {data} {lang} {origin} {target}'
             .format(

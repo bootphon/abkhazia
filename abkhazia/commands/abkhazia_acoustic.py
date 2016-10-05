@@ -54,18 +54,26 @@ class _AmBase(AbstractKaldiCommand):
         parser.formatter_class = argparse.RawDescriptionHelpFormatter
         parser.description = cls.long_description()
 
-        # add parameters for source directories (language model and input dir)
+        # add parameters for source directories (language model,
+        # features and (except for monophone) input dir)
         dir_group.add_argument(
             '-l', '--language-model', metavar='<lm-dir>', default=None,
             help='''the language model recipe directory, data is read from
             <lm-dir>/language/lang, if not specified use <lm-dir>=<corpus>.''')
 
         dir_group.add_argument(
-            '-i', '--input-dir', metavar='<{}-dir>'.format(cls.prev_step[0]),
-            default=None,
-            help='''the input directory, data is read
-            from <{0}-dir>/{1}, if not specified use <{0}-dir>=<corpus>.'''
-            .format(cls.prev_step[0], cls.prev_step[1]))
+            '-f', '--features', metavar='<feats-dir>', default=None,
+            help='')
+
+        if cls.prev_step:
+            # if not monophone, add a --input-dir option to specify
+            # input acoustic model
+            dir_group.add_argument(
+                '-i', '--input-dir',
+                metavar='<{}-dir>'.format(cls.prev_step[0]),
+                help='''the input directory, data is read
+                from <{0}-dir>/{1}, if not specified use <{0}-dir>=<corpus>.'''
+                .format(cls.prev_step[0], cls.prev_step[1]))
 
         # add parameters for Kaldi options
         kaldi_group = parser.add_argument_group('training parameters')
@@ -81,20 +89,30 @@ class _AmBase(AbstractKaldiCommand):
             verbose=args.verbose)
         corpus = Corpus.load(corpus_dir)
 
-        # get back the input directory
-        input_dir = (
-            os.path.join(
-                os.path.dirname(corpus_dir), '/{}'.format(cls.prev_step[1]))
-            if args.input_dir is None
-            else os.path.abspath(args.input_dir))
-
         # get back the language model directory
         lang = (os.path.join(os.path.dirname(corpus_dir), 'language')
                 if args.language_model is None
                 else os.path.abspath(args.language_model))
 
+        # get back the features directory
+        feats = (os.path.join(os.path.dirname(corpus_dir), 'features')
+                 if args.features is None
+                 else os.path.abspath(args.features))
+
         # instanciate and setup the kaldi recipe with standard args
-        recipe = cls.am_class(corpus, lang, input_dir, output_dir, log=log)
+        if cls.am_class is not acoustic.Monophone:
+            # get back the input directory
+            input_dir = (
+                os.path.join(os.path.dirname(corpus_dir),
+                             '/{}'.format(cls.prev_step[1]))
+                if args.input_dir is None
+                else os.path.abspath(args.input_dir))
+
+            recipe = cls.am_class(
+                corpus, lang, feats, input_dir, output_dir, log=log)
+        else:
+            recipe = cls.am_class(corpus, lang, feats, output_dir, log=log)
+
         recipe.njobs = args.njobs
         if args.recipe:
             recipe.delete_recipe = False
@@ -114,14 +132,11 @@ class _AmMono(_AmBase):
     name = 'monophone'
     description = 'Monophone HMM-GMM acoustic model'
     am_class = acoustic.Monophone
-    prev_step = ('feat', 'features')
+    prev_step = None  # monophone is built directly on features
     _long_description = '''
-        Training a monophone HMM-GMM acoustic model on a corpus, with
-        an attached language model (the <lm-dir> option).
-
-        The model is trained on features input coming from one of the
-        "abkhazia features" subcommands (specified by the <feat-dir>
-        option).
+        Training a monophone HMM-GMM acoustic model on a corpus, with an
+        attached language model and features (<lm-dir> and <feat-dir>
+        options respectively).
 
         Other training options, such as the number of
         Gaussians or iterations, are specified in the "training
@@ -185,12 +200,15 @@ class _AmDnn(_AmBase):
         Training a neural netwok with pnorm nonlinearities on a
         corpus, with an attached language model (the <lm-dir> option).
 
-        The model is trained on a previously computed HMM-GMM acoustic
-        model, specified by the <am-dir> option.
+        The model is trained on top of a previously computed HMM-GMM
+        acoustic model, specified by the <am-dir> option.
 
         The trained model is wrote in a directory specified by the
         <output-dir> option. It can then feed the "abkhazia align" or
-        "abkhazia decode" commands.'''
+        "abkhazia decode" commands.
+
+        See http://kaldi-asr.org/doc/dnn2.html for details on the DNN
+        recipe implementation '''
 
 
 class AbkhaziaAcoustic(object):

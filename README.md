@@ -21,8 +21,7 @@ following:
   * computing ABX discriminability scores in various ABX tasks defined
     on the corpus
 
-Documentation **ACTUALLY NOT UP TO DATE** can be found
-[here](https://github.com/bootphon/abkhazia/wiki)
+**Online documentation can be found [here](https://abkhazia.readthedocs.io/en/latest/)**
 
 
 ## Installation
@@ -113,7 +112,13 @@ various audio formats.
 
 ### 2. Install Abkhazia
 
-* First run the configuration script. It will check the dependancies for
+* First clone the Abkhazia github repository and go to the created
+  `abkhazia` directory:
+
+        git clone git@github.com:bootphon/abkhazia.git
+        cd ./abkhazia
+
+* Run the configuration script. It will check the dependancies for
   you and will initialize a default configuration file in
   `abkahzia/abkhazia.cfg`.
 

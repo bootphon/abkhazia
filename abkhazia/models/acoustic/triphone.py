@@ -47,7 +47,7 @@ class Triphone(AbstractAcousticModel):
             'transition-scale', default=1.0, type=float,
             help='Transition-probability scale (relative to acoustics)'),
         utils.kaldi.options.make_option(
-                'self-loop-scale', default=0.1, type=float,
+            'self-loop-scale', default=0.1, type=float,
             help=('Scale of self-loop versus non-self-loop log probs '
                   '(relative to acoustics)')),
         utils.kaldi.options.make_option(

@@ -24,6 +24,11 @@ import abkhazia.utils as utils
 make_option = utils.kaldi.options.make_option
 
 
+def check_acoustic_model(am_dir):
+    """Raise IOError if final.mdl is not in am_dir"""
+    utils.check_directory(am_dir, ['final.mdl'], name='acoustic model')
+
+
 class AbstractAcousticModel(AbstractRecipe):
     """Abstract base class of acoustic models trainers
 
@@ -68,7 +73,8 @@ class AbstractAcousticModel(AbstractRecipe):
 
         self.meta.source += '\n'.join((
             'input directory:\t{}'.format(self.input_dir),
-            'language model directory:\t{}'.format(self.lm_dir)))
+            'language model directory:\t{}'.format(self.lm_dir),
+            'acoustic model type:\t{}'.format(self.model_type)))
 
     def set_option(self, name, value):
         """Set option `name` to `value`
@@ -127,5 +133,5 @@ class AbstractAcousticModel(AbstractRecipe):
         if t is bool:
             return utils.bool2str(v)
         elif t is list:
-            return ' '.join(str(i) for i in v)
+            return '"' + ' '.join(str(i) for i in v) + '"'
         return str(v)

@@ -79,7 +79,8 @@ class NeuralNetwork(AbstractAcousticModel):
 
     The following options are not forwarded from Kaldi to Abkhazia:
     get_egs_stage, online_ivector_dir, stage, cleanup, egs_dir,
-    lda_opts, lda_dim, egs_opts, transform_dir
+    lda_opts, lda_dim, egs_opts, transform_dir, cmvn_opts, feat_type,
+    prior_subset_size
 
     """
     model_type = 'nnet'
@@ -163,13 +164,14 @@ class NeuralNetwork(AbstractAcousticModel):
                 'Number of components to mix up to (should be > #tree leaves, '
                 'if specified)')),
         utils.kaldi.options.make_option(
-            'combine-num-threads', default=8, type=int,),
+            'combine-num-threads', default=8, type=int,
+            help='number of threads for the "combine" stage'),
         )}
 
-    def __init__(self, corpus, lm_dir, am_dir,
+    def __init__(self, corpus, lm_dir, feats_dir, am_dir,
                  output_dir, log=utils.logger.null_logger):
         super(NeuralNetwork, self).__init__(
-            corpus, lm_dir, am_dir, output_dir, log=log)
+            corpus, lm_dir, feats_dir, output_dir, log=log)
 
         self.am_dir = os.path.abspath(am_dir)
         utils.check_directory(
@@ -189,10 +191,12 @@ class NeuralNetwork(AbstractAcousticModel):
                 ' '.join('--{} {}'.format(
                     k, v.value) for k, v in self.options.iteritems()),
                 ('--num-threads {0} '
-                 '--parallel-opts "--num-threads {0} --mem 1G"')
+                 # '--parallel-opts "--num-threads {0}"')
+                 '--parallel-opts ""')
                 .format(self.njobs),
-                '--combine-parallel-opts "--num-threads {}"'.format(
-                    self.options['combine-num-threads'].value),
+                # '--combine-parallel-opts "--num-threads {}"'.format(
+                #     self.options['combine-num-threads'].value),
+                '--combine-parallel-opts ""',
                 '{data} {lang} {origin} {target}'.format(
                     data=self.data_dir,
                     lang=self.lm_dir,
