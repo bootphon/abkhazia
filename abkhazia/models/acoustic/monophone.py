@@ -42,7 +42,7 @@ def is_monophone(am_dir):
     for line in utils.open_utf8(meta, 'r'):
         if (
                 line.startswith('acoustic model type') and
-                line.split(':')[1].strip() == 'monophone'):
+                line.split(':')[1].strip() == Monophone.model_type):
             return True
     return False
 
@@ -113,7 +113,7 @@ class Monophone(AbstractAcousticModel):
             '--acoustic-scale={acoustic} --self-loop-scale={selfloop}" '
             '--num-iters {niters} --max-iter-inc {maxinc} --totgauss {ngauss} '
             '--careful {careful} --boost-silence {boost} '
-            '--realign-iters "{realign}" {data} {lm} {target}'
+            '--realign-iters {realign} {data} {lm} {target}'
             .format(
                 njobs=self.njobs,
                 cmd=utils.config.get('kaldi', 'train-cmd'),

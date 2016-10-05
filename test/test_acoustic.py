@@ -25,7 +25,7 @@ from .conftest import assert_no_expr_in_log
 
 @pytest.mark.parametrize('njobs', [1, 4])
 def test_acoustic_njobs(corpus, features, language_model, njobs, tmpdir):
-    output_dir = str(tmpdir.mkdir('lang'))
+    output_dir = str(tmpdir.mkdir('am-mono'))
     flog = os.path.join(output_dir, 'language.log')
     log = utils.logger.get_log(flog)
     am = acoustic.Monophone(corpus, language_model, features, output_dir, log)
