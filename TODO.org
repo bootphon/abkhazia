@@ -1,17 +1,10 @@
 * DNN branch
 Implement dnn recipe on top of triphone speaker-adapted acoustic models
-- [ ] une classe AlignedCorpus ?
-- [ ] voir avec XN pour la préparation de buckeye: si on veut sortir
-  l'alignment manuel il faut les segments au phone et non au
-  word. Soit on corrige la version raw de Buckeye en alignant words on
-  phones dans les fichiers words_fold.
-- [ ] tester decode et sortir PER sur les étapes du tri-sa
-- [ ] étendre tri-sa vers dnn
+- [ ] tester decode et sortir WER/PER sur les étapes du tri-sa
+- [X] étendre tri-sa vers dnn
 - [X] revoir l'architecture de abkhazia acoustic pour avoir une classe par
   modèle, avoir une méthode eval(corpus) serait chouette.
-* Open bugs [0/2]
-** TODO decode
-   what is the bug??
+* Open bugs [0/1]
 ** TODO acoustic with delta features
 Acoustic modeling fails when built on features with deltas. This is
 caused by bad features dimension.
@@ -28,10 +21,6 @@ WIP on investigation
      (for instance, specifically retrain silence models, or retrain on a
      bunch of new corpus)
    - [ ] questions vs data-driven option
-   - [ ] test the acoustic model (this is the decode command)
-     providing WER for every model, eventual automatic parameter search ?
-   - [X] expose in Kaldi parameters (e.g. in steps/train_mono.sh) to
-     the abkhazia interface
 ** decode
    options:
       evaluate(transcription, gold)
@@ -41,6 +30,8 @@ WIP on investigation
 ** corpus
 - [ ] des méthodes de stats sur les corpus (duration, per spks, etc)
 - [ ] split with (p_train + p_test) < 1 (by now only =1 supported)
+- [ ] need of a structure to append data to an existing corpus (eg
+  attach a LM, features or manual alignments)
 ** features
 - [ ] convertion ark to h5f is slow, can we do parallel ark to RAM, and
   sequential RAM to h5features?
@@ -54,9 +45,14 @@ WIP on investigation
 ** documentation
   - [ ] have more detailed command description on 'abkhazia <command>
     --help'. Assume the user doesn't know abkhazia or kaldi.
-  - [ ] improve the 'command line' page
-  - [ ] improve the 'corpus format' page
-* New specifications (0.3)
+  - [ ] improve the online documentation
+    - install and configure
+    - preparators for new corpora
+    - ASR: LM, AM, features, alignment, etc
+    - ABX: item files generation from alignment
+  - [ ] add READMEs in intermediate directories of the project (or
+    have a 'project organization' page)
+** New specifications (0.3)
 #+begin_src python
   corpus = BuckeyeCorpusPreparator('./buckeye').prepare()
   corpus.speakers()
