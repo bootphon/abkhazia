@@ -94,14 +94,17 @@ class Corpus(utils.abkhazia_base.AbkhaziaBase):
     """
 
     @classmethod
-    def load(cls, corpus_dir, log=utils.logger.null_logger()):
+    def load(cls, corpus_dir, validate=False, log=utils.logger.null_logger()):
         """Return a corpus initialized from `corpus_dir`
+
+        If validate is True, make sure the corpus is valid before
+        returning it.
 
         Raise IOError if corpus_dir if an invalid directory, the
         output corpus is not validated.
 
         """
-        return CorpusLoader.load(cls, corpus_dir, log=log)
+        return CorpusLoader.load(cls, corpus_dir, validate=validate, log=log)
 
     def __init__(self, log=utils.logger.null_logger()):
         """Init an empty corpus"""

@@ -102,7 +102,7 @@ class _FeatBase(AbstractKaldiCommand):
         corpus_dir, output_dir = cls._parse_io_dirs(args, 'features')
         log = utils.logger.get_log(
             os.path.join(output_dir, 'features.log'), verbose=args.verbose)
-        corpus = Corpus.load(corpus_dir)
+        corpus = Corpus.load(corpus_dir, validate=args.validate, log=log)
 
         recipe = features.Features(corpus, output_dir, log=log)
         recipe.type = cls.feat_name

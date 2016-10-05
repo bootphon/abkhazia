@@ -87,7 +87,7 @@ class _AmBase(AbstractKaldiCommand):
         log = utils.logger.get_log(
             os.path.join(output_dir, '{}.log'.format(cls.name)),
             verbose=args.verbose)
-        corpus = Corpus.load(corpus_dir)
+        corpus = Corpus.load(corpus_dir, validate=args.validate, log=log)
 
         # get back the language model directory
         lang = (os.path.join(os.path.dirname(corpus_dir), 'language')

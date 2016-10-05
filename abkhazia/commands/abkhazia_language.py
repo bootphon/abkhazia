@@ -65,7 +65,7 @@ class AbkhaziaLanguage(AbstractKaldiCommand):
 
     @classmethod
     def run(cls, args):
-        corpus, output_dir = cls._parse_io_dirs(args)
+        corpus_dir, output_dir = cls._parse_io_dirs(args)
         log = utils.logger.get_log(
             os.path.join(output_dir, 'language.log'), verbose=args.verbose)
 
@@ -78,8 +78,10 @@ class AbkhaziaLanguage(AbstractKaldiCommand):
         if args.model_order is None:
             args.model_order = utils.config.get('language', 'model-order')
 
+        corpus = Corpus.load(corpus_dir, validate=args.validate, log=log)
+
         # instanciate the lm recipe creator
-        recipe = LanguageModel(Corpus.load(corpus), output_dir, log=log)
+        recipe = LanguageModel(corpus, output_dir, log=log)
         recipe.order = args.model_order
         recipe.level = args.model_level
         recipe.position_dependent_phones = args.word_position_dependent

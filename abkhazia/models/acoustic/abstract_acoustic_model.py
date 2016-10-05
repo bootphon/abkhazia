@@ -122,10 +122,12 @@ class AbstractAcousticModel(AbstractRecipe):
     def _opt(self, name):
         """Return the value of an option given its name
 
-        The returned value is converted to string according to its type.
-        Lookup in self.options, raise KeyError on unknown option
+        The returned value is converted to string according to its
+        type. For bool: True -> 'true'. For list: [1, 2, 3] -> '"1 2
+        3"' (note the double quotes). Lookup the `name` in
+        self.options, raise KeyError on unknown option
 
-        TODO This method must be part of utils.options
+        TODO This method should be part of utils.options?
 
         """
         t = self.options[name].type

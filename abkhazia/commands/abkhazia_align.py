@@ -91,7 +91,7 @@ class AbkhaziaAlign(AbstractKaldiCommand):
         corpus_dir, output_dir = cls._parse_io_dirs(args)
         log = utils.logger.get_log(
             os.path.join(output_dir, 'align.log'), verbose=args.verbose)
-        corpus = Corpus.load(corpus_dir)
+        corpus = Corpus.load(corpus_dir, validate=args.validate, log=log)
 
         # get back the language model directory
         lang = (os.path.dirname(corpus_dir) if args.language_model is None

@@ -68,7 +68,7 @@ class AbkhaziaDecode(AbstractKaldiCommand):
         corpus_dir, output_dir = cls._parse_io_dirs(args)
         log = utils.logger.get_log(
             os.path.join(output_dir, 'decode.log'), verbose=args.verbose)
-        corpus = Corpus.load(corpus_dir)
+        corpus = Corpus.load(corpus_dir, validate=args.validate, log=log)
 
         # get back the features, language and acoustic models directories
         feat = cls._parse_aux_dir(corpus_dir, args.features, 'features')

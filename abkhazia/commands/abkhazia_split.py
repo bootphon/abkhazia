@@ -70,7 +70,7 @@ class AbkhaziaSplit(AbstractCoreCommand):
         log = utils.logger.get_log(
             os.path.join(output_dir, 'split.log'), verbose=args.verbose)
 
-        corpus = Corpus.load(corpus_dir, log=log)
+        corpus = Corpus.load(corpus_dir, validate=args.validate, log=log)
 
         # retrieve the test proportion
         if args.train_prop is None:
