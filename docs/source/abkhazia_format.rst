@@ -8,39 +8,74 @@ Definition
 A standardized corpus is stored as a directory composed of the
 following:
 
-- A ``wavs`` subfolder containing the speech recordings in wav, either
-  as files or links.
+- ``wavs``: subfolder containing the speech recordings in wav, either
+  as files or symbolic links
 
-- A list of utterances with a description of their location in the
-  wavefiles
+- ``segments.txt``: list of utterances with a description of their
+  location in the wavefiles
 
-- A list containing the speaker associated to each utterance
+- ``utt2spk.txt``: list containing the speaker associated to each utterance
 
-- A transcription of each utterance in word units
+- ``text.txt``: transcription of each utterance in word units
 
-- A phone inventory mapped to IPA
+- ``phones.txt``: phone inventory mapped to IPA
 
-- A phonetic dictionary using that inventory
+- ``lexicon.txt``: phonetic dictionary using that inventory
 
-Optionally, the corpus directory may contains:
+- ``silences.txt``: list of silence symbols
 
-- Time-alignments (The previous files in the list are sufficient for
-  training ASR models with kaldi, however for ABX experiments we also
-  need time-alignments for each phone or each word. If they are not
-  provided directly, a surrogate will be obtained through
-  forced-alignment using the kaldi-trained ASR models)
 
-- A language model, either in OpenFST text or binary format
-  or in ARPA-MIT N-gram format
+Supported corpora
+=================
 
-- Syllabification of each utterance
+Supported corpora are:
+
+* Articulation Index Corpus LSCP
+
+* Buckeye Corpus of conversational speech
+
+* Child Language Data Exchange System (only Brent part for now)
+
+* Corpus of Interactional Data
+
+* Corpus of Spontaneous Japanese
+
+* GlobalPhone multilingual read speech corpus (Vietnamese and Mandarin)
+
+* LibriSpeech ASR Corpus
+
+* Wall Street Journal ASR Corpus
+
+* NCHLT Xitsonga Speech Corpus
+
+
+Once you have the raw data, you can import any of the above corpora in
+the standardized Abkhazia format using the ``abkhazia prepare``
+command, for exemple::
+
+  abkhazia prepare csj /path/to/raw/csj -o ./prepared_csj
+
+
+Note that many corpora do not form a homogeneous whole, but are
+constituted from several homogenous subparts. For example in the core
+subset of the [CSJ](http://www.ninjal.ac.jp/english/products/csj/)
+corpus, spontaneous presentations from academics (files whos names
+starts with an 'A'), spontaneous presentations from laymen ('S'
+files), readings ('R' files) and dialogs ('D' files) form homogeneous
+sub-corpora. If you expect the differences between the different
+subparts to have an impact on the results of standard ABX and kaldi
+analyses, you should generate a separate standardized corpus for each
+of them.
+
 
 
 Files format
 ============
 
-File formats are often, but not always, identical to kaldi standard
-file formats, see http://kaldi.sourceforge.net/data_prep.html.
+.. note::
+
+   File formats are often, but not always, identical to `Kaldi standard
+   file formats <http://kaldi-asr.org/doc/data_prep.html>`_.
 
 
 1. Speech recordings
@@ -259,6 +294,8 @@ phoneset::
 7. Time-alignments (Optional)
 -----------------------------
 
+Not yet supported.
+
 A text file called ``phone_alignment.txt``, containing a beginning and
 end timestamp for each phone of each utterance in the corpus. The file
 should contain one entry per line in the following format::
@@ -291,30 +328,15 @@ Not yet supported.
 Not yet supported.
 
 
-Data preparation
-================
+Add new corpora
+===============
 
+* Make a new Python class which inherit from
+  ``abkhazia.corpus.prepare.abstract_preparator``. So far, you need to
+  implement few methods to populate the transcriptions, lexicon,
+  etc... See the absctract preparator code for detailed
+  specifications, and the existing preparators for exemples.
 
-Data validation and statistics
-------------------------------
-
-Once your corpus is in standard format, you can use
-**bin/validate_corpus.py** to check its consistency with abkhazia
-guidelines. You need to have all the items required (see previous
-section) in a single folder and you need to pass the path to that
-folder as an argument to **bin/validate_corpus.py**.
-
-You can use _corpus_stats.py_ to output some statistics about the
-corpus.
-
-
-Note that many corpora do not form a homogeneous whole, but are
-constituted from several homogenous subparts. For example in the core
-subset of the [CSJ](http://www.ninjal.ac.jp/english/products/csj/)
-corpus, spontaneous presentations from academics (files whos names
-starts with an 'A'), spontaneous presentations from laymen ('S'
-files), readings ('R' files) and dialogs ('D' files) form homogeneous
-sub-corpora. If you expect the differences between the different
-subparts to have an impact on the results of standard ABX and kaldi
-analyses, you should generate a separate standardized corpus for each
-of them.
+* Register it in ``abkhazia.commands.abkhazia_prepare``, an
+  intermediate factory class can be defined to add command line
+  arguments, or a default one can be used.

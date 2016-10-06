@@ -53,6 +53,19 @@ WIP on investigation
   - [ ] add READMEs in intermediate directories of the project (or
     have a 'project organization' page)
 ** New specifications (0.3)
+   Optionally, the corpus directory may contains:
+
+   - Time-alignments (The previous files in the list are sufficient for
+     training ASR models with kaldi, however for ABX experiments we also
+     need time-alignments for each phone or each word. If they are not
+     provided directly, a surrogate will be obtained through
+     forced-alignment using the kaldi-trained ASR models)
+
+   - A language model, either in OpenFST text or binary format
+     or in ARPA-MIT N-gram format
+
+   - Syllabification of each utterance
+
 #+begin_src python
   corpus = BuckeyeCorpusPreparator('./buckeye').prepare()
   corpus.speakers()

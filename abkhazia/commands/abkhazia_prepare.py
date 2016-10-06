@@ -24,8 +24,12 @@ from abkhazia.commands.abstract_command import AbstractCommand
 
 # import all the corpora preparators
 from abkhazia.corpus.prepare import (
-    AICPreparator, BuckeyePreparator, ChildesPreparator,
-    CSJPreparator, LibriSpeechPreparator, XitsongaPreparator,
+    AICPreparator,
+    BuckeyePreparator,
+    ChildesPreparator,
+    CSJPreparator,
+    LibriSpeechPreparator,
+    XitsongaPreparator,
     AbstractGlobalPhonePreparator, MandarinPreparator, VietnamesePreparator,
     WallStreetJournalPreparator, JournalistReadPreparator,
     JournalistSpontaneousPreparator, MainReadPreparator)

@@ -35,8 +35,7 @@ class AbstractPreparator(object):
     specialized preparators.
 
     For more details on data preparation and the abkhazia format,
-    please refer to
-    https://github.com/bootphon/abkhazia/wiki/data_preparation
+    please refer to the Abkhazia documentation.
 
     Parameters
     ----------
