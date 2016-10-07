@@ -25,18 +25,13 @@ VERSION = '0.3'
 # On Reads The Docs we don't install any package
 ON_RTD = os.environ.get('READTHEDOCS', None) == 'True'
 REQUIREMENTS = [] if ON_RTD else [
-    # 'abnet',
-    # 'ABXpy',
-    # 'cpickle',
-    # 'matplotlib',
-    # 'pandas',
-    # 'yaafelib',
     'numpy',
     'progressbar2',
     'joblib',
     'argcomplete',
     'pytest',
-    'h5features>=1.1',
+    'Sphinx',
+    'h5features>=1.2',
     'phonemizer>=0.2'
 ]
 
@@ -50,9 +45,7 @@ setup(
     # install dependancies from bootphon github
     dependency_links=[GITHUB_BOOTPHON + package for package in (
         'phonemizer/archive/v0.2.tar.gz#egg=phonemizer-0.2',
-        'h5features/archive/v1.1.tar.gz#egg=h5features-1.1',
-        # 'ABXpy/archive/v0.2.tar.gz#egg=ABXpy-0.2'
-    )],
+        'h5features/archive/v1.2.tar.gz#egg=h5features-1.2')],
 
     # install python dependencies from PyPI
     install_requires=REQUIREMENTS,
@@ -67,8 +60,8 @@ setup(
     },
 
     # define the command-line script to use
-    entry_points={
-        'console_scripts': ['abkhazia = abkhazia.commands.abkhazia_main:main']},
+    entry_points={'console_scripts': [
+        'abkhazia = abkhazia.commands.abkhazia_main:main']},
 
     # metadata for upload to PyPI
     author='Thomas Schatz, Mathieu Bernard, Roland Thiolliere, Xuan-Nga Cao',
