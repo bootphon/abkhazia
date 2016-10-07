@@ -15,60 +15,12 @@
 """Training neural network acoustic models with pnorm nonlinearities"""
 
 import os
-import re
-import subprocess
+import pkg_resources
 
 import abkhazia.utils as utils
 from abkhazia.utils.kaldi.options import OptionEntry
 from abkhazia.models.acoustic.abstract_acoustic_model import (
     AbstractAcousticModel)
-
-
-# def _guess_type(value):
-#     if value.startswith('"'):
-#         return str
-#     elif '.' in value:
-#         return float
-#     else:
-#         return int
-
-
-# def _parse_options():
-#     """Return a dict[name] -> OptionEntry read from train_pnorm_fast.sh"""
-#     # read the help message from the script
-#     try:
-#         script = os.path.join('steps', 'nnet2', 'train_pnorm_fast.sh')
-#         path = os.path.join(
-#             utils.config.get('kaldi', 'kaldi-directory'), 'egs', 'wsj', 's5')
-
-#         # help message displayed on stderr with --help argument
-#         helpmsg = subprocess.Popen(
-#             os.path.join(path, script),
-#             stdout=subprocess.PIPE, cwd=path).communicate()[0]
-#     except OSError:
-#         raise RuntimeError(
-#             'No such file "{}" in directory {}'.format(script, path))
-
-#     # parse each option in a list
-#     exclude = ['mix-up', 'stage']
-#     started = False
-#     options = []
-#     for line in helpmsg.split('\n')[:-2]:
-#         if line.startswith('Main options'):
-#             started = True
-#             continue
-#         if started:
-#             m = re.match(r'^\s+--([\w\-?]+)\s+<.+\|(.+)>\s+\#\s+(.+)$', line)
-#             # new option
-#             if m and m.group(1) not in exclude:
-#                 options.append(list(m.group(1, 2, 3)))
-#             # continuation of the comment
-#             elif line.strip().startswith('#'):
-#                 options[-1][-1] += ' ' + ' '.join(line.split('#')[1:])
-
-#     # build a dict of OptionEntry
-#     return {o[0]: OptionEntry(help=o[2], default=o[1], type=_guess_type(o[1]))
-#             for o in options}
 
 
 class NeuralNetwork(AbstractAcousticModel):
@@ -186,16 +138,19 @@ class NeuralNetwork(AbstractAcousticModel):
 
         command = (
             ' '.join((
-                'steps/nnet2/train_pnorm_fast.sh --cmd "{}"'.format(
-                    utils.config.get('kaldi', 'train-cmd')),
+                'steps/nnet2/train_pnorm_fast.sh --cmd "{} --config {}"'
+                .format(
+                    utils.config.get('kaldi', 'train-cmd'),
+                    pkg_resources.resource_filename(
+                        pkg_resources.Requirement.parse('abkhazia'),
+                        'abkhazia/queue.conf')),
                 ' '.join('--{} {}'.format(
                     k, v.value) for k, v in self.options.iteritems()),
                 ('--num-threads {0} '
-                 # '--parallel-opts "--num-threads {0}"')
-                 '--parallel-opts ""')
+                 '--parallel-opts "--num-threads {0}"')
                 .format(self.njobs),
-                # '--combine-parallel-opts "--num-threads {}"'.format(
-                #     self.options['combine-num-threads'].value),
+                '--combine-parallel-opts "--num-threads {}"'.format(
+                    self.options['combine-num-threads'].value),
                 '--combine-parallel-opts ""',
                 '{data} {lang} {origin} {target}'.format(
                     data=self.data_dir,
