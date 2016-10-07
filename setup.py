@@ -57,9 +57,13 @@ setup(
     # install python dependencies from PyPI
     install_requires=REQUIREMENTS,
 
-    # include any files in abkhazia/share and abkhazia.cfg
+    # include any files in abkhazia/share and abkhazia.conf
     package_data={
-        'abkhazia': ['share/*.*', 'share/kaldi_templates/*', 'abkhazia.cfg']
+        'abkhazia': [
+            'share/*.*',
+            'share/kaldi_templates/*',
+            'abkhazia.conf',
+            'queue.conf']
     },
 
     # define the command-line script to use

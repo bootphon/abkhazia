@@ -21,7 +21,7 @@
 # setup the path to kaldi. It also creates the following files in
 # ./abkhazia/share
 #
-# - abkhazia.cfg default configuration file
+# - abkhazia.conf default configuration file
 # - path.sh and cmd.sh used by kaldi recipes
 #
 # Until all is correctly configured, the script fails with an error
@@ -85,9 +85,9 @@ festival_failure="festival not found on your system, please install it
 [ ! -z $festival ] && echo "Found festival as $festival" || failure "$festival_failure"
 
 
-# configuring abkhazia.cfg
-conf_in=$share/abkhazia.cfg.in
-conf=$setupdir/abkhazia/abkhazia.cfg
+# configuring abkhazia.conf
+conf_in=$share/abkhazia.conf.in
+conf=$setupdir/abkhazia/abkhazia.conf
 if [ ! -e $conf ]; then
     # Init an empty configuration file if not existing
     echo "Writing $conf"
@@ -96,12 +96,12 @@ if [ ! -e $conf ]; then
 else
     echo "Found configuration file as $conf"
 
-    # check all sections defined in abkhazia.cfg.in are in abkhazia.cfg
+    # check all sections defined in abkhazia.conf.in are in abkhazia.conf
     sec_in=$(sed '/^#/d' $conf_in | grep -e '\[.*\]' | tr -d '[]' | sort)
     sec_out=$(sed '/^#/d' $conf | grep -e '\[.*\]' | tr -d '[]' | sort)
     [ ! "$sec_in" == "$sec_out" ] && failure "Some configuration sections are missing in $conf, please merge it from $conf_in"
 
-    # check all parameters defined in abkhazia.cfg.in are in abkhazia.cfg
+    # check all parameters defined in abkhazia.conf.in are in abkhazia.conf
     sec_in=$(sed '/^#/d' $conf_in | grep -e '^.*:' | cut -d':' -f 1 | sort)
     sec_out=$(sed '/^#/d' $conf | grep -e '^.*:' | cut -d':' -f 1 | sort)
     [ ! "$sec_in" == "$sec_out" ] && failure "Some configuration parameters are missing in $conf, please merge it from $conf_in"

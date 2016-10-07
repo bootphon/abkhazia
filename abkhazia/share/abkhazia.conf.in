@@ -12,7 +12,6 @@ tmp-directory: /tmp
 
 [kaldi]
 # The absolute path to the kaldi distribution directory
-# YOU MUST SPECIFY THIS PATH MANUALLY.
 kaldi-directory:
 
 # "queue.pl" uses qsub. The options to it are options to qsub.  If you

@@ -33,7 +33,7 @@ Exemple:
 
 * To load a custom config file:
 ..
-  custom_config = config.AbkhaziaConfig('/path/to/my-custom-config.cfg')
+  custom_config = config.AbkhaziaConfig('/path/to/my-custom-config.conf')
   custom_config.get(...)
 
 """
@@ -58,17 +58,17 @@ class AbkhaziaConfig(object):
     def default_config_file():
         """Return the default abkhazia configuation file
 
-        Look for 'abkhazia.cfg' from pkg_resources, if not found, look
-        for __file__/../abkhazia.cfg, else raise a RuntimeError.
+        Look for 'abkhazia.conf' from pkg_resources, if not found, look
+        for __file__/../abkhazia.conf, else raise a RuntimeError.
 
         """
         try:
             return pkg.resource_filename(
-                pkg.Requirement.parse('abkhazia'), 'abkhazia/abkhazia.cfg')
+                pkg.Requirement.parse('abkhazia'), 'abkhazia/abkhazia.conf')
         except pkg.DistributionNotFound:
             config_file = os.path.join(
                 os.path.dirname(os.path.abspath(__file__)),
-                '..', 'abkhazia.cfg')
+                '..', 'abkhazia.conf')
 
             if not os.path.isfile(config_file):
                 raise RuntimeError(
