@@ -11,6 +11,13 @@ Installation and configuration
      git clone git@github.com:bootphon/abkhazia.git
      cd ./abkhazia
 
+.. note::
+
+   Abkhazia have been succesfully installed on various Unix flavours
+   (Debian, Ubuntu, CentOS) and on Mac OS. It should be possible to
+   install it on a Windows system as well (through CygWin), but this
+   has not been tested.
+
 
 Install dependencies
 ====================
@@ -20,6 +27,10 @@ following dependencies: Kaldi, sox, shorten and festival.
 
 Kaldi
 -----
+
+* Kaldi is an open-source toolkit for HMM based ASR. It is a
+  collection of low-level C++ programs and high-level bash
+  scripts. See `here <http://kaldi-asr.org>`_.
 
 * **In brief: use install_kaldi.sh**
 
@@ -102,7 +113,7 @@ Install Abkhazia
 
 * Run the configuration script. It will check the dependancies for
   you and will initialize a default configuration file in
-  ``abkahzia/abkhazia.cfg``::
+  ``abkahzia/abkhazia.conf``::
 
     ./configure
 
@@ -119,12 +130,39 @@ Install Abkhazia
   last step by ``python setup.py develop``.
 
 * To build the documentation (the one you are actually reading),
-  install ``sphinx`` (with ``pip install Sphinx``) and, from the
+  install sphinx (with ``pip install Sphinx``) and, from the
   Abkhazia root directory, have a::
 
     sphinx-build -b html ./docs/source ./docs/html
 
   Then open the file ``./docs/html/index.html`` with your favorite browser.
+
+
+Configuration file
+==================
+
+The ``abkhazia.conf`` configuration file defines a set of default
+parameters that are used by the abkhazia commands. The path to this
+file depends on your installation and is given by the ``abkhazia
+--help`` message. Most notable parameters are:
+
+* **abkhazia.data-directory** is the directory where abkhazia write
+  its data (corpora, recipes and results are stored here).  During
+  installation, the data directory is configured to point in a
+  ``data`` folder of the abkhazia source tree. You can specify a path
+  to another dircetory, maybe on another partition.
+
+* **kaldi.kaldi-directory** is the path to an installed kaldi
+  distribution. This path is configured during abkhazia installation.
+
+* **kaldi.{train, decode, highmem}-cmd** setup the parallelization to
+  run the Kaldi recipes (see `here
+  <http://kaldi-asr.org/doc/queue.html>`_ for details). Choose either
+  ``run.pl`` to run locally or ``queue.pl`` to use a cluster managed
+  with the Sun GridEngine.
+
+* **raw corpora directories** can be specified in the ``corpus``
+  section of the configuration file.
 
 
 Run the tests
@@ -148,7 +186,4 @@ Run the tests
 
 * If you run the tests on a cluster and you configured Abkhazia to use
   Sun GridEngine, you must specify the temp directory to be in a shared
-  filesystem with ``py.test ./test --basetemp=mydir``.
-
-
-.. _kaldi: http://kaldi-asr.org
+  filesystem with ``pytest ./test --basetemp=mydir``.

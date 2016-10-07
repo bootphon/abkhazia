@@ -1,26 +1,23 @@
 * DNN branch
 Implement dnn recipe on top of triphone speaker-adapted acoustic models
-- [ ] tester decode et sortir WER/PER sur les étapes du tri-sa
-- [X] étendre tri-sa vers dnn
-- [X] revoir l'architecture de abkhazia acoustic pour avoir une classe par
-  modèle, avoir une méthode eval(corpus) serait chouette.
-* Open bugs [0/1]
-** TODO acoustic with delta features
-Acoustic modeling fails when built on features with deltas. This is
-caused by bad features dimension.
-
-Solution:
- - assert no delta in features in init (get back the dim or
- delta order from feat-to-dim ?)
- - OR split deltas from raw when computing features
-WIP on investigation
+- [ ] tester decode et sortir WER/PER sur les étapes du tri-sa et DNN
+- [ ] debug the --num-threads options to be compatible with oberon
+- [ ] revoir l'architecture des décodeurs pour avoir une méthode
+  adaptée à chaque AM. Après ça revoir le binding vers les
+  commandes
+- [ ] reduce the config file (and rename it abkhazia.conf). No more
+  command specific parameters.
+- [ ] see if we can remove path.sh and cmd.sh, as they are already
+  implemented in python...
+- [ ] Feed path to kaldi with a $KALDI_PATH (setup in
+  install_kaldi.sh, or user specified)
 * Feature requests
 ** acoustic
    - [ ] --retrain option
      it should be possible to retrain a trained model on a new corpus
      (for instance, specifically retrain silence models, or retrain on a
      bunch of new corpus)
-   - [ ] questions vs data-driven option
+   - [ ] questions vs data-driven option (is it for tree building ?)
 ** decode
    options:
       evaluate(transcription, gold)
@@ -32,6 +29,16 @@ WIP on investigation
 - [ ] split with (p_train + p_test) < 1 (by now only =1 supported)
 - [ ] need of a structure to append data to an existing corpus (eg
   attach a LM, features or manual alignments)
+
+  From the Thomas version we want... Optionally, the corpus directory may contains:
+   - Time-alignments (The previous files in the list are sufficient
+     for training ASR models with kaldi, however for ABX experiments
+     we also need time-alignments for each phone or each word. If they
+     are not provided directly, a surrogate will be obtained through
+     forced-alignment using the kaldi-trained ASR models)
+   - A language model, either in OpenFST text or binary format or in
+     ARPA-MIT N-gram format
+   - Syllabification of each utterance
 ** features
 - [ ] convertion ark to h5f is slow, can we do parallel ark to RAM, and
   sequential RAM to h5features?
@@ -40,32 +47,18 @@ WIP on investigation
 ** updating abkhazia.cfg
    - Need of an automated way to update new versions of the installed
      configuration file in the ./configure script.
-   - Do that along with the next update of the config file
-   - rewrite configure as a python execution
+   - rewrite configure as a python script
 ** documentation
   - [ ] have more detailed command description on 'abkhazia <command>
     --help'. Assume the user doesn't know abkhazia or kaldi.
   - [ ] improve the online documentation
-    - install and configure
-    - preparators for new corpora
-    - ASR: LM, AM, features, alignment, etc
-    - ABX: item files generation from alignment
+    - [ ] install and configure
+    - [ ] preparators for new corpora
+    - [ ] ASR: LM, AM, features, alignment, etc
+    - [ ] ABX: item files generation from alignment
   - [ ] add READMEs in intermediate directories of the project (or
     have a 'project organization' page)
 ** New specifications (0.3)
-   Optionally, the corpus directory may contains:
-
-   - Time-alignments (The previous files in the list are sufficient for
-     training ASR models with kaldi, however for ABX experiments we also
-     need time-alignments for each phone or each word. If they are not
-     provided directly, a surrogate will be obtained through
-     forced-alignment using the kaldi-trained ASR models)
-
-   - A language model, either in OpenFST text or binary format
-     or in ARPA-MIT N-gram format
-
-   - Syllabification of each utterance
-
 #+begin_src python
   corpus = BuckeyeCorpusPreparator('./buckeye').prepare()
   corpus.speakers()
@@ -86,6 +79,15 @@ WIP on investigation
   features.write2h5('train.h5', 'features')
   features.write2ark('/somewhere')
 #+end_src
+* Open bugs [0/1]
+** TODO acoustic with delta features
+*** problem
+    Acoustic modeling fails when built on features with deltas. This is
+    caused by bad features dimension.
+*** solution
+ - assert no delta in features in init (get back the dim or
+ delta order from feat-to-dim ?)
+ - OR split deltas from raw when computing features
 * Fixed bugs [6/6]
 ** DONE installation on Mac
    CLOSED: [2016-05-20 ven. 13:02]
@@ -182,21 +184,21 @@ reimplementation of format_lm_sri in Python
 ** DONE abkhazia features/language brent
    CLOSED: [2016-06-06 lun. 15:54]
 *** ldes_brent/language /home/mbernard/dev/abkhazia/egs/align_childes_brent/acoustic/recipe/exp/mono
-steps/train_mono.sh --nj 4 --cmd run.pl data/acoustic /home/mbernard/dev/abkhazia/egs/align_childes_brent/language /home/mbernard/dev/abkhazia/egs/align_childes_brent/acoustic/recipe/exp/mono
-split_data.sh: warning, #lines is (utt2spk,feats.scp) is (112865,112862); you can
-use utils/fix_data_dir.sh data/acoustic to fix this.
-
+steps/train_mono.sh --nj 4 --cmd run.pl data/acoustic
+/home/mbernard/dev/abkhazia/egs/align_childes_brent/language
+/home/mbernard/dev/abkhazia/egs/align_childes_brent/acoustic/recipe/exp/mono
+split_data.sh: warning, #lines is (utt2spk,feats.scp) is
+(112865,112862); you can use utils/fix_data_dir.sh data/acoustic to
+fix this.
 *** problem
 features from utts shorter than 100ms cannot be computed (see
 extract-segments.c in kaldi featbin)
 *** solution
 remove those short utts from corpus in preparation step
 (--keep-short-utts option added)
-<<<<<<< HEAD
 ** DONE acoustic fails with -j too high on qsub
 *** problem
 caused by features computed on more than 9 jobs, concatenation of
 resulted features was not naturally ordered but as 1, 10, 2, ...
 *** solution
 obvious natural sort of features files
-=======
