@@ -75,18 +75,6 @@ class Abkhazia2Kaldi(object):
             os.makedirs(out)
         return out
 
-    def _copy_template(self, filename, template):
-        """Copy `filename` to self.recipe_dir"""
-        path, name = os.path.split(filename)
-
-        if not os.path.exists(filename):
-            raise IOError(
-                "No {0} in {1}. You need to create one adapted to "
-                "your machine. You can get inspiration from {2}"
-                .format(name, path, template))
-
-        shutil.copy(filename, os.path.join(self.recipe_dir, name))
-
     @staticmethod
     def _desired_utterances(corpus, min_duration=0.015):
         """Filter out utterances too short for kaldi (less than 15ms)
@@ -198,13 +186,25 @@ class Abkhazia2Kaldi(object):
                 os.remove(target)
             os.symlink(origin, target)
 
+    @staticmethod
+    def _write_cmd_script(script):
+        with open(script, 'w') as stream:
+            for cmd in ('train', 'decode', 'highmem'):
+                key = '{}-cmd'.format(cmd)
+                value = utils.config.get('kaldi', key)
+                stream.write('export {}={}\n'.format(key, value))
+
+    @staticmethod
+    def _write_path_script(script):
+        source = pkg_resources.resource_filename(
+            pkg_resources.Requirement.parse('abkhazia'),
+            'abkhazia/share/path.sh')
+        shutil.copy(source, script)
+
     def setup_machine_specific_scripts(self):
-        """Copy cmd.sh and path.sh to self.recipe_dir"""
-        for target in ('cmd', 'path'):
-            script = os.path.join(self.share_dir, target + '.sh')
-            template = os.path.join(
-                self.share_dir, 'kaldi_templates', target + '_template.sh')
-            self._copy_template(script, template)
+        """Setup cmd.sh and path.sh in self.recipe_dir"""
+        self._write_cmd_script(os.path.join(self.recipe_dir, 'cmd.sh'))
+        self._write_path_script(os.path.join(self.recipe_dir, 'path.sh'))
 
     def setup_score(self):
         """Copy kaldi/egs/wsj/s5/local/score.sh to self.recipe_dir"""

@@ -58,7 +58,10 @@ class Abkhazia(object):
     # a string describing abkhazia and its subcommands
     description = (
         'ABX and kaldi experiments on speech corpora made easy,\n'
-        "type 'abkhazia <command> --help' for help on a specific command")
+        "type 'abkhazia <command> --help' for help on a specific command\n\n"
+        "The configuration files are:\n\t{}\n\t{}\n".format(
+            utils.AbkhaziaConfig.default_config_file(name='abkhazia'),
+            utils.AbkhaziaConfig.default_config_file(name='queue')))
 
     def load_config(self):
         """Load the config file optionally given by --config argument

@@ -26,6 +26,8 @@ class AbkhaziaSplit(AbstractCoreCommand):
     name = 'split'
     description = 'split a corpus in train and test subcorpora'
 
+    default_test_proportion = 0.5
+
     @classmethod
     def add_parser(cls, subparsers):
         # get basic parser init from AbstractCommand
@@ -34,7 +36,6 @@ class AbkhaziaSplit(AbstractCoreCommand):
         group = parser.add_argument_group('split arguments')
 
         prop = group.add_mutually_exclusive_group()
-        default_prop = utils.config.get('split', 'default-test-proportion'),
         prop.add_argument(
             '-t', '--test-prop', type=float, metavar='<test>',
             default=None,
@@ -42,7 +43,7 @@ class AbkhaziaSplit(AbstractCoreCommand):
             dataset to include in the test set. If not specfied, the
             value is automatically set to the complement of the
             <train>.  If <train> is not specified, <test> is set to
-            {}'''.format(default_prop))
+            {}'''.format(cls.default_test_proportion))
 
         prop.add_argument(
             '-T', '--train-prop', default=None, type=float, metavar='<train>',
@@ -75,8 +76,8 @@ class AbkhaziaSplit(AbstractCoreCommand):
         # retrieve the test proportion
         if args.train_prop is None:
             test_prop = (
-                float(utils.config.get('split', 'default-test-proportion'))
-                if args.test_prop is None else args.test_prop)
+                cls.default_test_proportion if args.test_prop is None
+                else args.test_prop)
         else:
             test_prop = (
                 1 - args.train_prop

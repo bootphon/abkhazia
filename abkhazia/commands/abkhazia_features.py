@@ -50,20 +50,17 @@ class _FeatBase(AbstractKaldiCommand):
             named '<output_dir>/feats.h5f'""")
 
         parser.add_argument(
-            '--use-pitch', metavar='<true|false>', choices=['true', 'false'],
-            default=utils.config.get('features', 'use-pitch'),
-            help="""if true, compute pitch estimation,
+            '--pitch', action='store_true',
+            help="""if specified, compute pitch estimation,
             default is %(default)s""")
 
         parser.add_argument(
-            '--use-cmvn', metavar='<true|false>', choices=['true', 'false'],
-            default=utils.config.get('features', 'use-cmvn'),
-            help="""if true, compute CMVN statistics,
+            '--cmvn', action='store_true',
+            help="""if specified, compute CMVN statistics,
             default is %(default)s""")
 
         parser.add_argument(
-            '--delta-order', metavar='<int>', type=int,
-            default=utils.config.getint('features', 'delta-order'),
+            '--delta-order', metavar='<int>', type=int, default=0,
             help="""compute deltas on raw features, up to the specified order. If
             delta-order is set to 0, deltas are not computed. Default
             is %(default)s.""")

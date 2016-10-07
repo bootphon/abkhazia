@@ -28,7 +28,7 @@ class Features(abstract_recipe.AbstractRecipe):
 
     @staticmethod
     def check_features(directory):
-        """Raise IOError if feats.scp and wavs.scp are not in `dircetory`"""
+        """Raise IOError if feats.scp and wavs.scp are not in `directory`"""
         for f in ('feats.scp', 'wav.scp'):
             if not os.path.isfile(os.path.join(directory, f)):
                 raise IOError(
@@ -53,22 +53,21 @@ class Features(abstract_recipe.AbstractRecipe):
         for scp in scps:
             shutil.copy(scp, os.path.join(destdir, os.path.basename(scp)))
 
-    def __init__(self, corpus, output_dir, log=utils.logger.null_logger()):
+    def __init__(self, corpus, output_dir,
+                 type='mfcc', use_pitch=False, use_cmvn=False, delta_order=0,
+                 log=utils.logger.null_logger()):
         super(Features, self).__init__(corpus, output_dir, log=log)
 
-        self.type = utils.config.get('features', 'type')
+        self.type = type
+        self.use_pitch = use_pitch
+        self.use_cmvn = use_cmvn
+        self.delta_order = delta_order
+
+        # overload a kaldi default parameter
+        self.features_options = [('use-energy', 'false')]
+
         if self.type not in ['mfcc', 'plp', 'fbank']:
             raise IOError('unknown feature type "{}"'.format(self.type))
-
-        self.use_pitch = utils.str2bool(
-            utils.config.get('features', 'use-pitch'))
-
-        self.use_cmvn = utils.str2bool(
-            utils.config.get('features', 'use-cmvn'))
-
-        self.delta_order = utils.config.getint('features', 'delta-order')
-
-        self.features_options = [('use-energy', 'false')]
 
     def _setup_conf_dir(self):
         """Setup the configurtion files for feature extraction
@@ -170,7 +169,6 @@ class Features(abstract_recipe.AbstractRecipe):
         if self.delta_order != 0:
             self._compute_delta()
 
-    # this is NOT the export_to_h5features method !
     def export(self):
         super(Features, self).export()
 

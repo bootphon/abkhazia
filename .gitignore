@@ -4,10 +4,10 @@
 /data/*
 /test/data/*
 /test/out/*
-test/language/*
+/test/language/*
 
 # Ignore files generated during configuration
-/abkhazia/abkhazia.cfg
+/abkhazia/share/abkhazia.conf
 /abkhazia/share/cmudict.0.7a
 /abkhazia/share/cmd.sh
 /abkhazia/share/path.sh

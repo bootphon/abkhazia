@@ -56,8 +56,8 @@ class AbkhaziaDecode(AbstractKaldiCommand):
             return utils.config.get(cls.name, param)
 
         group.add_argument(
-            '-s', '--acoustic-scale', type=float, metavar='<float>',
-            default=config('acoustic-scale'),
+            '-s', '--acoustic-scale',
+            type=float, metavar='<float>', default=0.1,
             help='''acoustic scale for extracting posterior
             from the final lattice, default is %(default)s''')
 
@@ -83,6 +83,4 @@ class AbkhaziaDecode(AbstractKaldiCommand):
         recipe.acoustic_scale = args.acoustic_scale
         recipe.njobs = args.njobs
         recipe.delete_recipe = False if args.recipe else True
-        recipe.create()
-        recipe.run()
-        recipe.export()
+        recipe.compute()

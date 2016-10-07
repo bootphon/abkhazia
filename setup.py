@@ -51,13 +51,7 @@ setup(
     install_requires=REQUIREMENTS,
 
     # include any files in abkhazia/share and abkhazia.conf
-    package_data={
-        'abkhazia': [
-            'share/*.*',
-            'share/kaldi_templates/*',
-            'abkhazia.conf',
-            'queue.conf']
-    },
+    package_data={'abkhazia': ['share/*.*']},
 
     # define the command-line script to use
     entry_points={'console_scripts': [

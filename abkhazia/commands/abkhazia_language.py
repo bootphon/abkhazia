@@ -34,13 +34,11 @@ class AbkhaziaLanguage(AbstractKaldiCommand):
 
         group = parser.add_argument_group('command options')
 
-        group = parser.add_argument_group(
-            'language model parameters', 'those parameters can also be '
-            'specified in the [language] section of the configuration file')
+        group = parser.add_argument_group('language model parameters')
 
         group.add_argument(
-            '-s', '--no-silence', action='store_true',
-            help='do not model silences (probability of 0, '
+            '-s', '--silence-probability', type=float, metavar='<float>',
+            help='usually 0.0 or 0.5, default is %(default)s'
             'default is a silence probability of 0.5)')
 
         group.add_argument(
@@ -51,14 +49,12 @@ class AbkhaziaLanguage(AbstractKaldiCommand):
             variants of the phones.''')
 
         group.add_argument(
-            '-n', '--model-order', type=int, metavar='<N>',
-            default=utils.config.get('language', 'model-order'),
+            '-n', '--model-order', type=int, metavar='<int>', default=2,
             help='n in n-gram, must be a positive integer, '
             'default is %(default)s')
 
         group.add_argument(
-            '-l', '--model-level',
-            default=utils.config.get('language', 'model-level'),
+            '-l', '--model-level', default='word',
             help="compute either a phone-level or a word-level language "
             "model, default is '%(default)s'",
             metavar='<phone|word>', choices=['phone', 'word'])
@@ -80,15 +76,11 @@ class AbkhaziaLanguage(AbstractKaldiCommand):
 
         corpus = Corpus.load(corpus_dir, validate=args.validate, log=log)
 
-        # instanciate the lm recipe creator
-        recipe = LanguageModel(corpus, output_dir, log=log)
-        recipe.order = args.model_order
-        recipe.level = args.model_level
-        recipe.position_dependent_phones = args.word_position_dependent
-        recipe.silence_probability = 0.0 if args.no_silence else 0.5
+        # instanciate the lm recipe and compute
+        recipe = LanguageModel(
+            corpus, output_dir, log=log,
+            order=args.model_order, level=args.model_level,
+            position_dependent_phones=args.word_position_dependent,
+            silence_probability=args.silence_probability)
         recipe.delete_recipe = False if args.recipe else True
-
-        # finally create and/or run the recipe
-        recipe.create()
-        recipe.run()
-        recipe.export()
+        recipe.compute()

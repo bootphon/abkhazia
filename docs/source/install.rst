@@ -2,7 +2,6 @@
 Installation and configuration
 ==============================
 
-
 .. note::
 
    First of all, clone the Abkhazia github repository and go to the
@@ -52,8 +51,8 @@ Kaldi
             git clone git@github.com:bootphon/kaldi.git
 
     * Once cloned, you have to install Kaldi (configuration and
-      compilation). Follow the instructions from
-      `here <http://kaldi-asr.org/doc/install.html>`_. Basically, you have
+      compilation). Follow `those instructions
+      <http://kaldi-asr.org/doc/install.html>`_. Basically, you have
       to do (from the ``kaldi`` directory)::
 
             cd tools
@@ -111,11 +110,17 @@ Install Abkhazia
 ================
 
 
-* Run the configuration script. It will check the dependancies for
-  you and will initialize a default configuration file in
-  ``abkahzia/abkhazia.conf``::
+* It will check the dependancies for you and will initialize a default
+  configuration file in ``share/abkhazia.conf``::
 
     ./configure
+
+  The ``install_kaldi.sh`` setup the ``KALDI_PATH`` environment
+  variable to point to the installed Kaldi root directory. If you have
+  installed Kaldi manually, or if the ``configure`` script complains
+  for a missing ``KALDI_PATH``, you need to specify it with for exemple::
+
+    KALDI_PATH=./kaldi ./configure
 
   Rerun this script and correct the prompted configuration errors
   until it succed. At least you are asked to specify the path to Kaldi
@@ -138,13 +143,27 @@ Install Abkhazia
   Then open the file ``./docs/html/index.html`` with your favorite browser.
 
 
-Configuration file
-==================
+Configuration files
+===================
 
-The ``abkhazia.conf`` configuration file defines a set of default
-parameters that are used by the abkhazia commands. The path to this
-file depends on your installation and is given by the ``abkhazia
---help`` message. Most notable parameters are:
+Abkhazia relies on two configuration files, ``abkhazia.conf`` and
+``queue.conf``. Those files are generated at install time (during the
+configuration step) and wrote in the ``share`` directory. But those files
+are usually copied in the installation directory (e.g. in ``/usr/bin``)
+
+.. note::
+
+   To know where are located the configuration files on your setup,
+   have a::
+
+     abkhazia --help
+
+
+``abkhazia.conf``
+-----------------
+
+The ``abkhazia.conf`` configuration file defines a set of general
+parameters that are used by Abkhazia.
 
 * **abkhazia.data-directory** is the directory where abkhazia write
   its data (corpora, recipes and results are stored here).  During
@@ -156,13 +175,22 @@ file depends on your installation and is given by the ``abkhazia
   distribution. This path is configured during abkhazia installation.
 
 * **kaldi.{train, decode, highmem}-cmd** setup the parallelization to
-  run the Kaldi recipes (see `here
-  <http://kaldi-asr.org/doc/queue.html>`_ for details). Choose either
+  run the Kaldi recipes. Choose either
   ``run.pl`` to run locally or ``queue.pl`` to use a cluster managed
   with the Sun GridEngine.
 
 * **raw corpora directories** can be specified in the ``corpus``
   section of the configuration file.
+
+``queue.conf``
+--------------
+
+**You should adapt this file to your cluster configuration**
+
+The ``queue.conf`` configuration file is related to parallel
+processing in Kaldi when ``queue.pl`` is used. It allows to forward
+options to the Sun GridEngine when submitting jobs. See `this page
+<http://kaldi-asr.org/doc/queue.html>`_ for details.
 
 
 Run the tests
@@ -186,4 +214,4 @@ Run the tests
 
 * If you run the tests on a cluster and you configured Abkhazia to use
   Sun GridEngine, you must specify the temp directory to be in a shared
-  filesystem with ``pytest ./test --basetemp=mydir``.
+  filesystem with ``pytest ./test --basetemp=mydir/tmp``.

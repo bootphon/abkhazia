@@ -5,12 +5,6 @@ Implement dnn recipe on top of triphone speaker-adapted acoustic models
 - [ ] revoir l'architecture des décodeurs pour avoir une méthode
   adaptée à chaque AM. Après ça revoir le binding vers les
   commandes
-- [ ] reduce the config file (and rename it abkhazia.conf). No more
-  command specific parameters.
-- [ ] see if we can remove path.sh and cmd.sh, as they are already
-  implemented in python...
-- [ ] Feed path to kaldi with a $KALDI_PATH (setup in
-  install_kaldi.sh, or user specified)
 * Feature requests
 ** acoustic
    - [ ] --retrain option
@@ -47,7 +41,6 @@ Implement dnn recipe on top of triphone speaker-adapted acoustic models
 ** updating abkhazia.cfg
    - Need of an automated way to update new versions of the installed
      configuration file in the ./configure script.
-   - rewrite configure as a python script
 ** documentation
   - [ ] have more detailed command description on 'abkhazia <command>
     --help'. Assume the user doesn't know abkhazia or kaldi.
@@ -58,7 +51,7 @@ Implement dnn recipe on top of triphone speaker-adapted acoustic models
     - [ ] ABX: item files generation from alignment
   - [ ] add READMEs in intermediate directories of the project (or
     have a 'project organization' page)
-** New specifications (0.3)
+** New specifications (0.4)
 #+begin_src python
   corpus = BuckeyeCorpusPreparator('./buckeye').prepare()
   corpus.speakers()

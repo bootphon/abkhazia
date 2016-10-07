@@ -76,3 +76,6 @@ make -j $ncores || failure "failed to build kaldi"
 # compile irstlm
 cd $kaldi/tools
 ./extras/install_irstlm.sh || failure "failed to install IRSTLM"
+
+# forward the path to Kaldi to the configure script
+export KALDI_PATH=$kaldi

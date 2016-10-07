@@ -55,25 +55,34 @@ class AbkhaziaConfig(object):
 
     """
     @staticmethod
-    def default_config_file():
+    def default_config_file(name='abkhazia'):
         """Return the default abkhazia configuation file
 
+        If name is 'abkhazia', look for abkhazia.conf. If name is
+        'queue' look for queue.conf. Else raise RuntimeError.
+
         Look for 'abkhazia.conf' from pkg_resources, if not found, look
-        for __file__/../abkhazia.conf, else raise a RuntimeError.
+        for __file__/../share/abkhazia.conf, else raise a RuntimeError.
 
         """
+        if name not in ('abkhazia', 'queue'):
+            raise RuntimeError(
+                'unknown configuration file {}.conf'.format(name))
+
+        name += '.conf'
+
         try:
             return pkg.resource_filename(
-                pkg.Requirement.parse('abkhazia'), 'abkhazia/abkhazia.conf')
+                pkg.Requirement.parse('abkhazia'),
+                'abkhazia/share/{}'.format(name))
         except pkg.DistributionNotFound:
             config_file = os.path.join(
                 os.path.dirname(os.path.abspath(__file__)),
-                '..', 'abkhazia.conf')
+                '..', 'share', name)
 
             if not os.path.isfile(config_file):
                 raise RuntimeError(
-                    'abkhazia configuration file not found {}'
-                    .format(config_file))
+                    'configuration file not found {}'.format(config_file))
 
             return config_file
 

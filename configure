@@ -87,12 +87,11 @@ festival_failure="festival not found on your system, please install it
 
 # configuring abkhazia.conf
 conf_in=$share/abkhazia.conf.in
-conf=$setupdir/abkhazia/abkhazia.conf
+conf=$share/abkhazia.conf
 if [ ! -e $conf ]; then
     # Init an empty configuration file if not existing
     echo "Writing $conf"
     cp $conf_in $conf
-    failure "Please specify the path to the kaldi root directory in $conf"
 else
     echo "Found configuration file as $conf"
 
@@ -105,68 +104,61 @@ else
     sec_in=$(sed '/^#/d' $conf_in | grep -e '^.*:' | cut -d':' -f 1 | sort)
     sec_out=$(sed '/^#/d' $conf | grep -e '^.*:' | cut -d':' -f 1 | sort)
     [ ! "$sec_in" == "$sec_out" ] && failure "Some configuration parameters are missing in $conf, please merge it from $conf_in"
+fi
 
-    # if existing, check if kaldi-directory is defined in it
-    kaldi=$(cat $conf | sed '/^#/d' | grep kaldi-directory | cut -d: -f2 | sed 's/^ *//')
-    [ -z $kaldi ] &&
-        failure "Please specify the path to the kaldi root directory in $conf"
 
-    # check kaldi-directory is an existing directory
-    [ -d $kaldi ] && echo "Found kaldi root directory as $kaldi" ||
-            failure "Please correct the path to the kaldi root directory in
-$conf
+# check if kaldi-directory is defined in the config file
+kaldi=$(sed '/^#/d' $conf | grep kaldi-directory | cut -d: -f2 | sed 's/^ *//')
+if [ -z $kaldi ]; then
+    # kaldi not defined, take it from the KALDI_PATH variable
+    [ -z $KALDI_PATH ] &&
+        failure "Please set KALDI_PATH to the Kaldi root directory (Kaldi must be compiled)
+Use for exemple: 'KALDI_PATH=/path/to/kaldi ./configure'"
+
+    [ ! -d $KALDI_PATH ] &&
+        failure "KALDI_PATH must be a directory"
+
+    # get the absolute path
+    KALDI_PATH=$(cd $KALDI_PATH; pwd -P)
+
+    sed -i "s|kaldi-directory:$|kaldi-directory: $KALDI_PATH|" $conf || exit
+    kaldi=$KALDI_PATH
+fi
+
+# check kaldi-directory is an existing directory
+[ -d $kaldi ] && echo "Found kaldi root directory as $kaldi" ||
+        failure "Please correct the path to the kaldi root directory in
+KALDI_PATH,
 $kaldi is not an existing directory"
 
-    # check sph2pipe is found in kaldi (also means kaldi is compiled)
-    sph2pipe="$kaldi/tools/sph2pipe_v2.5/sph2pipe"
-    [ -e $sph2pipe ] && echo "Found sph2pipe as $sph2pipe" ||
-            failure "$sph2pipe not found in the kaldi distribution"
+# check sph2pipe is found in kaldi (also means kaldi is compiled)
+sph2pipe="$kaldi/tools/sph2pipe_v2.5/sph2pipe"
+[ -e $sph2pipe ] && echo "Found sph2pipe as $sph2pipe" ||
+        failure "$sph2pipe not found in the kaldi distribution"
 
-    # check irstlm is installed
-    irstlm=$kaldi/tools/irstlm
-    [ -d $irstlm ] && echo "Found irstlm root directory as $irstlm" ||
-            failure "Please install irstlm in kaldi tools:
+# check irstlm is installed
+irstlm=$kaldi/tools/irstlm
+[ -d $irstlm ] && echo "Found irstlm root directory as $irstlm" ||
+        failure "Please install irstlm in kaldi tools:
     cd $kaldi/tools
     ./extras/install_irstlm.sh
 
 Please do not source the tools/env.sh as indicated by that
 script, this is already done for you."
 
-    # check srilm is installed
-    srilm=$kaldi/tools/srilm
-    [ -d $srilm ] && echo "Found srilm root directory as $srilm" ||
-            failure "Please install srilm in kaldi tools:
+# check srilm is installed
+srilm=$kaldi/tools/srilm
+[ -d $srilm ] && echo "Found srilm root directory as $srilm" ||
+        failure "Please install srilm in kaldi tools:
     cd $kaldi/tools
     ./extras/install_srilm.sh
 
 Please do not source the tools/env.sh as indicated by that
 script, this is already done for you."
 
-fi
-
 # configure and copy path.sh
-cp $share/kaldi_templates/path_template.sh $share/path.sh
-kaldi=`sed '/^#/d' $conf | grep kaldi-directory | sed 's/kaldi-directory: //'`
-sed -i -e "s|^\(KALDI_ROOT=\).*$|\1$kaldi|" $share/path.sh
+sed "s|^KALDI_ROOT=|KALDI_ROOT=$kaldi|" $share/path.sh.in > $share/path.sh
 echo "Configured $share/path.sh"
-
-# test we can reach the ngram binary from SRILM once we sourced the
-# path.sh (problematic because it's change from Linux to Mac)
-source $share/path.sh > /dev/null
-which ngram > /dev/null || failure "Cannot reach 'ngram' binary
-from the SRILM library, ensure your path is correct"
-
-# configure and copy cmd.sh
-if [ -e $share/cmd.sh ]
-then
-    echo "Found $share/cmd.sh"
-else
-    cp $share/kaldi_templates/cmd_template.sh $share/cmd.sh
-    echo "Configured $share/cmd.sh"
-    echo
-    echo "cmd.sh is configured to run jobs locally,"
-    echo "edit and customize it if you want to use qsub"
-fi
 
 # all is good !!
 echo "

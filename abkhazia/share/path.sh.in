@@ -4,7 +4,7 @@
 export LC_ALL=C  # For expected sorting and joining behaviour
 
 # This value is setup during abkhazia configuration
-KALDI_ROOT=@kaldi-directory@
+KALDI_ROOT=
 
 KALDISRC=$KALDI_ROOT/src
 KALDIBIN=$KALDISRC/bin:$KALDISRC/featbin:$KALDISRC/fgmmbin:$KALDISRC/fstbin
