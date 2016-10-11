@@ -150,7 +150,7 @@ def remove(path, safe=False):
 
     """
     try:
-        if os.path.isdir(path):
+        if os.path.isdir(path) and not os.path.islink(path):
             shutil.rmtree(path)
         else:
             # works for both files and links

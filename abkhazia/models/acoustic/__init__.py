@@ -52,10 +52,10 @@ Access to the list of available options
 
 """
 
-from abkhazia.models.acoustic.monophone import Monophone, is_monophone
+from abkhazia.models.acoustic.monophone import Monophone
 from abkhazia.models.acoustic.triphone import Triphone
 from abkhazia.models.acoustic.triphone_speaker_adaptive import (
     TriphoneSpeakerAdaptive)
 from abkhazia.models.acoustic.neural_network import NeuralNetwork
 from abkhazia.models.acoustic.abstract_acoustic_model import (
-    check_acoustic_model)
+    check_acoustic_model, model_type)

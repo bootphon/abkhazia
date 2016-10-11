@@ -162,8 +162,8 @@ class AbstractCoreCommand(AbstractCommand):
             name = cls.name
 
         # append the command name
-        output = os.path.abspath(os.path.join(
-            corpus if output is None else output, name))
+        output = os.path.abspath(
+            os.path.join(corpus, name) if output is None else output)
 
         # if --force, remove any existing output_dir
         if force and os.path.exists(output):

@@ -30,6 +30,23 @@ class OptionEntry(object):
         self.default = default
         self.value = value if value else default
 
+    def __str__(self):
+        """Return the value of an option as a string
+
+        The returned value is converted to string according to its
+        type.
+
+        * For bool: True -> 'true'.
+        * For list: [1, 2, 3] -> '"1 2 3"' (note the double quotes).
+        * Else defailt str() cast
+
+        """
+        if self.type is bool:
+            return utils.bool2str(self.value)
+        elif self.type is list:
+            return '"' + ' '.join(str(i) for i in self.value) + '"'
+        return str(self.value)
+
 
 def make_option(name, help='', type=None, default=None, value=None):
     """Return a tuple (name, OptionEntry)"""

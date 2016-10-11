@@ -1,10 +1,13 @@
 * DNN branch
 Implement dnn recipe on top of triphone speaker-adapted acoustic models
 - [ ] tester decode et sortir WER/PER sur les étapes du tri-sa et DNN
-- [ ] debug the --num-threads options to be compatible with oberon
+- [ ] debug the --num-threads options in DNN to be compatible with oberon
 - [ ] revoir l'architecture des décodeurs pour avoir une méthode
   adaptée à chaque AM. Après ça revoir le binding vers les
   commandes
+- [X] decode.export
+- [ ] in export use symlinks to save some place (file in output-dir,
+  link in recipe-dir)
 * Feature requests
 ** acoustic
    - [ ] --retrain option

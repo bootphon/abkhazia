@@ -35,31 +35,23 @@ class AbkhaziaDecode(AbstractKaldiCommand):
 
         dir_group.add_argument(
             '-l', '--language-model', metavar='<lm-dir>', default=None,
-            help='''the language model recipe directory, data is read from
-            <lm-dir>/language. If not specified, use <lm-dir>=<corpus>.''')
+            help='''the language model recipe directory. If not specified, use
+            <lm-dir>=<corpus>/language.''')
 
         dir_group.add_argument(
             '-a', '--acoustic-model', metavar='<am-dir>', default=None,
-            help='''the acoustic model recipe directory, data is read from
-            <am-dir>/acoustic. If not specified, use <am-dir>=<corpus>.''')
+            help='''the acoustic model recipe directory. If not specified, use
+            <am-dir>=<corpus>/acoustic.''')
 
         dir_group.add_argument(
             '-f', '--features', metavar='<feat-dir>', default=None,
-            help='''the features directory, data is read from
-            <feat-dir>/features. If not specified, use <feat-dir>=<corpus>.''')
+            help='''the features directory. If not specified, use
+            <feat-dir>=<corpus>/features.''')
 
-        group = parser.add_argument_group(
-            'decoding parameters', 'those parameters can also be '
-            'specified in the [decode] section of the configuration file')
-
-        def config(param):
-            return utils.config.get(cls.name, param)
-
-        group.add_argument(
-            '-s', '--acoustic-scale',
-            type=float, metavar='<float>', default=0.1,
-            help='''acoustic scale for extracting posterior
-            from the final lattice, default is %(default)s''')
+        # TODO link that to the decoders, thre kinds: si, sa, nnet
+        # decode_group = parser.add_argument_group('decoding parameters')
+        # graph_group = parser.add_argument_group('graph making parameters')
+        # score_group = parser.add_argument_group('scoring parameters')
 
         return parser
 
@@ -76,11 +68,9 @@ class AbkhaziaDecode(AbstractKaldiCommand):
         acou = cls._parse_aux_dir(corpus_dir, args.acoustic_model, 'acoustic')
 
         # instanciate and run the kaldi recipe
-        recipe = decode.Decode(corpus, output_dir, log=log)
-        recipe.feat_dir = feat
-        recipe.lm_dir = lang
-        recipe.am_dir = acou
-        recipe.acoustic_scale = args.acoustic_scale
+        recipe = decode.Decode(corpus, lang, feat, acou, output_dir,
+                               #acoustic_scale=args.acoustic_scale,
+                               log=log)
         recipe.njobs = args.njobs
         recipe.delete_recipe = False if args.recipe else True
         recipe.compute()

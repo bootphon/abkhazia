@@ -24,6 +24,25 @@ import abkhazia.utils as utils
 make_option = utils.kaldi.options.make_option
 
 
+def model_type(am_dir):
+    """Return the type of the trained model
+
+    Read in meta.txt, or raise IOError if not found
+
+    TODO could be parsed from final.mdl ?
+
+    """
+    meta = os.path.join(am_dir, 'meta.txt')
+    if not os.path.isfile(meta):
+        raise IOError('file not found: {}'.format(meta))
+
+    for line in utils.open_utf8(meta, 'r'):
+        if line.startswith('acoustic model type'):
+            return line.split(':')[1].strip()
+
+    raise IOError('acoustic model type not found in {}'.format(meta))
+
+
 def check_acoustic_model(am_dir):
     """Raise IOError if final.mdl is not in am_dir"""
     utils.check_directory(am_dir, ['final.mdl'], name='acoustic model')
@@ -122,18 +141,7 @@ class AbstractAcousticModel(AbstractRecipe):
     def _opt(self, name):
         """Return the value of an option given its name
 
-        The returned value is converted to string according to its
-        type. For bool: True -> 'true'. For list: [1, 2, 3] -> '"1 2
-        3"' (note the double quotes). Lookup the `name` in
-        self.options, raise KeyError on unknown option
-
-        TODO This method should be part of utils.options?
+        TODO this method is DEPRECATED, remove it!!
 
         """
-        t = self.options[name].type
-        v = self.options[name].value
-        if t is bool:
-            return utils.bool2str(v)
-        elif t is list:
-            return '"' + ' '.join(str(i) for i in v) + '"'
-        return str(v)
+        return str(self.options[name])
