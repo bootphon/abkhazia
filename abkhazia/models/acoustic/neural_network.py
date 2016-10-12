@@ -75,9 +75,6 @@ class NeuralNetwork(AbstractAcousticModel):
             'samples-per-iter', default=200000, type=int,
             help='each iteration of training, see this many samples per job'),
         utils.kaldi.options.make_option(
-            'num-jobs-nnet', default=16, type=int,
-            help='Number of neural net jobs to run in parallel'),
-        utils.kaldi.options.make_option(
             'shuffle-buffer-size', default=500, type=int,
             help='''
             This "buffer_size" variable controls randomization of the samples
@@ -115,9 +112,15 @@ class NeuralNetwork(AbstractAcousticModel):
             'mix-up', default=0, type=int, help=(
                 'Number of components to mix up to (should be > #tree leaves, '
                 'if specified)')),
+
+        # njobs related options
         utils.kaldi.options.make_option(
-            'combine-num-threads', default=8, type=int,
+            'combine-num-threads', default=1, type=int,
             help='number of threads for the "combine" stage'),
+        utils.kaldi.options.make_option(
+            'num-jobs-nnet', default=16, type=int,
+            help='Number of neural net jobs to run in parallel'),
+
         )}
 
     def __init__(self, corpus, lm_dir, feats_dir, am_dir,
@@ -136,22 +139,24 @@ class NeuralNetwork(AbstractAcousticModel):
         message = 'training neural network'
         target = os.path.join(self.recipe_dir, 'exp', self.model_type)
 
+        # feeding the --cmd option
+        job_cmd = utils.config.get('kaldi', 'train-cmd')
+        if 'queue' in job_cmd:
+            job_cmd += ' --conf {}'.format(
+                pkg_resources.resource_filename(
+                    pkg_resources.Requirement.parse('abkhazia'),
+                    'abkhazia/share/queue.conf'))
+
         command = (
             ' '.join((
-                'steps/nnet2/train_pnorm_fast.sh --cmd "{} --config {}"'
-                .format(
-                    utils.config.get('kaldi', 'train-cmd'),
-                    pkg_resources.resource_filename(
-                        pkg_resources.Requirement.parse('abkhazia'),
-                        'abkhazia/queue.conf')),
+                'steps/nnet2/train_pnorm_fast.sh --cmd "{}"'
+                .format(job_cmd),
                 ' '.join('--{} {}'.format(
                     k, v.value) for k, v in self.options.iteritems()),
-                ('--num-threads {0} '
-                 '--parallel-opts "--num-threads {0}"')
+                ('--num-threads {0} --parallel-opts "--num-threads {0}"')
                 .format(self.njobs),
                 '--combine-parallel-opts "--num-threads {}"'.format(
                     self.options['combine-num-threads'].value),
-                '--combine-parallel-opts ""',
                 '{data} {lang} {origin} {target}'.format(
                     data=self.data_dir,
                     lang=self.lm_dir,

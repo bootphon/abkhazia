@@ -20,7 +20,7 @@
 # tri, tri-sa and dnn)
 
 
-data_dir=${1:-/home/mbernard/scratch/data/abkhazia/wsj}
+data_dir=${1:-/home/mbernard/data/abkhazia/wsj}
 data_dir=$(readlink -f $data_dir)
 
 echo 'preparing WSJ (journalist read only)'
@@ -31,19 +31,13 @@ echo 'split in train and test subcorpora (50% each, by speaker)'
 train_dir=$data_dir/split/train
 test_dir=$data_dir/split/test
 
-# (
-#     echo 'computing MFCC features and word bigram for train set'
-#     abkhazia features mfcc $train_dir --use-pitch true -v || exit 1
-#     abkhazia language $train_dir -l word -n 2 -v || exit 1
-# )&
+echo 'computing MFCC features and word bigram for train set'
+#abkhazia features mfcc $train_dir --pitch -v || exit 1
+#abkhazia language $train_dir -l word -n 2 -v || exit 1
 
-# (
-#     echo 'computing MFCC features and word bigram for test set'
-#     abkhazia features mfcc $test_dir --use-pitch true -v || exit 1
-#     abkhazia language $test_dir -l word -n 2 -v || exit 1
-# )&
-
-# wait
+echo 'computing MFCC features and word bigram for test set'
+# abkhazia features mfcc $test_dir --pitch -v || exit 1
+# abkhazia language $test_dir -l word -n 2 -v || exit 1
 
 echo 'computing monophone model'
 # abkhazia acoustic monophone \

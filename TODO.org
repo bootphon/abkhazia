@@ -1,4 +1,8 @@
 * DNN branch
+** additional package to install
+libcublas6.0 libcudart6.0
+
+** tasks
 Implement dnn recipe on top of triphone speaker-adapted acoustic models
 - [X] decode.export
 - [X] revoir l'architecture des décodeurs pour avoir une méthode

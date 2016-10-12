@@ -28,8 +28,8 @@ def kaldi_path():
     kaldisrc = os.path.join(kaldiroot, 'src')
 
     targets = ('bin', 'featbin', 'fgmmbin', 'fstbin', 'gmmbin',
-               'latbin', 'nnetbin', 'sgmmbin', 'lmbin', 'kwsbin', 'ivectorbin',
-               'online2bin', 'sgmm2bin')
+               'latbin', 'nnetbin', 'nnet2bin', 'sgmmbin', 'lmbin',
+               'kwsbin', 'ivectorbin', 'online2bin', 'sgmm2bin')
     kaldibin = ':'.join((os.path.join(kaldisrc, target)
                         for target in targets))
 
