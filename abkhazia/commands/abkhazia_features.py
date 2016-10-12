@@ -103,8 +103,8 @@ class _FeatBase(AbstractKaldiCommand):
 
         recipe = features.Features(corpus, output_dir, log=log)
         recipe.type = cls.feat_name
-        recipe.use_pitch = utils.str2bool(args.use_pitch)  # 'true' to True
-        recipe.use_cmvn = utils.str2bool(args.use_cmvn)
+        recipe.use_pitch = utils.str2bool(args.pitch)  # 'true' to True
+        recipe.use_cmvn = utils.str2bool(args.cmvn)
         recipe.delta_order = args.delta_order
         recipe.features_options = cls.parsed_options
         recipe.njobs = args.njobs

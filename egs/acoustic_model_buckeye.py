@@ -119,6 +119,7 @@ def main(compute_init=False):
     am_trisa.compute()
 
     # evaluate it (WER on test corpus)
+    # TODO
 
 
 if __name__ == '__main__':

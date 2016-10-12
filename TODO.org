@@ -1,26 +1,15 @@
 * DNN branch
 Implement dnn recipe on top of triphone speaker-adapted acoustic models
-- [ ] tester decode et sortir WER/PER sur les étapes du tri-sa et DNN
-- [ ] debug the --num-threads options in DNN to be compatible with oberon
-- [ ] revoir l'architecture des décodeurs pour avoir une méthode
-  adaptée à chaque AM. Après ça revoir le binding vers les
-  commandes
 - [X] decode.export
-- [ ] in export use symlinks to save some place (file in output-dir,
-  link in recipe-dir)
+- [X] revoir l'architecture des décodeurs pour avoir une méthode
+  adaptée à chaque AM.
+- [ ] new decoders binding to command-line (scoring options, etc)
+- [X] tester decode et sortir WER/PER sur les étapes du tri-sa et DNN
+  - [X] mono, tri, tri-sa WER ok
+  - [ ] nnet ?
+  - [ ] PER ?
+- [ ] debug the --num-threads options in DNN to be compatible with oberon
 * Feature requests
-** acoustic
-   - [ ] --retrain option
-     it should be possible to retrain a trained model on a new corpus
-     (for instance, specifically retrain silence models, or retrain on a
-     bunch of new corpus)
-   - [ ] questions vs data-driven option (is it for tree building ?)
-** decode
-   options:
-      evaluate(transcription, gold)
-      output = {posteriorgrams, transcription}
-      speaker_adapt
-      output: results (repertoire)
 ** corpus
 - [ ] des méthodes de stats sur les corpus (duration, per spks, etc)
 - [ ] split with (p_train + p_test) < 1 (by now only =1 supported)
@@ -39,11 +28,20 @@ Implement dnn recipe on top of triphone speaker-adapted acoustic models
 ** features
 - [ ] convertion ark to h5f is slow, can we do parallel ark to RAM, and
   sequential RAM to h5features?
-** align --post --with-words
-   Update the probabilities estimation to be on words, not on phones
-** updating abkhazia.cfg
-   - Need of an automated way to update new versions of the installed
-     configuration file in the ./configure script.
+** language
+*** Where is the --prune-lexicon option ? --prune-lexicon false
+Could be useful when using a lexicon that is tailored to the corpus
+to the point of overfitting (i.e. only words occuring in the corpus
+were included and many other common words weren't), which could lead
+to overestimated performance on words from the lexicon appearing in
+the test only. Removes from the lexicon all words that are not
+present at least once in the training set.
+** acoustic
+   - [ ] --retrain option
+     it should be possible to retrain a trained model on a new corpus
+     (for instance, specifically retrain silence models, or retrain on a
+     bunch of new corpus)
+   - [ ] questions vs data-driven option (is it for tree building ?)
 ** documentation
   - [ ] have more detailed command description on 'abkhazia <command>
     --help'. Assume the user doesn't know abkhazia or kaldi.
@@ -75,7 +73,13 @@ Implement dnn recipe on top of triphone speaker-adapted acoustic models
   features.write2h5('train.h5', 'features')
   features.write2ark('/somewhere')
 #+end_src
-* Open bugs [0/1]
+** Minor changes
+*** TODO in export use symlinks to save some place (file in output-dir,
+  link in recipe-dir)
+*** updating abkhazia.cfg
+    - Need of an automated way to update new versions of the installed
+      configuration file in the ./configure script.
+* Open bugs [0/3]
 ** TODO acoustic with delta features
 *** problem
     Acoustic modeling fails when built on features with deltas. This is
@@ -84,6 +88,10 @@ Implement dnn recipe on top of triphone speaker-adapted acoustic models
  - assert no delta in features in init (get back the dim or
  delta order from feat-to-dim ?)
  - OR split deltas from raw when computing features
+** TODO comments in config file
+   'data-directory: #/something' actually creates the ./#/someting directory
+** TODO align --post --with-words
+   Update the probabilities estimation to be on words, not on phones
 * Fixed bugs [6/6]
 ** DONE installation on Mac
    CLOSED: [2016-05-20 ven. 13:02]

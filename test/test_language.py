@@ -31,10 +31,7 @@ def test_srilm_path():
     # test we can reach the ngram binary from SRILM in the Kaldi
     # environment (problematic because it's change from Linux to Mac)
     # This raises RuntimeError if failing
-    utils.jobs.run(
-        'which ngram',
-        env=utils.kaldi.path.kaldi_path())
-        # stdout=open(os.devnull, 'w').write)
+    utils.jobs.run('which ngram', env=utils.kaldi.path.kaldi_path())
 
 
 @pytest.mark.parametrize('level, order', params)

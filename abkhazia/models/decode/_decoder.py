@@ -32,7 +32,7 @@ def options():
         opt('acwt', default=0.083333, type=float,
             help=('Acoustic scale used for lattice generation. note: '
                   'only really affects pruning (scoring is on lattices)')),
-        opt('max_active', default=7000, type=int,
+        opt('max-active', default=7000, type=int,
             help='Decoder max active states'),
         opt('beam', default=13.0, type=float,
             help='Decoding beam'),

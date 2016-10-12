@@ -43,10 +43,9 @@ abkhazia language $train_dir -l word -n 3 -v || exit 1
 abkhazia features mfcc $train_dir || exit 1
 
 # compute a speaker-adapted triphone HMM-GMM acoustic model
-abkhazia acoustic $train_dir -t tri-sa --recipe || exit 1
+abkhazia acoustic monophone -v $train_dir || exit 1
+abkhazia acoustic tripĥone -v $train_dir || exit 1
+abkhazia acoustic tripĥone-sa -v $train_dir || exit 1
 
 # compute alignment (should be done on the test set)
 abkhazia align $train_dir || exit 1
-
-# decode the corpus (should be done on test set)
-abkhazia decode $train_dir || exit 1

@@ -37,7 +37,8 @@ class AbkhaziaLanguage(AbstractKaldiCommand):
         group = parser.add_argument_group('language model parameters')
 
         group.add_argument(
-            '-s', '--silence-probability', type=float, metavar='<float>',
+            '-s', '--silence-probability', default=0.5,
+            metavar='<float>', type=float,
             help='usually 0.0 or 0.5, default is %(default)s'
             'default is a silence probability of 0.5)')
 
@@ -64,15 +65,6 @@ class AbkhaziaLanguage(AbstractKaldiCommand):
         corpus_dir, output_dir = cls._parse_io_dirs(args)
         log = utils.logger.get_log(
             os.path.join(output_dir, 'language.log'), verbose=args.verbose)
-
-        # retrieve recipe parameters, if not specified in the command
-        # read them from the configuration file
-        if args.word_position_dependent is None:
-            args.word_position_dependent = utils.config.get(
-                'language', 'word-position-dependent')
-
-        if args.model_order is None:
-            args.model_order = utils.config.get('language', 'model-order')
 
         corpus = Corpus.load(corpus_dir, validate=args.validate, log=log)
 

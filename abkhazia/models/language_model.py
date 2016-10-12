@@ -90,7 +90,7 @@ class LanguageModel(abstract_recipe.AbstractRecipe):
         ones. Must be in [0, 1], (usually 0.0 or 0.5, 0.5 is the
         default from kaldi wsj/utils/prepare_lang.sh).
 
-    position_dependendent_phones (bool): Should be set to True or
+    position_dependent_phones (bool): Should be set to True or
         False depending on whether the language model produced is
         destined to be used with an acoustic model trained with or
         without word position dependent variants of the phones
@@ -113,7 +113,7 @@ class LanguageModel(abstract_recipe.AbstractRecipe):
 
     def __init__(self, corpus, output_dir,
                  level='word', order=2, silence_probability=0.5,
-                 position_dependendent_phones=True,
+                 position_dependent_phones=True,
                  log=utils.logger.null_logger()):
         super(LanguageModel, self).__init__(corpus, output_dir, log=log)
 
@@ -126,7 +126,7 @@ class LanguageModel(abstract_recipe.AbstractRecipe):
         self.level = level
         self.order = order
         self.silence_probability = silence_probability
-        self.position_dependent_phones = position_dependendent_phones
+        self.position_dependent_phones = position_dependent_phones
 
     def _check_level(self):
         level_choices = ['word', 'phone']

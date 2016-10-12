@@ -18,7 +18,7 @@ import os
 
 import abkhazia.utils as utils
 from abkhazia.models.acoustic.abstract_acoustic_model import (
-    AbstractAcousticModel, model_type)
+    AbstractAcousticModel)
 
 
 class Monophone(AbstractAcousticModel):

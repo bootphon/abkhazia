@@ -24,6 +24,7 @@ from abkhazia.corpus.prepare import BuckeyePreparator
 from abkhazia.corpus import Corpus
 from abkhazia.models.features import Features
 from abkhazia.models.language_model import LanguageModel
+import abkhazia.models.acoustic as acoustic
 
 HERE = os.path.abspath(os.path.dirname(__file__))
 
@@ -84,9 +85,9 @@ def features(corpus, tmpdir_factory):
 
 
 @pytest.fixture(scope='session')
-def language_model(corpus, tmpdir_factory):
+def lm_word(corpus, tmpdir_factory):
     """Return a directory with bigram word LM computed from the test corpus"""
-    output_dir = str(tmpdir_factory.mktemp('lm'))
+    output_dir = str(tmpdir_factory.mktemp('lm_word'))
     flog = os.path.join(output_dir, 'language.log')
     log = utils.logger.get_log(flog)
     lm = LanguageModel(corpus, output_dir, log=log)
@@ -96,7 +97,61 @@ def language_model(corpus, tmpdir_factory):
     return output_dir
 
 
+@pytest.fixture(scope='session')
+def am_mono(corpus, features, lm_word, tmpdir_factory):
+    output_dir = str(tmpdir_factory.mktemp('am_mono'))
+    flog = os.path.join(output_dir, 'am_mono.log')
+    log = utils.logger.get_log(flog)
+    am = acoustic.Monophone(corpus, lm_word, features, output_dir, log=log)
+
+    am.options['total-gaussians'].value = 20
+    am.options['num-iterations'].value = 3
+    am.options['realign-iterations'].value = [1]
+    am.compute()
+    return output_dir
+
+
+@pytest.fixture(scope='session')
+def am_tri(corpus, features, lm_word, am_mono, tmpdir_factory):
+    output_dir = str(tmpdir_factory.mktemp('am_tri'))
+    flog = os.path.join(output_dir, 'am_tri.log')
+    log = utils.logger.get_log(flog)
+    am = acoustic.Triphone(
+        corpus, lm_word, features, am_mono, output_dir, log=log)
+
+    am.options['total-gaussians'].value = 20
+    am.options['num-iterations'].value = 3
+    am.options['realign-iterations'].value = [1]
+    am.options['num-leaves'].value = 100
+    am.compute()
+
+    acoustic.check_acoustic_model(output_dir)
+    assert_no_expr_in_log(flog, 'error')
+    return output_dir
+
+
+@pytest.fixture(scope='session')
+def am_trisa(corpus, features, lm_word, am_tri, tmpdir_factory):
+    output_dir = str(tmpdir_factory.mktemp('am_trisa'))
+    flog = os.path.join(output_dir, 'am_trisa.log')
+    log = utils.logger.get_log(flog)
+    am = acoustic.TriphoneSpeakerAdaptive(
+        corpus, lm_word, features, am_tri, output_dir, log=log)
+
+    am.options['total-gaussians'].value = 20
+    am.options['num-iterations'].value = 3
+    am.options['realign-iterations'].value = [2]
+    am.options['fmllr-iterations'].value = [1]
+    am.options['num-leaves'].value = 100
+    am.compute()
+
+    acoustic.check_acoustic_model(output_dir)
+    assert_no_expr_in_log(flog, 'error')
+    return output_dir
+
+
 def assert_no_expr_in_log(flog, expr='error'):
+    """Raise if `expr` is found in flog"""
     assert os.path.isfile(flog)
 
     matched_lines = [line for line in open(flog, 'r')
@@ -105,3 +160,12 @@ def assert_no_expr_in_log(flog, expr='error'):
     if matched_lines:
         print matched_lines
     assert len(matched_lines) == 0
+
+
+def assert_expr_in_log(flog, expr):
+    """Raise if `expr` is found in flog"""
+    assert os.path.isfile(flog)
+
+    matched_lines = [line for line in open(flog, 'r')
+                     if re.search(expr, line.lower())]
+    assert len(matched_lines)
