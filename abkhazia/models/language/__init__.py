@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 # Copyright 2016 Thomas Schatz, Xuan-Nga Cao, Mathieu Bernard
 #
 # This file is part of abkhazia: you can redistribute it and/or modify
@@ -13,14 +12,5 @@
 #
 # You should have received a copy of the GNU General Public License
 # along with abkhazia. If not, see <http://www.gnu.org/licenses/>.
-"""This package provides various utilities to abkhazia"""
 
-from .path import *
-from .misc import *
-from .config import config, AbkhaziaConfig
-
-import abkhazia_base
-import logger
-import wav
-import jobs
-import cha
+from abkhazia.models.language.language_model import LanguageModel

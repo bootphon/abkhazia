@@ -17,7 +17,7 @@
 import os
 import pytest
 
-import abkhazia.models.language_model as language_model
+import abkhazia.models.language.language_model as language_model
 import abkhazia.utils as utils
 from .conftest import assert_no_expr_in_log
 

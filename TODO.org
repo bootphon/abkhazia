@@ -11,7 +11,19 @@ Implement dnn recipe on top of triphone speaker-adapted acoustic models
   - [X] mono, tri, tri-sa WER ok
   - [ ] nnet ?
   - [ ] PER ?
-- [ ] debug the --num-threads options in DNN to be compatible with oberon
+- [ ] debug the --num-threads options in DNN to be compatible with queue.pl
+** njobs affair
+*** related parameters from train_pnorm_fast.sh
+- num_jobs_nnet=16
+    => passed to get_egs.sh
+    => conditionne les jobs des étapes posterieures
+- num_threads
+    => must be 1 to use GPU
+    => must be linked to parallel_opts
+- combine_num_threads
+    => only for the last step (nnet-combine-fast)
+    => must be linked to combine_parallel_opts
+*** parallel_opts relies on queue.conf -> need to debug that!
 * Feature requests
 ** corpus
 - [ ] des méthodes de stats sur les corpus (duration, per spks, etc)

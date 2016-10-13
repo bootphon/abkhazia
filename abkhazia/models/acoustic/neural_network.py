@@ -50,6 +50,7 @@ class NeuralNetwork(AbstractAcousticModel):
             'num-iters-final', default=20, type=int,
             help=('Maximum number of final iterations to give to the '
                   'optimization over the validation set (maximum)')),
+        # TODO have a help message for thos arguments
         utils.kaldi.options.make_option(
             'initial-learning-rate', default=0.04, type=float, help=''),
         utils.kaldi.options.make_option(
@@ -60,6 +61,7 @@ class NeuralNetwork(AbstractAcousticModel):
             'pnorm-input-dim', default=3000, type=int, help=''),
         utils.kaldi.options.make_option(
             'pnorm-output-dim', default=300, type=int, help=''),
+
         utils.kaldi.options.make_option(
             'p', default=2, type=float, help='p in p-norm'),
         utils.kaldi.options.make_option(
@@ -92,10 +94,13 @@ class NeuralNetwork(AbstractAcousticModel):
             help='add new layers every <int> iterations'),
         utils.kaldi.options.make_option(
             'num-hidden-layers', default=3, type=int, help=''),
+
+        # TODO change that in --limit-high-io-jobs
         utils.kaldi.options.make_option(
             'io-opts', default='"-tc 5"', type=str, help=(
                 'for jobs with a lot of I/O, limits the number '
                 'running at one time')),
+
         utils.kaldi.options.make_option(
             'splice-width', default=4, type=int,
             help='meaning +- <int> frames on each side for second LDA'),
@@ -115,7 +120,7 @@ class NeuralNetwork(AbstractAcousticModel):
 
         # njobs related options
         utils.kaldi.options.make_option(
-            'combine-num-threads', default=1, type=int,
+            'combine-num-threads', default=8, type=int,
             help='number of threads for the "combine" stage'),
         utils.kaldi.options.make_option(
             'num-jobs-nnet', default=16, type=int,

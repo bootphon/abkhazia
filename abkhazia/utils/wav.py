@@ -14,7 +14,7 @@
 # along with abkhazia. If not, see <http://www.gnu.org/licenses/>.
 """Provides functions to convert various audio formats to wav
 
-Wavs conversion functions in this module are tuned the abkhazia needs,
+Wav conversion functions in this module are tuned the abkhazia needs,
 that is 16 bits, 16 kHz mono wav files.
 
 """

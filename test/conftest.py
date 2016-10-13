@@ -23,7 +23,7 @@ import abkhazia.utils as utils
 from abkhazia.corpus.prepare import BuckeyePreparator
 from abkhazia.corpus import Corpus
 from abkhazia.models.features import Features
-from abkhazia.models.language_model import LanguageModel
+from abkhazia.models.language import LanguageModel
 import abkhazia.models.acoustic as acoustic
 
 HERE = os.path.abspath(os.path.dirname(__file__))

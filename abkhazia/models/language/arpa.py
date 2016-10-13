@@ -25,7 +25,7 @@ https://github.com/sfischer13/python-arpa.
 
 import os
 import re
-import utils  # this is abkhazia.utils
+import abkhazia.utils as utils
 
 
 class ARPALanguageModel(object):

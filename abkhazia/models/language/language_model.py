@@ -23,6 +23,7 @@ import tempfile
 
 import abkhazia.utils as utils
 import abkhazia.models.abstract_recipe as abstract_recipe
+from abkhazia.models.language.arpa import ARPALanguageModel
 from abkhazia.utils.kaldi import kaldi_path
 
 
@@ -307,7 +308,7 @@ class LanguageModel(abstract_recipe.AbstractRecipe):
         self.log.debug('pruning vocabulary in %s', out_lm)
 
         words = set(w.split()[0] for w in utils.open_utf8(words_txt, 'r'))
-        lm = utils.arpa.ARPALanguageModel.load(lm_txt)
+        lm = ARPALanguageModel.load(lm_txt)
         lm.prune_vocabulary(words)
         lm_pruned = lm_txt + '.pruned'
         lm.save(lm_pruned)
