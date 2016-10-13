@@ -1,7 +1,6 @@
 * DNN branch
 ** additional package to install
 libcublas6.0 libcudart6.0
-
 ** tasks
 Implement dnn recipe on top of triphone speaker-adapted acoustic models
 - [X] decode.export
@@ -80,9 +79,14 @@ present at least once in the training set.
 ** Minor changes
 *** TODO in export use symlinks to save some place (file in output-dir,
   link in recipe-dir)
-*** updating abkhazia.cfg
+*** TODO updating abkhazia.cfg
     - Need of an automated way to update new versions of the installed
       configuration file in the ./configure script.
+*** TODO adjust log level by detecting WARNING and ERROR from Kaldi messages
+2016-10-12 16:33:58,372 - DEBUG - ERROR (apply-cmvn:Write():kaldi-matrix.cc:1229) Failed to write matrix to stream
+2016-10-12 16:33:58,373 - DEBUG - WARNING (apply-cmvn:Write():util/kaldi-holder-inl.h:54) Exception caught writing Table object: ERROR (apply-cmvn:Write():kaldi-matrix.cc:1229) Failed to write matrix to stream
+*** TODO Have completion setup during installation (or configuration?)
+*** TODO Have a test_commands module for... testing command line interface!
 * Open bugs [0/3]
 ** TODO acoustic with delta features
 *** problem

@@ -19,9 +19,9 @@ kaldi-directory:
 # to. Otherwise, use "run.pl", which will run jobs locally
 
 # On Oberon use:
-# train-cmd: queue.pl -q all
-# decode-cmd: queue.pl -q all
-# highmem-cmd: queue.pl -q all
+# train-cmd: queue.pl -q all.q@puck*.cm.cluster
+# decode-cmd: queue.pl -q all.q@puck*.cm.cluster
+# highmem-cmd: queue.pl -q all.q@puck*.cm.cluster
 
 # On Eddie use:
 # train-cmd: queue.pl -P inf_hcrc_cstr_general

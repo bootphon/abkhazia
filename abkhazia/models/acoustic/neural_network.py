@@ -142,7 +142,7 @@ class NeuralNetwork(AbstractAcousticModel):
         # feeding the --cmd option
         job_cmd = utils.config.get('kaldi', 'train-cmd')
         if 'queue' in job_cmd:
-            job_cmd += ' --conf {}'.format(
+            job_cmd += ' --config {}'.format(
                 pkg_resources.resource_filename(
                     pkg_resources.Requirement.parse('abkhazia'),
                     'abkhazia/share/queue.conf'))
@@ -153,7 +153,7 @@ class NeuralNetwork(AbstractAcousticModel):
                 .format(job_cmd),
                 ' '.join('--{} {}'.format(
                     k, v.value) for k, v in self.options.iteritems()),
-                ('--num-threads {0} --parallel-opts "--num-threads {0}"')
+                ('--num-threads {0}')  # --parallel-opts "--num-threads {0}"')
                 .format(self.njobs),
                 '--combine-parallel-opts "--num-threads {}"'.format(
                     self.options['combine-num-threads'].value),
