@@ -12,7 +12,7 @@
 #
 # You should have received a copy of the GNU General Public License
 # along with abkahzia. If not, see <http://www.gnu.org/licenses/>.
-"""Python implementation of the share/path.sh"""
+"""Python implementation of the share/path.sh Kaldi script"""
 
 import os
 from abkhazia.utils import config

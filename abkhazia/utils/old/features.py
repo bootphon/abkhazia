@@ -22,7 +22,7 @@ import os
 
 import abkhazia.utils.basic_io as io
 
-
+# TODO this should go to models/features module
 def segment_features(features_file, segments_file, out_file):
     """
     Segment h5features file containing features for whole wavefiles
