@@ -18,7 +18,6 @@ import os
 import pkg_resources
 
 import abkhazia.utils as utils
-from abkhazia.utils.kaldi.options import OptionEntry
 from abkhazia.models.acoustic.abstract_acoustic_model import (
     AbstractAcousticModel)
 
@@ -37,7 +36,6 @@ class NeuralNetwork(AbstractAcousticModel):
     """
     model_type = 'nnet'
 
-    # options = _parse_options()
     options = {k: v for k, v in (
         utils.kaldi.options.make_option(
             'num-epochs', default=15, type=int,
@@ -50,7 +48,8 @@ class NeuralNetwork(AbstractAcousticModel):
             'num-iters-final', default=20, type=int,
             help=('Maximum number of final iterations to give to the '
                   'optimization over the validation set (maximum)')),
-        # TODO have a help message for thos arguments
+
+        # TODO have a help message for those arguments
         utils.kaldi.options.make_option(
             'initial-learning-rate', default=0.04, type=float, help=''),
         utils.kaldi.options.make_option(
@@ -95,12 +94,6 @@ class NeuralNetwork(AbstractAcousticModel):
         utils.kaldi.options.make_option(
             'num-hidden-layers', default=3, type=int, help=''),
 
-        # TODO change that in --limit-high-io-jobs
-        utils.kaldi.options.make_option(
-            'io-opts', default='"-tc 5"', type=str, help=(
-                'for jobs with a lot of I/O, limits the number '
-                'running at one time')),
-
         utils.kaldi.options.make_option(
             'splice-width', default=4, type=int,
             help='meaning +- <int> frames on each side for second LDA'),
@@ -117,16 +110,24 @@ class NeuralNetwork(AbstractAcousticModel):
             'mix-up', default=0, type=int, help=(
                 'Number of components to mix up to (should be > #tree leaves, '
                 'if specified)')),
-
-        # njobs related options
+        utils.kaldi.options.make_option(
+            'max-high-io-jobs', default=-1, type=int,
+            help=('limits the number of jobs with lots of I/O running '
+                  'at one time, default is -1 (no limit). This value is '
+                  'translated into the "-tc <int>" before to be passed to the '
+                  'queuing system')),
         utils.kaldi.options.make_option(
             'combine-num-threads', default=8, type=int,
             help='number of threads for the "combine" stage'),
         utils.kaldi.options.make_option(
             'num-jobs-nnet', default=16, type=int,
-            help='Number of neural net jobs to run in parallel'),
+            help=('Number of neural net jobs to run in parallel, '
+                  'set this to 1 to run on GPU '
+                  '(if Kaldi is compiled with CUDA support)')))}
 
-        )}
+    # njobs related options
+    _njobs_options = [
+        'max-high-io-jobs', 'combine-num-threads', 'num-jobs-nnet']
 
     def __init__(self, corpus, lm_dir, feats_dir, am_dir,
                  output_dir, log=utils.logger.null_logger):
@@ -144,6 +145,27 @@ class NeuralNetwork(AbstractAcousticModel):
         message = 'training neural network'
         target = os.path.join(self.recipe_dir, 'exp', self.model_type)
 
+        # format the nnet parameters options except njobs relatedd
+        # that need further preprocessing/formatting (see above)
+        nnet_opts = ' '.join(
+            '--{} {}'.format(k, v.value)
+            for k, v in self.options.iteritems()
+            if k not in self._njobs_options)
+
+        # convert the max_high_io_jobs option to what kaldi expect...
+        _maxiojobs = self.options['max-high-io-jobs'].value
+        io_opt = '--io-opts "{}"'.format(
+            '' if _maxiojobs <= 0 else '-tc {}'.format(_maxiojobs))
+
+        num_threads_opt = (
+            '--num-threads {0} --parallel-opts "--num-threads {0}"'
+            .format(self.njobs))
+
+        combine_opt = (
+            '--combine-num-threads {0} '
+            '--combine-parallel-opts "--num-threads {0}"'
+            .format(self.options['combine-num-threads'].value))
+
         # feeding the --cmd option
         job_cmd = utils.config.get('kaldi', 'train-cmd')
         if 'queue' in job_cmd:
@@ -154,14 +176,8 @@ class NeuralNetwork(AbstractAcousticModel):
 
         command = (
             ' '.join((
-                'steps/nnet2/train_pnorm_fast.sh --cmd "{}"'
-                .format(job_cmd),
-                ' '.join('--{} {}'.format(
-                    k, v.value) for k, v in self.options.iteritems()),
-                ('--num-threads {0}')  # --parallel-opts "--num-threads {0}"')
-                .format(self.njobs),
-                '--combine-parallel-opts "--num-threads {}"'.format(
-                    self.options['combine-num-threads'].value),
+                'steps/nnet2/train_pnorm_fast.sh --cmd "{}"'.format(job_cmd),
+                nnet_opts, io_opt, num_threads_opt, combine_opt,
                 '{data} {lang} {origin} {target}'.format(
                     data=self.data_dir,
                     lang=self.lm_dir,

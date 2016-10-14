@@ -6,12 +6,15 @@ Implement dnn recipe on top of triphone speaker-adapted acoustic models
 - [X] decode.export
 - [X] revoir l'architecture des décodeurs pour avoir une méthode
   adaptée à chaque AM.
-- [ ] new decoders binding to command-line (scoring options, etc)
-- [X] tester decode et sortir WER/PER sur les étapes du tri-sa et DNN
+- [-] tester decode et sortir WER/PER sur les étapes du tri-sa et DNN
   - [X] mono, tri, tri-sa WER ok
   - [ ] nnet ?
   - [ ] PER ?
-- [ ] debug the --num-threads options in DNN to be compatible with queue.pl
+- [ ] new decoders binding to command-line (scoring options, etc)
+- [X] debug the --num-threads options in DNN to be compatible with queue.pl
+- [ ] upgrade the bootphon/kaldi repo
+- [ ] add cuda support in the install_kaldi.sh script
+- [ ] add nnet am/decode test
 ** njobs affair
 *** related parameters from train_pnorm_fast.sh
 - num_jobs_nnet=16
