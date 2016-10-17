@@ -1,32 +1,12 @@
 * DNN branch
-** additional package to install
-libcublas6.0 libcudart6.0
-** tasks
 Implement dnn recipe on top of triphone speaker-adapted acoustic models
-- [X] decode.export
-- [X] revoir l'architecture des décodeurs pour avoir une méthode
-  adaptée à chaque AM.
 - [-] tester decode et sortir WER/PER sur les étapes du tri-sa et DNN
   - [X] mono, tri, tri-sa WER ok
-  - [ ] nnet ?
+  - [X] nnet ?
   - [ ] PER ?
-- [ ] new decoders binding to command-line (scoring options, etc)
-- [X] debug the --num-threads options in DNN to be compatible with queue.pl
-- [ ] upgrade the bootphon/kaldi repo
-- [ ] add cuda support in the install_kaldi.sh script
 - [ ] add nnet am/decode test
-** njobs affair
-*** related parameters from train_pnorm_fast.sh
-- num_jobs_nnet=16
-    => passed to get_egs.sh
-    => conditionne les jobs des étapes posterieures
-- num_threads
-    => must be 1 to use GPU
-    => must be linked to parallel_opts
-- combine_num_threads
-    => only for the last step (nnet-combine-fast)
-    => must be linked to combine_parallel_opts
-*** parallel_opts relies on queue.conf -> need to debug that!
+- [ ] debug the --transform-dir option for nnet decoding (need to be on
+  top of align_fmllr?)
 * Feature requests
 ** corpus
 - [ ] des méthodes de stats sur les corpus (duration, per spks, etc)
@@ -92,8 +72,11 @@ present at least once in the training set.
   features.write2ark('/somewhere')
 #+end_src
 ** Minor changes
-*** TODO in export use symlinks to save some place (file in output-dir,
-  link in recipe-dir)
+*** TODO upgrade the bootphon/kaldi repo
+*** TODO add cuda support in the install_kaldi.sh script
+
+*** TODO in export use symlinks to save some place
+    (file in output-dir, link in recipe-dir)
 *** TODO updating abkhazia.cfg
     - Need of an automated way to update new versions of the installed
       configuration file in the ./configure script.
@@ -101,7 +84,7 @@ present at least once in the training set.
 2016-10-12 16:33:58,372 - DEBUG - ERROR (apply-cmvn:Write():kaldi-matrix.cc:1229) Failed to write matrix to stream
 2016-10-12 16:33:58,373 - DEBUG - WARNING (apply-cmvn:Write():util/kaldi-holder-inl.h:54) Exception caught writing Table object: ERROR (apply-cmvn:Write():kaldi-matrix.cc:1229) Failed to write matrix to stream
 *** TODO Have completion setup during installation (or configuration?)
-*** TODO Have a test_commands module for... testing command line interface!
+*** TODO Have a test_commands module for testing command line interface!
 * Open bugs [0/3]
 ** TODO acoustic with delta features
 *** problem
@@ -115,117 +98,3 @@ present at least once in the training set.
    'data-directory: #/something' actually creates the ./#/someting directory
 ** TODO align --post --with-words
    Update the probabilities estimation to be on words, not on phones
-* Fixed bugs [6/6]
-** DONE installation on Mac
-   CLOSED: [2016-05-20 ven. 13:02]
-   XN -- Pour le testing sur mac, ça ne marche pas ou en tout cas, je
-   n'ai pas pu avancer.  J'ai lancé install_kaldi.sh et il a fait
-   pleins de choses mais il a crashé vers la fin.  J'ai aussi essayé
-   de cloner la dernière version de kaldi mais ça ne semble pas
-   marcher sur abkhazia car il plante sur abkhazia language.
-** DONE language
-   Fail on n!=3 for n-grams. Used to work with previous version of kaldi.
-*** py.test -vx ./test/test_language.py | egrep "^\[.*ERROR"
-    ["2016-03-30 17:51:06,422 - DEBUG - ERROR
-    (arpa2fst:Read():arpa-file-parser.cc:228) in line 70: Invalid or
-    unexpected directive line '\\2-grams:', expected \\end\\.\n",
-    "2016-03-30 17:51:06,422 - DEBUG - ERROR
-    (arpa2fst:Read():arpa-file-parser.cc:228) in line 70: Invalid or
-    unexpected directive line '\\2-grams:', expected \\end\\.\n",
-    '2016-03-30 17:51:06,423 - DEBUG - ERROR: FstHeader::Read: Bad FST
-    header: standard input\n']
-*** details
- - [X] A working kaldi commit
-    a9b65137b4ab90845c1357724d5ddaa805972830 (10 Feb. 2016)
- - [X] where in abkhazia script the bug occurs?
-   - in _format_lm() -> utils/format_lm_sri.sh
-   - in kaldi-trunk/tools/srilm/bin/change-lm-vocab -> add an empty 3-gram
- - [X] find a kaldi commit before that bug was introduced?
-   - seems to be introduced by dpovey on commit (after?)
-     a9b65137b4ab90845c1357724d5ddaa805972830 (10 Feb. 2016)
- - [X] eventually write a pull request?
-*** solution
- - submited https://github.com/kaldi-asr/kaldi/pull/639
- - the bug is fixed within kaldi, see https://github.com/kaldi-asr/kaldi/issues/643
-** DONE abkhazia language buckeye -v
-   CLOSED: [2016-05-30 lun. 23:30]
-*** gzip: stdout: Broken pipe
-   -: line 340912: warning: 13585 1-grams read, expected 13590
-   -: line 340912: warning: 98096 2-grams read, expected 98106
-   -: line 340912: warning: 229218 3-grams read, expected 229232
-*** broken pipe does not impact anything
-*** warning on missing n-grams
-    this is the effect of OOV pruning in kaldi
-    tools/srilm/bin/change-lm-vocab, so not a problem nor a bug
-** DONE abkhazia language librispeech-test-clean -n 3 -l word
-   CLOSED: [2016-06-03 ven. 15:52]
-*** Fail in word level, regardless silences. Work on phone
-running utils/format_lm_sri.sh --srilm_opts "-subset -prune-lowprobs -unk" /home/mathieu/lscp/data/abkhazia/librispeech-test-clean/language /home/mathieu/lscp/data/abkhazia/librispeech-test-clean/language/recipe/data/local/language/G.arpa.gz /tmp/tmpFWGkJL
-Converting '/home/mathieu/lscp/data/abkhazia/librispeech-test-clean/language/recipe/data/local/language/G.arpa.gz' to FST
-gzip: stdout: Broken pipe
--: line 91932: warning: 8014 1-grams read, expected 8141
--: line 91932: warning: 35217 2-grams read, expected 35595
--: line 91932: warning: 48688 3-grams read, expected 49258
-ngram: ../../include/LHash.cc:519: void LHashIter<KeyT, DataT>::sortKeys() [with KeyT = unsigned int; DataT = Trie<unsigned int, BOnode>]: Assertion `j == numEntries' failed.
-/home/mathieu/lscp/dev/kaldi/tools/srilm/bin/change-lm-vocab: line 78: 12596 Done                    gzip -dcf $oldlm
-12597                       | ${GAWK-gawk} '
-# read the vocab file
-NR == 1 && vocab {
-# always include sentence begin/end
-is_word["<s>"] = is_word["</s>"] = 1;
-while ((getline word < vocab) > 0) {
-is_word[to_lower ? tolower(word) : word] = 1;
-}
-close(vocab);
-}
-# process old lm
-NF==0 {
-print; next;
-}
-/^ngram *[0-9][0-9]*=/ {
-order = substr($2,1,index($2,"=")-1);
-print;
-next;
-}
-/^\\[0-9]-grams:/ {
-currorder=substr($0,2,1);
-print;
-next;
-}
-/^\\/ {
-print; next;
-}
-currorder {
-for (i = 2 ; i <= currorder + 1; i ++) {
-if (!((to_lower ? tolower($i) : $i) in is_word)) next;
-}
-print;
-next;
-}
-{ print }
-' vocab=$vocab to_lower=$tolower
-12598 Aborted                 | ngram -lm - -vocab "$ngram_vocab" -renorm -write-lm "$newlm" $options
-
-*** Solution
-reimplementation of format_lm_sri in Python
-** DONE abkhazia features/language brent
-   CLOSED: [2016-06-06 lun. 15:54]
-*** ldes_brent/language /home/mbernard/dev/abkhazia/egs/align_childes_brent/acoustic/recipe/exp/mono
-steps/train_mono.sh --nj 4 --cmd run.pl data/acoustic
-/home/mbernard/dev/abkhazia/egs/align_childes_brent/language
-/home/mbernard/dev/abkhazia/egs/align_childes_brent/acoustic/recipe/exp/mono
-split_data.sh: warning, #lines is (utt2spk,feats.scp) is
-(112865,112862); you can use utils/fix_data_dir.sh data/acoustic to
-fix this.
-*** problem
-features from utts shorter than 100ms cannot be computed (see
-extract-segments.c in kaldi featbin)
-*** solution
-remove those short utts from corpus in preparation step
-(--keep-short-utts option added)
-** DONE acoustic fails with -j too high on qsub
-*** problem
-caused by features computed on more than 9 jobs, concatenation of
-resulted features was not naturally ordered but as 1, 10, 2, ...
-*** solution
-obvious natural sort of features files

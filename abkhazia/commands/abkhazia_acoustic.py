@@ -89,12 +89,12 @@ class _AmBase(AbstractKaldiCommand):
             verbose=args.verbose)
         corpus = Corpus.load(corpus_dir, validate=args.validate, log=log)
 
-        # get back the language model directory
+        # get back the language model directory TODO use cls._parse_aux_dir
         lang = (os.path.join(os.path.dirname(corpus_dir), 'language')
                 if args.language_model is None
                 else os.path.abspath(args.language_model))
 
-        # get back the features directory
+        # get back the features directory TODO use cls._parse_aux_dir
         feats = (os.path.join(os.path.dirname(corpus_dir), 'features')
                  if args.features is None
                  else os.path.abspath(args.features))
@@ -117,7 +117,7 @@ class _AmBase(AbstractKaldiCommand):
         if args.recipe:
             recipe.delete_recipe = False
 
-        # setup the model options
+        # setup the model options parsed from command line
         for k, v in vars(args).iteritems():
             try:
                 recipe.set_option(k.replace('_', '-'), v)

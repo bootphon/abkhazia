@@ -28,7 +28,9 @@ def options():
     return {k: v for k, v in (
                opt('decode-mbr', default=False, type=bool,
                    help='maximum bayes risk decoding (confusion network)'),
-               opt('beam', default=6, type=float,
+               # the name of that option in Kaldi is beam, but
+               # conflicts with deocde.beam option
+               opt('pruning-beam', default=6, type=float,
                    help='Pruning beam (applied after acoustic scaling)'),
                # TODO cause bugs when parsing
                # opt('word-ins-penalty', default=[0.0, 0.5, 1.0], type=list,
@@ -37,3 +39,15 @@ def options():
                    help='minumum LM-weight for lattice rescoring'),
                opt('max-lmwt', default=20, type=int,
                    help='maximum LM-weight for lattice rescoring'))}
+
+
+def format(score_opts, mkgraph_opts):
+    # generate option string for scoring
+    opts = ' '.join('--{} {}'.format(
+        'beam' if n == 'pruning-beam' else n, str(o))
+                    for n, o in score_opts.iteritems())
+
+    # add the reverse flag if enabled in the mkgraph options
+    if mkgraph_opts['reverse'].value:
+        opts += ' --reverse true'
+    return opts

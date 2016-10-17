@@ -55,25 +55,26 @@ echo 'computing triphone-sa model'
 #          -v $train_dir || exit 1
 
 echo 'computing DNN model'
-abkhazia acoustic nnet --force --recipe -v \
-         -l $train_dir/language -f $train_dir/features -i $train_dir/triphone-sa \
-         $train_dir || exit 1
-exit 0
+# abkhazia acoustic nnet --force --recipe -v \
+#          -l $train_dir/language -f $train_dir/features -i $train_dir/triphone-sa \
+#          $train_dir || exit 1
+
 
 echo 'decoding monophone model'
-# abkhazia decode $test_dir -o $test_dir/decode_monophone_bis --recipe --force -v \
+# abkhazia decode si $test_dir -o $test_dir/decode_monophone_bis --recipe --force -v \
 #          -a $train_dir/monophone -l $train_dir/language || exit 1
 
 echo 'decoding triphone model'
-# abkhazia decode $test_dir -o $test_dir/decode_triphone --recipe --force -v \
+# abkhazia decode si $test_dir -o $test_dir/decode_triphone --recipe --force -v \
 #          -a $train_dir/triphone -l $train_dir/language || exit 1
 
 echo 'decoding triphone-sa model'
-# abkhazia decode $test_dir -o $test_dir/decode_triphone-sa --recipe --force -v \
+# abkhazia decode sa $test_dir -o $test_dir/decode_triphone-sa --recipe --force -v \
 #          -a $train_dir/triphone-sa -l $train_dir/language
 
-# echo 'decoding DNN model'
-# abkhazia decode $test_dir -o $test_dir/decode_nnet --recipe --force -v \
-#          -a $train_dir/nnet -l $train_dir/language
+echo 'decoding DNN model'
+abkhazia decode nnet $test_dir -o $test_dir/decode_nnet --recipe --force -v \
+         -a $train_dir/nnet -l $train_dir/language || exit 1
+#         --transform-dir $test_dir/decode_triphone-sa || exit 1
 
 exit 0

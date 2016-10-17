@@ -14,7 +14,9 @@
 # along with abkhazia. If not, see <http://www.gnu.org/licenses/>.
 """Implementation of the 'abkhazia decode' command"""
 
+import argparse
 import os
+import textwrap
 
 from abkhazia.commands.abstract_command import AbstractKaldiCommand
 from abkhazia.corpus import Corpus
@@ -22,16 +24,28 @@ import abkhazia.models.decode as decode
 import abkhazia.utils as utils
 
 
-class AbkhaziaDecode(AbstractKaldiCommand):
-    name = 'decode'
+class _DecodeBase(AbstractKaldiCommand):
+    # name of subcommand in command-line
+    name = NotImplemented
 
-    description = """decode a corpus and provides WER"""
+    # one line description of the subcommand
+    description = NotImplemented
+
+    # multiline detailed description
+    _long_description = NotImplemented
+
+    @classmethod
+    def long_description(cls):
+        return textwrap.dedent(cls._long_description)
 
     @classmethod
     def add_parser(cls, subparsers):
         """Return a parser for the align command"""
         # get basic parser init from AbstractCommand
-        parser, dir_group = super(AbkhaziaDecode, cls).add_parser(subparsers)
+        parser, dir_group = super(_DecodeBase, cls).add_parser(
+            subparsers, name=cls.name)
+        parser.formatter_class = argparse.RawDescriptionHelpFormatter
+        parser.description = cls.long_description()
 
         dir_group.add_argument(
             '-l', '--language-model', metavar='<lm-dir>', default=None,
@@ -48,10 +62,18 @@ class AbkhaziaDecode(AbstractKaldiCommand):
             help='''the features directory. If not specified, use
             <feat-dir>=<corpus>/features.''')
 
-        # TODO link that to the decoders, thre kinds: si, sa, nnet
-        # decode_group = parser.add_argument_group('decoding parameters')
-        # graph_group = parser.add_argument_group('graph making parameters')
-        # score_group = parser.add_argument_group('scoring parameters')
+        # TODO if nnet decoding, add transform-dir in dir_group
+
+        graph_group = parser.add_argument_group('graph making parameters')
+        utils.kaldi.options.add_options(graph_group, decode._mkgraph.options())
+
+        decode_group = parser.add_argument_group('decoding parameters')
+        utils.kaldi.options.add_options(
+            # different for sa, si and nnet
+            decode_group, decode.decoders[cls.name].options())
+
+        score_group = parser.add_argument_group('scoring parameters')
+        utils.kaldi.options.add_options(score_group, decode._score.options())
 
         return parser
 
@@ -67,10 +89,66 @@ class AbkhaziaDecode(AbstractKaldiCommand):
         lang = cls._parse_aux_dir(corpus_dir, args.language_model, 'language')
         acou = cls._parse_aux_dir(corpus_dir, args.acoustic_model, 'acoustic')
 
-        # instanciate and run the kaldi recipe
-        recipe = decode.Decode(corpus, lang, feat, acou, output_dir,
-                               #acoustic_scale=args.acoustic_scale,
-                               log=log)
+        # instanciate the kaldi recipe
+        recipe = decode.Decode(
+            corpus, lang, feat, acou, output_dir,
+            decode_type=cls.name, log=log)
         recipe.njobs = args.njobs
         recipe.delete_recipe = False if args.recipe else True
+
+        # setup the model options parsed from command line
+        for k, v in vars(args).iteritems():
+            try:
+                recipe.set_option(k.replace('_', '-'), v)
+            except KeyError:
+                pass
+
+        # finally decode the corpus
         recipe.compute()
+
+
+class _DecodeSi(_DecodeBase):
+    name = 'si'
+    description = 'decode on mono and tri models'
+    _long_description = ''''''
+
+
+class _DecodeSa(_DecodeBase):
+    name = 'sa'
+    description = 'decode on tri-sa model'
+    _long_description = ''''''
+
+
+class _DecodeDnn(_DecodeBase):
+    name = 'nnet'
+    description = 'decode on nnet model'
+    _long_description = ''''''
+
+
+class AbkhaziaDecode(object):
+    name = 'decode'
+    description = 'decode a corpus (with features) on a trained acoustic model'
+
+    _commands = [_DecodeSi, _DecodeSa, _DecodeDnn]
+
+    @classmethod
+    def add_parser(cls, subparsers):
+        """Return a parser for the 'abkhazia acoustic' command
+
+        Add a subparser and help message for 'si', 'sa' and 'nnet'
+        subcommands.
+
+        """
+        parser = subparsers.add_parser(cls.name)
+        parser.formatter_class = argparse.RawTextHelpFormatter
+        subparsers = parser.add_subparsers(
+            metavar='<command>',
+            help='possible commands are:\n' + '\n'.join(
+                (' {} - {}'.format(
+                    c.name + ' '*(11-len(c.name)), c.description)
+                 for c in cls._commands)))
+
+        for command in cls._commands:
+            command.add_parser(subparsers)
+
+        return parser

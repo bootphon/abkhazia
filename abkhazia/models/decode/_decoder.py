@@ -14,14 +14,14 @@
 # along with abkhazia. If not, see <http://www.gnu.org/licenses/>.
 """Wrapper on egs/wsj/s5/steps/decode.sh
 
-Following decode options are ignored: num_thread (TODO for num_thread
-need to update options to queue as well, from queue.conf),
-skip_scoring, iter, transform_dir
+Following decode options are ignored: num_thread, skip_scoring, iter,
+transform_dir
 
 """
 
 import os
 import abkhazia.utils as utils
+import _score
 
 
 def options():
@@ -47,17 +47,6 @@ def decode(decoder, graph_dir):
         decode_opts = ' '.join('--{} {}'.format(n, str(o))
                                for n, o in decoder.decode_opts.iteritems())
 
-        # generate option string for scoring
-        score_opts = ' '.join('--{} {}'.format(n, str(o))
-                              for n, o in decoder.score_opts.iteritems())
-        # add the reverse flag if enabled in the mkgraph options
-        if decoder.mkgraph_opts['reverse'].value:
-            score_opts += ' --reverse true'
-        # # need to remove any " insterted by --word-ins-penality. This
-        # # cause the command string to have "" and cause a bug while
-        # # parsing
-        # score_opts = score_opts.replace('"', '')
-
         target = os.path.join(decoder.recipe_dir, 'decode')
         if not os.path.isdir(target):
             os.makedirs(target)
@@ -71,7 +60,8 @@ def decode(decoder, graph_dir):
                 # TODO .mdl or .alimdl ?
                 model=os.path.join(decoder.am_dir, 'final.mdl'),
                 decode_opts=decode_opts,
-                score_opts=score_opts,
+                score_opts=_score.format(
+                    decoder.score_opts, decoder.mkgraph_opts),
                 graph=graph_dir,
                 data=os.path.join(decoder.recipe_dir, 'data', decoder.name),
                 decode=target)))

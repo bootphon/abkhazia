@@ -14,4 +14,4 @@
 # along with abkhazia. If not, see <http://www.gnu.org/licenses/>.
 """Provides classes for decoding acoustic models with Kaldi"""
 
-from abkhazia.models.decode.decode import Decode
+from abkhazia.models.decode.decode import Decode, decoders

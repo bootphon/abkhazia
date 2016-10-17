@@ -21,6 +21,7 @@ num-threads, skip_scoring, max_fmllr_jobs
 
 import os
 import abkhazia.utils as utils
+import _score
 
 
 def options():
@@ -67,6 +68,10 @@ def decode(decoder, graph_dir):
     # the script in it, and finally delete the symlink. Moreover the
     # script make a speaker independant decoding so we use the tweak
     # again for si.
+    #
+    # TODO This is an error to assume write permission in
+    # decoder.am_dir!! Instead we must copy (link) the required files
+    # to decoder.recipe_dir (as in _decoder_nnet)
 
     target_sa = os.path.join(decoder.recipe_dir, 'decode')
     if not os.path.isdir(target_sa):
@@ -87,7 +92,8 @@ def decode(decoder, graph_dir):
             njobs=decoder.njobs,
             cmd=utils.config.get('kaldi', 'decode-cmd'),
             decode_opts=decode_opts,
-            score_opts=score_opts,
+            score_opts=_score.format(
+                decoder.score_opts, decoder.mkgraph_opts),
             graph=graph_dir,
             data=os.path.join(decoder.recipe_dir, 'data', decoder.name),
             decode=tempdir_sa)))

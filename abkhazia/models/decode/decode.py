@@ -26,26 +26,38 @@ import abkhazia.utils as utils
 import _mkgraph
 import _decoder
 import _decoder_fmllr
+import _decoder_nnet
 import _score
+
+
+decoders = {
+    'si': _decoder,
+    'sa': _decoder_fmllr,
+    'nnet': _decoder_nnet}
 
 
 class Decode(abstract_recipe.AbstractRecipe):
     name = 'decode'
 
     def __init__(self, corpus, lm_dir, feats_dir, am_dir, output_dir,
-                 log=utils.logger.null_logger()):
+                 decode_type=None, log=utils.logger.null_logger()):
         super(Decode, self).__init__(corpus, output_dir, log=log)
         self.feat_dir = os.path.abspath(feats_dir)
         self.lm_dir = os.path.abspath(lm_dir)
-
         self.am_dir = os.path.abspath(am_dir)
+
         self.am_type = acoustic.model_type(am_dir)
-        self._decoder = {
-            'mono': _decoder,
-            'tri': _decoder,
-            'tri-sa': _decoder_fmllr,
-            #  'nnet': self._decode_nnet
-        }[self.am_type]
+        self._decoder_type = {
+            'mono': 'si',
+            'tri': 'si',
+            'tri-sa': 'sa',
+            'nnet': 'nnet'}[self.am_type]
+        if decode_type and self._decoder_type != decode_type:
+            raise IOError(
+                '''cannot setup decoder, acoustic model
+                and decoder type are not compatible''')
+
+        self._decoder = decoders[self._decoder_type]
 
         self.mkgraph_opts = _mkgraph.options()
         self.decode_opts = self._decoder.options()
@@ -63,6 +75,22 @@ class Decode(abstract_recipe.AbstractRecipe):
             'features = {}'.format(self.feat_dir),
             'language model = {}'.format(self.lm_dir),
             'acoustic model = {}'.format(self.am_dir)))
+
+    def set_option(self, name, value):
+        """Set option `name` to `value`
+
+        Raise KeyError on unknown option and TypeError if the value
+        cannot be converted to the option type
+
+        """
+        if name in self.mkgraph_opts:
+            self.mkgraph_opts[name].value = self.mkgraph_opts[name].type(value)
+        elif name in self.decode_opts:
+            self.decode_opts[name].value = self.decode_opts[name].type(value)
+        elif name in self.score_opts:
+            self.score_opts[name].value = self.score_opts[name].type(value)
+        else:
+            raise KeyError('Option {} not valid'.format(name))
 
     def create(self):
         super(Decode, self).create()
