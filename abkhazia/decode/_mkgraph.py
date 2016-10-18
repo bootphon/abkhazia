@@ -21,11 +21,12 @@ ignored for now
 
 import os
 import abkhazia.utils as utils
+import abkhazia.kaldi as kaldi
 
 
 def options():
     """Return default parameters for the mkgraph script"""
-    opt = utils.kaldi.options.make_option
+    opt = kaldi.options.make_option
 
     return {k: v for k, v in (
         opt('transition-scale', default=1.0, type=float,

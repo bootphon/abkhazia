@@ -18,8 +18,9 @@ import os
 import pkg_resources
 
 import abkhazia.utils as utils
-from abkhazia.models.acoustic.abstract_acoustic_model import (
+from abkhazia.acoustic.abstract_acoustic_model import (
     AbstractAcousticModel)
+import abkhazia.kaldi as kaldi
 
 
 class NeuralNetwork(AbstractAcousticModel):
@@ -40,45 +41,45 @@ class NeuralNetwork(AbstractAcousticModel):
     model_type = 'nnet'
 
     options = {k: v for k, v in (
-        utils.kaldi.options.make_option(
+        kaldi.options.make_option(
             'num-epochs', default=15, type=int,
             help=('Number of epochs during which we reduce the learning rate; '
                   'number of iterations is worked out from this')),
-        utils.kaldi.options.make_option(
+        kaldi.options.make_option(
             'num-epochs-extra', default=5, type=int,
             help='Number of epochs after we stop reducing the learning rate'),
-        utils.kaldi.options.make_option(
+        kaldi.options.make_option(
             'num-iters-final', default=20, type=int,
             help=('Maximum number of final iterations to give to the '
                   'optimization over the validation set (maximum)')),
 
         # TODO have a help message for those arguments
-        utils.kaldi.options.make_option(
+        kaldi.options.make_option(
             'initial-learning-rate', default=0.04, type=float, help=''),
-        utils.kaldi.options.make_option(
+        kaldi.options.make_option(
             'final-learning-rate', default=0.004, type=float, help=''),
-        utils.kaldi.options.make_option(
+        kaldi.options.make_option(
             'bias-stddev', default=0.5, type=float, help=''),
-        utils.kaldi.options.make_option(
+        kaldi.options.make_option(
             'pnorm-input-dim', default=3000, type=int, help=''),
-        utils.kaldi.options.make_option(
+        kaldi.options.make_option(
             'pnorm-output-dim', default=300, type=int, help=''),
 
-        utils.kaldi.options.make_option(
+        kaldi.options.make_option(
             'p', default=2, type=float, help='p in p-norm'),
-        utils.kaldi.options.make_option(
+        kaldi.options.make_option(
             'presoftmax-prior-scale-power', default=-0.25, type=float,
             help=('use the specified power value on the priors (inverse '
                   'priors) to scale the pre-softmax outputs')),
-        utils.kaldi.options.make_option(
+        kaldi.options.make_option(
             'minibatch-size', default=128, type=int,
             help='''by default use a smallish minibatch size for neural net
             training; this controls instability which would otherwise
             be a problem with multi-threaded update'''),
-        utils.kaldi.options.make_option(
+        kaldi.options.make_option(
             'samples-per-iter', default=200000, type=int,
             help='each iteration of training, see this many samples per job'),
-        utils.kaldi.options.make_option(
+        kaldi.options.make_option(
             'shuffle-buffer-size', default=500, type=int,
             help='''
             This "buffer_size" variable controls randomization of the samples
@@ -91,44 +92,44 @@ class NeuralNetwork(AbstractAcousticModel):
             minibatches on different iterations, since in the
             preconditioning method, 2 samples in the same minibatch
             can affect each others' gradients.'''),
-        utils.kaldi.options.make_option(
+        kaldi.options.make_option(
             'add-layers-period', default=2, type=int,
             help='add new layers every <int> iterations'),
-        utils.kaldi.options.make_option(
+        kaldi.options.make_option(
             'num-hidden-layers', default=3, type=int, help=''),
 
-        utils.kaldi.options.make_option(
+        kaldi.options.make_option(
             'splice-width', default=4, type=int,
             help='meaning +- <int> frames on each side for second LDA'),
-        utils.kaldi.options.make_option(
+        kaldi.options.make_option(
             'randprune', default=4.0, type=float,
             help='speeds up LDA'),
-        utils.kaldi.options.make_option(
+        kaldi.options.make_option(
             'alpha', default=4.0, type=float,
             help='relates to preconditioning'),
-        utils.kaldi.options.make_option(
+        kaldi.options.make_option(
             'target-multiplier', default=0, type=float,
             help='Set this to e.g. 1.0 to enable perturbed training'),
-        utils.kaldi.options.make_option(
+        kaldi.options.make_option(
             'mix-up', default=0, type=int, help=(
                 'Number of components to mix up to (should be > #tree leaves, '
                 'if specified)')),
-        utils.kaldi.options.make_option(
+        kaldi.options.make_option(
             'num-utts-subset', default=300, type=int, help='''
             number of utterances in validation and training
             subsets used for shrinkage and diagnostics.
             Should have 2*num-utt-subset <= corpus.nutts'''),
 
-        utils.kaldi.options.make_option(
+        kaldi.options.make_option(
             'max-high-io-jobs', default=-1, type=int,
             help=('limits the number of jobs with lots of I/O running '
                   'at one time, default is -1 (no limit). This value is '
                   'translated into the "-tc <int>" before to be passed to the '
                   'queuing system')),
-        utils.kaldi.options.make_option(
+        kaldi.options.make_option(
             'combine-num-threads', default=8, type=int,
             help='number of threads for the "combine" stage'),
-        utils.kaldi.options.make_option(
+        kaldi.options.make_option(
             'num-jobs-nnet', default=16, type=int,
             help=('Number of neural net jobs to run in parallel, '
                   'set this to 1 to run on GPU '

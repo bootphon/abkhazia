@@ -17,8 +17,9 @@
 import argparse
 import os
 
-import abkhazia.models.features as features
+import abkhazia.features as features
 import abkhazia.utils as utils
+import abkhazia.kaldi as kaldi
 
 from abkhazia.commands.abstract_command import AbstractKaldiCommand
 from abkhazia.corpus import Corpus
@@ -82,7 +83,7 @@ class _FeatBase(AbstractKaldiCommand):
                     cls.parsed_options.append((name, value))
             return customAction
 
-        utils.kaldi.add_options_executable(
+        kaldi.add_options_executable(
             parser, cls.kaldi_bin,
             action=action,
             ignore=cls.ignored_options,

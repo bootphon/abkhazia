@@ -19,9 +19,9 @@ import os
 import sys
 import tempfile
 
-import abkhazia.utils as utils
 import abkhazia.corpus.prepare.buckeye_preparator as buckeye
-from abkhazia.utils.abkhazia2abx import alignment2item
+import abkhazia.utils as utils
+from utils.abkhazia2abx import alignment2item
 
 
 # The path to the raw Buckeye distribution

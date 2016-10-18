@@ -16,12 +16,13 @@
 import os
 import shutil
 
-from abkhazia.models.features import Features
-from abkhazia.models.language import check_language_model
-from abkhazia.models.abstract_recipe import AbstractRecipe
+from abkhazia.features import Features
+from abkhazia.language import check_language_model
+from abkhazia.abstract_recipe import AbstractRecipe
 import abkhazia.utils as utils
+import abkhazia.kaldi as kaldi
 
-make_option = utils.kaldi.options.make_option
+make_option = kaldi.options.make_option
 
 
 def model_type(am_dir):

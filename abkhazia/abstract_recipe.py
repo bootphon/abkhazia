@@ -18,7 +18,7 @@ import multiprocessing
 import os
 
 import abkhazia.utils as utils
-from abkhazia.utils.kaldi import kaldi_path, Abkhazia2Kaldi
+from abkhazia.kaldi import kaldi_path, Abkhazia2Kaldi
 
 
 class AbstractRecipe(utils.abkhazia_base.AbkhaziaBase):

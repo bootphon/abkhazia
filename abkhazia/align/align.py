@@ -35,10 +35,10 @@ import os
 import shutil
 
 import abkhazia.utils as utils
-import abkhazia.models.abstract_recipe as abstract_recipe
-from abkhazia.models.language import check_language_model, read_int2phone
-from abkhazia.models.acoustic import check_acoustic_model
-from abkhazia.models.features import Features
+import abkhazia.abstract_recipe as abstract_recipe
+from abkhazia.language import check_language_model, read_int2phone
+from abkhazia.acoustic import check_acoustic_model
+from abkhazia.features import Features
 
 
 # TODO check alignment: which utt have been transcribed, have silence

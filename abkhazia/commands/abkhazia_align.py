@@ -19,7 +19,7 @@ import os
 
 from abkhazia.commands.abstract_command import AbstractKaldiCommand
 from abkhazia.corpus import Corpus
-import abkhazia.models.align as align
+import abkhazia.align as align
 import abkhazia.utils as utils
 
 

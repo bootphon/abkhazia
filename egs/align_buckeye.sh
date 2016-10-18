@@ -40,7 +40,7 @@ train_dir=$data_dir/split/train
 abkhazia language $train_dir -l word -n 3 -v || exit 1
 
 # compute MFCC features
-abkhazia features mfcc $train_dir || exit 1
+abkhazia features mfcc $train_dir --cmvn || exit 1
 
 # compute a speaker-adapted triphone HMM-GMM acoustic model
 abkhazia acoustic monophone -v $train_dir || exit 1

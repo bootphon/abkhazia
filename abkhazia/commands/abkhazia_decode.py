@@ -20,8 +20,9 @@ import textwrap
 
 from abkhazia.commands.abstract_command import AbstractKaldiCommand
 from abkhazia.corpus import Corpus
-import abkhazia.models.decode as decode
+import abkhazia.decode as decode
 import abkhazia.utils as utils
+import abkhazia.kaldi as kaldi
 
 
 class _DecodeBase(AbstractKaldiCommand):
@@ -65,15 +66,15 @@ class _DecodeBase(AbstractKaldiCommand):
         # TODO if nnet decoding, add transform-dir in dir_group
 
         graph_group = parser.add_argument_group('graph making parameters')
-        utils.kaldi.options.add_options(graph_group, decode._mkgraph.options())
+        kaldi.options.add_options(graph_group, decode._mkgraph.options())
 
         decode_group = parser.add_argument_group('decoding parameters')
-        utils.kaldi.options.add_options(
+        kaldi.options.add_options(
             # different for sa, si and nnet
             decode_group, decode.decoders[cls.name].options())
 
         score_group = parser.add_argument_group('scoring parameters')
-        utils.kaldi.options.add_options(score_group, decode._score.options())
+        kaldi.options.add_options(score_group, decode._score.options())
 
         return parser
 

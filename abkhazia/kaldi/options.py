@@ -18,8 +18,8 @@ import re
 import shlex
 import subprocess
 
-import abkhazia.utils as utils
-from abkhazia.utils.kaldi.path import kaldi_path
+from abkhazia.utils import bool2str
+from abkhazia.kaldi.path import kaldi_path
 
 
 class OptionEntry(object):
@@ -42,7 +42,7 @@ class OptionEntry(object):
 
         """
         if self.type is bool:
-            return utils.bool2str(self.value)
+            return bool2str(self.value)
         elif self.type is list:
             return '"' + ' '.join(str(i) for i in self.value) + '"'
         return str(self.value)
@@ -153,7 +153,7 @@ def add_options(parser, options,
 
     def _format_help(entry, default):
         if isinstance(default, bool):
-            default = utils.bool2str(default)
+            default = bool2str(default)
         elif isinstance(default, list):
             default = '"' + ' '.join(str(i) for i in default) + '"'
         default = 'default is {}'.format(default)

@@ -22,10 +22,10 @@ from abkhazia.corpus.corpus_saver import CorpusSaver
 from abkhazia.corpus.corpus_loader import CorpusLoader
 from abkhazia.corpus.corpus_validation import CorpusValidation
 from abkhazia.corpus.corpus_split import CorpusSplit
-import abkhazia.utils as utils
+from abkhazia.utils import abkhazia_base, default_njobs, logger
 
 
-class Corpus(utils.abkhazia_base.AbkhaziaBase):
+class Corpus(abkhazia_base.AbkhaziaBase):
     """Speech corpus in the abkhazia format
 
     This class wraps a speech corpus in the abkhazia format and
@@ -94,7 +94,7 @@ class Corpus(utils.abkhazia_base.AbkhaziaBase):
     """
 
     @classmethod
-    def load(cls, corpus_dir, validate=False, log=utils.logger.null_logger()):
+    def load(cls, corpus_dir, validate=False, log=logger.null_logger()):
         """Return a corpus initialized from `corpus_dir`
 
         If validate is True, make sure the corpus is valid before
@@ -106,7 +106,7 @@ class Corpus(utils.abkhazia_base.AbkhaziaBase):
         """
         return CorpusLoader.load(cls, corpus_dir, validate=validate, log=log)
 
-    def __init__(self, log=utils.logger.null_logger()):
+    def __init__(self, log=logger.null_logger()):
         """Init an empty corpus"""
         super(Corpus, self).__init__(log=log)
 
@@ -131,7 +131,7 @@ class Corpus(utils.abkhazia_base.AbkhaziaBase):
         self.log.info('saving corpus to %s', path)
         CorpusSaver.save(self, path, no_wavs=no_wavs)
 
-    def validate(self, njobs=utils.default_njobs()):
+    def validate(self, njobs=default_njobs()):
         """Validate speech corpus data
 
         Raise IOError on the first encoutered error, relies on the
@@ -140,7 +140,7 @@ class Corpus(utils.abkhazia_base.AbkhaziaBase):
         """
         CorpusValidation(self, njobs=njobs, log=self.log).validate()
 
-    def is_valid(self, njobs=utils.default_njobs()):
+    def is_valid(self, njobs=default_njobs()):
         """Return True if the corpus is in a valid state"""
         try:
             self.validate(njobs=njobs)
@@ -199,7 +199,7 @@ class Corpus(utils.abkhazia_base.AbkhaziaBase):
         utt2dur = dict()
         for utt, (wav, start, stop) in self.segments.iteritems():
             start = 0 if start is None else start
-            stop = utils.wav.duration(self.wavs[wav]) if stop is None else stop
+            stop = wav.duration(self.wavs[wav]) if stop is None else stop
             utt2dur[utt] = stop - start
         return utt2dur
 

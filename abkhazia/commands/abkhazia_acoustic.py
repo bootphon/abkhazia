@@ -18,8 +18,9 @@ import argparse
 import os
 import textwrap
 
-import abkhazia.models.acoustic as acoustic
+import abkhazia.acoustic as acoustic
 import abkhazia.utils as utils
+import abkhazia.kaldi as kaldi
 
 from abkhazia.commands.abstract_command import AbstractKaldiCommand
 from abkhazia.corpus import Corpus
@@ -77,7 +78,7 @@ class _AmBase(AbstractKaldiCommand):
 
         # add parameters for Kaldi options
         kaldi_group = parser.add_argument_group('training parameters')
-        utils.kaldi.options.add_options(kaldi_group, cls.am_class.options)
+        kaldi.options.add_options(kaldi_group, cls.am_class.options)
 
         return parser
 

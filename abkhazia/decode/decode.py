@@ -17,10 +17,10 @@
 import os
 import shutil
 
-import abkhazia.models.abstract_recipe as abstract_recipe
-import abkhazia.models.language as language
-import abkhazia.models.features as features
-import abkhazia.models.acoustic as acoustic
+import abkhazia.abstract_recipe as abstract_recipe
+import abkhazia.language as language
+import abkhazia.features as features
+import abkhazia.acoustic as acoustic
 import abkhazia.utils as utils
 
 import _mkgraph

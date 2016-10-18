@@ -17,8 +17,9 @@
 import os
 import pytest
 
-import abkhazia.models.language.language_model as language_model
+import abkhazia.language.language_model as language_model
 import abkhazia.utils as utils
+import abkhazia.kaldi as kaldi
 from .conftest import assert_no_expr_in_log
 
 
@@ -31,7 +32,7 @@ def test_srilm_path():
     # test we can reach the ngram binary from SRILM in the Kaldi
     # environment (problematic because it's change from Linux to Mac)
     # This raises RuntimeError if failing
-    utils.jobs.run('which ngram', env=utils.kaldi.path.kaldi_path())
+    utils.jobs.run('which ngram', env=kaldi.path.kaldi_path())
 
 
 @pytest.mark.parametrize('level, order', params)

@@ -20,10 +20,11 @@ option is linked to the mkgraph.reverse option
 """
 
 import abkhazia.utils as utils
+import abkhazia.kaldi as kaldi
 
 
 def options():
-    opt = utils.kaldi.options.make_option
+    opt = kaldi.options.make_option
 
     return {k: v for k, v in (
                opt('decode-mbr', default=False, type=bool,

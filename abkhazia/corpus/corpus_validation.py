@@ -18,7 +18,7 @@ import collections
 import datetime
 import os
 
-import abkhazia.utils as utils
+from abkhazia.utils import duplicates, logger, wav, default_njobs
 
 
 class CorpusValidation(object):
@@ -52,8 +52,8 @@ class CorpusValidation(object):
 
     """
 
-    def __init__(self, corpus, njobs=utils.default_njobs(),
-                 log=utils.logger.null_logger()):
+    def __init__(self, corpus, njobs=default_njobs(),
+                 log=logger.null_logger()):
         self.corpus = corpus
         self.njobs = njobs
         self.log = log
@@ -108,7 +108,7 @@ class CorpusValidation(object):
                 .format(wrong_extensions))
 
         # get meta information on the wavs
-        meta = utils.wav.scan(wavs.values(), njobs=self.njobs)
+        meta = wav.scan(wavs.values(), njobs=self.njobs)
         meta = dict((os.path.splitext(os.path.basename(k))[0], v)
                     for k, v in meta.iteritems())
 
@@ -158,11 +158,11 @@ class CorpusValidation(object):
         stops = [w[2] for w in segments.itervalues()]
 
         # unique utterance-ids
-        duplicates = utils.duplicates(utt_ids)
-        if duplicates:
+        _duplicates = duplicates(utt_ids)
+        if _duplicates:
             raise IOError(
                 "There is utterance-ids in segments used several times: {}"
-                .format(duplicates))
+                .format(_duplicates))
 
         # all referenced wavs are in wav folder
         missing_wavefiles = set.difference(
@@ -207,11 +207,11 @@ class CorpusValidation(object):
 
         # same utterance-ids in segments and utt2spk
         if utt_ids_spk != utt_ids:
-            duplicates = utils.duplicates(utt_ids_spk)
-            if duplicates:
+            _duplicates = duplicates(utt_ids_spk)
+            if _duplicates:
                 raise IOError(
                     "The following utterance-ids are used several times "
-                    "in utt2spk: {}".format(duplicates))
+                    "in utt2spk: {}".format(_duplicates))
             else:
                 e_spk = set(utt_ids_spk)
                 e_seg = set(utt_ids)
@@ -256,15 +256,15 @@ class CorpusValidation(object):
         # we will check that the words are mostly in the lexicon later
         # same utterance-ids in segments and text
         if utt_ids_txt != utt_ids:
-            duplicates = utils.duplicates(utt_ids_txt)
-            if duplicates:
+            _duplicates = duplicates(utt_ids_txt)
+            if _duplicates:
                 self.log.debug(
                     "utterance-ids used several times in text: {}"
-                    .format(len(duplicates)))
+                    .format(len(_duplicates)))
 
                 raise IOError(
                     "utterance-ids used several times in text: {}"
-                    .format(duplicates))
+                    .format(_duplicates))
             else:
                 e_txt = set(utt_ids_txt)
                 e_seg = set(utt_ids)
@@ -304,17 +304,17 @@ class CorpusValidation(object):
                 "'SPN' symbol is reserved for indicating "
                 "vocal noise, it cannot be used in phones")
 
-        duplicates = utils.duplicates(phones)
-        if duplicates:
+        _duplicates = duplicates(phones)
+        if _duplicates:
             raise IOError(
                 "following phone symbols are used several times in phones: {}"
-                .format(duplicates))
+                .format(_duplicates))
 
-        duplicates = utils.duplicates(ipas)
-        if duplicates:
+        _duplicates = duplicates(ipas)
+        if _duplicates:
             raise IOError(
                 "following IPA symbols are used several times in phones: {}"
-                .format(duplicates))
+                .format(_duplicates))
 
         self._check_position_dependent_phones(phones)
         return phones
@@ -334,11 +334,11 @@ class CorpusValidation(object):
         self.log.debug('checking silences')
         sils = self.corpus.silences
 
-        duplicates = utils.duplicates(sils)
-        if duplicates:
+        _duplicates = duplicates(sils)
+        if _duplicates:
             raise IOError(
                 "following symbols are used several times in silences: {}"
-                .format(duplicates))
+                .format(_duplicates))
 
         if u"SIL" not in sils:
             self.log.debug("adding missing 'SIL' symbol to silences")
@@ -369,11 +369,11 @@ class CorpusValidation(object):
                 "but are neither in phones nor in silences: "
                 "{}".format(unknown_symbols))
 
-            duplicates = utils.duplicates(all_symbols)
-            if duplicates:
+            _duplicates = duplicates(all_symbols)
+            if _duplicates:
                 raise IOError(
                     "The following symbols are used several times "
-                    "in variants: {}".format(duplicates))
+                    "in variants: {}".format(_duplicates))
 
         return set.union(set(phones), set(sils))
 
@@ -393,12 +393,12 @@ class CorpusValidation(object):
 
         # unique word entries (alternative pronunciations are not
         # currently supported)
-        duplicates = utils.duplicates(dict_words)
-        if duplicates:
+        _duplicates = duplicates(dict_words)
+        if _duplicates:
             raise IOError(
                 "Alternative pronunciations are not currently supported. "
                 "Following words have several transcriptions in lexicon: {}"
-                .format(duplicates))
+                .format(_duplicates))
 
         # OOV item
         if u"<unk>" not in dict_words:
@@ -542,8 +542,8 @@ class CorpusValidation(object):
 
         short_utts = []
         warning = False
-        for wav, utts in self.corpus.wav2utt().iteritems():
-            duration = meta[wav].duration
+        for _wav, utts in self.corpus.wav2utt().iteritems():
+            duration = meta[_wav].duration
 
             # check all utterances are within wav boundaries
             for utt_id, start, stop in utts:
@@ -556,7 +556,7 @@ class CorpusValidation(object):
                     raise IOError(
                         "utterance {} is not whithin boudaries in wav {} "
                         "({} not in {})"
-                        .format(utt_id, wav,
+                        .format(utt_id, _wav,
                                 '[{}, {}]'.format(start, stop),
                                 '[0, {}]'.format(duration)))
 
@@ -586,13 +586,13 @@ class CorpusValidation(object):
                 warning = True
                 self.log.warning(
                     "The following utterances start at the same time "
-                    "in wavefile {}: {}".format(wav, sorted(same_start)))
+                    "in wavefile {}: {}".format(_wav, sorted(same_start)))
 
             if same_stop:
                 warning = True
                 self.log.warning(
                     "The following utterances stop at the same time "
-                    "in wavefile {}: {}".format(wav, sorted(same_stop)))
+                    "in wavefile {}: {}".format(_wav, sorted(same_stop)))
 
             # TODO overlap checking is buggy
             # timestamps = list(set(wav_starts)) + list(set(wav_stops))

@@ -35,7 +35,7 @@ import h5features as h5f
 import h5py
 
 import abkhazia.utils as utils
-from abkhazia.utils.kaldi import kaldi_path
+from abkhazia.kaldi import kaldi_path
 
 
 def ark_to_dict(arkfile):

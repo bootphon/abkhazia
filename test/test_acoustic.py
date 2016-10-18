@@ -18,8 +18,8 @@ import os
 import sys
 import pytest
 
-import abkhazia.models.features as features
-import abkhazia.models.acoustic as acoustic
+import abkhazia.features as features
+import abkhazia.acoustic as acoustic
 import abkhazia.utils as utils
 from .conftest import assert_no_expr_in_log, assert_expr_in_log
 

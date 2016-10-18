@@ -18,8 +18,8 @@ import os
 import shutil
 import joblib
 
-import abkhazia.models.abstract_recipe as abstract_recipe
 import abkhazia.utils as utils
+import abkhazia.abstract_recipe as abstract_recipe
 
 
 class Features(abstract_recipe.AbstractRecipe):

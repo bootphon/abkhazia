@@ -21,12 +21,13 @@ num-threads, skip_scoring, max_fmllr_jobs
 
 import os
 import abkhazia.utils as utils
+import abkhazia.kaldi as kaldi
 import _score
 
 
 def options():
     """Return default parameters for the decode script"""
-    opt = utils.kaldi.options.make_option
+    opt = kaldi.options.make_option
 
     return {k: v for k, v in (
         opt('acwt', default=0.083333, type=float,

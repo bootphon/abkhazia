@@ -23,13 +23,13 @@ format.
 """
 
 import re
-import utils  # this is abkhazia.utils
+from abkhazia.utils import open_utf8
 
 
 def nadults(cha):
     """Return the number of adult speakers recorded in `cha`"""
     # speaker IDs, lines starting with '@ID', forced to lowercase
-    spks = (l.strip().lower() for l in utils.open_utf8(cha, 'r')
+    spks = (l.strip().lower() for l in open_utf8(cha, 'r')
             if l.startswith('@ID'))
 
     # exclude non-adult speakers

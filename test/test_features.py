@@ -18,9 +18,9 @@ import h5features
 import os
 import pytest
 
-import abkhazia.models.features as features
+import abkhazia.features as features
 import abkhazia.utils as utils
-import abkhazia.utils.kaldi.ark as ark
+import abkhazia.kaldi.ark as ark
 from .conftest import assert_no_expr_in_log
 
 params = [(pitch, ftype)

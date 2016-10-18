@@ -16,7 +16,7 @@
 
 import os
 
-import abkhazia.models.decode as decode
+import abkhazia.decode as decode
 import abkhazia.utils as utils
 from .conftest import assert_no_expr_in_log
 

@@ -16,7 +16,7 @@
 
 import os
 import shutil
-import abkhazia.utils as utils
+from abkhazia.utils import open_utf8
 
 
 class CorpusSaver(object):
@@ -65,13 +65,13 @@ class CorpusSaver(object):
 
     @staticmethod
     def save_lexicon(corpus, path):
-        with utils.open_utf8(path, 'w') as out:
+        with open_utf8(path, 'w') as out:
             for k, v in sorted(corpus.lexicon.iteritems()):
                 out.write(u'{} {}\n'.format(k, v))
 
     @staticmethod
     def save_segments(corpus, path):
-        with utils.open_utf8(path, 'w') as out:
+        with open_utf8(path, 'w') as out:
             for k, v in sorted(corpus.segments.iteritems()):
                 # different case with/without timestamps
                 v = (v[0] if v[1] is None and v[2] is None
@@ -80,30 +80,30 @@ class CorpusSaver(object):
 
     @staticmethod
     def save_text(corpus, path):
-        with utils.open_utf8(path, 'w') as out:
+        with open_utf8(path, 'w') as out:
             for k, v in sorted(corpus.text.iteritems()):
                 out.write(u'{} {}\n'.format(k, v))
 
     @staticmethod
     def save_phones(corpus, path):
-        with utils.open_utf8(path, 'w') as out:
+        with open_utf8(path, 'w') as out:
             for k, v in sorted(corpus.phones.iteritems()):
                 out.write(u'{} {}\n'.format(k, v))
 
     @staticmethod
     def save_silences(corpus, path):
-        with utils.open_utf8(path, 'w') as out:
+        with open_utf8(path, 'w') as out:
             for s in sorted(corpus.silences):
                 out.write(u'{}\n'.format(s))
 
     @staticmethod
     def save_utt2spk(corpus, path):
-        with utils.open_utf8(path, 'w') as out:
+        with open_utf8(path, 'w') as out:
             for utt, spk in sorted(corpus.utt2spk.iteritems()):
                 out.write(u'{} {}\n'.format(utt, spk))
 
     @staticmethod
     def save_variants(corpus, path):
-        with utils.open_utf8(path, 'w') as out:
+        with open_utf8(path, 'w') as out:
             for v in sorted(corpus.variants):
                 out.write(u'{}\n'.format(v))
