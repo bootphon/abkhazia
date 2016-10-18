@@ -83,3 +83,5 @@ egs/align_childes_brent_1percent/
 egs/exemple_buckeye/*
 /kaldi/
 debug/
+/abkhazia/share/abkhazia.conf
+/egs/acoustic_model_buckeye/*
