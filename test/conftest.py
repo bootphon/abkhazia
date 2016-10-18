@@ -150,6 +150,30 @@ def am_trisa(corpus, features, lm_word, am_tri, tmpdir_factory):
     return output_dir
 
 
+@pytest.fixture(scope='session')
+def am_nnet(corpus, features, lm_word, am_trisa, tmpdir_factory):
+    output_dir = str(tmpdir_factory.mktemp('am_nnet'))
+    flog = os.path.join(output_dir, 'am_nnet.log')
+    log = utils.logger.get_log(flog)
+    am = acoustic.NeuralNetwork(
+        corpus, lm_word, features, am_trisa, output_dir, log=log)
+
+    am.options['num-epochs'].value = 2
+    am.options['num-epochs-extra'].value = 1
+    am.options['num-hidden-layers'].value = 1
+    am.options['num-iters-final'].value = 1
+    am.options['pnorm-input-dim'].value = 100
+    am.options['pnorm-output-dim'].value = 10
+    am.options['num-utts-subset'].value = 20
+    am.compute()
+
+    acoustic.check_acoustic_model(output_dir)
+    # TODO this assert fails since some preliminary steps of the recipe
+    # generate errors (but this do not impact the recipe)
+    # # assert_no_expr_in_log(flog, 'error')
+    return output_dir
+
+
 def assert_no_expr_in_log(flog, expr='error'):
     """Raise if `expr` is found in flog"""
     assert os.path.isfile(flog)

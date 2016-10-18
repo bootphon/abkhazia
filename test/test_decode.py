@@ -75,3 +75,22 @@ def test_decode_trisa(corpus, lm_word, features, am_trisa, tmpdir):
     assert_no_expr_in_log(flog, 'error')
     assert os.path.isfile(
         os.path.join(output_dir, 'scoring_kaldi', 'best_wer'))
+
+
+def test_decode_nnet(corpus, lm_word, features, am_nnet, tmpdir):
+    output_dir = str(tmpdir.mkdir('decode-nnet'))
+    flog = os.path.join(output_dir, 'decode-nnet.log')
+    log = utils.logger.get_log(flog)
+
+    decoder = decode.Decode(
+        corpus, lm_word, features, am_nnet, output_dir, log=log)
+    decoder.decode_opts['beam'].value = 2
+    decoder.decode_opts['min-active'].value = 2
+    decoder.decode_opts['max-active'].value = 70
+    decoder.decode_opts['lattice-beam'].value = 1
+    decoder.compute()
+
+    # check if we have no error and a WER file
+    assert_no_expr_in_log(flog, 'error')
+    assert os.path.isfile(
+        os.path.join(output_dir, 'scoring_kaldi', 'best_wer'))

@@ -30,8 +30,11 @@ class NeuralNetwork(AbstractAcousticModel):
 
     The following options are not forwarded from Kaldi to Abkhazia:
     get_egs_stage, online_ivector_dir, stage, cleanup, egs_dir,
-    lda_opts, lda_dim, egs_opts, transform_dir, cmvn_opts, feat_type,
+    lda_opts, lda_dim, egs_opts, transfrm_dir, cmvn_opts, feat_type,
     prior_subset_size
+
+    A single option from egs_opts is forwarded: num_utts_subset. This
+    allows to train on very small corpora, as used in the tests...
 
     """
     model_type = 'nnet'
@@ -111,6 +114,12 @@ class NeuralNetwork(AbstractAcousticModel):
                 'Number of components to mix up to (should be > #tree leaves, '
                 'if specified)')),
         utils.kaldi.options.make_option(
+            'num-utts-subset', default=300, type=int, help='''
+            number of utterances in validation and training
+            subsets used for shrinkage and diagnostics.
+            Should have 2*num-utt-subset <= corpus.nutts'''),
+
+        utils.kaldi.options.make_option(
             'max-high-io-jobs', default=-1, type=int,
             help=('limits the number of jobs with lots of I/O running '
                   'at one time, default is -1 (no limit). This value is '
@@ -128,6 +137,9 @@ class NeuralNetwork(AbstractAcousticModel):
     # njobs related options
     _njobs_options = [
         'max-high-io-jobs', 'combine-num-threads', 'num-jobs-nnet']
+
+    # options forwarded to get_egs.sh
+    _egs_options = ['num-utts-subset']
 
     def __init__(self, corpus, lm_dir, feats_dir, am_dir,
                  output_dir, log=utils.logger.null_logger):
@@ -150,7 +162,7 @@ class NeuralNetwork(AbstractAcousticModel):
         nnet_opts = ' '.join(
             '--{} {}'.format(k, v.value)
             for k, v in self.options.iteritems()
-            if k not in self._njobs_options)
+            if k not in self._njobs_options and k not in self._egs_options)
 
         # convert the max_high_io_jobs option to what kaldi expect...
         _maxiojobs = self.options['max-high-io-jobs'].value
@@ -166,6 +178,11 @@ class NeuralNetwork(AbstractAcousticModel):
             '--combine-parallel-opts "--num-threads {0}"'
             .format(self.options['combine-num-threads'].value))
 
+        egs_opts = '--egs-opts "{}"'.format(
+            ' '.join('--{} {}'.format(k, v.value)
+                     for k, v in self.options.iteritems()
+                     if k in self._egs_options))
+
         # feeding the --cmd option
         job_cmd = utils.config.get('kaldi', 'train-cmd')
         if 'queue' in job_cmd:
@@ -177,7 +194,7 @@ class NeuralNetwork(AbstractAcousticModel):
         command = (
             ' '.join((
                 'steps/nnet2/train_pnorm_fast.sh --cmd "{}"'.format(job_cmd),
-                nnet_opts, io_opt, num_threads_opt, combine_opt,
+                nnet_opts, io_opt, egs_opts, num_threads_opt, combine_opt,
                 '{data} {lang} {origin} {target}'.format(
                     data=self.data_dir,
                     lang=self.lm_dir,

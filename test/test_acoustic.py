@@ -78,7 +78,3 @@ def test_monophone_cmvn_bad(corpus, lm_word, tmpdir):
     with pytest.raises(IOError) as err:
         am.check_parameters()
     assert 'cmvn' in str(err)
-
-
-# def test_nnet(am_nnet):
-#     assert 1
