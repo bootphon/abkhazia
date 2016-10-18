@@ -1,155 +1,47 @@
-* DNN branch
-Implement dnn recipe ion top of triphone speaker-adapted acoustic models
-* Open bugs [0/3]
-** TODO decode
-   what is the bug??
-** TODO acoustic with delta features
-Acoustic modeling fails when built on features with deltas. This is
-caused by bad features dimension.
-
-Solution:
- - assert no delta in features in init (get back the dim or
- delta order from feat-to-dim ?)
- - OR split deltas from raw when computing features
-** TODO acoustic fails with -j too high on qsub
-WIP on investigation
-* Fixed bugs [5/5]
-** DONE installation on Mac
-   CLOSED: [2016-05-20 ven. 13:02]
-   XN -- Pour le testing sur mac, ça ne marche pas ou en tout cas, je
-   n'ai pas pu avancer.  J'ai lancé install_kaldi.sh et il a fait
-   pleins de choses mais il a crashé vers la fin.  J'ai aussi essayé
-   de cloner la dernière version de kaldi mais ça ne semble pas
-   marcher sur abkhazia car il plante sur abkhazia language.
-** DONE language
-   Fail on n!=3 for n-grams. Used to work with previous version of kaldi.
-*** py.test -vx ./test/test_language.py | egrep "^\[.*ERROR"
-    ["2016-03-30 17:51:06,422 - DEBUG - ERROR
-    (arpa2fst:Read():arpa-file-parser.cc:228) in line 70: Invalid or
-    unexpected directive line '\\2-grams:', expected \\end\\.\n",
-    "2016-03-30 17:51:06,422 - DEBUG - ERROR
-    (arpa2fst:Read():arpa-file-parser.cc:228) in line 70: Invalid or
-    unexpected directive line '\\2-grams:', expected \\end\\.\n",
-    '2016-03-30 17:51:06,423 - DEBUG - ERROR: FstHeader::Read: Bad FST
-    header: standard input\n']
-*** details
- - [X] A working kaldi commit
-    a9b65137b4ab90845c1357724d5ddaa805972830 (10 Feb. 2016)
- - [X] where in abkhazia script the bug occurs?
-   - in _format_lm() -> utils/format_lm_sri.sh
-   - in kaldi-trunk/tools/srilm/bin/change-lm-vocab -> add an empty 3-gram
- - [X] find a kaldi commit before that bug was introduced?
-   - seems to be introduced by dpovey on commit (after?)
-     a9b65137b4ab90845c1357724d5ddaa805972830 (10 Feb. 2016)
- - [X] eventually write a pull request?
-*** solution
- - submited https://github.com/kaldi-asr/kaldi/pull/639
- - the bug is fixed within kaldi, see https://github.com/kaldi-asr/kaldi/issues/643
-** DONE abkhazia language buckeye -v
-   CLOSED: [2016-05-30 lun. 23:30]
-*** gzip: stdout: Broken pipe
-   -: line 340912: warning: 13585 1-grams read, expected 13590
-   -: line 340912: warning: 98096 2-grams read, expected 98106
-   -: line 340912: warning: 229218 3-grams read, expected 229232
-*** broken pipe does not impact anything
-*** warning on missing n-grams
-    this is the effect of OOV pruning in kaldi
-    tools/srilm/bin/change-lm-vocab, so not a problem nor a bug
-** DONE abkhazia language librispeech-test-clean -n 3 -l word
-   CLOSED: [2016-06-03 ven. 15:52]
-*** Fail in word level, regardless silences. Work on phone
-running utils/format_lm_sri.sh --srilm_opts "-subset -prune-lowprobs -unk" /home/mathieu/lscp/data/abkhazia/librispeech-test-clean/language /home/mathieu/lscp/data/abkhazia/librispeech-test-clean/language/recipe/data/local/language/G.arpa.gz /tmp/tmpFWGkJL
-Converting '/home/mathieu/lscp/data/abkhazia/librispeech-test-clean/language/recipe/data/local/language/G.arpa.gz' to FST
-gzip: stdout: Broken pipe
--: line 91932: warning: 8014 1-grams read, expected 8141
--: line 91932: warning: 35217 2-grams read, expected 35595
--: line 91932: warning: 48688 3-grams read, expected 49258
-ngram: ../../include/LHash.cc:519: void LHashIter<KeyT, DataT>::sortKeys() [with KeyT = unsigned int; DataT = Trie<unsigned int, BOnode>]: Assertion `j == numEntries' failed.
-/home/mathieu/lscp/dev/kaldi/tools/srilm/bin/change-lm-vocab: line 78: 12596 Done                    gzip -dcf $oldlm
-12597                       | ${GAWK-gawk} '
-# read the vocab file
-NR == 1 && vocab {
-# always include sentence begin/end
-is_word["<s>"] = is_word["</s>"] = 1;
-while ((getline word < vocab) > 0) {
-is_word[to_lower ? tolower(word) : word] = 1;
-}
-close(vocab);
-}
-# process old lm
-NF==0 {
-print; next;
-}
-/^ngram *[0-9][0-9]*=/ {
-order = substr($2,1,index($2,"=")-1);
-print;
-next;
-}
-/^\\[0-9]-grams:/ {
-currorder=substr($0,2,1);
-print;
-next;
-}
-/^\\/ {
-print; next;
-}
-currorder {
-for (i = 2 ; i <= currorder + 1; i ++) {
-if (!((to_lower ? tolower($i) : $i) in is_word)) next;
-}
-print;
-next;
-}
-{ print }
-' vocab=$vocab to_lower=$tolower
-12598 Aborted                 | ngram -lm - -vocab "$ngram_vocab" -renorm -write-lm "$newlm" $options
-
-*** Solution
-reimplementation of format_lm_sri in Python
-** DONE abkhazia features/language brent
-   CLOSED: [2016-06-06 lun. 15:54]
-*** ldes_brent/language /home/mbernard/dev/abkhazia/egs/align_childes_brent/acoustic/recipe/exp/mono
-steps/train_mono.sh --nj 4 --cmd run.pl data/acoustic /home/mbernard/dev/abkhazia/egs/align_childes_brent/language /home/mbernard/dev/abkhazia/egs/align_childes_brent/acoustic/recipe/exp/mono
-split_data.sh: warning, #lines is (utt2spk,feats.scp) is (112865,112862); you can
-use utils/fix_data_dir.sh data/acoustic to fix this.
-
-*** problem
-features from utts shorter than 100ms cannot be computed (see
-extract-segments.c in kaldi featbin)
-*** solution
-remove those short utts from corpus in preparation step
-(--keep-short-utts option added)
 * Feature requests
+** corpus
+- [ ] des méthodes de stats sur les corpus (duration, per spks, etc)
+- [ ] split with (p_train + p_test) < 1 (by now only =1 supported)
+- [ ] need of a structure to append data to an existing corpus (eg
+  attach a LM, features or manual alignments)
+
+  From the Thomas version we want... Optionally, the corpus directory may contains:
+   - Time-alignments (The previous files in the list are sufficient
+     for training ASR models with kaldi, however for ABX experiments
+     we also need time-alignments for each phone or each word. If they
+     are not provided directly, a surrogate will be obtained through
+     forced-alignment using the kaldi-trained ASR models)
+   - A language model, either in OpenFST text or binary format or in
+     ARPA-MIT N-gram format
+   - Syllabification of each utterance
 ** features
-   convertion ark to h5f is slow, can we do parallel ark to RAM, and
-   sequential RAM to h5features?
+- [ ] convertion ark to h5f is slow, can we do parallel ark to RAM, and
+  sequential RAM to h5features?
+** language
+*** Where is the --prune-lexicon option ? --prune-lexicon false
+Could be useful when using a lexicon that is tailored to the corpus
+to the point of overfitting (i.e. only words occuring in the corpus
+were included and many other common words weren't), which could lead
+to overestimated performance on words from the lexicon appearing in
+the test only. Removes from the lexicon all words that are not
+present at least once in the training set.
 ** acoustic
    - [ ] --retrain option
      it should be possible to retrain a trained model on a new corpus
      (for instance, specifically retrain silence models, or retrain on a
      bunch of new corpus)
-   - [ ] questions vs data-driven option
-   - [ ] test the acoustic model
-     providing WER for every model, eventual automatic parameter search ?
-** align --post --with-words
-   Update the probabilities estimation to be on words, not on phones
-** decode
-   options:
-      evaluate(transcription, gold)
-      output = {posteriorgrams, transcription}
-      speaker_adapt
-      output: results (repertoire)
-** updating abkhazia.cfg
-   - Need of an automated way to update new versions of the installed
-     configuration file in the ./configure script.
-   - Do that along with the next update of the config file
-   - rewrite configure as a python execution
+   - [ ] questions vs data-driven option (is it for tree building ?)
 ** documentation
   - [ ] have more detailed command description on 'abkhazia <command>
     --help'. Assume the user doesn't know abkhazia or kaldi.
-  - [ ] improve the 'command line' page
-  - [ ] improve the 'corpus format' page
-* New specifications (0.3)
+  - [ ] improve the online documentation
+    - [ ] install and configure
+    - [ ] preparators for new corpora
+    - [ ] ASR: LM, AM, features, alignment, etc
+    - [ ] ABX: item files generation from alignment
+  - [ ] add READMEs in intermediate directories of the project (or
+    have a 'project organization' page)
+** New specifications (0.4)
 #+begin_src python
   corpus = BuckeyeCorpusPreparator('./buckeye').prepare()
   corpus.speakers()
@@ -170,3 +62,38 @@ remove those short utts from corpus in preparation step
   features.write2h5('train.h5', 'features')
   features.write2ark('/somewhere')
 #+end_src
+** Minor changes
+*** TODO upgrade the bootphon/kaldi repo
+*** TODO add cuda support in the install_kaldi.sh script
+*** TODO in export use symlinks to save some place
+    (file in output-dir, link in recipe-dir)
+*** TODO updating abkhazia.cfg
+    - Need of an automated way to update new versions of the installed
+      configuration file in the ./configure script.
+*** TODO adjust log level by detecting WARNING and ERROR from Kaldi messages
+Those messages are actually logged in debug level, should be smater to be warnong/error
+2016-10-12 16:33:58,372 - DEBUG - ERROR (apply-cmvn:Write():kaldi-matrix.cc:1229) Failed to write matrix to stream
+2016-10-12 16:33:58,373 - DEBUG - WARNING (apply-cmvn:Write():util/kaldi-holder-inl.h:54) Exception caught writing Table object: ERROR (apply-cmvn:Write():kaldi-matrix.cc:1229) Failed to write matrix to stream
+*** TODO Have completion setup during installation (or configuration?)
+*** TODO Have a test_commands module for testing command line interface!
+*** TODO Remove the wiki page on github, as we have now a readthedoc site
+* Open bugs [0/4]
+** TODO acoustic with delta features
+*** problem
+    Acoustic modeling fails when built on features with deltas. This is
+    caused by bad features dimension.
+*** solution
+ - assert no delta in features in init (get back the dim or
+ delta order from feat-to-dim ?)
+ - OR split deltas from raw when computing features
+** TODO comments in config file
+   'data-directory: #/something' actually creates the ./#/someting directory
+** TODO align --post --with-words
+   Update the probabilities estimation to be on words, not on phones
+** TODO align export phones and words
+   The code that parses words from phones is not accurate (see
+   the _export_phones_and_words method in Align)
+** TODO acoustic nnet
+   debug the --transform-dir option for nnet decoding (need to be on
+   top of align_fmllr?) this eat trans.* files if features are LDA, or
+   raw_trans.* if features are raw.

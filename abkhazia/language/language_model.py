@@ -1,4 +1,4 @@
-# Copyright 2016 Thomas Schatz, Xuan Nga Cao, Mathieu Bernard
+# Copyright 2016 Thomas Schatz, Xuan-Nga Cao, Mathieu Bernard
 #
 # This file is part of abkhazia: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -22,8 +22,9 @@ import shutil
 import tempfile
 
 import abkhazia.utils as utils
-import abkhazia.models.abstract_recipe as abstract_recipe
-from abkhazia.utils.kaldi import kaldi_path
+import abkhazia.abstract_recipe as abstract_recipe
+from abkhazia.language.arpa import ARPALanguageModel
+from abkhazia.kaldi import kaldi_path
 
 
 def check_language_model(lm_dir):
@@ -74,53 +75,69 @@ class LanguageModel(abstract_recipe.AbstractRecipe):
     language models from any abkhazia speech corpus. The models can be
     either at word or phone level.
 
-    Example:
+    Parameters
+    ----------
+
+    corpus (abkhazia.corpus.Corpus): the abkhazia corpus to process
+
+    output_dir (path): output directory to create with results
+
+    level (str): Can be either 'phone' or 'word' and compute either a
+        phone-level or a word-level language model.
+
+    order (int): n in n-gram, order of the processed language model
+
+    silence_probability (float): do all computations or focus on main
+        ones. Must be in [0, 1], (usually 0.0 or 0.5, 0.5 is the
+        default from kaldi wsj/utils/prepare_lang.sh).
+
+    position_dependent_phones (bool): Should be set to True or
+        False depending on whether the language model produced is
+        destined to be used with an acoustic model trained with or
+        without word position dependent variants of the phones
+
+    Exemple:
+    --------
 
     The following exemple compute a word level trigram without
-    optional silences::
+    optional silences, write in 'path/to/output'::
 
         corpus = Corpus.load('/path/to/corpus')
-        lm = LanguageModel(corpus)
-        lm.order = 3
-        lm.level = 'word'
-        lm.silence_probability = 0.0
-        lm.create()
-        lm.run()
-
-    Attributes:
-        level (str): 'phone' or 'word' language model
-        order (int): order of the language model (n in n-gram)
-        silence_probability (float)
-        position_dependent_phone (bool)
+        lm = LanguageModel(
+            corpus, '/path/to/output',
+            order=3, level='word', silence_probability=0.0)
+        lm.compute()
 
     """
 
     name = 'language'
 
-    def __init__(self, corpus, output_dir, log=utils.logger.null_logger()):
+    def __init__(self, corpus, output_dir,
+                 level='word', order=2, silence_probability=0.5,
+                 position_dependent_phones=True,
+                 log=utils.logger.null_logger()):
         super(LanguageModel, self).__init__(corpus, output_dir, log=log)
 
-        # setup default values for parameters from the configuration
-        # file. Here we could use a different
-        # silence_probability. Thomas thinks however that
-        # position_dependent_phones has to be the same as what was
-        # used for training (as well as the phones.txt,
-        # extra_questions.txt and nonsilence_phones.txt), otherwise
-        # the mapping between phones and acoustic state in the trained
-        # model will be lost.
-        def config(name):
-            """Quick access to LM configuration"""
-            return utils.config.get('language', name)
-        self.level = config('model-level')
-        self.order = config('model-order')
-
-        # 0.5 is the default from kaldi wsj/utils/prepare_lang.sh
-        self.silence_probability = (
-            0.5 if config('optional-silence') is 'true' else 0.0)
-        self.position_dependent_phones = config('word-position-dependent')
+        # Here we could use a different silence_probability. Thomas
+        # thinks however that position_dependent_phones has to be the
+        # same as what was used for training (as well as the
+        # phones.txt, extra_questions.txt and nonsilence_phones.txt),
+        # otherwise the mapping between phones and acoustic state in
+        # the trained model will be lost.
+        self.level = level
+        self.order = order
+        self.silence_probability = silence_probability
+        self.position_dependent_phones = position_dependent_phones
 
     def _check_level(self):
         level_choices = ['word', 'phone']
+
+        # remove any plural on the level type
+        if self.level == 'phones':
+            self.level = 'phone'
+        if self.level == 'words':
+            self.level = 'word'
+
         if self.level not in level_choices:
             raise RuntimeError(
                 'language model level must be in {}, it is {}'
@@ -291,7 +308,7 @@ class LanguageModel(abstract_recipe.AbstractRecipe):
         self.log.debug('pruning vocabulary in %s', out_lm)
 
         words = set(w.split()[0] for w in utils.open_utf8(words_txt, 'r'))
-        lm = utils.arpa.ARPALanguageModel.load(lm_txt)
+        lm = ARPALanguageModel.load(lm_txt)
         lm.prune_vocabulary(words)
         lm_pruned = lm_txt + '.pruned'
         lm.save(lm_pruned)

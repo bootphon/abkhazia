@@ -1,6 +1,6 @@
 # Copyright Maarten van Gompel, ILK, Universiteit van Tilburg
 # Copyright 2015, 2016 Stefan Fischer
-# Copyright 2016 Thomas Schatz, Xuan Nga Cao, Mathieu Bernard
+# Copyright 2016 Thomas Schatz, Xuan-Nga Cao, Mathieu Bernard
 #
 # This file is part of abkhazia: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -25,7 +25,7 @@ https://github.com/sfischer13/python-arpa.
 
 import os
 import re
-import utils  # this is abkhazia.utils
+import abkhazia.utils as utils
 
 
 class ARPALanguageModel(object):

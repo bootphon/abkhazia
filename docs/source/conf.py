@@ -225,7 +225,7 @@ latex_elements = {
 #  author, documentclass [howto, manual, or own class]).
 latex_documents = [
     (master_doc, 'abkhazia.tex', u'abkhazia Documentation',
-     u'Thomas Schatz, Mathieu Bernard, Roland Thiolliere, Xuan Nga Cao', 'manual'),
+     u'Thomas Schatz, Mathieu Bernard, Roland Thiolliere, Xuan-Nga Cao', 'manual'),
 ]
 
 # The name of an image file (relative to this directory) to place at the top of

@@ -25,7 +25,6 @@ import ABXpy.database.database as database
 
 
 # TODO this file should be incorporated to ABXpy instead of abkhazia
-
 # Note that randomness is probably reproducible on the same machine
 # with the same python version, but I'm not sure what would happen on
 # different machines or with different python versions
@@ -56,13 +55,14 @@ def threshold_item(item_file, output_file, columns,
                                          df.iloc[i]]) + u"\n")
 
 
-root = '/Users/thomas/Documents/PhD/Recherche/test/'  #'/Users/thomas/Documents/PhD/Recherche/Code/ABXYvsABX/data/'
-corpus = 'BUC_phone' #'WSJ_T_IY-AH_N'  # 'WSJ_phone'
-item_file = root + corpus + '.item'
-lower_threshold = 1
-upper_threshold = 5
-out_file = root + corpus + '_threshold_' + str(lower_threshold) + '_' + str(upper_threshold) + '.item'
-columns = ['phone', 'prev-phone', 'next-phone', 'talker']  # ['phone', 'talker']
-threshold_item(item_file, out_file, columns,
-               lower_threshold=lower_threshold,
-               upper_threshold=upper_threshold)
+# root = '/Users/thomas/Documents/PhD/Recherche/test/'
+#'/Users/thomas/Documents/PhD/Recherche/Code/ABXYvsABX/data/'
+# corpus = 'BUC_phone' #'WSJ_T_IY-AH_N'  # 'WSJ_phone'
+# item_file = root + corpus + '.item'
+# lower_threshold = 1
+# upper_threshold = 5
+# out_file = root + corpus + '_threshold_' + str(lower_threshold) + '_' + str(upper_threshold) + '.item'
+# columns = ['phone', 'prev-phone', 'next-phone', 'talker']  # ['phone', 'talker']
+# threshold_item(item_file, out_file, columns,
+#                lower_threshold=lower_threshold,
+#                upper_threshold=upper_threshold)

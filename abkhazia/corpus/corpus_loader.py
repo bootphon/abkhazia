@@ -1,4 +1,4 @@
-# Copyright 2016 Thomas Schatz, Xuan Nga Cao, Mathieu Bernard
+# Copyright 2016 Thomas Schatz, Xuan-Nga Cao, Mathieu Bernard
 #
 # This file is part of abkhazia: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -30,7 +30,7 @@ class CorpusLoader(object):
 
     @classmethod
     def load(cls, corpus_cls, corpus_dir,
-             log=utils.logger.null_logger()):
+             validate=False, log=utils.logger.null_logger()):
         """Return a corpus initialized from `corpus_dir`
 
         Raise IOError if corpus_dir if an invalid abkhazia corpus
@@ -52,6 +52,10 @@ class CorpusLoader(object):
         corpus.silences = cls.load_silences(data['silences'])
         corpus.utt2spk = cls.load_utt2spk(data['utt2spk'])
         corpus.variants = cls.load_variants(data['variants'])
+
+        if validate:
+            corpus.validate()
+
         return corpus
 
     @staticmethod

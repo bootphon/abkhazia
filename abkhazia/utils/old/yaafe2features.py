@@ -22,6 +22,8 @@ This module requires:
 On Oberon, you can get yaafelib available in your python
 environment by executing 'module load yaafe' in the terminal.
 
+TODO This should be part of the models/features code...?
+
 """
 
 

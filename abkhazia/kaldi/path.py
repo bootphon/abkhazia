@@ -1,4 +1,4 @@
-# Copyright 2016 Thomas Schatz, Xuan Nga Cao, Mathieu Bernard
+# Copyright 2016 Thomas Schatz, Xuan-Nga Cao, Mathieu Bernard
 #
 # This file is part of abkhazia: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -12,7 +12,7 @@
 #
 # You should have received a copy of the GNU General Public License
 # along with abkahzia. If not, see <http://www.gnu.org/licenses/>.
-"""Python implementation of the share/path.sh"""
+"""Python implementation of the share/path.sh Kaldi script"""
 
 import os
 from abkhazia.utils import config
@@ -28,8 +28,8 @@ def kaldi_path():
     kaldisrc = os.path.join(kaldiroot, 'src')
 
     targets = ('bin', 'featbin', 'fgmmbin', 'fstbin', 'gmmbin',
-               'latbin', 'nnetbin', 'sgmmbin', 'lmbin', 'kwsbin', 'ivectorbin',
-               'online2bin', 'sgmm2bin')
+               'latbin', 'nnetbin', 'nnet2bin', 'sgmmbin', 'lmbin',
+               'kwsbin', 'ivectorbin', 'online2bin', 'sgmm2bin')
     kaldibin = ':'.join((os.path.join(kaldisrc, target)
                         for target in targets))
 

@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright 2016 Thomas Schatz, Xuan Nga Cao, Mathieu Bernard
+# Copyright 2016 Thomas Schatz, Xuan-Nga Cao, Mathieu Bernard
 #
 # This file is part of abkhazia: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -22,7 +22,7 @@ import os
 
 import abkhazia.utils.basic_io as io
 
-
+# TODO this should go to models/features module
 def segment_features(features_file, segments_file, out_file):
     """
     Segment h5features file containing features for whole wavefiles

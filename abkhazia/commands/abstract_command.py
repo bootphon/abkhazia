@@ -1,4 +1,4 @@
-# Copyright 2016 Thomas Schatz, Xuan Nga Cao, Mathieu Bernard
+# Copyright 2016 Thomas Schatz, Xuan-Nga Cao, Mathieu Bernard
 #
 # This file is part of abkhazia: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -112,6 +112,12 @@ class AbstractCoreCommand(AbstractCommand):
             help='if specified, overwrite the output directory. '
             'If not specified but the directory exists, exit with error')
 
+        # add a --validate option
+        parser.add_argument(
+            '--validate', action='store_true',
+            help=('''if specified, validate the corpus before any
+            other processing, ensure corpus data are consistent'''))
+
         dir_group = parser.add_argument_group('directories')
 
         # add a <corpus> mandatory parameter
@@ -156,8 +162,8 @@ class AbstractCoreCommand(AbstractCommand):
             name = cls.name
 
         # append the command name
-        output = os.path.abspath(os.path.join(
-            corpus if output is None else output, name))
+        output = os.path.abspath(
+            os.path.join(corpus, name) if output is None else output)
 
         # if --force, remove any existing output_dir
         if force and os.path.exists(output):
@@ -182,9 +188,8 @@ class AbstractCoreCommand(AbstractCommand):
         if name is None:
             name = cls.name
 
-        return os.path.join(
-            os.path.dirname(corpus_dir) if arg is None
-            else os.path.abspath(arg), name)
+        return (os.path.join(os.path.dirname(corpus_dir), name)
+                if arg is None else os.path.abspath(arg))
 
 
 class AbstractKaldiCommand(AbstractCoreCommand):
@@ -213,7 +218,10 @@ class AbstractKaldiCommand(AbstractCoreCommand):
         parser.add_argument(
             '-j', '--njobs', type=int, metavar='<njobs>',
             default=utils.default_njobs(),
-            help="""number of jobs for parallel computation, default is
-            to launch %(default)s jobs.""")
+            help="""
+            number of jobs for parallel computation, because Kaldi
+            used to run jobs per speakers, the number of jobs is
+            min(<njobs>, corpus.nspeakers). Default is to launch
+            %(default)s jobs.""")
 
         return parser, dir_group

@@ -1,4 +1,4 @@
-# Copyright 2016 Thomas Schatz, Xuan Nga Cao, Mathieu Bernard
+# Copyright 2016 Thomas Schatz, Xuan-Nga Cao, Mathieu Bernard
 #
 # This file is part of abkhazia: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -24,8 +24,12 @@ from abkhazia.commands.abstract_command import AbstractCommand
 
 # import all the corpora preparators
 from abkhazia.corpus.prepare import (
-    AICPreparator, BuckeyePreparator, ChildesPreparator,
-    CSJPreparator, LibriSpeechPreparator, XitsongaPreparator,
+    AICPreparator,
+    BuckeyePreparator,
+    ChildesPreparator,
+    CSJPreparator,
+    LibriSpeechPreparator,
+    XitsongaPreparator,
     AbstractGlobalPhonePreparator, MandarinPreparator, VietnamesePreparator,
     WallStreetJournalPreparator, JournalistReadPreparator,
     JournalistSpontaneousPreparator, MainReadPreparator)

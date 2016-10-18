@@ -1,4 +1,4 @@
-# Copyright 2016 Thomas Schatz, Xuan Nga Cao, Mathieu Bernard
+# Copyright 2016 Thomas Schatz, Xuan-Nga Cao, Mathieu Bernard
 #
 # This file is part of abkhazia: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -35,8 +35,7 @@ class AbstractPreparator(object):
     specialized preparators.
 
     For more details on data preparation and the abkhazia format,
-    please refer to
-    https://github.com/bootphon/abkhazia/wiki/data_preparation
+    please refer to the Abkhazia documentation.
 
     Parameters
     ----------
@@ -71,6 +70,7 @@ class AbstractPreparator(object):
         except ConfigParser.NoOptionError:
             return None
 
+    # TODO njobs as parameter,
     def __init__(self, input_dir, log=utils.logger.null_logger()):
         self.njobs = utils.default_njobs(local=True)
         self.log = log
@@ -86,6 +86,7 @@ class AbstractPreparator(object):
         self.corpus.meta.source = self.input_dir
         self.corpus.meta.name = self.name
 
+    # TODO wavs_dir not a good argument?
     def prepare(self, wavs_dir, keep_short_utts=False):
         """Prepare the corpus from raw distribution to abkhazia format
 

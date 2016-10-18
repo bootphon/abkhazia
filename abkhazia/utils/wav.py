@@ -1,4 +1,4 @@
-# Copyright 2016 Thomas Schatz, Xuan Nga Cao, Mathieu Bernard
+# Copyright 2016 Thomas Schatz, Xuan-Nga Cao, Mathieu Bernard
 #
 # This file is part of abkhazia: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -14,7 +14,7 @@
 # along with abkhazia. If not, see <http://www.gnu.org/licenses/>.
 """Provides functions to convert various audio formats to wav
 
-Wavs conversion functions in this module are tuned the abkhazia needs,
+Wav conversion functions in this module are tuned the abkhazia needs,
 that is 16 bits, 16 kHz mono wav files.
 
 """

@@ -1,4 +1,4 @@
-# Copyright 2016 Thomas Schatz, Xuan Nga Cao, Mathieu Bernard
+# Copyright 2016 Thomas Schatz, Xuan-Nga Cao, Mathieu Bernard
 #
 # This file is part of abkhazia: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -18,9 +18,9 @@ import h5features
 import os
 import pytest
 
-import abkhazia.models.features as features
+import abkhazia.features as features
 import abkhazia.utils as utils
-import abkhazia.utils.kaldi.ark as ark
+import abkhazia.kaldi.ark as ark
 from .conftest import assert_no_expr_in_log
 
 params = [(pitch, ftype)

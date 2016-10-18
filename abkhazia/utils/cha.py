@@ -1,6 +1,6 @@
 # coding: utf-8
 
-# Copyright 2016 Thomas Schatz, Xuan Nga Cao, Mathieu Bernard
+# Copyright 2016 Thomas Schatz, Xuan-Nga Cao, Mathieu Bernard
 #
 # This file is part of abkhazia: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -14,16 +14,22 @@
 #
 # You should have received a copy of the GNU General Public License
 # along with abkhazia. If not, see <http://www.gnu.org/licenses/>.
-"""Provides some functions to work on cha files"""
+"""Provides some functions to work on cha files
+
+Cha format is used by some corpora abkhazia have preparators for. See
+http://childes.psy.cmu.edu/manuals/CHAT.pdf for detailed info on thaht
+format.
+
+"""
 
 import re
-import utils  # this is abkhazia.utils
+from abkhazia.utils import open_utf8
 
 
 def nadults(cha):
     """Return the number of adult speakers recorded in `cha`"""
     # speaker IDs, lines starting with '@ID', forced to lowercase
-    spks = (l.strip().lower() for l in utils.open_utf8(cha, 'r')
+    spks = (l.strip().lower() for l in open_utf8(cha, 'r')
             if l.startswith('@ID'))
 
     # exclude non-adult speakers
@@ -83,8 +89,9 @@ def _cha_cleanup(s):
     for c in ('xxx', 'www', 'XXX', 'yyy', '@o', '@f', '@q', '@u', '@c'):
         s = s.replace(c, '')
 
-    # NOTE check that the next set of replacements for unusual
-    # spellings is adapted to your purposes
+    # TODO This should be outside the cha module and goes in the
+    # preparator code directly...  NOTE check that the next set of
+    # replacements for unusual spellings is adapted to your purposes
     for p in (
             ('allgone', 'all gone'),
             ('whaddaya', 'what do you'),

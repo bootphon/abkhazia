@@ -1,4 +1,4 @@
-# Copyright 2016 Thomas Schatz, Xuan Nga Cao, Mathieu Bernard
+# Copyright 2016 Thomas Schatz, Xuan-Nga Cao, Mathieu Bernard
 #
 # This file is part of abkhazia: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -12,7 +12,11 @@
 #
 # You should have received a copy of the GNU General Public License
 # along with abkhazia. If not, see <http://www.gnu.org/licenses/>.
-"""Provides a base class for Abkhazia componants"""
+"""Provides a base class for all Abkhazia componants
+
+Defines a logger and a metadata handler.
+
+"""
 
 from abkhazia.utils.meta import Meta
 from abkhazia.utils.logger import null_logger

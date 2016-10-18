@@ -1,4 +1,4 @@
-# Copyright 2016 Thomas Schatz, Xuan Nga Cao, Mathieu Bernard
+# Copyright 2016 Thomas Schatz, Xuan-Nga Cao, Mathieu Bernard
 #
 # This file is part of abkhazia: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -180,46 +180,49 @@ def lattice2features(phones_file, post_file, out_file,
     h5features.write(out_file, 'features', utt_ids, times, features)
 
 
-def features2features(in_file, out_file):
-    """
-    kaldi input features (mfcc, etc.) to h5features
-    this loads everything into memory, but it would be easy to write
-    an incremental version if this poses a problem
-    Input features must be in a single archive text format, that can be
-    obtained using the 'copy-feats' kaldi utility
-    """
-    # below is basically a parser for kaldi vector format for each line
-    # parse input text file
-    outside_utt = True
-    features = []
-    utt_ids = []
-    times = []
-    with codecs.open(in_file, mode='r', encoding='UTF-8') as inp:
-        for index, line in enumerate(inp):
-            print("Processing line {0}".format(index+1))
-            # / {1}".format(index+1, len(lines)))
-
-            tokens = line.strip().split(u" ")
-            if outside_utt:
-                assert (len(tokens) == 3 and
-                        tokens[1] == u"" and
-                        tokens[2] == u"[")
-
-                utt_id = tokens[0]
-                outside_utt = False
-                frames = []
-            else:
-                if tokens[-1] == u"]":
-                    # end of utterance
-                    outside_utt = True
-                    tokens = tokens[:-1]
-                frames.append(np.array(tokens, dtype=np.float))
-                if outside_utt:
-                    # end of utterance, continued
-                    features.append(np.row_stack(frames))
-
-                    # as in kaldi2abkhazia, this is ad hoc and has not
-                    # been checked formally
-                    times.append(0.0125 + 0.01*np.arange(len(frames)))
-                    utt_ids.append(utt_id)
-    h5features.write(out_file, 'features', utt_ids, times, features)
+# TODO this function can be removed as utils.kaldi.{ark, scp}_to_h5f
+# replace it
+#
+# def features2features(in_file, out_file):
+#     """
+#     kaldi input features (mfcc, etc.) to h5features
+#     this loads everything into memory, but it would be easy to write
+#     an incremental version if this poses a problem
+#     Input features must be in a single archive text format, that can be
+#     obtained using the 'copy-feats' kaldi utility
+#     """
+#     # below is basically a parser for kaldi vector format for each line
+#     # parse input text file
+#     outside_utt = True
+#     features = []
+#     utt_ids = []
+#     times = []
+#     with codecs.open(in_file, mode='r', encoding='UTF-8') as inp:
+#         for index, line in enumerate(inp):
+#             print("Processing line {0}".format(index+1))
+#             # / {1}".format(index+1, len(lines)))
+#
+#             tokens = line.strip().split(u" ")
+#             if outside_utt:
+#                 assert (len(tokens) == 3 and
+#                         tokens[1] == u"" and
+#                         tokens[2] == u"[")
+#
+#                 utt_id = tokens[0]
+#                 outside_utt = False
+#                 frames = []
+#             else:
+#                 if tokens[-1] == u"]":
+#                     # end of utterance
+#                     outside_utt = True
+#                     tokens = tokens[:-1]
+#                 frames.append(np.array(tokens, dtype=np.float))
+#                 if outside_utt:
+#                     # end of utterance, continued
+#                     features.append(np.row_stack(frames))
+#
+#                     # as in kaldi2abkhazia, this is ad hoc and has not
+#                     # been checked formally
+#                     times.append(0.0125 + 0.01*np.arange(len(frames)))
+#                     utt_ids.append(utt_id)
+#     h5features.write(out_file, 'features', utt_ids, times, features)

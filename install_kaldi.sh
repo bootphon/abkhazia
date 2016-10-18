@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 #
-# Copyright 2016 Thomas Schatz, Xuan Nga Cao, Mathieu Bernard
+# Copyright 2016 Thomas Schatz, Xuan-Nga Cao, Mathieu Bernard
 #
 # This file is part of abkhazia: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -76,3 +76,6 @@ make -j $ncores || failure "failed to build kaldi"
 # compile irstlm
 cd $kaldi/tools
 ./extras/install_irstlm.sh || failure "failed to install IRSTLM"
+
+# forward the path to Kaldi to the configure script
+export KALDI_PATH=$kaldi

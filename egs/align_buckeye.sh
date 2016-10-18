@@ -1,5 +1,5 @@
 #!/bin/bash
-# Copyright 2015, 2016 Thomas Schatz, Xuan Nga Cao, Mathieu Bernard
+# Copyright 2015, 2016 Thomas Schatz, Xuan-Nga Cao, Mathieu Bernard
 #
 # This file is part of abkhazia: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -40,13 +40,12 @@ train_dir=$data_dir/split/train
 abkhazia language $train_dir -l word -n 3 -v || exit 1
 
 # compute MFCC features
-abkhazia features mfcc $train_dir || exit 1
+abkhazia features mfcc $train_dir --cmvn || exit 1
 
 # compute a speaker-adapted triphone HMM-GMM acoustic model
-abkhazia acoustic $train_dir -t tri-sa --recipe || exit 1
+abkhazia acoustic monophone -v $train_dir || exit 1
+abkhazia acoustic tripĥone -v $train_dir || exit 1
+abkhazia acoustic tripĥone-sa -v $train_dir || exit 1
 
 # compute alignment (should be done on the test set)
 abkhazia align $train_dir || exit 1
-
-# decode the corpus (should be done on test set)
-abkhazia decode $train_dir || exit 1

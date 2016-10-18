@@ -1,4 +1,4 @@
-# Copyright 2016 Thomas Schatz, Xuan Nga Cao, Mathieu Bernard
+# Copyright 2016 Thomas Schatz, Xuan-Nga Cao, Mathieu Bernard
 #
 # This file is part of abkhazia: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -16,7 +16,7 @@
 
 import ConfigParser
 import random
-import abkhazia.utils as utils
+from abkhazia.utils import logger, config
 
 
 class CorpusSplit(object):
@@ -47,7 +47,7 @@ class CorpusSplit(object):
 
 
     """
-    def __init__(self, corpus, log=utils.logger.null_logger(),
+    def __init__(self, corpus, log=logger.null_logger(),
                  random_seed=None, prune=True):
         self.log = log
         self.prune = prune
@@ -72,7 +72,7 @@ class CorpusSplit(object):
 
         Try to read from configuration file, else return 0.5"""
         try:
-            return float(utils.config.get(
+            return float(config.get(
                 'split', 'default-test-proportion'))
         except ConfigParser.NoOptionError:
             return 0.5

@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright 2016 Thomas Schatz, Xuan Nga Cao, Mathieu Bernard
+# Copyright 2016 Thomas Schatz, Xuan-Nga Cao, Mathieu Bernard
 #
 # This file is part of abkhazia: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -15,12 +15,12 @@
 # along with abkhazia. If not, see <http://www.gnu.org/licenses/>.
 """This package provides various utilities to abkhazia"""
 
-from .utils import *
+from .path import *
+from .misc import *
 from .config import config, AbkhaziaConfig
 
-import logger
 import abkhazia_base
-import arpa
+import logger
 import wav
 import jobs
 import cha

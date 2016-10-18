@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright 2016 Thomas Schatz, Xuan Nga Cao, Mathieu Bernard
+# Copyright 2016 Thomas Schatz, Xuan-Nga Cao, Mathieu Bernard
 #
 # This file is part of abkhazia: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -16,7 +16,7 @@
 """Utility for logging to stdout and an optional log file.
 
 This uses the 'logging' module from Python standard library. In the
-'logging module', a 'level' is associated to each message. The
+logging module, a 'level' is associated to each message. The
 possible levels are:
 
     CRITICAL, ERROR, WARNING, INFO, DEBUG or NOTSET.

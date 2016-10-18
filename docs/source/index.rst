@@ -4,11 +4,11 @@ Abkhazia's documentation
 
 .. note::
 
-   The source code is available at `<www.github.com/bootphon/abkhazia>`_.
+   The source code is available at `<https://www.github.com/bootphon/abkhazia>`_.
 
 
 The abkhazia project makes it easy to obtain simple baselines for
-supervised ASR (using `kaldi`_) and ABX tasks (using `ABXpy`_) on the
+supervised ASR (using `Kaldi`_) and ABX tasks (using `ABXpy`_) on the
 large corpora of speech recordings typically used in speech
 engineering, linguistics or cognitive science research. To this end,
 abkhazia provides the following:
@@ -30,7 +30,6 @@ abkhazia provides the following:
   * computing ABX discriminability scores in various ABX tasks defined
     on the corpus
 
-
 Abkhazia also comes with a set of recipes for specific corpora, which
 can be applied to the raw distribution of these corpora directly to
 obtain a version in standard format. The only requirement is to have
@@ -43,18 +42,12 @@ available. List the list of corpora supported in abkhazia with
    :caption: Table of contents
    :maxdepth: 2
 
+   install
    abkhazia_format
    abkhazia_usage
-   abkhazia
+   abkhazia_api
    license
 
 
-Indices and tables
-==================
-
-* :ref:`genindex`
-* :ref:`modindex`
-* :ref:`search`
-
-.. _kaldi: http://kaldi.sourceforge.net
+.. _Kaldi: http://kaldi-asr.org
 .. _ABXpy: https://github.com/bootphon/ABXpy

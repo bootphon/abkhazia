@@ -1,6 +1,6 @@
 # coding: utf-8
 
-# Copyright 2016 Thomas Schatz, Xuan Nga Cao, Mathieu Bernard
+# Copyright 2016 Thomas Schatz, Xuan-Nga Cao, Mathieu Bernard
 #
 # This file is part of abkhazia: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -23,6 +23,7 @@ from abkhazia.corpus.corpus_loader import CorpusLoader
 from abkhazia.corpus.corpus_validation import CorpusValidation
 from abkhazia.corpus.corpus_split import CorpusSplit
 import abkhazia.utils as utils
+#from abkhazia.utils import abkhazia_base, default_njobs, logger
 
 
 class Corpus(utils.abkhazia_base.AbkhaziaBase):
@@ -94,14 +95,17 @@ class Corpus(utils.abkhazia_base.AbkhaziaBase):
     """
 
     @classmethod
-    def load(cls, corpus_dir, log=utils.logger.null_logger()):
+    def load(cls, corpus_dir, validate=False, log=utils.logger.null_logger()):
         """Return a corpus initialized from `corpus_dir`
+
+        If validate is True, make sure the corpus is valid before
+        returning it.
 
         Raise IOError if corpus_dir if an invalid directory, the
         output corpus is not validated.
 
         """
-        return CorpusLoader.load(cls, corpus_dir, log=log)
+        return CorpusLoader.load(cls, corpus_dir, validate=validate, log=log)
 
     def __init__(self, log=utils.logger.null_logger()):
         """Init an empty corpus"""
@@ -200,6 +204,26 @@ class Corpus(utils.abkhazia_base.AbkhaziaBase):
             utt2dur[utt] = stop - start
         return utt2dur
 
+    def duration(self, format='seconds'):
+        """Return the total duration of the corpus
+
+        If `format` is 'second', returns the corpus duration in
+        seconds as a float. If `format` is 'datetime', returns the
+        corpus duration as a string in the 'hh:mm:ss' format.
+
+        Raise IOError if `format` is not 'seconds' or 'datetime'
+
+        """
+        total = sum(self.utt2duration().itervalues())
+        if format == 'seconds':
+            return total
+        elif format == 'datetime':
+            import datetime
+            # format as hh:mm:ss, skipping subseconds
+            return str(datetime.timedelta(seconds=total)).split('.')[0]
+        else:
+            raise IOError('Unknow format for corpus duration (%s)', format)
+
     def words(self, in_lexicon=True):
         """Return a set of words composing the corpus
 
@@ -287,6 +311,8 @@ class Corpus(utils.abkhazia_base.AbkhaziaBase):
         words = self.words(in_lexicon=False)
         self.lexicon = {key: value for key, value in self.lexicon.iteritems()
                         if key in words}
+        # make sure <unk> is still here (needed by Kaldi programs)
+        self.lexicon['<unk>'] = 'SPN'
 
         # prune phones from pruned lexicon
         phones = set(phone for phones in self.lexicon.itervalues()

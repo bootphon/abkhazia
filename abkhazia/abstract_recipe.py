@@ -1,4 +1,4 @@
-# Copyright 2016 Thomas Schatz, Xuan Nga Cao, Mathieu Bernard
+# Copyright 2016 Thomas Schatz, Xuan-Nga Cao, Mathieu Bernard
 #
 # This file is part of abkhazia: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -18,7 +18,7 @@ import multiprocessing
 import os
 
 import abkhazia.utils as utils
-from abkhazia.utils.kaldi import kaldi_path, Abkhazia2Kaldi
+from abkhazia.kaldi import kaldi_path, Abkhazia2Kaldi
 
 
 class AbstractRecipe(utils.abkhazia_base.AbkhaziaBase):

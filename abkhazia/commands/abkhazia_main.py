@@ -3,7 +3,7 @@
 
 # PYTHON_ARGCOMPLETE_OK
 #
-# Copyright 2016 Thomas Schatz, Xuan Nga Cao, Mathieu Bernard
+# Copyright 2016 Thomas Schatz, Xuan-Nga Cao, Mathieu Bernard
 #
 # This file is part of abkhazia: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -58,7 +58,10 @@ class Abkhazia(object):
     # a string describing abkhazia and its subcommands
     description = (
         'ABX and kaldi experiments on speech corpora made easy,\n'
-        "type 'abkhazia <command> --help' for help on a specific command")
+        "type 'abkhazia <command> --help' for help on a specific command\n\n"
+        "The configuration files are:\n\t{}\n\t{}\n".format(
+            utils.AbkhaziaConfig.default_config_file(name='abkhazia'),
+            utils.AbkhaziaConfig.default_config_file(name='queue')))
 
     def load_config(self):
         """Load the config file optionally given by --config argument
@@ -176,7 +179,7 @@ class CatchExceptions(object):
 # can be usefull to don't catch any exception, so the full error
 # traceback error is printed. To do so, just comment the following
 # line
-@CatchExceptions
+#@CatchExceptions
 def main():
     """abkhazia main entry point in command line"""
     Abkhazia()

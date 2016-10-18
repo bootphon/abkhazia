@@ -1,4 +1,4 @@
-# Copyright 2016 Thomas Schatz, Xuan Nga Cao, Mathieu Bernard
+# Copyright 2016 Thomas Schatz, Xuan-Nga Cao, Mathieu Bernard
 #
 # This file is part of abkhazia: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -12,32 +12,31 @@
 #
 # You should have received a copy of the GNU General Public License
 # along with abkhazia. If not, see <http://www.gnu.org/licenses/>.
-"""Test of the abkhazia.models.acoustic_model module"""
+"""Test of the abkhazia.models.acoustic module"""
 
 import os
 import sys
 import pytest
 
-import abkhazia.models.acoustic_model as acoustic_model
+import abkhazia.features as features
+import abkhazia.acoustic as acoustic
 import abkhazia.utils as utils
-from .conftest import assert_no_expr_in_log
+from .conftest import assert_no_expr_in_log, assert_expr_in_log
 
 
-@pytest.mark.parametrize('njobs', [1, 4])
-def test_acoustic_njobs(corpus, features, language_model, njobs, tmpdir):
-    output_dir = str(tmpdir.mkdir('lang'))
-    flog = os.path.join(output_dir, 'language.log')
+# There was a bug with more than 9 jobs (when more than 9 available
+# cores/nodes)
+@pytest.mark.parametrize('njobs', [4, 11])
+def test_acoustic_njobs(corpus, features, lm_word, njobs, tmpdir):
+    output_dir = str(tmpdir.mkdir('am-mono'))
+    flog = os.path.join(output_dir, 'am-mono.log')
     log = utils.logger.get_log(flog)
-    am = acoustic_model.AcousticModel(corpus, output_dir, log)
+    am = acoustic.Monophone(corpus, lm_word, features, output_dir, log)
 
-    am.feat = features
-    am.lang = language_model
     am.njobs = njobs
-    am.model_type = 'mono'
-    am.num_gauss_si = 10
-    am.num_states_si = 10
-    am.num_gauss_sa = 10
-    am.num_states_sa = 10
+    am.options['total-gaussians'].value = 10
+    am.options['num-iterations'].value = 2
+    am.options['realign-iterations'].value = [1]
 
     try:
         am.compute()
@@ -51,5 +50,31 @@ def test_acoustic_njobs(corpus, features, language_model, njobs, tmpdir):
         sys.stdout.write('####################\n')
         raise err
 
-    acoustic_model.check_acoustic_model(output_dir)
+    acoustic.check_acoustic_model(output_dir)
+    assert acoustic.model_type(output_dir) == 'mono'
+    assert str(am.options['num-iterations']) == '2'
+    assert_expr_in_log(flog, ' --num-iters 2 ')
     assert_no_expr_in_log(flog, 'error')
+
+
+# monophone needs features with cmvn, check it works
+def test_monophone_cmvn_good(corpus, features, lm_word, tmpdir):
+    output_dir = str(tmpdir.mkdir('am_mono'))
+    am = acoustic.Monophone(corpus, lm_word, features, output_dir)
+    am.check_parameters()
+
+
+# check monophone fails without cmvn
+def test_monophone_cmvn_bad(corpus, lm_word, tmpdir):
+    features_dir = str(tmpdir.mkdir('feats'))
+    feat = features.Features(corpus, features_dir)
+    feat.use_pitch = False
+    feat.use_cmvn = False
+    feat.delta_order = 0
+    feat.compute()
+
+    output_dir = str(tmpdir.mkdir('am_mono'))
+    am = acoustic.Monophone(corpus, lm_word, features_dir, output_dir)
+    with pytest.raises(IOError) as err:
+        am.check_parameters()
+    assert 'cmvn' in str(err)

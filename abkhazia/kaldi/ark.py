@@ -14,10 +14,11 @@
 # along with abkhazia. If not, see <http://www.gnu.org/licenses/>.
 """Kaldi ark files input/output
 
-Read/write ark files into numpy arrays, conversion to h5features file.
+Read/write ark files into numpy arrays or h5features file.
 
-Provides the ark_to_dict and ark_to_h5f functions to convert Kaldi ark
-files to Python dictionaries and h5features files respectively.
+Provides the ark_to_dict, ark_to_h5f and scp_to_h5f functions to
+convert Kaldi ark files to Python dictionaries and h5features files
+respectively.
 
 Provides the dict_to_ark function to write ark files from numpy
 arrays.
@@ -34,7 +35,7 @@ import h5features as h5f
 import h5py
 
 import abkhazia.utils as utils
-from abkhazia.utils.kaldi import kaldi_path
+from abkhazia.kaldi import kaldi_path
 
 
 def ark_to_dict(arkfile):

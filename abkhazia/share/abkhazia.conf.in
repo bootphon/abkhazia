@@ -1,0 +1,49 @@
+# This is the abkhazia configuration file. This file is automatically
+# generated during installation. Change the values in here to overload
+# the default configuration.
+
+[abkhazia]
+# The absolute path to the output data directory of abkhazia.
+data-directory:
+
+# The directory where abkhazia write temporary data (usually /tmp or
+# /dev/shm).
+tmp-directory: /tmp
+
+[kaldi]
+# The absolute path to the kaldi distribution directory
+kaldi-directory:
+
+# "queue.pl" uses qsub. The options to it are options to qsub.  If you
+# have GridEngine installed, change this to a queue you have access
+# to. Otherwise, use "run.pl", which will run jobs locally
+
+# On Oberon use:
+# train-cmd: queue.pl -q all.q@puck*.cm.cluster
+# decode-cmd: queue.pl -q all.q@puck*.cm.cluster
+# highmem-cmd: queue.pl -q all.q@puck*.cm.cluster
+
+# On Eddie use:
+# train-cmd: queue.pl -P inf_hcrc_cstr_general
+# decode-cmd: queue.pl -P inf_hcrc_cstr_general
+# highmem-cmd: queue.pl -P inf_hcrc_cstr_general -pe memory-2G 2
+
+# To run locally use:
+train-cmd: run.pl
+decode-cmd: run.pl
+highmem-cmd: run.pl
+
+[corpus]
+# In this section you can specify the default input directory where to
+# read raw data for each supported corpus. By doing so, the
+# <input-dir> argument of 'abkhazia prepare <corpus>' becomes optional
+# for the corpus you have specified directories here.
+aic-directory:
+buckeye-directory:
+childes-directory:
+cid-directory:
+csj-directory:
+globalphone-directory:
+librispeech-directory:
+wsj-directory:
+xitsonga-directory:

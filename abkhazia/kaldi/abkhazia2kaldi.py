@@ -1,4 +1,4 @@
-# Copyright 2015, 2016 Thomas Schatz, Xuan Nga Cao, Mathieu Bernard
+# Copyright 2015, 2016 Thomas Schatz, Xuan-Nga Cao, Mathieu Bernard
 #
 # This file is part of abkhazia: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -18,7 +18,7 @@ import os
 import pkg_resources
 import shutil
 
-import abkhazia.utils as utils
+from abkhazia.utils import config, logger, open_utf8
 from abkhazia.corpus.corpus_saver import CorpusSaver
 
 
@@ -42,10 +42,10 @@ class Abkhazia2Kaldi(object):
 
     '''
     def __init__(self, corpus, recipe_dir,
-                 name='recipe', log=utils.logger.null_logger()):
+                 name='recipe', log=logger.null_logger()):
         # filter out short utterances
         self.corpus = corpus.subcorpus(
-            self._desired_utterances(corpus), validate=True)
+            self._desired_utterances(corpus), validate=False)
 
         # init the recipe directory, create it if needed
         self.recipe_dir = recipe_dir
@@ -56,7 +56,7 @@ class Abkhazia2Kaldi(object):
         self.log = log
 
         # init the path to kaldi
-        self.kaldi_root = utils.config.get('kaldi', 'kaldi-directory')
+        self.kaldi_root = config.get('kaldi', 'kaldi-directory')
 
         # init the path to abkhazia/share
         self.share_dir = pkg_resources.resource_filename(
@@ -74,18 +74,6 @@ class Abkhazia2Kaldi(object):
         if not os.path.isdir(out):
             os.makedirs(out)
         return out
-
-    def _copy_template(self, filename, template):
-        """Copy `filename` to self.recipe_dir"""
-        path, name = os.path.split(filename)
-
-        if not os.path.exists(filename):
-            raise IOError(
-                "No {0} in {1}. You need to create one adapted to "
-                "your machine. You can get inspiration from {2}"
-                .format(name, path, template))
-
-        shutil.copy(filename, os.path.join(self.recipe_dir, name))
 
     @staticmethod
     def _desired_utterances(corpus, min_duration=0.015):
@@ -116,10 +104,10 @@ class Abkhazia2Kaldi(object):
                 os.path.join(local_path, 'silence_phones.txt'),
                 os.path.join(local_path, 'nonsilence_phones.txt')):
             phones += [line.strip()
-                       for line in utils.open_utf8(origin, 'r').xreadlines()]
+                       for line in open_utf8(origin, 'r').xreadlines()]
 
         # create 'phone' lexicon
-        with utils.open_utf8(target, 'w') as out:
+        with open_utf8(target, 'w') as out:
             for word in phones:
                 out.write(u'{0} {0}\n'.format(word))
             # add <unk> word, in case one wants to use the phone loop
@@ -132,7 +120,7 @@ class Abkhazia2Kaldi(object):
     def setup_phones(self):
         """Create data/local/self.name/nonsilence_phones.txt"""
         target = os.path.join(self._local_path(), 'nonsilence_phones.txt')
-        with utils.open_utf8(target, 'w') as out:
+        with open_utf8(target, 'w') as out:
             for symbol in self.corpus.phones.iterkeys():
                 out.write(u"{0}\n".format(symbol))
 
@@ -143,7 +131,7 @@ class Abkhazia2Kaldi(object):
             self.corpus, os.path.join(local_path, 'silence_phones.txt'))
 
         target = os.path.join(local_path, 'optional_silence.txt')
-        with utils.open_utf8(target, 'w') as out:
+        with open_utf8(target, 'w') as out:
             out.write(u'SIL\n')
 
     def setup_variants(self):
@@ -164,7 +152,7 @@ class Abkhazia2Kaldi(object):
 
         # create spk2utt
         target = os.path.join(self._output_path(), 'spk2utt')
-        with utils.open_utf8(target, 'w') as out:
+        with open_utf8(target, 'w') as out:
             for spk, utt in sorted(self.corpus.spk2utt().iteritems()):
                 out.write(u'{} {}\n'.format(spk, ' '.join(sorted(utt))))
 
@@ -179,7 +167,7 @@ class Abkhazia2Kaldi(object):
         """Create wav.scp in data directory"""
         target = os.path.join(self._output_path(), 'wav.scp')
         wavs = set(w for w, _, _ in self.corpus.segments.itervalues())
-        with utils.open_utf8(target, 'w') as out:
+        with open_utf8(target, 'w') as out:
             for wav in sorted(wavs):
                 out.write(u'{} {}\n'.format(wav, self.corpus.wavs[wav]))
 
@@ -198,19 +186,35 @@ class Abkhazia2Kaldi(object):
                 os.remove(target)
             os.symlink(origin, target)
 
+    @staticmethod
+    def _write_cmd_script(script):
+        with open(script, 'w') as stream:
+            for cmd in ('train', 'decode', 'highmem'):
+                key = '{}-cmd'.format(cmd)
+                value = config.get('kaldi', key)
+                stream.write('export {}={}\n'.format(key, value))
+
+    @staticmethod
+    def _write_path_script(script):
+        source = pkg_resources.resource_filename(
+            pkg_resources.Requirement.parse('abkhazia'),
+            'abkhazia/share/path.sh')
+        shutil.copy(source, script)
+
     def setup_machine_specific_scripts(self):
-        """Copy cmd.sh and path.sh to self.recipe_dir"""
-        for target in ('cmd', 'path'):
-            script = os.path.join(self.share_dir, target + '.sh')
-            template = os.path.join(
-                self.share_dir, 'kaldi_templates', target + '_template.sh')
-            self._copy_template(script, template)
+        """Setup cmd.sh and path.sh in self.recipe_dir"""
+        self._write_cmd_script(os.path.join(self.recipe_dir, 'cmd.sh'))
+        self._write_path_script(os.path.join(self.recipe_dir, 'path.sh'))
 
     def setup_score(self):
-        """Copy kaldi/egs/gp/s5/local/score.sh to self.recipe_dir"""
+        """Copy kaldi/egs/wsj/s5/local/score.sh to self.recipe_dir"""
         local_dir = os.path.join(self.recipe_dir, 'local')
         if not os.path.isdir(local_dir):
             os.mkdir(local_dir)
 
-        target = os.path.join(self.kaldi_root, '/egs/gp/s5/local', 'score.sh')
-        shutil.copy(target, os.path.join(local_dir, 'score.sh'))
+        origin = os.path.join(
+            self.kaldi_root, 'egs', 'wsj', 's5', 'local', 'score.sh')
+        assert os.path.isfile(origin), 'no such file {}'.format(origin)
+
+        target = os.path.join(local_dir, 'score.sh')
+        shutil.copy(origin, target)

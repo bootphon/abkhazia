@@ -1,4 +1,4 @@
-# Copyright 2016 Thomas Schatz, Xuan Nga Cao, Mathieu Bernard
+# Copyright 2016 Thomas Schatz, Xuan-Nga Cao, Mathieu Bernard
 #
 # This file is part of abkhazia: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -17,14 +17,22 @@
 import os
 import pytest
 
-import abkhazia.models.language_model as language_model
+import abkhazia.language.language_model as language_model
 import abkhazia.utils as utils
+import abkhazia.kaldi as kaldi
 from .conftest import assert_no_expr_in_log
 
 
 levels = ['phone', 'word']
 orders = range(1, 4)
 params = [(l, o) for l in levels for o in orders]
+
+
+def test_srilm_path():
+    # test we can reach the ngram binary from SRILM in the Kaldi
+    # environment (problematic because it's change from Linux to Mac)
+    # This raises RuntimeError if failing
+    utils.jobs.run('which ngram', env=kaldi.path.kaldi_path())
 
 
 @pytest.mark.parametrize('level, order', params)

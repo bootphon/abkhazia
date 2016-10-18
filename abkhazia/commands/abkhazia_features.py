@@ -1,4 +1,4 @@
-# Copyright 2016 Thomas Schatz, Xuan Nga Cao, Mathieu Bernard
+# Copyright 2016 Thomas Schatz, Xuan-Nga Cao, Mathieu Bernard
 #
 # This file is part of abkhazia: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -17,8 +17,9 @@
 import argparse
 import os
 
-import abkhazia.models.features as features
+import abkhazia.features as features
 import abkhazia.utils as utils
+import abkhazia.kaldi as kaldi
 
 from abkhazia.commands.abstract_command import AbstractKaldiCommand
 from abkhazia.corpus import Corpus
@@ -50,20 +51,17 @@ class _FeatBase(AbstractKaldiCommand):
             named '<output_dir>/feats.h5f'""")
 
         parser.add_argument(
-            '--use-pitch', metavar='<true|false>', choices=['true', 'false'],
-            default=utils.config.get('features', 'use-pitch'),
-            help="""if true, compute pitch estimation,
+            '--pitch', action='store_true',
+            help="""if specified, compute pitch estimation,
             default is %(default)s""")
 
         parser.add_argument(
-            '--use-cmvn', metavar='<true|false>', choices=['true', 'false'],
-            default=utils.config.get('features', 'use-cmvn'),
-            help="""if true, compute CMVN statistics,
+            '--cmvn', action='store_true',
+            help="""if specified, compute CMVN statistics,
             default is %(default)s""")
 
         parser.add_argument(
-            '--delta-order', metavar='<int>', type=int,
-            default=utils.config.getint('features', 'delta-order'),
+            '--delta-order', metavar='<int>', type=int, default=0,
             help="""compute deltas on raw features, up to the specified order. If
             delta-order is set to 0, deltas are not computed. Default
             is %(default)s.""")
@@ -85,7 +83,7 @@ class _FeatBase(AbstractKaldiCommand):
                     cls.parsed_options.append((name, value))
             return customAction
 
-        utils.kaldi.add_options_arguments(
+        kaldi.add_options_executable(
             parser, cls.kaldi_bin,
             action=action,
             ignore=cls.ignored_options,
@@ -102,12 +100,12 @@ class _FeatBase(AbstractKaldiCommand):
         corpus_dir, output_dir = cls._parse_io_dirs(args, 'features')
         log = utils.logger.get_log(
             os.path.join(output_dir, 'features.log'), verbose=args.verbose)
-        corpus = Corpus.load(corpus_dir)
+        corpus = Corpus.load(corpus_dir, validate=args.validate, log=log)
 
         recipe = features.Features(corpus, output_dir, log=log)
         recipe.type = cls.feat_name
-        recipe.use_pitch = utils.str2bool(args.use_pitch)  # 'true' to True
-        recipe.use_cmvn = utils.str2bool(args.use_cmvn)
+        recipe.use_pitch = utils.str2bool(args.pitch)  # 'true' to True
+        recipe.use_cmvn = utils.str2bool(args.cmvn)
         recipe.delta_order = args.delta_order
         recipe.features_options = cls.parsed_options
         recipe.njobs = args.njobs
@@ -148,9 +146,10 @@ class AbkhaziaFeatures(object):
 
     @classmethod
     def add_parser(cls, subparsers):
-        """Return a parser for the features command
+        """Return a parser for the 'abkhazia features' command
 
-        add a subparser with 'mfcc', 'fbank' and 'plp' entries
+        Add a subparser and help message for 'mfcc', 'fbank' and 'plp'
+        subcommands.
 
         """
         parser = subparsers.add_parser(cls.name)

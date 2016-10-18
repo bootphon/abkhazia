@@ -1,4 +1,4 @@
-# Copyright 2016 Thomas Schatz, Xuan Nga Cao, Mathieu Bernard
+# Copyright 2016 Thomas Schatz, Xuan-Nga Cao, Mathieu Bernard
 #
 # This file is part of abkhazia: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -18,8 +18,8 @@ import os
 import shutil
 import joblib
 
-import abkhazia.models.abstract_recipe as abstract_recipe
 import abkhazia.utils as utils
+import abkhazia.abstract_recipe as abstract_recipe
 
 
 class Features(abstract_recipe.AbstractRecipe):
@@ -27,9 +27,12 @@ class Features(abstract_recipe.AbstractRecipe):
     name = 'features'
 
     @staticmethod
-    def check_features(directory):
-        """Raise IOError if feats.scp and wavs.scp are not in `dircetory`"""
-        for f in ('feats.scp', 'wav.scp'):
+    def check_features(directory, cmvn=False):
+        """Raise IOError if feats.scp and wavs.scp are not in `directory`"""
+        scp = ['feats.scp', 'wav.scp']
+        if cmvn is True:
+            scp.append('cmvn.scp')
+        for f in scp:
             if not os.path.isfile(os.path.join(directory, f)):
                 raise IOError(
                     'Invalid features directory, "{}" not found: {}'.format(
@@ -53,22 +56,21 @@ class Features(abstract_recipe.AbstractRecipe):
         for scp in scps:
             shutil.copy(scp, os.path.join(destdir, os.path.basename(scp)))
 
-    def __init__(self, corpus, output_dir, log=utils.logger.null_logger()):
+    def __init__(self, corpus, output_dir,
+                 type='mfcc', use_pitch=False, use_cmvn=False, delta_order=0,
+                 log=utils.logger.null_logger()):
         super(Features, self).__init__(corpus, output_dir, log=log)
 
-        self.type = utils.config.get('features', 'type')
+        self.type = type
+        self.use_pitch = use_pitch
+        self.use_cmvn = use_cmvn
+        self.delta_order = delta_order
+
+        # overload a kaldi default parameter
+        self.features_options = [('use-energy', 'false')]
+
         if self.type not in ['mfcc', 'plp', 'fbank']:
             raise IOError('unknown feature type "{}"'.format(self.type))
-
-        self.use_pitch = utils.str2bool(
-            utils.config.get('features', 'use-pitch'))
-
-        self.use_cmvn = utils.str2bool(
-            utils.config.get('features', 'use-cmvn'))
-
-        self.delta_order = utils.config.getint('features', 'delta-order')
-
-        self.features_options = [('use-energy', 'false')]
 
     def _setup_conf_dir(self):
         """Setup the configurtion files for feature extraction
@@ -170,7 +172,6 @@ class Features(abstract_recipe.AbstractRecipe):
         if self.delta_order != 0:
             self._compute_delta()
 
-    # this is NOT the export_to_h5features method !
     def export(self):
         super(Features, self).export()
 

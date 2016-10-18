@@ -1,4 +1,4 @@
-# Copyright 2016 Thomas Schatz, Xuan Nga Cao, Mathieu Bernard
+# Copyright 2016 Thomas Schatz, Xuan-Nga Cao, Mathieu Bernard
 #
 # This file is part of abkhazia: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -15,7 +15,7 @@
 """Provides the AbkhaziaConfig class and the config global variable
 
 The `config` variable store the default abkhazia configuration and is
-accessible from anywhere in the sources. It is designed to be
+accessible from anywhere in the abkhazia package. It is designed to be
 instanciated once and only once, the first time this module is
 imported.
 
@@ -33,7 +33,7 @@ Exemple:
 
 * To load a custom config file:
 ..
-  custom_config = config.AbkhaziaConfig('/path/to/my-custom-config.cfg')
+  custom_config = config.AbkhaziaConfig('/path/to/my-custom-config.conf')
   custom_config.get(...)
 
 """
@@ -55,25 +55,34 @@ class AbkhaziaConfig(object):
 
     """
     @staticmethod
-    def default_config_file():
+    def default_config_file(name='abkhazia'):
         """Return the default abkhazia configuation file
 
-        Look for 'abkhazia.cfg' from pkg_resources, if not found, look
-        for __file__/../abkhazia.cfg, else raise a RuntimeError.
+        If name is 'abkhazia', look for abkhazia.conf. If name is
+        'queue' look for queue.conf. Else raise RuntimeError.
+
+        Look for 'abkhazia.conf' from pkg_resources, if not found, look
+        for __file__/../share/abkhazia.conf, else raise a RuntimeError.
 
         """
+        if name not in ('abkhazia', 'queue'):
+            raise RuntimeError(
+                'unknown configuration file {}.conf'.format(name))
+
+        name += '.conf'
+
         try:
             return pkg.resource_filename(
-                pkg.Requirement.parse('abkhazia'), 'abkhazia/abkhazia.cfg')
+                pkg.Requirement.parse('abkhazia'),
+                'abkhazia/share/{}'.format(name))
         except pkg.DistributionNotFound:
             config_file = os.path.join(
                 os.path.dirname(os.path.abspath(__file__)),
-                '..', 'abkhazia.cfg')
+                '..', 'share', name)
 
             if not os.path.isfile(config_file):
                 raise RuntimeError(
-                    'abkhazia configuration file not found {}'
-                    .format(config_file))
+                    'configuration file not found {}'.format(config_file))
 
             return config_file
 

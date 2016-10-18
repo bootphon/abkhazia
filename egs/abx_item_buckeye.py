@@ -16,11 +16,12 @@
 # along with this program. If not, see <http://www.gnu.org/licenses/>.
 import argparse
 import os
+import sys
 import tempfile
 
-import abkhazia.utils as utils
 import abkhazia.corpus.prepare.buckeye_preparator as buckeye
-from abkhazia.utils.abkhazia2abx import alignment2item
+import abkhazia.utils as utils
+from utils.abkhazia2abx import alignment2item
 
 
 # The path to the raw Buckeye distribution
@@ -88,4 +89,4 @@ def main():
 
 
 if __name__ == '__main__':
-    main()
+    sys.exit(main())
