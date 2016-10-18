@@ -24,61 +24,53 @@ data_dir=${1:-/home/mbernard/scratch/data/abkhazia/wsj}
 data_dir=$(readlink -f $data_dir)
 
 echo 'preparing WSJ (journalist read only)'
-#abkhazia prepare wsj --selection 1 --verbose -o $data_dir || exit 1
+abkhazia prepare wsj --selection 1 --verbose -o $data_dir || exit 1
 
 echo 'split in train and test subcorpora (50% each, by speaker)'
-#abkhazia split -t 0.5 -b -v $data_dir || exit 1
+abkhazia split -t 0.5 -b -v $data_dir || exit 1
 train_dir=$data_dir/split/train
 test_dir=$data_dir/split/test
 
 echo 'computing MFCC features and word bigram for train set'
-#abkhazia features mfcc $train_dir --pitch -v || exit 1
-#abkhazia language $train_dir -l word -n 2 -v || exit 1
+abkhazia features mfcc $train_dir --pitch --cmvn -v || exit 1
+abkhazia language $train_dir -l word -n 2 -v || exit 1
 
 echo 'computing MFCC features and word bigram for test set'
-# abkhazia features mfcc $test_dir --pitch -v || exit 1
-# abkhazia language $test_dir -l word -n 2 -v || exit 1
+abkhazia features mfcc $test_dir --pitch --cmvn -v || exit 1
+abkhazia language $test_dir -l word -n 2 -v || exit 1
 
 echo 'computing monophone model'
-# abkhazia acoustic monophone \
-#          -l $train_dir/language -f $train_dir/features \
-#          -v $train_dir || exit 1
+abkhazia acoustic monophone -v $train_dir || exit 1
 
 echo 'computing triphone model'
-# abkhazia acoustic triphone \
-#          -l $train_dir/language -f $train_dir/features -i $train_dir/monophone \
-#          -v $train_dir || exit 1
+abkhazia acoustic triphone -v -i $train_dir/monophone $train_dir || exit 1
 
 echo 'computing triphone-sa model'
-# abkhazia acoustic triphone-sa \
-#          -l $train_dir/language -f $train_dir/features -i $train_dir/triphone \
-#          -v $train_dir || exit 1
+abkhazia acoustic triphone-sa -v -i $train_dir/triphone $train_dir || exit 1
 
 echo 'computing DNN model'
-# abkhazia acoustic nnet --force --recipe -v \
-#          -l $train_dir/language -f $train_dir/features -i $train_dir/triphone-sa \
-#          $train_dir || exit 1
+abkhazia acoustic nnet --force --recipe -v -i $train_dir/triphone-sa $train_dir || exit 1
 
 
 echo 'decoding monophone model'
-# abkhazia decode si $test_dir -o $test_dir/decode_monophone_bis --recipe --force -v \
-#          -a $train_dir/monophone -l $train_dir/language || exit 1
+abkhazia decode si $test_dir -o $test_dir/decode_monophone --recipe --force -v \
+         -a $train_dir/monophone -l $train_dir/language || exit 1
 
 echo 'decoding triphone model'
-# abkhazia decode si $test_dir -o $test_dir/decode_triphone --recipe --force -v \
-#          -a $train_dir/triphone -l $train_dir/language || exit 1
+abkhazia decode si $test_dir -o $test_dir/decode_triphone --recipe --force -v \
+         -a $train_dir/triphone -l $train_dir/language || exit 1
 
 echo 'decoding triphone-sa model'
-# abkhazia decode sa $test_dir -o $test_dir/decode_triphone-sa --recipe --force -v \
-#          -a $train_dir/triphone-sa -l $train_dir/language
+abkhazia decode sa $test_dir -o $test_dir/decode_triphone-sa --recipe --force -v \
+         -a $train_dir/triphone-sa -l $train_dir/language || exit 1
 
 echo 'aligning tri-sa model'
 abkhazia align --recipe --force --verbose $test_dir -o $test_dir/align_trisa \
          -a $train_dir/triphone-sa -l $train_dir/language || exit 1
 
-# echo 'decoding DNN model'
-# abkhazia decode nnet $test_dir -o $test_dir/decode_nnet --recipe --force -v \
-#          -a $train_dir/nnet -l $train_dir/language || exit 1
-# #         --transform-dir $test_dir/decode_triphone-sa || exit 1
+echo 'decoding DNN model'
+abkhazia decode nnet $test_dir -o $test_dir/decode_nnet --recipe --force -v \
+         -a $train_dir/nnet -l $train_dir/language || exit 1
+#         --transform-dir $test_dir/decode_triphone-sa || exit 1
 
 exit 0
