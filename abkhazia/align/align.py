@@ -358,12 +358,15 @@ class Align(abstract_recipe.AbstractRecipe):
                             wlen -= 1
                             begin = False
                         idx += 1
-                except IndexError as err:
-                    print len(utt_align), idx, begin, wlen, word, lexicon[word]
-                    print self.corpus.silences
-                    for w in words:
-                        print w
-                    raise err
+                except IndexError:
+                    # TODO fix that bug!!
+                    self.log.error(
+                        'failed to export phones AND words, ignoring words '
+                        '(this is a bug in abkhazia)')
+                    self.log.debug(' '.join((
+                        str(len(utt_align)), str(idx), str(begin),
+                        str(wlen), str(word), str(lexicon[word]))))
+                    return phones
         return words
 
     def _export_words(self, int2phone, ali, post):

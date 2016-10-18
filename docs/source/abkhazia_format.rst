@@ -1,9 +1,9 @@
-====================
-Speech corpus format
-====================
+=============
+Speech corpus
+=============
 
-Definition
-==========
+Format definition
+=================
 
 A standardized corpus is stored as a directory composed of the
 following:
@@ -28,7 +28,7 @@ following:
 Supported corpora
 =================
 
-Supported corpora are:
+Supported corpora are (see also ``abkhazia prepare --help``:
 
 * Articulation Index Corpus LSCP
 
@@ -53,7 +53,7 @@ Once you have the raw data, you can import any of the above corpora in
 the standardized Abkhazia format using the ``abkhazia prepare``
 command, for exemple::
 
-  abkhazia prepare csj /path/to/raw/csj -o ./prepared_csj
+  abkhazia prepare csj /path/to/raw/csj -o ./prepared_csj --verbose
 
 
 Note that many corpora do not form a homogeneous whole, but are
@@ -68,9 +68,25 @@ analyses, you should generate a separate standardized corpus for each
 of them.
 
 
+Adding new corpora
+==================
 
-Files format
-============
+* Make a new Python class which inherit from
+  ``abkhazia.corpus.prepare.abstract_preparator``. So far, you need to
+  implement few methods to populate the transcriptions, lexicon,
+  etc... See the section below and the absctract preparator code for
+  detailed specifications, and the existing preparators for exemples.
+
+* To access your new corpus from the command line, register it in
+  ``abkhazia.commands.abkhazia_prepare``. An intermediate factory
+  class can be defined to define additional command line arguments, or
+  the default ``AbstractFactory`` class can be used (if your corpus
+  prepration relies on the CMU dictionary, use instead
+  ``AbstractFactoryWithCMU``.
+
+
+Detailed files format
+=====================
 
 .. note::
 
@@ -326,17 +342,3 @@ Not yet supported.
 -----------------------------
 
 Not yet supported.
-
-
-Add new corpora
-===============
-
-* Make a new Python class which inherit from
-  ``abkhazia.corpus.prepare.abstract_preparator``. So far, you need to
-  implement few methods to populate the transcriptions, lexicon,
-  etc... See the absctract preparator code for detailed
-  specifications, and the existing preparators for exemples.
-
-* Register it in ``abkhazia.commands.abkhazia_prepare``, an
-  intermediate factory class can be defined to add command line
-  arguments, or a default one can be used.

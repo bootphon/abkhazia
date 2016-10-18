@@ -3,7 +3,7 @@
 **Online documentation can be found [here](https://abkhazia.readthedocs.io/en/latest/)**
 
 The Abkhazia project makes it easy to obtain simple baselines for
-supervised ASR (using [kaldi](http://kaldi-asr.org)) and ABX tasks
+supervised ASR (using [Kaldi](http://kaldi-asr.org)) and ABX tasks
 (using [ABXpy](https://github.com/bootphon/ABXpy)) on the large corpora
 of speech recordings typically used in speech engineering, linguistics
 or cognitive science research.

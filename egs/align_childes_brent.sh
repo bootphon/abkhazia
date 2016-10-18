@@ -14,9 +14,10 @@
 # You should have received a copy of the GNU General Public License
 # along with abkahzia. If not, see <http://www.gnu.org/licenses/>.
 
-# This script computes forced alignment (along with posterior
-# probabilities) on the Brent corpus of the Childes database. The
-# final alignment will be in the $data_dir/align/alignment.txt
+# This script computes forced alignment on top of a triphone speaker
+# adpative acoustic model (along with posterior probabilities) on the
+# Brent corpus of the Childes database. The final alignment will be in
+# the $data_dir/align/alignment.txt
 
 data_dir=${1:-./align_childes_brent}
 data_dir=$(readlink -f $data_dir)

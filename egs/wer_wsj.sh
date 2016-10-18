@@ -17,8 +17,8 @@
 
 # This script compute Word Error Rate on the Wall Street Journal
 # corpus. The 4 acoustic models in the pipeline are evaluated (mono,
-# tri, tri-sa and dnn)
-
+# tri, tri-sa and dnn). Only Journalist Read selection, about 4h for
+# train, 4h for test (10 speakers each)
 
 data_dir=${1:-/home/mbernard/scratch/data/abkhazia/wsj}
 data_dir=$(readlink -f $data_dir)
@@ -65,12 +65,12 @@ abkhazia decode sa $test_dir -o $test_dir/decode_triphone-sa --recipe --force -v
          -a $train_dir/triphone-sa -l $train_dir/language || exit 1
 
 echo 'aligning tri-sa model'
-abkhazia align --recipe --force --verbose $test_dir -o $test_dir/align_trisa \
+abkhazia align --recipe --force --verbose --post $test_dir -o $test_dir/align_trisa \
          -a $train_dir/triphone-sa -l $train_dir/language || exit 1
 
 echo 'decoding DNN model'
 abkhazia decode nnet $test_dir -o $test_dir/decode_nnet --recipe --force -v \
          -a $train_dir/nnet -l $train_dir/language || exit 1
-#         --transform-dir $test_dir/decode_triphone-sa || exit 1
+#        --transform-dir $test_dir/decode_triphone-sa || exit 1
 
 exit 0

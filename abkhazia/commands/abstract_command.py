@@ -218,7 +218,10 @@ class AbstractKaldiCommand(AbstractCoreCommand):
         parser.add_argument(
             '-j', '--njobs', type=int, metavar='<njobs>',
             default=utils.default_njobs(),
-            help="""number of jobs for parallel computation, default is
-            to launch %(default)s jobs.""")
+            help="""
+            number of jobs for parallel computation, because Kaldi
+            used to run jobs per speakers, the number of jobs is
+            min(<njobs>, corpus.nspeakers). Default is to launch
+            %(default)s jobs.""")
 
         return parser, dir_group
