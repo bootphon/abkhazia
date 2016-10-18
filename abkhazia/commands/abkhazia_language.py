@@ -19,7 +19,7 @@ import os
 
 import abkhazia.utils as utils
 from abkhazia.commands.abstract_command import AbstractKaldiCommand
-from abkhazia.models.language_model import LanguageModel
+from abkhazia.models.language import LanguageModel
 from abkhazia.corpus import Corpus
 
 

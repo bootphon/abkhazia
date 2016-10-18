@@ -74,18 +74,19 @@ present at least once in the training set.
 ** Minor changes
 *** TODO upgrade the bootphon/kaldi repo
 *** TODO add cuda support in the install_kaldi.sh script
-
 *** TODO in export use symlinks to save some place
     (file in output-dir, link in recipe-dir)
 *** TODO updating abkhazia.cfg
     - Need of an automated way to update new versions of the installed
       configuration file in the ./configure script.
 *** TODO adjust log level by detecting WARNING and ERROR from Kaldi messages
+Those messages are actually logged in debug level, should be smater to be warnong/error
 2016-10-12 16:33:58,372 - DEBUG - ERROR (apply-cmvn:Write():kaldi-matrix.cc:1229) Failed to write matrix to stream
 2016-10-12 16:33:58,373 - DEBUG - WARNING (apply-cmvn:Write():util/kaldi-holder-inl.h:54) Exception caught writing Table object: ERROR (apply-cmvn:Write():kaldi-matrix.cc:1229) Failed to write matrix to stream
 *** TODO Have completion setup during installation (or configuration?)
 *** TODO Have a test_commands module for testing command line interface!
-* Open bugs [0/3]
+*** TODO Remove the wiki page on github, as we have now a readthedoc site
+* Open bugs [0/4]
 ** TODO acoustic with delta features
 *** problem
     Acoustic modeling fails when built on features with deltas. This is
@@ -94,6 +95,8 @@ present at least once in the training set.
  - assert no delta in features in init (get back the dim or
  delta order from feat-to-dim ?)
  - OR split deltas from raw when computing features
+** TODO acoustic mmonophone needs features with cmvn
+   document it and make a test during recipe creation.
 ** TODO comments in config file
    'data-directory: #/something' actually creates the ./#/someting directory
 ** TODO align --post --with-words

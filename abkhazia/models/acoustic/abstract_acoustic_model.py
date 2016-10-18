@@ -17,7 +17,7 @@ import os
 import shutil
 
 from abkhazia.models.features import Features
-from abkhazia.models.language_model import check_language_model
+from abkhazia.models.language import check_language_model
 from abkhazia.models.abstract_recipe import AbstractRecipe
 import abkhazia.utils as utils
 

@@ -13,4 +13,5 @@
 # You should have received a copy of the GNU General Public License
 # along with abkhazia. If not, see <http://www.gnu.org/licenses/>.
 
-from abkhazia.models.language.language_model import LanguageModel
+from abkhazia.models.language.language_model import (
+    LanguageModel, check_language_model, read_int2phone)

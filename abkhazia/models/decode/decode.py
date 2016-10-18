@@ -18,7 +18,7 @@ import os
 import shutil
 
 import abkhazia.models.abstract_recipe as abstract_recipe
-import abkhazia.models.language_model as language_model
+import abkhazia.models.language as language
 import abkhazia.models.features as features
 import abkhazia.models.acoustic as acoustic
 import abkhazia.utils as utils
@@ -68,7 +68,7 @@ class Decode(abstract_recipe.AbstractRecipe):
         super(Decode, self).check_parameters()
 
         features.Features.check_features(self.feat_dir)
-        language_model.check_language_model(self.lm_dir)
+        language.check_language_model(self.lm_dir)
         acoustic.check_acoustic_model(self.am_dir)
 
         self.meta.source += '\n' + '\n'.join((

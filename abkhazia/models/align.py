@@ -36,8 +36,8 @@ import shutil
 
 import abkhazia.utils as utils
 import abkhazia.models.abstract_recipe as abstract_recipe
-from abkhazia.models.language_model import check_language_model, read_int2phone
-from abkhazia.models.acoustic_model import check_acoustic_model
+from abkhazia.models.language import check_language_model, read_int2phone
+from abkhazia.models.acoustic import check_acoustic_model
 from abkhazia.models.features import Features
 
 

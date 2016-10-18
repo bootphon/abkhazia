@@ -94,19 +94,19 @@ class AbkhaziaAlign(AbstractKaldiCommand):
         corpus = Corpus.load(corpus_dir, validate=args.validate, log=log)
 
         # get back the language model directory
-        lang = (os.path.dirname(corpus_dir) if args.language_model is None
+        lang = (os.path.join(os.path.dirname(corpus_dir), 'language')
+                if args.language_model is None
                 else os.path.abspath(args.language_model))
-        lang += '/language'
 
         # get back the acoustic model directory
-        acoustic = (os.path.dirname(corpus_dir) if args.acoustic_model is None
+        acoustic = (os.path.join(os.path.dirname(corpus_dir), 'acoustic')
+                    if args.acoustic_model is None
                     else os.path.abspath(args.acoustic_model))
-        acoustic += '/acoustic'
 
         # get back the features directory
-        feat = (os.path.dirname(corpus_dir) if args.features is None
+        feat = (os.path.join(os.path.dirname(corpus_dir), 'features')
+                if args.features is None
                 else os.path.abspath(args.features))
-        feat += '/features'
 
         # parse the alignment level
         if args.words_only:
