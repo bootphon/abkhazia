@@ -27,9 +27,12 @@ class Features(abstract_recipe.AbstractRecipe):
     name = 'features'
 
     @staticmethod
-    def check_features(directory):
+    def check_features(directory, cmvn=False):
         """Raise IOError if feats.scp and wavs.scp are not in `directory`"""
-        for f in ('feats.scp', 'wav.scp'):
+        scp = ['feats.scp', 'wav.scp']
+        if cmvn is True:
+            scp.append('cmvn.scp')
+        for f in scp:
             if not os.path.isfile(os.path.join(directory, f)):
                 raise IOError(
                     'Invalid features directory, "{}" not found: {}'.format(

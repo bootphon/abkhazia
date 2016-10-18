@@ -18,6 +18,7 @@ import os
 import sys
 import pytest
 
+import abkhazia.models.features as features
 import abkhazia.models.acoustic as acoustic
 import abkhazia.utils as utils
 from .conftest import assert_no_expr_in_log, assert_expr_in_log
@@ -54,3 +55,30 @@ def test_acoustic_njobs(corpus, features, lm_word, njobs, tmpdir):
     assert str(am.options['num-iterations']) == '2'
     assert_expr_in_log(flog, ' --num-iters 2 ')
     assert_no_expr_in_log(flog, 'error')
+
+
+# monophone needs features with cmvn, check it works
+def test_monophone_cmvn_good(corpus, features, lm_word, tmpdir):
+    output_dir = str(tmpdir.mkdir('am_mono'))
+    am = acoustic.Monophone(corpus, lm_word, features, output_dir)
+    am.check_parameters()
+
+
+# check monophone fails without cmvn
+def test_monophone_cmvn_bad(corpus, lm_word, tmpdir):
+    features_dir = str(tmpdir.mkdir('feats'))
+    feat = features.Features(corpus, features_dir)
+    feat.use_pitch = False
+    feat.use_cmvn = False
+    feat.delta_order = 0
+    feat.compute()
+
+    output_dir = str(tmpdir.mkdir('am_mono'))
+    am = acoustic.Monophone(corpus, lm_word, features_dir, output_dir)
+    with pytest.raises(IOError) as err:
+        am.check_parameters()
+    assert 'cmvn' in str(err)
+
+
+# def test_nnet(am_nnet):
+#     assert 1

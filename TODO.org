@@ -43,8 +43,8 @@ present at least once in the training set.
 ** documentation
   - [ ] have more detailed command description on 'abkhazia <command>
     --help'. Assume the user doesn't know abkhazia or kaldi.
-  - [ ] improve the online documentation
-    - [ ] install and configure
+  - [-] improve the online documentation
+    - [X] install and configure
     - [ ] preparators for new corpora
     - [ ] ASR: LM, AM, features, alignment, etc
     - [ ] ABX: item files generation from alignment
@@ -86,7 +86,7 @@ Those messages are actually logged in debug level, should be smater to be warnon
 *** TODO Have completion setup during installation (or configuration?)
 *** TODO Have a test_commands module for testing command line interface!
 *** TODO Remove the wiki page on github, as we have now a readthedoc site
-* Open bugs [0/4]
+* Open bugs [0/3]
 ** TODO acoustic with delta features
 *** problem
     Acoustic modeling fails when built on features with deltas. This is
@@ -95,8 +95,6 @@ Those messages are actually logged in debug level, should be smater to be warnon
  - assert no delta in features in init (get back the dim or
  delta order from feat-to-dim ?)
  - OR split deltas from raw when computing features
-** TODO acoustic mmonophone needs features with cmvn
-   document it and make a test during recipe creation.
 ** TODO comments in config file
    'data-directory: #/something' actually creates the ./#/someting directory
 ** TODO align --post --with-words

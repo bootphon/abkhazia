@@ -17,6 +17,7 @@
 import os
 
 import abkhazia.utils as utils
+import abkhazia.models.features as features
 from abkhazia.models.acoustic.abstract_acoustic_model import (
     AbstractAcousticModel)
 
@@ -24,7 +25,7 @@ from abkhazia.models.acoustic.abstract_acoustic_model import (
 class Monophone(AbstractAcousticModel):
     """Wrapper on Kaldi egs/wsj/s5/steps/train_mono.sh
 
-    Training is done on an abkhazia corpus, from computed features.
+    Training is done on an abkhazia corpus, from computed features with cmvn.
 
     The following options are not forwarded from Kaldi to
     Abkhazia: power, cmvn_opts.
@@ -72,6 +73,12 @@ class Monophone(AbstractAcousticModel):
                  output_dir, log=utils.logger.null_logger):
         super(Monophone, self).__init__(
             corpus, lm_dir, feats_dir, output_dir, log=log)
+
+    def check_parameters(self):
+        super(Monophone, self).check_parameters()
+
+        # ensure cmvn are computed for the features
+        features.Features.check_features(self.input_dir, cmvn=True)
 
     def run(self):
         self._train_mono()
