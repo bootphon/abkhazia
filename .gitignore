@@ -85,3 +85,5 @@ egs/exemple_buckeye/*
 debug/
 /egs/acoustic_model_buckeye/*
 /egs/triphones.item
+#ignore .swp
+*.swp

@@ -77,13 +77,13 @@ class CorpusMergeWavs(object):
         except:
             raise OSError('sox is not installed on your system')
 
-         # get input and output wav dir
+        # get input and output wav dir
         corpus_dir=os.path.abspath(corpus_dir)
         corpus_dir=os.path.join(corpus_dir,function)
         corpus_dir=os.path.join(corpus_dir,'data')
         wav_dir=os.path.join(corpus_dir,'wavs')
-       # if not os.path.isdir(wav_dir):
-       #     raise IOError('invalid corpus: not found{}'.format(path))
+        if not os.path.isdir(wav_dir):
+            raise IOError('invalid corpus: not found{}'.format(wav_dir))
         
 
         utt2dur = self.utt2dur
@@ -106,11 +106,13 @@ class CorpusMergeWavs(object):
         spk2wav_dur=dict()
         for spkr in speakers:
             wav_utt=[self.corpus.segments[utt][0] for utt in spk2utts[spkr]]
-            # we want uniq values in the list of wav :
+            
+            # we want unique values in the list of wav :
             wav_utt=list(set(wav_utt))
-            print wav_utt
+            self.log.debug(wav_utt) 
             spk2wavs[spkr]=wav_utt
-            #first wav file in the list doesn't have an offset since it's first
+
+            #first wav file in the list doesn't have an offset
             spk2wav_dur[spkr]=[]
             spk2wav_dur[spkr].append(0)
             for wav in wav_utt:
@@ -120,30 +122,11 @@ class CorpusMergeWavs(object):
                     frames = wav_file.getnframes()
                     rate = wav_file.getframerate()
                     duration = frames / float(rate)
-                    print('wav file %s has a duration of %d',wav_name,duration)
+                    self.log.debug('wav file {wav} has a duration of {dur}'.format(wav=wav_name,dur=duration))
 
-                #comm="soxi -D "+wav_path
-                #print comm
-                #p1=subprocess.check_output(shlex.split(comm))
-                #spk2wav_dur[spkr].append(float(p1))
                 spk2wav_dur[spkr].append(duration)
-            if len(spk2wav_dur[spkr])!=len(wav_utt)+1:
-                """ length should be the same, as spk2wav_dur declares 
-                the length of waves in wav_utt
-                """
-                raise OSError('error with length detection using soxi')
-                #print 'normal'
-            #x_range=range(len(spk2wav_dur[spkr]))
-            #print x_range
-            #plt.clf()
-            #plt.bar(x_range,spk2wav_dur[spkr],alpha=0.5)
 
-            cumulated_duration=np.cumsum(spk2wav_dur[spkr])
-            print ('cumulated_duration[0] = ',cumulated_duration[0])
-            #plt.bar(x_range,cumulated_duration[:len(spk2wav_dur[spkr])],0.50,color='r')
-            #plt.show()
-            #spk2wav_dur[spkr]=np.cumsum(spk2wav_dur[spkr])
-            spk2wav_dur[spkr]=cumulated_duration
+            spk2wav_dur[spkr]=np.cumsum(spk2wav_dur[spkr])
             
 
 
@@ -155,7 +138,6 @@ class CorpusMergeWavs(object):
                 #print spk2wav_dur_temp
                 wav_dur_dict=dict(zip(spk2wavs[spkr],spk2wav_dur_temp))
                 offset=wav_dur_dict[utt_wav_id]
-                print 'putting offset ',offset,'for wav ',utt_wav_id
                 start=self.corpus.segments[utt][1]
                 stop=self.corpus.segments[utt][2]
 
@@ -166,29 +148,34 @@ class CorpusMergeWavs(object):
         #merge the wavs 
         spk2list_wav_to_merge=dict() 
         for spkr in speakers:
+            
+            # create the list of waves we want to merge
             wav_name='.'.join([spkr,'wav'])
             wav_input_path='/'.join([wav_dir,wav_name])
             list_wav_to_merge=[]
+
             for wav in spk2wavs[spkr]:
                 wav_to_merge='.'.join([wav,'wav'])
                 wav_to_merge='/'.join([wav_dir,wav_to_merge])
                 list_wav_to_merge.append(wav_to_merge)
-
+            
+            # create the output wave
             spk2list_wav_to_merge[spkr]=list_wav_to_merge
             data=[]
             for wav_file in spk2list_wav_to_merge[spkr]:
                 wav_to_merge=wave.open(wav_file,'rb')
-                print 'for speaker ',spkr,' adding the wave ',wav_file
+                self.log.debug('for speaker {spkr} adding the wave {wav}'.format(spkr=spkr,wav=wav_file))
                 data.append( [wav_to_merge.getparams(), wav_to_merge.readframes(wav_to_merge.getnframes())])
                 wav_to_merge.close
-            output= wave.open(wav_input_path,'wb')
-            output.setparams(data[0][0])
+            output_wave= wave.open(wav_input_path,'wb')
+            output_wave.setparams(data[0][0])
             for nb in range(len(spk2wavs[spkr])):
-                output.writeframes(data[nb][1])
+                output_wave.writeframes(data[nb][1])
 
-            output.close()
+            output_wave.close()
+
+            ''' we can also merge the files using sox : '''
             #list_command = ["sox"]+list_wav_to_merge+[wav_input_path]
-            #print list_command
             #command = " ".join(list_command)
             #subprocess.call(shlex.split(command))
             
@@ -201,26 +188,23 @@ class CorpusMergeWavs(object):
 
             self.corpus.wavs[spkr]=wav_input_path
             if os.path.isfile(wav_input_path):
-                print 'last time'
-                #comm="soxi -D "+wav_input_path
-                #p1=subprocess.check_output(shlex.split(comm))
                 duration=0
                 with contextlib.closing(wave.open(wav_input_path,'r')) as f:
                     frames=f.getnframes()
                     rate = f.getframerate()
                     duration=frames/float(rate)
-                
-                if duration!=spk2wav_dur[spkr][-1]:
-                    #raise IOError('the merged wave length is different from the sum of the initial wave file')
-                    print duration ,spk2wav_dur[spkr][-1]
+
+                # check if the length of the output is the sum of the wave files lengths
+                if not duration<spk2wav_dur[spkr][-1]+(1.0/16000) or not  duration>spk2wav_dur[spkr][-1]-(1.0/16000):
+                    self.log.info('sum of lengths : {dur}, output length : {out}'.format(dur=spk2wav_dur[spkr][-1],out=duration))
+                    raise IOError('the merged wave length is different from the sum of the initial wave file')
                     
+            #remove the intput files        
             for wav_path in spk2list_wav_to_merge[spkr]:
                 if os.path.isfile(wav_path):
-                    print wav_path
                     os.remove(wav_path)
-                else:
-                    print 'no hello'
-        #update wav set
+
+        # validate the corpus
         self.corpus.validate()
                 
 

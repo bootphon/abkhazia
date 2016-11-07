@@ -38,7 +38,7 @@ class CorpusSaver(object):
             return os.path.join(path, f)
 
         if not no_wavs:
-            cls.save_wavs(corpus, _path('wavs'))
+            cls.save_wavs(corpus, _path('wavs'),copy_wavs=True)
         cls.save_lexicon(corpus, _path('lexicon.txt'))
         cls.save_segments(corpus, _path('segments.txt'))
         cls.save_text(corpus, _path('text.txt'))
@@ -65,10 +65,8 @@ class CorpusSaver(object):
                 raise exc
             pass
 
-        func = shutil.copy #if copy_wavs is True else os.symlink
+        func = shutil.copy if copy_wavs is True else os.symlink
         for wav in (os.path.realpath(w) for w in corpus.wavs.itervalues()):
-            print 'saving wav:' 
-            print wav
             try:
                 func(wav, os.path.join(path, os.path.basename(wav)))
             except shutil.Error:

@@ -45,7 +45,7 @@ class AbkhaziaFilter(AbstractCoreCommand):
                 them)''')
            
         group.add_argument(
-            '-p','--plot',type=bool,metavar='<plot>',default=False,
+            '-p','--plot',type=str,metavar='<plot>',default='False',
             help='''If plot==True, a plot of the speech duration distribution and
             of the filtering function will be displayed''')
        
@@ -55,22 +55,30 @@ class AbkhaziaFilter(AbstractCoreCommand):
     def run(cls, args):
         corpus_dir, output_dir = cls._parse_io_dirs(args)
         log = utils.logger.get_log(
-            os.path.join(output_dir, 'plot.log'), verbose=args.verbose)
+            os.path.join(output_dir, 'filter.log'), verbose=args.verbose)
 
         corpus = Corpus.load(corpus_dir, validate=args.validate, log=log)
+
+        # parse the plot arg as a bool
+        if args.plot=="True":
+            plot=True
+        elif args.plot=="False": 
+            plot=False
+        else:
+            plot=False
 
         # retrieve the test proportion
         (output,not_kept_utterances)=corpus.create_filter(
                 function=args.function,
                 nb_speaker=args.nb_speaker,
-                plot=args.plot)
-        print type(output) 
+                plot=plot)
+        
         
         output.save(os.path.join(output_dir,args.function,'data'),no_wavs=False)
-        print 'entering the trimming function'
+
         output.trim(corpus_dir,output_dir,args.function,not_kept_utterances)
 
         output.merge_wavs(output_dir,args.function)
         
-        output.save(os.path.join(output_dir,args.function,'data'),no_wavs=False)
+        output.save(os.path.join(output_dir,args.function,'data'),no_wavs=True)
 

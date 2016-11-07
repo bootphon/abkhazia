@@ -44,9 +44,8 @@ class CorpusFilter(object):
       of the speech distribution and the cutting function
     """
     def __init__(self, corpus, log=logger.null_logger(),
-                 random_seed=None, prune=True):
+                 random_seed=None):
         self.log = log
-        self.prune = prune
         self.corpus = corpus
 
         # read utt2spk from the input corpus
@@ -77,16 +76,7 @@ class CorpusFilter(object):
 
         self.log.info('sorting speaker by the total duration of speech')
 
-        # For each speaker, get the total duration of speech
-        #for spkr in speakers:
-        #    spk_utts=[utt_id for utt_id, utt_speaker in utts if utt_speaker == spkr]
-        #    duration=sum([utt2dur[utt_id] for utt_id in spk_utts])
-        #    spk2dur[spkr]=duration
-        #    spk2utts[spkr]=spk_utts
-        #    self.log.debug('for speaker %s , total duration is %i',
-        #                    spkr,duration/60)
-        #self.spk2utts=spk2utts
-        
+        # Sort the utterances in order of appearance in the wave file 
         spk2utts_temp=defaultdict(list)
         for utt,spkr in utts:
             utt_start=self.corpus.segments[utt][1]
@@ -98,6 +88,7 @@ class CorpusFilter(object):
             spk2dur[spkr]=duration
  
         self.spk2utts=spk2utts
+
         # Sort Speech duration from longest to shortest
         sorted_speaker=sorted(spk2dur.iteritems(), key=lambda(k,v):(v,k))
         sorted_speaker.reverse()
@@ -113,27 +104,25 @@ class CorpusFilter(object):
         times=[duration for (spk_id,duration) in sorted_speaker]
         times_reduced=[format(u0,'.1f') for u0 in times]
         total=self.corpus.duration(format='seconds')
-        self.log.info('corpus.duration=%i, sum(sorted_speaker)=%i',total/60,sum(times)/60)
+        self.log.debug('corpus.duration=%i, sum(sorted_speaker)=%i',total/60,sum(times)/60)
         (spk_id0,duration0)=sorted_speaker[0]
         x_axis=range(1,1+len(names))
         plt.bar(x_axis,times,width=0.7,align="center",alpha=0.7,label="speech time")
 
-        # Compute the power law distribution, if requested
+        # Compute the distribution used to cut the corpus
         if function == "exponential":
             distrib=[duration0*exp(-0.4*(ind-1)) for ind in x_axis]
         elif function =="power-law":
             exponent=1
-            distrib=[duration0/((ind)**exponent)+15 for ind in x_axis]
-            #print type(distrib)
+            distrib=[duration0/((ind)**exponent)+30 for ind in x_axis]
         elif function =="step":
             #number of speaker for which we keep the whole speech
             spk_threshold=5 
+            
             #duration of speech we keep for the other speakers : 
-            dur_threshold=5*60
+            dur_threshold=10*60
             distrib=times[0:spk_threshold]
             distrib[spk_threshold+1:len(times)]=[dur_threshold] *(len(times)-spk_threshold)
-            #print len(distrib)
-            #distrib[spk_threshold+1:len(times)]=dur_threshold
             
         distrib_reduced=[format(u0,'.1f') for u0 in distrib]
         plt.scatter(x_axis,distrib,marker='*',color='r',
@@ -174,17 +163,14 @@ class CorpusFilter(object):
         utt2dur=self.utt2dur
         not_kept_utts=defaultdict(list)
         corpus=self.corpus
+        
+        # create list of utterances we want to keep, utterances we don't want to keep
         for speaker in names:
-            #print speaker
             utt_and_dur=zip(spk2utts[speaker],[utt2dur[utt] for utt in spk2utts[speaker]])
-            #print (utt_and_dur[0])
             decreasing_utts=sorted(utt_and_dur,key=lambda utt_and_dur: utt_and_dur[1],reverse=True)
             ascending_utts=sorted(utt_and_dur,key=lambda utt_and_dur: utt_and_dur[1])
 
-            ordered_list_utts=[utt for utt,dur in decreasing_utts]
-            small_utts_list=[utt for utt,dur in ascending_utts]
             nb_utt=0
-            #for utts in ordered_list_utts:
             for utts in spk2utts[speaker]:
                 time+=utt2dur[utts]
                 if time<limits[speaker] or nb_utt<10:
@@ -197,50 +183,22 @@ class CorpusFilter(object):
                     break
 
                 
-            #for small_utts in small_utts_list:
-            #    time+=utt2dur[small_utts]
-            #    if time<limits[speaker]:
-            #        utt_ids.append(utts)
-            #    else:
-            #        time=0
-            #        break
             kept_utt_set=set(utt_ids)
-            #not_kept_utts[speaker]=[(utt,corpus.segments[utt]) for utt in spk2utts[speaker] if utt not in kept_utt_set]
              
             # here we build the list of utts we remove, and we adjust the boundaries of
-            # the other utts, in order to still be true
+            # the other utterancess, in order to have correct timestamps
             
             for utt in spk2utts[speaker]:
-                for wav in corpus.wavs:
-                    #for each wav, we compute the cumsum of the lengths of the utts we remove
-                    # in order to have correct timestamps for the other utts in the files
-                    offset=0
-                    wav_id,utt_tbegin,utt_tend=corpus.segments[utt]
-                    if wav_id!=wav:
-                        continue
-                    if wav_id=='s0302a':
-                        print utt
-                    corpus.segments[utt]=(wav_id,utt_tbegin-offset,utt_tend-offset)
-                    if utt_tbegin-offset<0 or utt_tend-offset<0:
-                        print 'weird'
-                        print utt_tbegin-offset
-                        print utt_tend-offset
-                    if utt not in kept_utt_set:
+                #for each wav, we compute the cumsum of the lengths of the utts we remove
+                # in order to have correct timestamps for the other utts in the files
+                offset=0
+                wav_id,utt_tbegin,utt_tend=corpus.segments[utt]
+                corpus.segments[utt]=(wav_id,utt_tbegin-offset,utt_tend-offset)
+                if utt_tbegin-offset<0 or utt_tend-offset<0:
+                    self.log.info('WARN : offset is greater than utterance boundaries')
+                if utt not in kept_utt_set:
+                    offset=offset+utt2dur[utt]
+                    not_kept_utts[speaker].append((utt,corpus.segments[utt]))
 
-                        offset=offset+utt2dur[utt]
-                        #print offset
-                        not_kept_utts[speaker].append((utt,corpus.segments[utt]))
-
-            print set(not_kept_utts).intersection(kept_utt_set)
-            
-        #print not_kept_utts               
-        #print kept_utt_set
         return(self.corpus.subcorpus(utt_ids,prune=True,name=function,validate=True),
                 not_kept_utts);
-        
-
-
-
-
-                
-

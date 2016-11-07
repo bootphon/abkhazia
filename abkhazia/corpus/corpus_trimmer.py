@@ -22,17 +22,19 @@ import wave
 import sys 
 import matplotlib.pyplot as plt
 import numpy as np
+import wave
+import contextlib
 
 from itertools import * 
 from operator import itemgetter, attrgetter, methodcaller
 from collections import defaultdict
-from abkhazia.utils import open_utf8
+from abkhazia.utils import open_utf8, logger
 
 
 class CorpusTrimmer(object):
     """Removes utterances from a corpus"""
 
-    def __init__(self,corpus,not_kept_utts):
+    def __init__(self,corpus,not_kept_utts,log=logger.null_logger()):
         """Removes utterances in 'not_kept_utts' from the
         wavs in the corpus
 
@@ -42,7 +44,7 @@ class CorpusTrimmer(object):
         not_kept_utts=(speaker :[(utt1,wav_id,start_time,stop_time),
         (utt1,wav_id,start_time,stop_time)...])
         """
-
+        self.log = log
         self.corpus = corpus
         self.not_kept_utts = not_kept_utts
         
@@ -59,9 +61,8 @@ class CorpusTrimmer(object):
             subprocess.check_output(shlex.split('which sox'))
         except:
             raise OSError('sox is not installed on your system')
-        print 'hello' 
 
-        # get input and output wav dir
+        # get input and output wav paths
         corpus_dir=os.path.abspath(corpus_dir)
         wav_dir=os.path.join(corpus_dir,'wavs')
         if not os.path.isdir(wav_dir):
@@ -74,11 +75,12 @@ class CorpusTrimmer(object):
             os.makedirs(output_wav_dir)
         
         # remove utterances from the wavs using sox
-        i=0
         for speaker in self.speakers:
             utt_to_remove= self.not_kept_utts[speaker]
-            #print utt_to_remove
+
+            # don't trim utterances for wave file that won't be kept at all
             wavs_output=[(wav_id,start,stop) for utt_id,(wav_id,start,stop) in utt_to_remove if wav_id in self.corpus.wavs]
+            
             wavs_start_dict=defaultdict(list)
             wavs_stop_dict=defaultdict(list)
             wavs_duration_dict=defaultdict(list)
@@ -88,8 +90,10 @@ class CorpusTrimmer(object):
                 wavs_duration_dict[wav_id].append(stop-start)
             
             for wav in wavs_start_dict:
+                # start removing utterances at the end and finish at the begining
                 wavs_starts_temp=sorted(wavs_start_dict[wav],reverse=True)
                 wavs_stop_temp=sorted(wavs_stop_dict[wav],reverse=True)
+
                 wav_name='.'.join([wav,'wav'])
                 wav_input_path='/'.join([wav_dir,wav_name])
                 wav_output_path='/'.join([output_wav_dir,wav_name])
@@ -99,38 +103,26 @@ class CorpusTrimmer(object):
                 for start,stop in zip(wavs_starts_temp,wavs_stop_temp):
                     times='='+str(start)+' '+'='+str(stop)
                     timestamps=' '.join([times,timestamps])
-                    
+
+                # call sox to trim part of the signal    
                 list_command=['sox',wav_input_path,wav_output_path,'trim 0',timestamps]
                 command = ' '.join(list_command)
-                    
-                 
-                subprocess.call(shlex.split(command))              
-                print 'for wav {wav_id}, {duration} seconds should have been trimmed'.format(wav_id=wav,duration= sum(wavs_duration_dict[wav]))
-                comm='soxi -D '+wav_output_path
-                p1=subprocess.check_output(shlex.split(comm))
-                print 'checking length of output trimmed file'
-                if float(p1)==0:
-                    print 'removing empty file'
-                    print wav_output_path
-                    print p1
+                
+                process=subprocess.Popen(shlex.split(command),stdout=subprocess.PIPE,stderr=subprocess.PIPE)
+                stdout,stderr=process.communicate()
+
+                if stdout:
+                    self.log.debug(stdout)
+                if stderr:
+                    self.log.debug(stderr)
+                   
+                self.log.debug('for wav {wav_id}, {duration} seconds should have been trimmed'.format(wav_id=wav,duration= sum(wavs_duration_dict[wav])))
+                
+                # if the output file is empty, remove it
+                with contextlib.closing(wave.open(wav_output_path,'r')) as wav_file:
+                    frames=wav_file.getnframes()
+                
+                self.log.debug('checking length of output trimmed file')
+                if frames==0:
+                    self.log.debug('removing empty file : {wav_id}'.format(wav_id=wav_output_path))
                     os.remove(wav_output_path)
-                    
-                #wav1=wave.open(wav_input_path,'r')
-                #wav2=wave.open(wav_output_path,'r')
-
-                #signal1 = wav1.readframes(-1)
-                #signal1 = np.fromstring(signal1, 'Int16')
-
-                #signal2 = wav2.readframes(-1)
-                #signal2 = np.fromstring(signal2, 'Int16')
-
-
-                ##If Stereo
-                #if wav1.getnchannels() == 2:
-                #    print 'Just mono files'
-                #    sys.exit(0)
-
-                #f,axarr = plt.subplots(2,sharex=True)
-                #axarr[0].plot(signal1)
-                #axarr[1].plot(signal2)
-                #plt.show()
