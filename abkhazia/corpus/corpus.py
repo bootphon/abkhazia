@@ -22,6 +22,9 @@ from abkhazia.corpus.corpus_saver import CorpusSaver
 from abkhazia.corpus.corpus_loader import CorpusLoader
 from abkhazia.corpus.corpus_validation import CorpusValidation
 from abkhazia.corpus.corpus_split import CorpusSplit
+from abkhazia.corpus.corpus_filter import CorpusFilter
+from abkhazia.corpus.corpus_trimmer import CorpusTrimmer
+from abkhazia.corpus.corpus_mergeWavs import CorpusMergeWavs
 import abkhazia.utils as utils
 #from abkhazia.utils import abkhazia_base, default_njobs, logger
 
@@ -140,6 +143,16 @@ class Corpus(utils.abkhazia_base.AbkhaziaBase):
 
         """
         CorpusValidation(self, njobs=njobs, log=self.log).validate()
+
+    def create_filter(self,function,nb_speaker=None,plot=True):
+        """Filter the speech duration distribution of the corpus
+            
+            if plot==True, a plot of the distribution is shown
+        """
+        return(CorpusFilter(self).create_filter(function,nb_speaker,plot))
+
+    def trim(self,corpus_dir,output_dir,function,not_kept_utts):
+        CorpusTrimmer(self,not_kept_utts).trim(corpus_dir,output_dir,function,not_kept_utts)
 
     def is_valid(self, njobs=utils.default_njobs()):
         """Return True if the corpus is in a valid state"""
@@ -374,3 +387,6 @@ class Corpus(utils.abkhazia_base.AbkhaziaBase):
                     phones.append(self.lexicon['<unk>'])
             phonemized[utt_id] = ' '.join(phones)
         return phonemized
+
+    def merge_wavs(self,corpus_dir,function):
+        CorpusMergeWavs(self).merge_wavs(corpus_dir,function)

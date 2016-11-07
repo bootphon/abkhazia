@@ -16,6 +16,7 @@
 
 import os
 import shutil
+import errno
 from abkhazia.utils import open_utf8
 
 
@@ -57,11 +58,21 @@ class CorpusSaver(object):
         symlinks
 
         """
-        os.makedirs(path)
+        try:
+            os.makedirs(path)
+        except OSError as exc:
+            if exc.errno != errno.EEXIST:
+                raise exc
+            pass
 
-        func = shutil.copy if copy_wavs is True else os.symlink
+        func = shutil.copy #if copy_wavs is True else os.symlink
         for wav in (os.path.realpath(w) for w in corpus.wavs.itervalues()):
-            func(wav, os.path.join(path, os.path.basename(wav)))
+            print 'saving wav:' 
+            print wav
+            try:
+                func(wav, os.path.join(path, os.path.basename(wav)))
+            except shutil.Error:
+                pass
 
     @staticmethod
     def save_lexicon(corpus, path):
