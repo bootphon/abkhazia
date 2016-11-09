@@ -105,7 +105,7 @@ class _AmBase(AbstractKaldiCommand):
             # get back the input directory
             input_dir = (
                 os.path.join(os.path.dirname(corpus_dir),
-                             '/{}'.format(cls.prev_step[1]))
+                             '{}'.format(cls.prev_step[1]))
                 if args.input_dir is None
                 else os.path.abspath(args.input_dir))
 
