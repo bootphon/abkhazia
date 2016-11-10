@@ -62,13 +62,14 @@ class CorpusTriphones(object):
         phones_output=defaultdict(list)
         phones=self.read_alignments(alignment)
         i=0
+        triphones=defaultdict(list)
         for spkr in speakers:
             i=i+1
-            #For each speaker, group the timestamps by phones    
+            #For each speaker, group the timestamps by phones
+            #this loop is based on the fact that one speaker = one wave file
             sorted_phones=sorted(phones[spkr],key=itemgetter(1))
-            triphones=self.list_triphones(sorted_phones)
-            if i==1:
-                print triphones[0:3]
+            triphones[spkr]=self.list_triphones(sorted_phones)
+            
             ##Add the phones to the list of phones we want to keep
             ##until we reach a file of 10 minutes for this speaker
             #time=0
@@ -82,6 +83,7 @@ class CorpusTriphones(object):
             #    #add context to the selected phone
             #    time_to_add = (length_context-(stop-start))/2
             #    phones_output[spkr].append((start-time_to_add,stop+time_to_add))
+        return(triphones)
     
     def read_alignments(self,align_path):
         """Read the alignment txt file at align_path and return a  

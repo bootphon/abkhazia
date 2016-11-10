@@ -31,3 +31,4 @@ from abkhazia.commands.abkhazia_prepare import AbkhaziaPrepare
 from abkhazia.commands.abkhazia_split import AbkhaziaSplit
 from abkhazia.commands.abkhazia_filter import AbkhaziaFilter
 from abkhazia.commands.abkhazia_features import AbkhaziaFeatures
+from abkhazia.commands.abkhazia_triphones import AbkhaziaTriphones

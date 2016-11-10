@@ -26,6 +26,7 @@ from abkhazia.corpus.corpus_filter import CorpusFilter
 from abkhazia.corpus.corpus_trimmer import CorpusTrimmer
 from abkhazia.corpus.corpus_mergeWavs import CorpusMergeWavs
 from abkhazia.corpus.corpus_triphones import CorpusTriphones
+from abkhazia.corpus.corpus_miniwavs import CorpusMiniWavs
 import abkhazia.utils as utils
 #from abkhazia.utils import abkhazia_base, default_njobs, logger
 
@@ -158,6 +159,9 @@ class Corpus(utils.abkhazia_base.AbkhaziaBase):
 
     def phones_timestamps(self,length_context,output_dir,alignment):
         CorpusTriphones(self).phones_timestamps(length_context,output_dir,alignment)
+
+    def create_mini_wavs(self,corpus_dir,duration,alignment,triphone,overlap):
+        CorpusMiniWavs(self).create_mini_wavs(corpus_dir,duration,alignment,triphones,overlap)
     
     def is_valid(self, njobs=utils.default_njobs()):
         """Return True if the corpus is in a valid state"""

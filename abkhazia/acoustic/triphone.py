@@ -92,6 +92,7 @@ class Triphone(AbstractAcousticModel):
             corpus, lm_dir, feats_dir, output_dir, log=log)
 
         self.mono_dir = os.path.abspath(mono_dir)
+        print mono_dir
         utils.check_directory(
             self.mono_dir, ['tree', 'final.mdl', 'final.occs'])
 

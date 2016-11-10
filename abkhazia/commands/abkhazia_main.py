@@ -37,7 +37,8 @@ from abkhazia.commands import (
     AbkhaziaAcoustic,
     AbkhaziaDecode,
     AbkhaziaAlign,
-    AbkhaziaFilter)
+    AbkhaziaFilter,
+    AbkhaziaTriphones)
 
 # TODO get that from setup.py
 __version__ = '0.3'
@@ -54,7 +55,8 @@ class Abkhazia(object):
         AbkhaziaAcoustic,
         AbkhaziaAlign,
         AbkhaziaDecode,
-        AbkhaziaFilter
+        AbkhaziaFilter,
+        AbkhaziaTriphones
     ]
 
     # a string describing abkhazia and its subcommands

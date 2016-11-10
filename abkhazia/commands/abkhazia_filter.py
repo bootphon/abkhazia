@@ -12,7 +12,7 @@
 #
 # You should have received a copy of the GNU General Public License
 # along with abkhazia. If not, see <http://www.gnu.org/licenses/>.
-"""Implementation of the 'abkazia plot' command"""
+"""Implementation of the 'abkazia filter' command"""
 
 import os
 
@@ -48,7 +48,17 @@ class AbkhaziaFilter(AbstractCoreCommand):
             '-p','--plot',type=str,metavar='<plot>',default='False',
             help='''If plot==True, a plot of the speech duration distribution and
             of the filtering function will be displayed''')
-       
+        
+        group.add_argument(
+            '-tr','--trim',type=str,default='True',
+            help='''if trim==True, the unwanted utterances will be removed from the 
+            wav_files, and the segments updated accordingly''')
+        group.add_argument(
+            '-m','--merge',type=str,default='True',
+            help='''if merge==True, all wav files that corresponds to one speaker 
+            will be merged, so that in the output folder there are only one wave
+            file per speaker''')
+
         return parser
 
     @classmethod
@@ -58,14 +68,31 @@ class AbkhaziaFilter(AbstractCoreCommand):
             os.path.join(output_dir, 'filter.log'), verbose=args.verbose)
 
         corpus = Corpus.load(corpus_dir, validate=args.validate, log=log)
+        #corpus.is_noise()
 
-        # parse the plot arg as a bool
+        # parse the plot,trim and merge arg as a bool
         if args.plot=="True":
             plot=True
         elif args.plot=="False": 
             plot=False
         else:
             plot=False
+        
+        if args.trim=="True":
+            trim=True
+        elif args.trim=="False": 
+            trim=False
+        else:
+            trim=True
+        
+        if args.merge=="True":
+            merge=True
+        elif args.merge=="False": 
+            merge=False
+        else:
+            merge=True
+        
+
 
         # retrieve the test proportion
         (output,not_kept_utterances)=corpus.create_filter(
@@ -75,10 +102,10 @@ class AbkhaziaFilter(AbstractCoreCommand):
         
         
         output.save(os.path.join(output_dir,args.function,'data'),no_wavs=False)
-
-        output.trim(corpus_dir,output_dir,args.function,not_kept_utterances)
-
-        output.merge_wavs(output_dir,args.function)
+        if trim==True:
+           output.trim(corpus_dir,output_dir,args.function,not_kept_utterances)
+        if merge==True:
+            output.merge_wavs(output_dir,args.function)
         
-        output.save(os.path.join(output_dir,args.function,'data'),no_wavs=True)
+            output.save(os.path.join(output_dir,args.function,'data'),no_wavs=True)
 
