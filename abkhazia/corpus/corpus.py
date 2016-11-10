@@ -25,6 +25,7 @@ from abkhazia.corpus.corpus_split import CorpusSplit
 from abkhazia.corpus.corpus_filter import CorpusFilter
 from abkhazia.corpus.corpus_trimmer import CorpusTrimmer
 from abkhazia.corpus.corpus_mergeWavs import CorpusMergeWavs
+from abkhazia.corpus.corpus_triphones import CorpusTriphones
 import abkhazia.utils as utils
 #from abkhazia.utils import abkhazia_base, default_njobs, logger
 
@@ -120,6 +121,7 @@ class Corpus(utils.abkhazia_base.AbkhaziaBase):
         self.text = dict()
         self.phones = dict()
         self.utt2spk = dict()
+        self.isNoise = dict()
         self.silences = []
         self.variants = []
 
@@ -154,6 +156,9 @@ class Corpus(utils.abkhazia_base.AbkhaziaBase):
     def trim(self,corpus_dir,output_dir,function,not_kept_utts):
         CorpusTrimmer(self,not_kept_utts).trim(corpus_dir,output_dir,function,not_kept_utts)
 
+    def phones_timestamps(self,length_context,output_dir,alignment):
+        CorpusTriphones(self).phones_timestamps(length_context,output_dir,alignment)
+    
     def is_valid(self, njobs=utils.default_njobs()):
         """Return True if the corpus is in a valid state"""
         try:
@@ -255,6 +260,48 @@ class Corpus(utils.abkhazia_base.AbkhaziaBase):
             if start is not None or stop is not None:
                 return True
         return False
+
+    def is_noise(self):
+        """ this function asks the user to classify phones as spoken ph         ones or noise. 
+        """
+          
+        yes = set(['yes','y'])
+        no = set(['no','n',''])
+
+        corpus=self
+        phones=self.phones
+        isNoise=self.isNoise
+
+        for phone in phones:
+            print 'is ',phone,' noise ?'
+            choice= raw_input().lower()
+            if choice in yes:
+                isNoise[phone]=True
+            elif choice in no:
+                isNoise[phone]=False
+            else:
+                print "Please respond with 'yes' or 'no'" 
+        self.isNoise=isNoise
+
+    def is_utt_noise(self,utt):
+        """ Tell if a utt is (mostly) noise or if it has spoken words
+        """
+        utterance=self.text[utt]
+        nb_words=0
+        nb_noise=0
+        nb_speech=0
+
+        isNoise=self.isNoise
+        for word in utterance.split(" "):
+            nb_words=nb_words+1
+            if word in isNoise:
+                if  isNoise[word]==True:
+                    nb_noise=nb_noise+1
+                else:
+                    nb_speech=nb_speech+1
+        if nb_words is not 0 :
+            if float(nb_noise)/nb_words >0.5:
+                print "percentage of noise is ",float(nb_noise)/nb_words
 
     def subcorpus(self, utt_ids, prune=True, name=None, validate=True):
         """Return a subcorpus made of utterances in `utt_ids`

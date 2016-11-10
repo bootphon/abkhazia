@@ -187,11 +187,14 @@ class CorpusFilter(object):
              
             # here we build the list of utts we remove, and we adjust the boundaries of
             # the other utterancess, in order to have correct timestamps
-            
+            #i=0 
             for utt in spk2utts[speaker]:
                 #for each wav, we compute the cumsum of the lengths of the utts we remove
                 # in order to have correct timestamps for the other utts in the files
                 offset=0
+               
+                #if i==0:
+                    #corpus.is_utt_noise(utt)
                 wav_id,utt_tbegin,utt_tend=corpus.segments[utt]
                 corpus.segments[utt]=(wav_id,utt_tbegin-offset,utt_tend-offset)
                 if utt_tbegin-offset<0 or utt_tend-offset<0:

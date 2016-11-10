@@ -91,6 +91,9 @@ class CorpusMergeWavs(object):
         speakers=self.speakers
         spk2utts=self.spk2utts
         utts=self.utts
+ 
+        spk2wavs=dict()
+        spk2wav_dur=dict()
 
         for spkr in speakers:
             spk_utts=[utt_id for utt_id, utt_speaker in utts if utt_speaker == spkr]
@@ -99,12 +102,9 @@ class CorpusMergeWavs(object):
             spk2utts[spkr]=spk_utts
             self.log.debug('for speaker %s , total duration is %i',
                             spkr,duration/60)
-        self.spk2utts=spk2utts
+            #self.spk2utts=spk2utts
         
-        
-        spk2wavs=dict()
-        spk2wav_dur=dict()
-        for spkr in speakers:
+            
             wav_utt=[self.corpus.segments[utt][0] for utt in spk2utts[spkr]]
             
             # we want unique values in the list of wav :
@@ -130,8 +130,7 @@ class CorpusMergeWavs(object):
             
 
 
-        #update segments
-        for spkr in speakers:
+            #update segments
             for utt in spk2utts[spkr]:
                 utt_wav_id=self.corpus.segments[utt][0]
                 spk2wav_dur_temp=spk2wav_dur[spkr][0:len(spk2wavs[spkr])]
