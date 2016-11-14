@@ -63,11 +63,13 @@ class CorpusTriphones(object):
         phones=self.read_alignments(alignment)
         i=0
         triphones=defaultdict(list)
+        print 'computing the triphones'
         for spkr in speakers:
             i=i+1
             #For each speaker, group the timestamps by phones
             #this loop is based on the fact that one speaker = one wave file
             sorted_phones=sorted(phones[spkr],key=itemgetter(1))
+            print 'listing triphones for speaker',spkr
             triphones[spkr]=self.list_triphones(sorted_phones)
             
             ##Add the phones to the list of phones we want to keep
@@ -89,6 +91,7 @@ class CorpusTriphones(object):
         """Read the alignment txt file at align_path and return a  
         dict(speaker,(phone,start,stop))
         """
+        print 'reading the alignment file'
         phones=defaultdict(list)
         speakers=self.speakers
         utt2spk=self.corpus.utt2spk
@@ -101,44 +104,49 @@ class CorpusTriphones(object):
         #for some lines in alignment.txt, the word corresponding to the phone is
         #put at the end of the line
         alignment=[line.rstrip().split(" ") for line in align if line]
-        for utt,start,stop,probability,phone,word in izip(*izip_longest(*alignment)):
+        for utt,start,stop,probability,phone in alignment:
             '''in the alignment file, the timestamps are given
             relative to the begining of the utterance '''
-            utt_pos=self.corpus.segments[utt][1]
+            try:
+                utt_pos=self.corpus.segments[utt][1]
+            except:
+                continue
+            
             phones[utt2spk[utt]].append((phone,float(start)+utt_pos,float(stop)+utt_pos))
-
+            
         return(phones)
     
     def list_triphones(self,phones):
         '''Create a dictionary which lists all available triphones ABC
-        output= dict( B , (A,C, start time, stop time))
+        output= list( (A,B,C, start time, stop time))
         '''
         triphones=[]
         silences=set(self.corpus.silences) 
         list_phones=phones
-        i=1
-        for phone,start,stop in list_phones[1:len(list_phones)-1]:
-            start=float(start)
-            stop=float(stop)
-            previous_phone=list_phones[i-1][0]
-            next_phone=list_phones[i+1][0]
-        
-            if (previous_phone in silences) or (phone in silences) or (next_phone in silences):
-                i=i+1
+        for ind,x in enumerate(list_phones[:len(list_phones)-1]):
+            if ind==0:
                 continue
-            previous_phone_stop=float(list_phones[i-1][2])
-            next_phone_start=float(list_phones[i+1][1])
-             
+            
+            phone=x[0]
+            start=float(x[1])
+            stop=float(x[2])
+            previous_phone=list_phones[ind-1][0]
+            next_phone=list_phones[ind+1][0]
+            if (previous_phone in silences) or (phone in silences) or (next_phone in silences):
+                
+                continue
+            
+            previous_phone_stop=float(list_phones[ind-1][2])
+            next_phone_start=float(list_phones[ind+1][1])
             #check if the three phones are consecutive
             if (start-(1.0/16000)<previous_phone_stop<start+1.0/16000) and (1.0/16000<next_phone_start<stop+1.0/16000):
                 # we can save the current phone 
                 
-                previous_phone_start=list_phones[i-1][1]
-                next_phone_stop=list_phones[i+1][2]
+                previous_phone_start=list_phones[ind-1][1]
+                next_phone_stop=list_phones[ind+1][2]
                 triphones.append(
                         (previous_phone,phone,next_phone,
                             previous_phone_start,next_phone_stop))
-            i=i+1
         return(triphones)
 
 
