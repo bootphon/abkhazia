@@ -35,11 +35,27 @@ class AbkhaziaTriphones(AbstractCoreCommand):
     
         group.add_argument('-a','--alignment',type=str,metavar='<alignment>',
                 help='''the path to the alignment text  file''')
+        group.add_argument('-m','--merge',type=str,metavar='<merge>',default='False',
+                help='''merge the wavs by speaker in input - necessary to create
+                the triphones -. Only specify if not already done''')
+
     @classmethod
     def run(cls,args):
         corpus_dir, output_dir = cls._parse_io_dirs(args)
         log = utils.logger.get_log(
                 os.path.join(output_dir, 'phonewav.log'),verbose=args.verbose)
         corpus = Corpus.load(corpus_dir, validate=args.validate, log=log)
-        corpus.phones_timestamps(1,output_dir,alignment=args.alignment)
+        corpus.is_noise()
+        if args.merge=='True':
+            merge=True
+        elif args.merge=='False':
+            merge=False
+        if merge==True:
+            corpus.merge_wavs(
+                    '/home/julien/workspace/data/exemple/buckeye','test')
+        triphones=corpus.phones_timestamps(1,output_dir,alignment=args.alignment)
+        print(type(triphones))
+
+        corpus.create_mini_wavs(output_dir,30,alignment=args.alignment,triphones=triphones,overlap=0.5,in_path=corpus_dir,out_path=output_dir)
+
 

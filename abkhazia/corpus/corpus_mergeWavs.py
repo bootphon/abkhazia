@@ -68,7 +68,7 @@ class CorpusMergeWavs(object):
         self.log.debug('loaded %i utterances from %i speakers',
                        self.size, len(self.speakers))
 
-    def merge_wavs(self,corpus_dir,function):
+    def merge_wavs(self,corpus_dir,output_dir):
         """For each speaker, merge all the wav file together, 
         and edit the segments to keep a correct alignment."""
          # return error if sox is not installed 
@@ -79,12 +79,15 @@ class CorpusMergeWavs(object):
 
         # get input and output wav dir
         corpus_dir=os.path.abspath(corpus_dir)
-        corpus_dir=os.path.join(corpus_dir,function)
-        corpus_dir=os.path.join(corpus_dir,'data')
+        
+        output_dir=os.path.join(output_dir,'data/wavs')
+        
         wav_dir=os.path.join(corpus_dir,'wavs')
         if not os.path.isdir(wav_dir):
             raise IOError('invalid corpus: not found{}'.format(wav_dir))
-        
+        if not os.path.isdir(output_dir):
+            os.makedirs(output_dir)
+
 
         utt2dur = self.utt2dur
         spk2dur=dict()
@@ -150,7 +153,7 @@ class CorpusMergeWavs(object):
             
             # create the list of waves we want to merge
             wav_name='.'.join([spkr,'wav'])
-            wav_input_path='/'.join([wav_dir,wav_name])
+            wav_out_path='/'.join([output_dir,wav_name])
             list_wav_to_merge=[]
 
             for wav in spk2wavs[spkr]:
@@ -166,7 +169,7 @@ class CorpusMergeWavs(object):
                 self.log.debug('for speaker {spkr} adding the wave {wav}'.format(spkr=spkr,wav=wav_file))
                 data.append( [wav_to_merge.getparams(), wav_to_merge.readframes(wav_to_merge.getnframes())])
                 wav_to_merge.close
-            output_wave= wave.open(wav_input_path,'wb')
+            output_wave= wave.open(wav_out_path,'wb')
             output_wave.setparams(data[0][0])
             for nb in range(len(spk2wavs[spkr])):
                 output_wave.writeframes(data[nb][1])
@@ -181,14 +184,14 @@ class CorpusMergeWavs(object):
         #verify that the merger worked and update wave set
         for spkr in speakers:
             wav_name='.'.join([spkr,'wav'])
-            wav_input_path='/'.join([wav_dir,wav_name])
+            wav_out_path='/'.join([output_dir,wav_name])
 
-            self.log.debug(os.path.isfile(wav_input_path))
+            self.log.debug(os.path.isfile(wav_out_path))
 
-            self.corpus.wavs[spkr]=wav_input_path
-            if os.path.isfile(wav_input_path):
+            self.corpus.wavs[spkr]=wav_out_path
+            if os.path.isfile(wav_out_path):
                 duration=0
-                with contextlib.closing(wave.open(wav_input_path,'r')) as f:
+                with contextlib.closing(wave.open(wav_out_path,'r')) as f:
                     frames=f.getnframes()
                     rate = f.getframerate()
                     duration=frames/float(rate)
@@ -199,9 +202,9 @@ class CorpusMergeWavs(object):
                     raise IOError('the merged wave length is different from the sum of the initial wave file')
                     
             #remove the intput files        
-            for wav_path in spk2list_wav_to_merge[spkr]:
-                if os.path.isfile(wav_path):
-                    os.remove(wav_path)
+            #for wav_path in spk2list_wav_to_merge[spkr]:
+            #    if os.path.isfile(wav_path):
+            #        os.remove(wav_path)
 
         # validate the corpus
         self.corpus.validate()

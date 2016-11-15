@@ -32,3 +32,5 @@ from abkhazia.commands.abkhazia_split import AbkhaziaSplit
 from abkhazia.commands.abkhazia_filter import AbkhaziaFilter
 from abkhazia.commands.abkhazia_features import AbkhaziaFeatures
 from abkhazia.commands.abkhazia_triphones import AbkhaziaTriphones
+from abkhazia.commands.abkhazia_split_challenge import AbkhaziaSplitChallenge
+from abkhazia.commands.abkhazia_mergewavs import AbkhaziaMergeWavs

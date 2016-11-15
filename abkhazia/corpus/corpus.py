@@ -27,6 +27,7 @@ from abkhazia.corpus.corpus_trimmer import CorpusTrimmer
 from abkhazia.corpus.corpus_mergeWavs import CorpusMergeWavs
 from abkhazia.corpus.corpus_triphones import CorpusTriphones
 from abkhazia.corpus.corpus_miniwavs import CorpusMiniWavs
+from abkhazia.corpus.corpus_split_challenge import CorpusSplitChallenge
 import abkhazia.utils as utils
 #from abkhazia.utils import abkhazia_base, default_njobs, logger
 
@@ -126,7 +127,7 @@ class Corpus(utils.abkhazia_base.AbkhaziaBase):
         self.silences = []
         self.variants = []
 
-    def save(self, path, no_wavs=False):
+    def save(self, path, no_wavs=False,copy_wavs=True):
         """Save the corpus to the directory `path`
 
         `path` is assumed to be a non existing directory.
@@ -136,7 +137,7 @@ class Corpus(utils.abkhazia_base.AbkhaziaBase):
 
         """
         self.log.info('saving corpus to %s', path)
-        CorpusSaver.save(self, path, no_wavs=no_wavs)
+        CorpusSaver.save(self, path, no_wavs=no_wavs,copy_wavs=copy_wavs)
 
     def validate(self, njobs=utils.default_njobs()):
         """Validate speech corpus data
@@ -383,6 +384,13 @@ class Corpus(utils.abkhazia_base.AbkhaziaBase):
                      for phone in phones.split())
         self.phones = {key: value for key, value in self.phones.iteritems()
                        if key in phones}
+    
+    def splitChallenge(self,nb_new_speaker=5,test_dur=10):
+        """ Split the corpus for the Zero Ressource Challenge
+        with a test set of {test_dur} minutes, and with 
+        {nb_new_speaker} new speakers in the test set """
+
+        return(CorpusSplitChallenge(self,prune=True).splitChallenge(nb_new_speaker,test_dur))
 
     def split(self, train_prop=None, test_prop=None,
               by_speakers=True, random_seed=None):
@@ -439,5 +447,5 @@ class Corpus(utils.abkhazia_base.AbkhaziaBase):
             phonemized[utt_id] = ' '.join(phones)
         return phonemized
 
-    def merge_wavs(self,corpus_dir,function):
-        CorpusMergeWavs(self).merge_wavs(corpus_dir,function)
+    def merge_wavs(self,corpus_dir,output_dir):
+        CorpusMergeWavs(self).merge_wavs(corpus_dir,output_dir)

@@ -23,7 +23,7 @@ from abkhazia.utils import open_utf8
 class CorpusSaver(object):
     """Save a corpus to a directory"""
     @classmethod
-    def save(cls, corpus, path, no_wavs=False):
+    def save(cls, corpus, path, no_wavs=False,copy_wavs=True):
         """Save the `corpus` to the directory `path`
 
         `path` is assumed to be a non existing directory.
@@ -38,7 +38,7 @@ class CorpusSaver(object):
             return os.path.join(path, f)
 
         if not no_wavs:
-            cls.save_wavs(corpus, _path('wavs'),copy_wavs=True)
+            cls.save_wavs(corpus, _path('wavs'),copy_wavs)
         cls.save_lexicon(corpus, _path('lexicon.txt'))
         cls.save_segments(corpus, _path('segments.txt'))
         cls.save_text(corpus, _path('text.txt'))

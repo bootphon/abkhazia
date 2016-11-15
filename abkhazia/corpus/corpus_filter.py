@@ -71,6 +71,7 @@ class CorpusFilter(object):
         utt2dur = self.utt2dur
         spk2dur=dict()
         speakers=self.speakers
+        segments=self.corpus.segments
         spk2utts=self.spk2utts
         utts=self.utts
 
@@ -79,7 +80,7 @@ class CorpusFilter(object):
         # Sort the utterances in order of appearance in the wave file 
         spk2utts_temp=defaultdict(list)
         for utt,spkr in utts:
-            utt_start=self.corpus.segments[utt][1]
+            utt_start=segments[utt][1]
             spk2utts_temp[spkr].append([utt,utt_start])
         for spkr in speakers:
             spk2utts_temp[spkr]=sorted(spk2utts_temp[spkr], key=lambda x: x[1])
