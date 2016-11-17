@@ -251,11 +251,12 @@ class LanguageModel(abstract_recipe.AbstractRecipe):
         # cut -d' ' -f2 lm_text > text_ready. Train need to
         # remove utt-id on first column of text file
         lm_text = os.path.join(self.a2k._local_path(), 'lm_text.txt')
+        lm_lines = utils.open_utf8(lm_text, 'r').readlines()
+
         text_ready = os.path.join(self.a2k._local_path(), 'text_ready.txt')
         with utils.open_utf8(text_ready, 'w') as ready:
             ready.write('\n'.join(
-                [' '.join(line.split()[1:])
-                 for line in utils.open_utf8(lm_text, 'r').xreadlines()]))
+                [' '.join(line.split()[1:]) for line in lm_lines]))
 
         text_se = os.path.join(self.a2k._local_path(), 'text_se.txt')
         utils.jobs.run(
@@ -363,7 +364,7 @@ class LanguageModel(abstract_recipe.AbstractRecipe):
                     if not (re.search('<s> <s>', line) or
                             re.search('</s> <s>', line) or
                             re.search('</s> </s>', line)):
-                        fp.write(line)
+                        fp.write(line.decode('utf-8'))
 
             # finds words in the arpa LM that are not symbols in the
             # OpenFst-format symbol table words.txt

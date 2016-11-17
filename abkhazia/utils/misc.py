@@ -17,9 +17,7 @@
 import codecs
 import collections
 import multiprocessing
-import os
 import re
-import shutil
 
 import config  # this is abkhazia.utils.config
 

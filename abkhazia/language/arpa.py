@@ -93,9 +93,9 @@ class ARPALanguageModel(object):
                     for k, v in sorted(self.ngrams[order].items()):
                         ngram = ' '.join(k)
                         if v[1] is None:  # no backoff
-                            fp.write('{}\t{}\n'.format(v[0], ngram))
+                            fp.write(u'{}\t{}\n'.format(v[0], ngram))
                         else:
-                            fp.write('{}\t{}\t{}\n'.format(v[0], ngram, v[1]))
+                            fp.write(u'{}\t{}\t{}\n'.format(v[0], ngram, v[1]))
                     fp.write('\n')
             fp.write('\\end\\\n')
 
