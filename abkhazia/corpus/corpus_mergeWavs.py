@@ -111,7 +111,7 @@ class CorpusMergeWavs(object):
             wav_utt=[self.corpus.segments[utt][0] for utt in spk2utts[spkr]]
             
             # we want unique values in the list of wav :
-            wav_utt=list(set(wav_utt))
+            wav_utt=sorted(list(set(wav_utt)))
             self.log.debug(wav_utt) 
             spk2wavs[spkr]=wav_utt
 
@@ -140,13 +140,17 @@ class CorpusMergeWavs(object):
                 #print spk2wav_dur_temp
                 wav_dur_dict=dict(zip(spk2wavs[spkr],spk2wav_dur_temp))
                 offset=wav_dur_dict[utt_wav_id]
-                start=self.corpus.segments[utt][1]
-                stop=self.corpus.segments[utt][2]
-
-                #the name of the finale wave file will be spkr.wav (ex s01.wav)
                 finale_wav_id=spkr
+                if self.corpus.segments[utt][1] is not None:
+                    start=self.corpus.segments[utt][1]
+                    stop=self.corpus.segments[utt][2]
+                else:
+                    start=0
+                    stop=self.utt2dur[utt]
+                   
                 self.corpus.segments[utt]=finale_wav_id,start+offset,stop+offset
-
+                #the name of the finale wave file will be spkr.wav (ex s01.wav)
+                  
         #merge the wavs 
         spk2list_wav_to_merge=dict() 
         for spkr in speakers:
@@ -189,6 +193,7 @@ class CorpusMergeWavs(object):
             self.log.debug(os.path.isfile(wav_out_path))
 
             self.corpus.wavs[spkr]=wav_out_path
+            self.log.debug('for speaker {}, putting wave {}'.format(spkr,wav_out_path))
             if os.path.isfile(wav_out_path):
                 duration=0
                 with contextlib.closing(wave.open(wav_out_path,'r')) as f:

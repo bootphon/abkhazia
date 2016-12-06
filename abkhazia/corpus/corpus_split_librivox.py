@@ -12,7 +12,7 @@
 #
 # You should have received a copy of the GNU General Public License
 # along with abkhazia. If not, see <http://www.gnu.org/licenses/>.
-"""Provides the CorpusSplit class"""
+"""Provides the CorpusSplitLibrivox class"""
 
 import ConfigParser
 import random
@@ -21,8 +21,8 @@ from collections import defaultdict
 from abkhazia.utils import logger, config
 
 
-class CorpusSplitChallenge(object):
-    """A class for spliting an abkhazia corpus into train and test subsets
+class CorpusSplitLibrivox(object):
+    """A class for spliting an abkhazia/Librivox corpus into train and test subsets
 
     corpus : The abkhazia corpus to split. The corpus is assumed
       to be valid.
@@ -69,7 +69,7 @@ class CorpusSplitChallenge(object):
                        self.size, len(self.speakers))
 
 
-    def splitChallenge(self,nb_new_spkr, test_dur=10,out=''):
+    def splitLibrivox(self,in_path):
         """Split the corpus by utterances regardless of the speakers
 
         Both generated subsets get speech from all the speakers with a
@@ -84,69 +84,26 @@ class CorpusSplitChallenge(object):
         speakers=self.speakers
         spk2utts=dict()
         spk2dur=dict()
-        # Select n "new" speaker for the test part
-        spk2utts_temp=defaultdict(list)
+
+        train=self.read_text_files(in_path)
+        train_utt_ids=[]
+        test_utt_ids=[]
         for utt,spkr in utts:
-            utt_start=self.corpus.segments[utt][1]
-            spk2utts_temp[spkr].append([utt,utt_start])
-        for spkr in speakers:
-            spk2utts_temp[spkr]=sorted(spk2utts_temp[spkr], key=lambda x: x[1])
-            spk2utts[spkr]=[utt for utt,utt_start in spk2utts_temp[spkr]]
-            duration=sum([utt2dur[utt_id] for utt_id in spk2utts[spkr]])
-            spk2dur[spkr]=duration
- 
-        self.spk2utts=spk2utts
-        sorted_speaker=sorted(spk2dur.iteritems(), key=lambda(k,v):(v,k))
-        new_speakers=set([spkr for spkr,duration in sorted_speaker[0:nb_new_spkr]]) 
-
-        train_utt_ids = []
-        test_utt_ids = []
-
-        # Split the corpus in test/train, to have test_dur min
-        # of speech in the test set
-        for spkr in speakers:
-            spk_utts = [utt_id for utt_id, utt_speaker in self.utts
-                        if utt_speaker == spkr]
-
-            # sample utterances at random for this speaker 
-            test_utts_temp = random.sample(spk_utts, len(spk_utts))
-            time=0
-            utts=enumerate(test_utts_temp)
-
-            # while the total of speech for this speaker is not 10 minutes,
-            # add a randomly picked utt in the test set
-            test_utts=[]
-            while (time<10):
-                try : 
-                    utt_ind,utt_id=next(utts)
-                except StopIteration :
-                    break
-                time=time+(utt2dur[utt_id]/60)
-                test_utts.append(utt_id)
-
-            test_set=set(test_utts)
-            if spkr not in new_speakers:
-                train_utts=[utt_id for utt_id in spk_utts if utt_id not in test_set]
+            wav_id=self.corpus.segments[utt][0]
+            if '.'.join([wav_id,'wav']) in set(train):
+                train_utt_ids.append(utt)
             else:
-                train_utts=[]
-            # add to train and test sets
-            train_utt_ids += train_utts
-            test_utt_ids += test_utts
-
-        self.write_new_speakers_set(new_speakers,out)
+                test_utt_ids.append(utt)
         return (self.corpus.subcorpus(train_utt_ids, prune=self.prune),
-                self.corpus.subcorpus(test_utt_ids, prune=self.prune),new_speakers)
+                self.corpus.subcorpus(test_utt_ids, prune=self.prune))
 
-    def write_new_speakers_set(self,new_speakers,out):
-        if not os.path.isdir(out):
-            os.makedirs(out)
-        out_path=os.path.join(out,'new_speakers.txt')
-        new_speakers_list=list(new_speakers)
-
-        with open(out_path,'w') as outf:
-            for spkr in new_speakers_list:
-                outf.write(u'{}\n'.format(spkr))
-
+    def read_text_files(self,in_path):
+        train=[]
+        with open(in_path,'r') as fin:
+            train_files=fin.readlines()
+            for line in train_files:
+                train.append(line.strip('\n'))
+        return(train)
 
 
 

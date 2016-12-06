@@ -45,6 +45,10 @@ class AbkhaziaFilter(AbstractCoreCommand):
                 them)''')
            
         group.add_argument(
+            '-ns','--new_speakers',type=int,help=''' and integer >1, represents 
+            the number of speakers to include in the "family" part''')
+        
+        group.add_argument(
             '-p','--plot',type=str,metavar='<plot>',default='False',
             help='''If plot==True, a plot of the speech duration distribution and
             of the filtering function will be displayed''')
@@ -53,11 +57,6 @@ class AbkhaziaFilter(AbstractCoreCommand):
             '-tr','--trim',type=str,default='True',
             help='''if trim==True, the unwanted utterances will be removed from the 
             wav_files, and the segments updated accordingly''')
-        group.add_argument(
-            '-m','--merge',type=str,default='True',
-            help='''if merge==True, all wav files that corresponds to one speaker 
-            will be merged, so that in the output folder there are only one wave
-            file per speaker''')
 
         return parser
 
@@ -85,27 +84,17 @@ class AbkhaziaFilter(AbstractCoreCommand):
         else:
             trim=True
         
-        if args.merge=="True":
-            merge=True
-        elif args.merge=="False": 
-            merge=False
-        else:
-            merge=True
-        
 
 
         # retrieve the test proportion
         (output,not_kept_utterances)=corpus.create_filter(
+                output_dir, 
                 function=args.function,
                 nb_speaker=args.nb_speaker,
-                plot=plot)
+                plot=plot,new_speakers=args.new_speakers)
         
         
-        output.save(os.path.join(output_dir,args.function,'data'),no_wavs=False)
         if trim==True:
-           output.trim(corpus_dir,output_dir,args.function,not_kept_utterances)
-        if merge==True:
-            output.merge_wavs(output_dir,args.function)
+            output.save(os.path.join(output_dir,args.function,'data'),no_wavs=True,copy_wavs=False)
+            output.trim(corpus_dir,output_dir,args.function,not_kept_utterances)
         
-            output.save(os.path.join(output_dir,args.function,'data'),no_wavs=True)
-

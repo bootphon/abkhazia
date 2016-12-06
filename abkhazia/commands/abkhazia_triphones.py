@@ -35,27 +35,53 @@ class AbkhaziaTriphones(AbstractCoreCommand):
     
         group.add_argument('-a','--alignment',type=str,metavar='<alignment>',
                 help='''the path to the alignment text  file''')
-        group.add_argument('-m','--merge',type=str,metavar='<merge>',default='False',
-                help='''merge the wavs by speaker in input - necessary to create
-                the triphones -. Only specify if not already done''')
-
+        group.add_argument('-ov','--overlap',type=float,metavar='<overlap>',
+                help=''' a float between 0 and 1.0,represents the overlap
+                between the small wave files in output''')
+        group.add_argument('-l','--length',type=int,metavar='<length>',
+                help=''' an int, usually 1, 10 or 30, represents the length
+                of the wave files in output''')
+        group.add_argument('-p','--precision',type=float,metavar='<precision>',
+                default=0.0125,help=''' specify the precision used to compute 
+                the features, by default set for mfcc (see abkhazia's alignment 
+                parameters) : 0.0125''')
+        group.add_argument('-mp','--mean_phone',type=float,metavar='<mean-phone>',
+                default=0.05,help=''' a float, represents the mean length of a 
+                phone, is used when creating the small wav files, to avoid having
+                a triphone too close to the start or the end of the file. 
+                Set to 0.05s by default''')
+        group.add_argument('-t','--threshold',type=float,metavar="<alignment>",
+                help='''the threshold on the posterior probability. If the
+                phone has a posterior probability under the threshold in 
+                the alignment, we don't take it into account''') 
     @classmethod
     def run(cls,args):
         corpus_dir, output_dir = cls._parse_io_dirs(args)
         log = utils.logger.get_log(
                 os.path.join(output_dir, 'phonewav.log'),verbose=args.verbose)
         corpus = Corpus.load(corpus_dir, validate=args.validate, log=log)
-        corpus.is_noise()
-        if args.merge=='True':
-            merge=True
-        elif args.merge=='False':
-            merge=False
-        if merge==True:
-            corpus.merge_wavs(
-                    '/home/julien/workspace/data/exemple/buckeye','test')
-        triphones=corpus.phones_timestamps(1,output_dir,alignment=args.alignment)
-        print(type(triphones))
+        
+        #load the new speakers text file:
+        new_spkr_dir=os.path.join(os.path.dirname(os.path.dirname(corpus_dir)),'new_speakers')
+        try : 
+            new_speakers_file=utils.open_utf8(os.path.join(new_spkr_dir,'new_speakers.txt'))
+        except IOError:
+            log.info("New Speakers File Not Found In {}".format(new_spkr_dir))
+            return False
+        new_speakers=[]
+        for spkr in new_speakers_file:
+            spkr=spkr.strip('\n')
+            new_speakers.append(spkr)
+        #log.info('create the noise lexicon')
+        #corpus.is_noise()
 
-        corpus.create_mini_wavs(output_dir,30,alignment=args.alignment,triphones=triphones,overlap=0.5,in_path=corpus_dir,out_path=output_dir)
+        log.info('create the list of triphones')
+        triphones=corpus.phones_timestamps(1,output_dir,alignment=args.alignment,precision=args.precision,proba_threshold=args.threshold)
+        
+        log.info('write the small wave files')
+        corpus.create_mini_wavs(
+                output_dir,duration=args.length,alignment=args.alignment,
+                triphones=triphones,overlap=args.overlap,
+                in_path=corpus_dir,out_path=output_dir,mean_phone=args.mean_phone,new_speakers=new_speakers)
 
 

@@ -40,7 +40,9 @@ from abkhazia.commands import (
     AbkhaziaFilter,
     AbkhaziaTriphones,
     AbkhaziaSplitChallenge,
-    AbkhaziaMergeWavs)
+    AbkhaziaMergeWavs,
+    AbkhaziaAbx)
+
 
 # TODO get that from setup.py
 __version__ = '0.3'
@@ -60,7 +62,8 @@ class Abkhazia(object):
         AbkhaziaFilter,
         AbkhaziaTriphones,
         AbkhaziaSplitChallenge,
-        AbkhaziaMergeWavs
+        AbkhaziaMergeWavs,
+        AbkhaziaAbx
     ]
 
     # a string describing abkhazia and its subcommands

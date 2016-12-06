@@ -116,7 +116,9 @@ class CorpusTrimmer(object):
                 if stderr:
                     self.log.debug(stderr)
                    
-                self.log.debug('for wav {wav_id}, {duration} seconds should have been trimmed'.format(wav_id=wav,duration= sum(wavs_duration_dict[wav])))
+                self.log.debug(
+                        'for wav {wav_id}, {duration} seconds should have been trimmed'.format(
+                            wav_id=wav,duration= sum(wavs_duration_dict[wav])))
                 
                 # if the output file is empty, remove it
                 with contextlib.closing(wave.open(wav_output_path,'r')) as wav_file:

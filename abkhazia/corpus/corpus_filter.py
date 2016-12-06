@@ -18,11 +18,14 @@ import ConfigParser
 import random
 import matplotlib.pyplot as plt
 import numpy as np
+import seaborn as sns
+import os
+
 
 from collections import defaultdict
 from operator import itemgetter
 from math import exp
-from abkhazia.utils import logger, config
+from abkhazia.utils import logger, config, open_utf8
 
 
 class CorpusFilter(object):
@@ -54,12 +57,13 @@ class CorpusFilter(object):
         self.size = len(utt_ids)
         self.speakers = set(utt_speakers)
         self.limits = dict()
+        self.gender = dict()
         self.spk2utts = dict()
         self.utt2dur=self.corpus.utt2duration()
         self.log.debug('loaded %i utterances from %i speakers',
                        self.size, len(self.speakers))
 
-    def create_filter(self,function,nb_speaker=None,plot=True):
+    def create_filter(self,out_path,function,nb_speaker=None,plot=True,new_speakers=10):
         """Prepare the corpus for the cutting
         
         The speakers are sorted by their speech duration. 
@@ -93,22 +97,71 @@ class CorpusFilter(object):
         # Sort Speech duration from longest to shortest
         sorted_speaker=sorted(spk2dur.iteritems(), key=lambda(k,v):(v,k))
         sorted_speaker.reverse()
+
+
+
+        # For the THCHS30 corpus, force the speaker selection and 
+        # put color to the gender : 
+        #males_to_keep = set(['A08','B08','C08','D08'])
+        #male = set(['A08','B08','C08','D08','A33','B21','A09','B34','A35','A05'])
+        #noisy = set(['A05','C22','C14','D32','A23','A36','D31','B11'])
+
+        # For the LibriSpeech corpus, read SPEAKER.TXT to find the genders :
+        #male=set()
+        #self.librispeech_gender(path='/home/julien/workspace/data/librispeech-raw/LibriSpeech/SPEAKERS.TXT')
+        #for speaker in speakers:
+        #    try:
+        #        self.gender[speaker]
+        #    except:
+        #        continue
+        #    if self.gender[speaker]=='M':
+        #        male.add(speaker)
+
+
+        #nb_speaker=90
+
         if nb_speaker:
             if nb_speaker<1 or nb_speaker>len(sorted_speaker):
                 self.log.info('Invalid number of speaker, keeping all speakers')
                 nb_speaker=len(sorted_speaker)
             sorted_speaker=sorted_speaker[0:nb_speaker]
-            
+
+        
+        ### For the THCHS30 corpus, force the selection of male speakers
+        #for spkr in speakers:
+        #    if spkr in males_to_keep:
+        #        sorted_speaker.remove((spkr,spk2dur[spkr]))
+        #        sorted_speaker=[(spkr,spk2dur[spkr])]+sorted_speaker
+        #    if spkr in noisy:
+        #        sorted_speaker.remove((spkr,spk2dur[spkr]))
+
  
         # Plot the Speech duration distribution, and superimpose a power law
+
         names=[spk_id for (spk_id,duration) in sorted_speaker]
         times=[duration for (spk_id,duration) in sorted_speaker]
-        times_reduced=[format(u0,'.1f') for u0 in times]
+        times_reduced=[format(u0/60,'.1f') for u0 in times]
+        sns.set_context(rc={"figure.figsize":(8,4)})
+        font={'weight' : 'bold', 
+                'size' : 15}
+        plt.rc('font',**font)
+
         total=self.corpus.duration(format='seconds')
-        self.log.debug('corpus.duration=%i, sum(sorted_speaker)=%i',total/60,sum(times)/60)
         (spk_id0,duration0)=sorted_speaker[0]
-        x_axis=range(1,1+len(names))
-        plt.bar(x_axis,times,width=0.7,align="center",alpha=0.7,label="speech time")
+        x_axis=range(0,len(names))
+        barlist=plt.bar(x_axis,times,width=0.7,align="center",label="speech time",color=sns.xkcd_rgb["periwinkle"])
+        
+        ### Uncomment to plot with different colors for the genders
+        # female/male proportions to 
+        #x_male=[ind for (ind,spk_id) in enumerate(names) if spk_id in male]
+        #x_female=[x for x in x_axis if x not in x_male]
+
+        #male_bars=plt.bar(x_male,[times[i] for i in x_male],width=0.7,align="center"
+                #,label="male speech time",color=sns.xkcd_rgb['light mauve'])
+        #aa=[times[j] for j in x_female]
+        #female_bars=plt.bar(x_female,[times[i] for i in x_female],width=0.7,
+                #align="center",label="female speech time",color=sns.xkcd_rgb['periwinkle'])
+            
 
         # Compute the distribution used to cut the corpus
         if function == "exponential":
@@ -118,38 +171,52 @@ class CorpusFilter(object):
             distrib=[duration0/((ind)**exponent)+30 for ind in x_axis]
         elif function =="step":
             #number of speaker for which we keep the whole speech
-            spk_threshold=5 
+            spk_threshold=new_speakers
             
             #duration of speech we keep for the other speakers : 
             dur_threshold=10*60
             distrib=times[0:spk_threshold]
             distrib[spk_threshold+1:len(times)]=[dur_threshold] *(len(times)-spk_threshold)
+            distrib=[dist if dist<=dur else dur for dist,dur in zip(distrib,times)]
             
-        distrib_reduced=[format(u0,'.1f') for u0 in distrib]
-        plt.scatter(x_axis,distrib,marker='*',color='r',
-                    label="power law distribution (in minutes)")
-            
-        for i,txt in enumerate(distrib_reduced):
-            plt.annotate(txt,(x_axis[i],distrib[i]+2),rotation=45,)
-        self.log.info('for %i speakers, the filter gives %i minutes of speech',
-                    len(sorted_speaker),sum(distrib)/60)
+            #keep the speakers in the "family", to construct the test part
+            family_temp=sorted_speaker[0:spk_threshold]
+            family=[speaker for speaker,duration in family_temp]
+            #distrib=[dist if names[ind] not in noisy else 0 for (ind,dist) in enumerate(distrib)]
+        elif function == "nothing":
+            distrib=times
+        
+        
 
         self.limits=dict(zip(names,distrib))
-        
+                
         
         # Show Plot
-        for j,txt in enumerate(times_reduced):
-            if j!=0:
-                plt.annotate(txt,(x_axis[j],times[j]+3),rotation=45)
-        self.log.info('Speech duration for corpus : %i minutes',sum(times)/60)
         if plot==True:
+
+            for j,txt in enumerate(times_reduced):
+                if j!=0:
+                    plt.annotate(txt,(x_axis[j]-1,times[j]+3),rotation=45)
+            self.log.info('Speech duration for corpus : %i minutes',sum(times)/60)
+            distrib_reduced=[format(u0/60,'.1f') for u0 in distrib]
+            plt.scatter(x_axis,distrib,marker='o',color=sns.xkcd_rgb["cerise"],
+                        label="Speech distribution (in minutes)")
+            plt.plot(x_axis,distrib,color=sns.xkcd_rgb["cerise"])
+            for i,txt in enumerate(distrib_reduced):
+                plt.annotate(txt,(x_axis[i]-1,distrib[i]+2),rotation=45,)
+            self.log.info('for %i speakers, the filter gives %i minutes of speech',
+                    len(sorted_speaker),sum(distrib)/60)
+
             plt.legend() 
             plt.xticks(x_axis,names,rotation=45)
             plt.xlabel('speaker')
             plt.ylabel('duration (in minutes)',rotation=90)
         
             plt.show()
+        
 
+        ## write the names of the "family" speakers, to use them in the test
+        self.write_family_set(family,out_path)
         return(self.filter_corpus(names,function))
 
     def filter_corpus(self,names,function):
@@ -165,6 +232,7 @@ class CorpusFilter(object):
         not_kept_utts=defaultdict(list)
         corpus=self.corpus
         
+
         # create list of utterances we want to keep, utterances we don't want to keep
         for speaker in names:
             utt_and_dur=zip(spk2utts[speaker],[utt2dur[utt] for utt in spk2utts[speaker]])
@@ -172,6 +240,9 @@ class CorpusFilter(object):
             ascending_utts=sorted(utt_and_dur,key=lambda utt_and_dur: utt_and_dur[1])
 
             nb_utt=0
+            if limits[speaker]==0:
+                continue 
+
             for utts in spk2utts[speaker]:
                 time+=utt2dur[utts]
                 if time<limits[speaker] or nb_utt<10:
@@ -188,16 +259,14 @@ class CorpusFilter(object):
              
             # here we build the list of utts we remove, and we adjust the boundaries of
             # the other utterancess, in order to have correct timestamps
-            #i=0 
             for utt in spk2utts[speaker]:
                 #for each wav, we compute the cumsum of the lengths of the utts we remove
                 # in order to have correct timestamps for the other utts in the files
                 offset=0
                
-                #if i==0:
-                    #corpus.is_utt_noise(utt)
                 wav_id,utt_tbegin,utt_tend=corpus.segments[utt]
                 corpus.segments[utt]=(wav_id,utt_tbegin-offset,utt_tend-offset)
+
                 if utt_tbegin-offset<0 or utt_tend-offset<0:
                     self.log.info('WARN : offset is greater than utterance boundaries')
                 if utt not in kept_utt_set:
@@ -206,3 +275,40 @@ class CorpusFilter(object):
 
         return(self.corpus.subcorpus(utt_ids,prune=True,name=function,validate=True),
                 not_kept_utts);
+
+    def librispeech_gender(self,path):
+        """ construct the dict(speaker_id,gender) for librispeech """
+        path=os.path.abspath(path)
+        try:
+            speaker_dict=open_utf8(path,'r')
+        except IOError:
+            self.log.info("Error: File not found at {}".format(path))
+            return False
+        for line in speaker_dict:
+            if line[0]==";":
+                continue
+            spk_id,sex,subset,dur,name = line.split(" | ")
+            subset.strip()
+            sex.strip()
+            spk_id.strip()
+
+            #if subset is not "train-clean-360 ":
+            #    print subset
+            #    continue
+            if len(spk_id)==2:
+                spk_id='00'+spk_id
+            elif len(spk_id)==3:
+                spk_id='0'+spk_id
+            self.gender[spk_id]=sex
+            
+    def write_family_set(self,family,out):
+        out=os.path.join(os.path.dirname(out),'family')
+        if not os.path.isdir(out):
+            os.makedirs(out)
+        out_path=os.path.join(out,'family.txt')
+
+        with open(out_path,'w') as outf:
+            for spkr in family:
+                outf.write(u'{}\n'.format(spkr))
+
+

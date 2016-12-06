@@ -28,6 +28,7 @@ from abkhazia.corpus.corpus_mergeWavs import CorpusMergeWavs
 from abkhazia.corpus.corpus_triphones import CorpusTriphones
 from abkhazia.corpus.corpus_miniwavs import CorpusMiniWavs
 from abkhazia.corpus.corpus_split_challenge import CorpusSplitChallenge
+from abkhazia.corpus.corpus_split_librivox import CorpusSplitLibrivox
 import abkhazia.utils as utils
 #from abkhazia.utils import abkhazia_base, default_njobs, logger
 
@@ -126,6 +127,7 @@ class Corpus(utils.abkhazia_base.AbkhaziaBase):
         self.isNoise = dict()
         self.silences = []
         self.variants = []
+        self.new_speakers = set()
 
     def save(self, path, no_wavs=False,copy_wavs=True):
         """Save the corpus to the directory `path`
@@ -148,21 +150,23 @@ class Corpus(utils.abkhazia_base.AbkhaziaBase):
         """
         CorpusValidation(self, njobs=njobs, log=self.log).validate()
 
-    def create_filter(self,function,nb_speaker=None,plot=True):
+    def create_filter(self,out_path,function,nb_speaker=None,plot=True,new_speakers=10):
         """Filter the speech duration distribution of the corpus
             
             if plot==True, a plot of the distribution is shown
         """
-        return(CorpusFilter(self).create_filter(function,nb_speaker,plot))
+        return(CorpusFilter(self).create_filter(out_path,function,nb_speaker,plot,new_speakers))
 
     def trim(self,corpus_dir,output_dir,function,not_kept_utts):
         CorpusTrimmer(self,not_kept_utts).trim(corpus_dir,output_dir,function,not_kept_utts)
 
-    def phones_timestamps(self,length_context,output_dir,alignment):
-        return(CorpusTriphones(self).phones_timestamps(length_context,output_dir,alignment))
+    def phones_timestamps(self,length_context,output_dir,alignment,precision,proba_threshold):
+        return(CorpusTriphones(self).phones_timestamps(length_context,
+            output_dir,alignment,precision,proba_threshold))
 
-    def create_mini_wavs(self,corpus_dir,duration,alignment,triphones,overlap,in_path,out_path):
-        CorpusMiniWavs(self).create_mini_wavs(corpus_dir,duration,alignment,triphones,overlap,in_path,out_path)
+    def create_mini_wavs(self,corpus_dir,duration,alignment,triphones,overlap,in_path,out_path,mean_phone,new_speakers):
+        CorpusMiniWavs(self).create_mini_wavs(corpus_dir,duration,alignment,
+                triphones,overlap,in_path,out_path,mean_phone,new_speakers)
     
     def is_valid(self, njobs=utils.default_njobs()):
         """Return True if the corpus is in a valid state"""
@@ -385,12 +389,15 @@ class Corpus(utils.abkhazia_base.AbkhaziaBase):
         self.phones = {key: value for key, value in self.phones.iteritems()
                        if key in phones}
     
-    def splitChallenge(self,nb_new_speaker=5,test_dur=10):
+    def splitChallenge(self,out,nb_new_speaker=5,test_dur=10):
         """ Split the corpus for the Zero Ressource Challenge
         with a test set of {test_dur} minutes, and with 
         {nb_new_speaker} new speakers in the test set """
 
-        return(CorpusSplitChallenge(self,prune=True).splitChallenge(nb_new_speaker,test_dur))
+        return(CorpusSplitChallenge(self,prune=True).splitChallenge(nb_new_speaker,test_dur,out))
+
+    def splitLibrivox(self,in_path):
+        return(CorpusSplitLibrivox(self,prune=True).splitLibrivox(in_path))
 
     def split(self, train_prop=None, test_prop=None,
               by_speakers=True, random_seed=None):

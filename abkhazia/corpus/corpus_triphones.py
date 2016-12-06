@@ -49,8 +49,8 @@ class CorpusTriphones(object):
 
         utt_ids, utt_speakers = zip(*self.corpus.utt2spk.iteritems())
         self.speakers = set(utt_speakers)
-
-    def phones_timestamps(self,length_context,wav_path,alignment):
+    
+    def phones_timestamps(self,length_context,output_dir,alignment,precision,proba_threshold):
         """Get the timestamps of the phones we want to keep
         and add the surrounding context to have length_context seconds
         for each phone
@@ -59,39 +59,41 @@ class CorpusTriphones(object):
         (it should be 1 second, 10 seconds or 30 seconds)
         """
         speakers=self.speakers
+        
+        # get the family and new_speakers sets 
+        new_speaker_dir=os.path.join(os.path.dirname(os.path.dirname(output_dir)),'new_speakers/new_speakers.txt')
+        family_dir=os.path.join(os.path.dirname(os.path.dirname(output_dir)),'family/family.txt')
+        family=self.read_family(family_dir)
+        new_speakers=self.read_new_speakers(new_speaker_dir)
+        family.remove('')
+        print new_speakers
+        new_speakers.remove('')
+        
+        speaker_set=family+new_speakers
         phones_output=defaultdict(list)
-        phones=self.read_alignments(alignment)
+        phones=self.read_alignments(alignment,precision,proba_threshold)
         i=0
         triphones=defaultdict(list)
-        print 'computing the triphones'
-        for spkr in speakers:
+        self.log.info('computing the triphones')
+        for spkr in speaker_set:
             i=i+1
             #For each speaker, group the timestamps by phones
             #this loop is based on the fact that one speaker = one wave file
-            sorted_phones=sorted(phones[spkr],key=itemgetter(1))
-            print 'listing triphones for speaker',spkr
-            triphones[spkr]=self.list_triphones(sorted_phones)
+            sorted_phones=sorted(phones[spkr],key=itemgetter(2))
             
-            ##Add the phones to the list of phones we want to keep
-            ##until we reach a file of 10 minutes for this speaker
-            #time=0
-            #while (time<60):
-            #    #pick a random phone and a random timestamp 
-            #    u=random.randrange(0,len(sorted_phones))
-            #    v=random.randrange(0,len(sorted_phones[u]))
-            #    (start,stop)=sorted_phones[u][v]
-            #    time = time + (stop-start)
-            #    
-            #    #add context to the selected phone
-            #    time_to_add = (length_context-(stop-start))/2
-            #    phones_output[spkr].append((start-time_to_add,stop+time_to_add))
+            self.log.debug('listing triphones for speaker {}'.format(spkr))
+            triphones[spkr]=self.list_triphones(sorted_phones)
+        
+        ##create abx item txt file
+        #self.triphone2abx_item(triphones,out_path)
+
         return(triphones)
     
-    def read_alignments(self,align_path):
+    def read_alignments(self,align_path,precision,proba_threshold):
         """Read the alignment txt file at align_path and return a  
         dict(speaker,(phone,start,stop))
         """
-        print 'reading the alignment file'
+        self.log.info('reading the alignment file')
         phones=defaultdict(list)
         speakers=self.speakers
         utt2spk=self.corpus.utt2spk
@@ -104,15 +106,16 @@ class CorpusTriphones(object):
         #for some lines in alignment.txt, the word corresponding to the phone is
         #put at the end of the line
         alignment=[line.rstrip().split(" ") for line in align if line]
-        for utt,start,stop,probability,phone in alignment:
+        for utt,start,stop,proba,phone in alignment:
             '''in the alignment file, the timestamps are given
             relative to the begining of the utterance '''
             try:
                 utt_pos=self.corpus.segments[utt][1]
             except:
                 continue
-            
-            phones[utt2spk[utt]].append((phone,float(start)+utt_pos,float(stop)+utt_pos))
+            if float(proba)>proba_threshold:
+                utt_pos=round(utt_pos/precision)*precision
+                phones[utt2spk[utt]].append((utt,phone,float(start)+utt_pos,float(stop)+utt_pos))
             
         return(phones)
     
@@ -126,59 +129,75 @@ class CorpusTriphones(object):
         for ind,x in enumerate(list_phones[:len(list_phones)-1]):
             if ind==0:
                 continue
-            
-            phone=x[0]
-            start=float(x[1])
-            stop=float(x[2])
-            previous_phone=list_phones[ind-1][0]
-            next_phone=list_phones[ind+1][0]
+
+            utt=x[0]
+            phone=x[1]
+            start=float(x[2])
+            stop=float(x[3])
+            previous_phone=list_phones[ind-1][1]
+            next_phone=list_phones[ind+1][1]
             if (previous_phone in silences) or (phone in silences) or (next_phone in silences):
                 
                 continue
             
-            previous_phone_stop=float(list_phones[ind-1][2])
-            next_phone_start=float(list_phones[ind+1][1])
+            previous_phone_stop=float(list_phones[ind-1][3])
+            next_phone_start=float(list_phones[ind+1][2])
             #check if the three phones are consecutive
-            if (start-(1.0/16000)<previous_phone_stop<start+1.0/16000) and (1.0/16000<next_phone_start<stop+1.0/16000):
+            if ((start-(1.0/16000)<previous_phone_stop<start+1.0/16000)
+                    and (1.0/16000<next_phone_start<stop+1.0/16000)):
                 # we can save the current phone 
                 
-                previous_phone_start=list_phones[ind-1][1]
-                next_phone_stop=list_phones[ind+1][2]
+                previous_phone_start=list_phones[ind-1][2]
+                next_phone_stop=list_phones[ind+1][3]
                 triphones.append(
-                        (previous_phone,phone,next_phone,
+                        (utt,previous_phone,phone,next_phone,
                             previous_phone_start,next_phone_stop))
         return(triphones)
 
+    def triphone2abx_item(self,triphones,out_path):
+        """Create the Item list for the ABX task"""
+        self.log.info('creating the abx item list')
+        out_list=[]
+        for k in triphones:
+            for v in triphones[k]:
+                temp=(v[0],v[4],v[5],v[1],v[2],v[3])
+                out_list.append(temp)
+        out_path=os.path.join(out_path,'phones.item')
 
-    def create_wav(self,speaker,wav_path,phones_output):
-        """Given the times of all the phones we want to keep, we create 
-        a wav file containing all the phones and their context"""
-        #The names of the wavs at this point should be {speaker}.wav !
-        wav_name='.'.join([speaker,'wav'])
-        wav_input=os.path.join(wav_path,wav_name)
-        wav_output_path=os.path.join(wav_path,'output.wav')
-        data=[]
+        # write the item file
+        with open_utf8(out_path,'w') as out:
+            ###write the header
+            out.write(u'#file onset offset #phone prev-phone next-phone speaker\n')
+            for v0,v1,v2,v3,v4,v5 in out_list:
+                out.write(u'{} {} {} {} {} {}\n'.format(v0,v1,v2,v3,v4,v5,v0))
 
+    def read_family(self,path):
+        """Read the alignment txt file at align_path and return a  
+        dict(speaker,(phone,start,stop))
+        """
+        self.log.info('reading the family file')
+        speakers=self.speakers
         try:
-            wav_file=wave.open(wav_input,'rb')
-        except IOError :
-            self.log.info("No wav file found in {}".format(wav_input))
-            return false
-        param=wav_file.getparams()
-        length = wav_file.getnframes()
+            family_file=open_utf8(path,'r')
+        except IOError:
+            self.log.info("Error: File not found at {}".format(path))
+            return False
+        family_read=family_file.read()
+        family=family_read.split('\n')
+        return(family)
 
-        rate = wav_file.getframerate()
-        
-        #sort the timestamps by decreasing order (NOT NECESSARY)
-        sorted_phones=sorted(phones_output,key=itemgetter(0),reverse=True)
-        #get the frames on which the phone is spoken and put them in data 
-        output_wav=wave.open(wav_output_path,'wb')
-        output_wav.setparams(param)
-        output_wav.setnframes(0) # for now the file is empty!
-        for (start,stop) in sorted_phones:
-            position=rate*start
-            length=rate*(stop-start)
-            wav_file.setpos(position)
-            frames=wav_file.readframes(length)
-            output_wav.writeframes(frames)
-        output_wav.close()
+    def read_new_speakers(self,path):
+        """Read the alignment txt file at align_path and return a  
+        dict(speaker,(phone,start,stop))
+        """
+        self.log.info('reading the new_speakers file')
+        try:
+            new_speakers_file=open_utf8(path,'r')
+        except IOError:
+            self.log.info("Error: File not found at {}".format(path))
+            return False
+        new_speakers_read=new_speakers_file.read()
+        new_speakers=new_speakers_read.split('\n')
+            
+        return(new_speakers)
+

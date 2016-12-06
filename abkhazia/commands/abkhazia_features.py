@@ -115,7 +115,7 @@ class _FeatBase(AbstractKaldiCommand):
         # export to h5features if asked for
         if args.h5f:
             recipe.log.info('exporting Kaldi ark features to h5features...')
-            utils.kaldi.scp_to_h5f(
+            kaldi.scp_to_h5f(
                 os.path.join(recipe.output_dir, 'feats.scp'),
                 os.path.join(recipe.output_dir, 'feats.h5f'))
 

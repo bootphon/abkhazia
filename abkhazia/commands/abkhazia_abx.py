@@ -12,7 +12,7 @@
 #
 # You should have received a copy of the GNU General Public License
 # along with abkhazia. If not, see <http://www.gnu.org/licenses/>.
-"""Implementation of the 'abkazia mergewavs' command"""
+"""Implementation of the 'abkazia abx' command"""
 
 import os
 
@@ -21,35 +21,36 @@ from abkhazia.corpus import Corpus
 import abkhazia.utils as utils
 
 
-class AbkhaziaMergeWavs(AbstractCoreCommand):
-    '''This class implements the 'abkhazia mergeWavs' command'''
-    name = 'mergeWavs'
-    description = 'Filter the speech duration distribution of the corpus'
+class AbkhaziaAbx(AbstractCoreCommand):
+
+    name='abx'
+    description = ' create ABX item list'
 
     @classmethod
     def add_parser(cls, subparsers):
         # get basic parser init from AbstractCommand
-        parser, _ = super(AbkhaziaMergeWavs, cls).add_parser(subparsers)
+        parser, _ = super(AbkhaziaAbx, cls).add_parser(subparsers)
 
-        group = parser.add_argument_group('mergewavs arguments')
+        group = parser.add_argument_group('abx arguments')
     
-        #group.add_argument(
-        #    '-m','--merge',type=str,default='True',
-        #    help='''if merge==True, all wav files that corresponds to one speaker 
-        #    will be merged, so that in the output folder there are only one wave
-        #    file per speaker''')
-
-        return parser
+        group.add_argument('-a','--alignment',type=str,metavar='<alignment>',
+                help='''the path to the alignment text  file''')
+        group.add_argument('-p','--precision',type=float,metavar='<features>',
+                default=0.0125,help='''a float, by default 0.0125, represents
+                the precision for the feature extraction''')
 
     @classmethod
-    def run(cls, args):
+    def run(cls,args):
         corpus_dir, output_dir = cls._parse_io_dirs(args)
         log = utils.logger.get_log(
-            os.path.join(output_dir, 'mergewavs.log'), verbose=args.verbose)
-
+                os.path.join(output_dir, 'phonewav.log'),verbose=args.verbose)
         corpus = Corpus.load(corpus_dir, validate=args.validate, log=log)
-
-        corpus.merge_wavs(corpus_dir,output_dir)
         
-        corpus.save(os.path.join(output_dir,'data'),no_wavs=True)
+        #log.info('create the noise lexicon')
+        #corpus.is_noise()
+
+        log.info('create the list of triphones')
+        triphones=corpus.phones_timestamps(1,output_dir,alignment=args.alignment,precision=args.precision)
+        
+
 

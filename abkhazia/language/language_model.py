@@ -20,12 +20,14 @@ import pkg_resources
 import re
 import shutil
 import tempfile
+import sys 
 
 import abkhazia.utils as utils
 import abkhazia.abstract_recipe as abstract_recipe
 from abkhazia.language.arpa import ARPALanguageModel
 from abkhazia.kaldi import kaldi_path
-
+reload(sys)
+sys.setdefaultencoding('utf8')
 
 def check_language_model(lm_dir):
     """Raise IOError if oov.int, G.fst and G.arpa.fst are not in `lm_dir`"""
@@ -255,7 +257,7 @@ class LanguageModel(abstract_recipe.AbstractRecipe):
         with utils.open_utf8(text_ready, 'w') as ready:
             ready.write('\n'.join(
                 [' '.join(line.split()[1:])
-                 for line in utils.open_utf8(lm_text, 'r').xreadlines()]))
+                 for line in open(lm_text, 'r').xreadlines()]))
 
         text_se = os.path.join(self.a2k._local_path(), 'text_se.txt')
         utils.jobs.run(

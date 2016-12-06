@@ -34,17 +34,23 @@ class AbkhaziaSplitChallenge(AbstractCoreCommand):
         group = parser.add_argument_group('split arguments')
 
         prop = group.add_mutually_exclusive_group()
-        prop.add_argument(
-            '-n', '--new_speakers', type=int, metavar='<test>',
-            default=5,
+        group.add_argument(
+            '-n', '--new_speakers', type=int, metavar='<test>',default=5,
             help=''' an int, represents the number of 'new' speakers that will
             appear in the test set and won't be present at all in the 
             training set''')
 
-        prop.add_argument(
+        group.add_argument(
             '-t', '--test_dur', default=10, type=float, metavar='<train>',
             help='''a float, represents the time of speech we want for 
             each speaker in the test set''')
+        group.add_argument(
+            '-tr','--train_file',type=str,
+            help='''the path to the file that lists the train wavs for librivox FR ''')
+        group.add_argument('-lb','--librivox',type=int,default=0,
+                help='''an int, by default 0, put to 1 if the entry corpus is already split in train/test
+                with a train.txt''')
+
 
         return parser
 
@@ -55,9 +61,16 @@ class AbkhaziaSplitChallenge(AbstractCoreCommand):
             os.path.join(output_dir, 'split.log'), verbose=args.verbose)
 
         corpus = Corpus.load(corpus_dir, validate=args.validate, log=log)
-
+        corpus.validate()
         # retrieve the test proportion
-        train, test = corpus.splitChallenge(nb_new_speaker=5,test_dur=10)
+        if args.librivox==0:
+            train, test, new_speakers = corpus.splitChallenge(
+                    out=os.path.join(output_dir,'new_speakers'),
+                    nb_new_speaker=args.new_speakers,test_dur=args.test_dur)
+            test.new_speakers=new_speakers
+        else:
+            train,test=corpus.splitLibrivox(args.train_file)
 
-        train.save(os.path.join(output_dir, 'train', 'data'))
+        train.save(os.path.join(output_dir, 'train', 'data'),copy_wavs=False)
         test.save(os.path.join(output_dir, 'test', 'data'),copy_wavs=False)
+
