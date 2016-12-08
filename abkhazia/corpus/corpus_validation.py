@@ -206,7 +206,7 @@ class CorpusValidation(object):
         utt_ids = self.corpus.segments.keys()
 
         # same utterance-ids in segments and utt2spk
-        if utt_ids_spk != utt_ids:
+        if sorted(utt_ids_spk) != sorted(utt_ids):
             _duplicates = duplicates(utt_ids_spk)
             if _duplicates:
                 raise IOError(
@@ -290,7 +290,7 @@ class CorpusValidation(object):
         # TODO check xsampa compatibility and/or compatibility
         # with articulatory features databases of IPA or just basic
         # IPA correctness
-        self.log.debug('checking phones')
+        self.log.debug(')checking phones')
         phones = self.corpus.phones.keys()
         ipas = self.corpus.phones.values()
 
