@@ -20,7 +20,7 @@
 # locally. Writes to $data_dir, the final alignment will be in the
 # $data_dir/split/train/align/export directory.
 
-data_dir=${1:-/home/mbernard/data/abkhazia/exemple}
+data_dir=${1:-./data_align_buckeye}
 data_dir=$(readlink -f $data_dir)
 rm -rf $data_dir
 mkdir -p $data_dir
@@ -33,7 +33,7 @@ abkhazia prepare buckeye -o $data_dir || exit 1
 # split the prepared corpus in train and test sets. We keep only 5%
 # for training and split by utterances (this is an exemple, in real
 # life consider taking more than 5% of the data).
-abkhazia split $data_dir -T 0.05 || exit 1
+abkhazia split $data_dir -T 0.05 -b || exit 1
 train_dir=$data_dir/split/train
 
 # compute a language model on the train set (word level trigram)
@@ -43,9 +43,9 @@ abkhazia language $train_dir -l word -n 3 -v || exit 1
 abkhazia features mfcc $train_dir --cmvn || exit 1
 
 # compute a speaker-adapted triphone HMM-GMM acoustic model
-abkhazia acoustic monophone -v $train_dir || exit 1
-abkhazia acoustic tripĥone -v $train_dir || exit 1
-abkhazia acoustic tripĥone-sa -v $train_dir || exit 1
+abkhazia acoustic monophone -v $train_dir --force --recipe || exit 1
+abkhazia acoustic triphone -v $train_dir || exit 1
+abkhazia acoustic triphone-sa -v $train_dir || exit 1
 
 # compute alignment (should be done on the test set)
-abkhazia align $train_dir || exit 1
+abkhazia align $train_dir -a $train_dir/triphone-sa || exit 1
