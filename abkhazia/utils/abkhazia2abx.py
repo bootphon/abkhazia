@@ -166,7 +166,9 @@ def _append_item(items, corpus, utt_id, start, stop, phone,
         # make phone times relative to utterance (was relative to wav)
         start = str(float(start) - utt_tstart)
         # TODO this is a bug on buckeye manual alignments
-        assert float(start) >= 0
+        assert float(start) >= 0, \
+            'Negative time (relative to utterance): {}, {}'.format(
+                utt_id, start)
         stop = str(float(stop) - utt_tstart)
 
         # add the new item
