@@ -124,7 +124,7 @@ class CorpusTriphones(object):
                       continue
                   utt_pos=round(utt_pos/precision)*precision
                   phones[utt2spk[utt]].append((utt,phone,float(start)+utt_pos,float(stop)+utt_pos))
-                  self.log.debug('phone {}, wav {} , utt {}'.format(phone,wav,utt))
+                  #self.log.debug('phone {}, wav {} , utt {}'.format(phone,wav,utt))
                   #to output the alignment and the vad
                   fout.write(u'{} {} {} {}\n'.format(wav,float(start)+utt_pos,float(stop)+utt_pos,phone))
                   if phone not in set(self.corpus.silences):
@@ -143,7 +143,7 @@ class CorpusTriphones(object):
                   if float(proba)>proba_threshold:
                     utt_pos=round(utt_pos/precision)*precision
                     phones[utt2spk[utt]].append((utt,phone,float(start)+utt_pos,float(stop)+utt_pos))
-                    self.log.debug('phone {}, wav {} , utt {}'.format(phone,wav,utt))
+                    #self.log.debug('phone {}, wav {} , utt {}'.format(phone,wav,utt))
                   #to output the alignment and the vad
                   #fout.write(u'{} {} {} {}\n'.format(wav,float(start)+utt_pos,float(stop)+utt_pos,phone))
                   #if phone not in set(self.corpus.silences):
@@ -159,7 +159,7 @@ class CorpusTriphones(object):
                       continue
                   utt_pos=round(utt_pos/precision)*precision
                   phones[utt2spk[utt]].append((utt,phone,float(start)+utt_pos,float(stop)+utt_pos))
-                  self.log.debug('phone {}, wav {} , utt {}'.format(phone,wav,utt))
+                  #self.log.debug('phone {}, wav {} , utt {}'.format(phone,wav,utt))
 
         return(phones)
     

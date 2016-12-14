@@ -87,9 +87,20 @@ class CorpusMiniWavs(object):
             rate=wav_in.getframerate()
             nframes=wav_in.getnframes()
             length_wav=float(nframes)/rate
+
+            # round the length of the wav in order to get the same number of triphones
+            # for each file size
+            starts_temp=np.arange(0,length_wav-120,(1-0.083)*120)
+            stops_temp=starts_temp+120.1
+
             tp=triphones[wav]
-            starts=np.arange(0,length_wav-duration,(1-overlap)*duration)
-            stops=starts+duration
+            if len(stops_temp)>0:
+                starts=np.arange(0,stops_temp[-1]-duration,(1-overlap)*duration)
+                stops=starts+duration
+            else:
+                starts=[]
+                stops=[]
+            
             output_timestamps=zip(starts,stops)
             
             self.log.debug('listing triphones in wav for speaker {}'.format(wav))
@@ -102,7 +113,8 @@ class CorpusMiniWavs(object):
         x_range=range(nb_output_wav)
         names=random.sample(x_range,nb_output_wav)
         
-        output_triphones=self.remove_duplicate_triphones(out_triphones)
+        output_triphones,nb_triphones=self.remove_duplicate_triphones(out_triphones)
+        self.log.debug('number of triphones per speaker:  {}'.format(nb_triphones))
         for wav in speaker_set:
             
             if wav in new_speakers:
@@ -127,17 +139,19 @@ class CorpusMiniWavs(object):
         nb_triphones=0
         out_times=[]
         self.log.debug('mean phone : {}'.format(mean_phone))
+        nb_triphones_index=dict()
         for start,stop in output_timestamps:
             # check if there's a triphone in the wave
+            nb_triphones_index[wav_index]=0
             
             gen=(i for i,x in enumerate(triphones_start) if (start+mean_phone<x[0] and x[1]<stop-mean_phone))
             index=next(gen,None)
             if index is None:
                 # if there's no triphone for this file, don't create it
                 #out_times.remove((start,stop))
-                self.log.debug(
-                        'no triphones found for wav {} from {} to {}, removing the wave'.format(
-                            wav,start,stop))
+                #self.log.debug(
+                #        'no triphones found for wav {} from {} to {}, removing the wave'.format(
+                #            wav,start,stop))
                 continue
             
             # while there's triphones in the file, add them to the dict 
@@ -154,15 +168,18 @@ class CorpusMiniWavs(object):
                 'adding triphone {}{}{}, with boundaries{}s-{}s, to wav {} from {}s to {}s'.format(
                     phone1,phone2,phone3,wav,
                     triphone_start,triphone_end,start,stop))
-
+                nb_triphones_index[wav_index]=nb_triphones_index[wav_index]+1
                             
             
             # when all the triphones have been listed 
             out_times.append((start,stop))
             nb_triphones=nb_triphones+len(output_triphones[wav_index])
+            self.log.debug('wav from {} to {} has {} triphones'.format(start,stop,nb_triphones_index[wav_index]))
             wav_index=wav_index+1
+            
         self.log.debug("{} wav should be created,{} will actually be created".format(
             wav_index,len(out_times)))
+        
         return(out_times,output_triphones,nb_triphones)
 
     def write_wavs(self,output_timestamps,output_triphones,wav_output_path,wav_input_path,wav,names):
@@ -202,7 +219,8 @@ class CorpusMiniWavs(object):
             #get the start-stop frames from the input
             rate=wav_in.getframerate()
             wav_in.setpos(start*rate)
-            frames=wav_in.readframes(int(rate*(stop-start)))
+            dur=int(rate*(stop-start))
+            frames=wav_in.readframes(dur)
            
             output_wave.writeframes(frames)
             output_wave.close()
@@ -235,7 +253,9 @@ class CorpusMiniWavs(object):
                 when a triphone is listed in more than one file"""
         out=set()
         out_triphones=dict()
+        nb_triphones=dict()
         for key in output_triphones: 
+            nb_triphones[key]=0
             dict_wav=defaultdict(list)
             for wav_output in output_triphones[key]:    
                 for utt,tri_start,tri_end,tri_start_in_wav,tri_end_in_wav,phone2,phone1,phone3 in output_triphones[key][wav_output]:
@@ -245,9 +265,11 @@ class CorpusMiniWavs(object):
                     else:
                         out.add((key,utt,tri_start,tri_end,phone2,phone1,phone3))
                         dict_wav[wav_output].append((utt,tri_start,tri_end,tri_start_in_wav,tri_end_in_wav,phone2,phone1,phone3))
+                        
+                nb_triphones[key]=nb_triphones[key]+len(dict_wav[wav_output])
             out_triphones[key]=dict_wav
             
-        return out_triphones
+        return out_triphones,nb_triphones
 
 
         
