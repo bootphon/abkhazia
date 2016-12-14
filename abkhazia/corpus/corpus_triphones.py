@@ -50,7 +50,7 @@ class CorpusTriphones(object):
         utt_ids, utt_speakers = zip(*self.corpus.utt2spk.iteritems())
         self.speakers = set(utt_speakers)
     
-    def phones_timestamps(self,length_context,output_dir,alignment,precision,proba_threshold):
+    def phones_timestamps(self,length_context,output_dir,alignment,precision,proba_threshold,speaker_set,vad):
         """Get the timestamps of the phones we want to keep
         and add the surrounding context to have length_context seconds
         for each phone
@@ -61,35 +61,38 @@ class CorpusTriphones(object):
         speakers=self.speakers
         
         # get the family and new_speakers sets 
-        new_speaker_dir=os.path.join(os.path.dirname(os.path.dirname(output_dir)),'new_speakers/new_speakers.txt')
-        family_dir=os.path.join(os.path.dirname(os.path.dirname(output_dir)),'family/family.txt')
-        family=self.read_family(family_dir)
-        new_speakers=self.read_new_speakers(new_speaker_dir)
-        family.remove('')
-        print new_speakers
-        new_speakers.remove('')
-        
-        speaker_set=family+new_speakers
+        #new_speaker_dir=os.path.join(os.path.dirname(os.path.dirname(output_dir)),'new_speakers/new_speakers.txt')
+        #family_dir=os.path.join(os.path.dirname(os.path.dirname(output_dir)),'family/family.txt')
+        #family=self.read_family(family_dir)
+        #new_speakers=self.read_new_speakers(new_speaker_dir)
+        #family.remove('')
+        #new_speakers.remove('')
+        #
+        #speaker_set=family+new_speakers
+        #speaker_set=list(set(speaker_set)) # remove duplicate if there are some
         phones_output=defaultdict(list)
-        phones=self.read_alignments(alignment,precision,proba_threshold)
+        phones=self.read_alignments(alignment,precision,proba_threshold,vad)
         i=0
         triphones=defaultdict(list)
+        nb_phones=dict()
         self.log.info('computing the triphones')
         for spkr in speaker_set:
             i=i+1
             #For each speaker, group the timestamps by phones
             #this loop is based on the fact that one speaker = one wave file
             sorted_phones=sorted(phones[spkr],key=itemgetter(2))
+            nb_phones[spkr]=len(sorted_phones)
             
             self.log.debug('listing triphones for speaker {}'.format(spkr))
-            triphones[spkr]=self.list_triphones(sorted_phones)
-        
+            triphones[spkr]=self.list_triphones(sorted_phones,spkr)
+
+        self.log.debug('number of triphones per speakers : {}'.format(nb_phones))
         ##create abx item txt file
         #self.triphone2abx_item(triphones,out_path)
 
         return(triphones)
     
-    def read_alignments(self,align_path,precision,proba_threshold):
+    def read_alignments(self,align_path,precision,proba_threshold,vad):
         """Read the alignment txt file at align_path and return a  
         dict(speaker,(phone,start,stop))
         """
@@ -106,26 +109,79 @@ class CorpusTriphones(object):
         #for some lines in alignment.txt, the word corresponding to the phone is
         #put at the end of the line
         alignment=[line.rstrip().split(" ") for line in align if line]
-        for utt,start,stop,proba,phone in alignment:
-            '''in the alignment file, the timestamps are given
-            relative to the begining of the utterance '''
-            try:
-                utt_pos=self.corpus.segments[utt][1]
-            except:
-                continue
-            if float(proba)>proba_threshold:
-                utt_pos=round(utt_pos/precision)*precision
-                phones[utt2spk[utt]].append((utt,phone,float(start)+utt_pos,float(stop)+utt_pos))
-            
+        length_align=len(alignment[0])
+
+        #with open_utf8('alignement.txt','w') as fout,open_utf8('vad.txt','w') as vad:
+        if vad:
+            with open_utf8('alignement.txt','w') as fout,open_utf8('vad.txt','w') as vad:
+                for utt,start,stop,phone in alignment:
+                  '''in the alignment file, the timestamps are given
+                  relative to the begining of the utterance '''
+                  try:
+                      utt_pos=self.corpus.segments[utt][1]
+                      wav=self.corpus.segments[utt][0]
+                  except:
+                      continue
+                  utt_pos=round(utt_pos/precision)*precision
+                  phones[utt2spk[utt]].append((utt,phone,float(start)+utt_pos,float(stop)+utt_pos))
+                  self.log.debug('phone {}, wav {} , utt {}'.format(phone,wav,utt))
+                  #to output the alignment and the vad
+                  fout.write(u'{} {} {} {}\n'.format(wav,float(start)+utt_pos,float(stop)+utt_pos,phone))
+                  if phone not in set(self.corpus.silences):
+                      vad.write(u'{} {} {}\n'.format(wav,float(start)+utt_pos,float(stop)+utt_pos))
+ 
+        else:
+            if length_align==5:
+                for utt,start,stop,proba,phone in alignment:
+                  '''in the alignment file, the timestamps are given
+                  relative to the begining of the utterance '''
+                  try:
+                      utt_pos=self.corpus.segments[utt][1]
+                      wav=self.corpus.segments[utt][0]
+                  except:
+                      continue
+                  if float(proba)>proba_threshold:
+                    utt_pos=round(utt_pos/precision)*precision
+                    phones[utt2spk[utt]].append((utt,phone,float(start)+utt_pos,float(stop)+utt_pos))
+                    self.log.debug('phone {}, wav {} , utt {}'.format(phone,wav,utt))
+                  #to output the alignment and the vad
+                  #fout.write(u'{} {} {} {}\n'.format(wav,float(start)+utt_pos,float(stop)+utt_pos,phone))
+                  #if phone not in set(self.corpus.silences):
+                  #    vad.write(u'{} {} {}\n'.format(wav,float(start)+utt_pos,float(stop)+utt_pos))
+            elif length_align==4:
+                for utt,start,stop,phone in alignment:
+                  '''in the alignment file, the timestamps are given
+                  relative to the begining of the utterance '''
+                  try:
+                      utt_pos=self.corpus.segments[utt][1]
+                      wav=self.corpus.segments[utt][0]
+                  except:
+                      continue
+                  utt_pos=round(utt_pos/precision)*precision
+                  phones[utt2spk[utt]].append((utt,phone,float(start)+utt_pos,float(stop)+utt_pos))
+                  self.log.debug('phone {}, wav {} , utt {}'.format(phone,wav,utt))
+
         return(phones)
     
-    def list_triphones(self,phones):
+    def list_triphones(self,phones,spkr):
         '''Create a dictionary which lists all available triphones ABC
         output= list( (A,B,C, start time, stop time))
         '''
         triphones=[]
         silences=set(self.corpus.silences) 
         list_phones=phones
+        if spkr=='M10':
+            for ind,x in enumerate(list_phones[:len(list_phones)-1]):
+                if ind==0:
+                    continue
+
+                utt=x[0]
+                phone=x[1]
+                start=float(x[2])
+                stop=float(x[3])
+                previous_phone=list_phones[ind-1][1]
+                next_phone=list_phones[ind+1][1]
+
         for ind,x in enumerate(list_phones[:len(list_phones)-1]):
             if ind==0:
                 continue
@@ -137,9 +193,7 @@ class CorpusTriphones(object):
             previous_phone=list_phones[ind-1][1]
             next_phone=list_phones[ind+1][1]
             if (previous_phone in silences) or (phone in silences) or (next_phone in silences):
-                
-                continue
-            
+                continue 
             previous_phone_stop=float(list_phones[ind-1][3])
             next_phone_start=float(list_phones[ind+1][2])
             #check if the three phones are consecutive
@@ -152,6 +206,7 @@ class CorpusTriphones(object):
                 triphones.append(
                         (utt,previous_phone,phone,next_phone,
                             previous_phone_start,next_phone_stop))
+
         return(triphones)
 
     def triphone2abx_item(self,triphones,out_path):

@@ -44,9 +44,6 @@ class AbkhaziaSplitChallenge(AbstractCoreCommand):
             '-t', '--test_dur', default=10, type=float, metavar='<train>',
             help='''a float, represents the time of speech we want for 
             each speaker in the test set''')
-        group.add_argument(
-            '-tr','--train_file',type=str,
-            help='''the path to the file that lists the train wavs for librivox FR ''')
         group.add_argument('-lb','--librivox',type=int,default=0,
                 help='''an int, by default 0, put to 1 if the entry corpus is already split in train/test
                 with a train.txt''')
@@ -69,7 +66,7 @@ class AbkhaziaSplitChallenge(AbstractCoreCommand):
                     nb_new_speaker=args.new_speakers,test_dur=args.test_dur)
             test.new_speakers=new_speakers
         else:
-            train,test=corpus.splitLibrivox(args.train_file)
+            train,test=corpus.splitLibrivox(output_dir)
 
         train.save(os.path.join(output_dir, 'train', 'data'),copy_wavs=False)
         test.save(os.path.join(output_dir, 'test', 'data'),copy_wavs=False)

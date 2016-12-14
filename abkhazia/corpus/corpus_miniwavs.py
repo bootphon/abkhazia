@@ -49,7 +49,7 @@ class CorpusMiniWavs(object):
         self.is_noise = self.corpus.is_noise
         self.silences = set(self.corpus.silences)
 
-    def create_mini_wavs(self,corpus_dir,duration,alignment,triphones,overlap,in_path,out_path,mean_phone,new_speakers):
+    def create_mini_wavs(self,corpus_dir,duration,alignment,triphones,overlap,in_path,out_path,mean_phone,new_speakers,speaker_set):
         """ create wav files of {duration} seconds, and list,
         for each file, the usable triphones in this file
         """
@@ -68,7 +68,7 @@ class CorpusMiniWavs(object):
         out_path_new = os.path.join(out_path,'new_speakers')
         if not os.path.isdir(out_path_new):
             os.makedirs(out_path_new)
-        with open_utf8(os.path.join(out_path_new,'{}s_new.txt'.format(duration)),'w') as out:
+        with open_utf8(os.path.join(out_path_new,'{}s_new.item'.format(duration)),'w') as out:
             ### Write the header ###
             out.write(u'#file onset offset #phone prev-phone next-phone speaker\n')
         new_speakers=set(new_speakers)
@@ -76,8 +76,8 @@ class CorpusMiniWavs(object):
         out_timestamps=dict()
         out_triphones=dict()
         nb_output_wav=0
-        
-        for wav in wavs:
+        nb_triphones_in=dict() 
+        for wav in speaker_set:
             # based on the fact that one wav = one speaker and that the name 
             # are the same
             #input_name=".".join([wav,'wav'])
@@ -88,23 +88,29 @@ class CorpusMiniWavs(object):
             nframes=wav_in.getnframes()
             length_wav=float(nframes)/rate
             tp=triphones[wav]
-            starts=np.arange(0,length_wav-duration,overlap*duration)
+            starts=np.arange(0,length_wav-duration,(1-overlap)*duration)
             stops=starts+duration
             output_timestamps=zip(starts,stops)
             
-            out_timestamps[wav],out_triphones[wav] = self.list_triphones_in_wav(
+            self.log.debug('listing triphones in wav for speaker {}'.format(wav))
+            out_timestamps[wav],out_triphones[wav],nb_triphones = self.list_triphones_in_wav(
                     tp,output_timestamps,wav,mean_phone)
+
+            nb_triphones_in[wav]=nb_triphones
             nb_output_wav=nb_output_wav+len(out_timestamps[wav])
+        self.log.debug('number of triphones now : {}'.format(nb_triphones))
         x_range=range(nb_output_wav)
         names=random.sample(x_range,nb_output_wav)
-        for wav in wavs:
+        
+        output_triphones=self.remove_duplicate_triphones(out_triphones)
+        for wav in speaker_set:
             
             if wav in new_speakers:
-                (names,tri_cor)=self.write_wavs(out_timestamps[wav],out_triphones[wav],out_path_new,in_path,wav,names)
-                self.write_list_triphone(out_triphones[wav],out_path_new,wav,tri_cor,'new',duration)
+                (names,tri_cor)=self.write_wavs(out_timestamps[wav],output_triphones[wav],out_path_new,in_path,wav,names)
+                self.write_list_triphone(output_triphones[wav],out_path_new,wav,tri_cor,'new',duration)
             else:
-                (names,tri_cor)=self.write_wavs(out_timestamps[wav],out_triphones[wav],out_path_old,in_path,wav,names)
-                self.write_list_triphone(out_triphones[wav],out_path_old,wav,tri_cor,'old',duration)
+                (names,tri_cor)=self.write_wavs(out_timestamps[wav],output_triphones[wav],out_path_old,in_path,wav,names)
+                self.write_list_triphone(output_triphones[wav],out_path_old,wav,tri_cor,'old',duration)
 
     def list_triphones_in_wav(self,triphones,output_timestamps,wav,mean_phone):
         """for each segment of signal, list the triphones in them, and 
@@ -118,18 +124,20 @@ class CorpusMiniWavs(object):
         
         # go through each output wave
         wav_index=0
+        nb_triphones=0
         out_times=[]
+        self.log.debug('mean phone : {}'.format(mean_phone))
         for start,stop in output_timestamps:
             # check if there's a triphone in the wave
-
+            
             gen=(i for i,x in enumerate(triphones_start) if (start+mean_phone<x[0] and x[1]<stop-mean_phone))
             index=next(gen,None)
             if index is None:
                 # if there's no triphone for this file, don't create it
                 #out_times.remove((start,stop))
                 self.log.debug(
-                        'no triphones found for wav from {} to {}, removing the wave'.format(
-                            start,stop))
+                        'no triphones found for wav {} from {} to {}, removing the wave'.format(
+                            wav,start,stop))
                 continue
             
             # while there's triphones in the file, add them to the dict 
@@ -137,24 +145,25 @@ class CorpusMiniWavs(object):
                 utt,phone1,phone2,phone3,triphone_start,triphone_end=triphones[index]
                 # change the timestamps of the triphone to make them relative to the
                 # output wav file
-                triphone_start=triphone_start-start
-                triphone_end=triphone_end-start
+                triphone_start_in_wav=triphone_start-start
+                triphone_end_in_wav=triphone_end-start
                 output_triphones[wav_index].append((
-                    utt,triphone_start,triphone_end,phone2,phone1,phone3))
+                    utt,triphone_start,triphone_end,triphone_start_in_wav,triphone_end_in_wav,phone2,phone1,phone3))
                 index=next(gen,None)
                 self.log.debug(
-                'adding triphone {}{}{}, with boundaries{}s-{}s, to wav from {}s to {}s'.format(
-                    phone1,phone2,phone3,
+                'adding triphone {}{}{}, with boundaries{}s-{}s, to wav {} from {}s to {}s'.format(
+                    phone1,phone2,phone3,wav,
                     triphone_start,triphone_end,start,stop))
 
                             
             
             # when all the triphones have been listed 
             out_times.append((start,stop))
+            nb_triphones=nb_triphones+len(output_triphones[wav_index])
             wav_index=wav_index+1
         self.log.debug("{} wav should be created,{} will actually be created".format(
             wav_index,len(out_times)))
-        return(out_times,output_triphones)
+        return(out_times,output_triphones,nb_triphones)
 
     def write_wavs(self,output_timestamps,output_triphones,wav_output_path,wav_input_path,wav,names):
         """ gets the timestamps corresponding to the {duration} seconds files 
@@ -210,16 +219,38 @@ class CorpusMiniWavs(object):
         for k in output_triphones:
             for v in output_triphones[k]:
                 wav_name=str(triphone_correspondance[k])
-                temp=(wav_name,v[1],v[2],v[3],v[4],v[5],wav)
+                temp=(wav_name,v[1],v[2],v[3],v[4],v[5],v[6],v[7],wav)
                 out_list.append(temp)
         out_path=os.path.join(out_path,'{}s_{}.item'.format(duration,distinction))
         with open_utf8(out_path,'a') as out:
             ### Write the header ###
             #out.write(u'#file onset offset #phone prev-phone next-phone speaker\n')
-            for out_wav,v0,v1,v2,v3,v4,v5 in out_list:
-                out.write(u'{} {} {} {} {} {} {}\n'.format(out_wav,v0,v1,v2,v3,v4,v5))
+            for out_wav,v0,v1,v2,v3,v4,v5,v6,v7 in out_list:
+                out.write(u'{} {} {} {} {} {} {}\n'.format(out_wav,v2,v3,v4,v5,v6,v7))
+
+        
+    
+    def remove_duplicate_triphones(self,output_triphones):
+        """ Removes  duplicates of triphones from the item output \
+                when a triphone is listed in more than one file"""
+        out=set()
+        out_triphones=dict()
+        for key in output_triphones: 
+            dict_wav=defaultdict(list)
+            for wav_output in output_triphones[key]:    
+                for utt,tri_start,tri_end,tri_start_in_wav,tri_end_in_wav,phone2,phone1,phone3 in output_triphones[key][wav_output]:
+                    if ((key,utt,tri_start,tri_end,phone2,phone1,phone3) in out):
+                        #output_triphones[key][wav_output].remove((utt,tri_start,tri_end,tri_start_in_wav,tri_end_in_wav,phone2,phone1,phone3))
+                        continue
+                    else:
+                        out.add((key,utt,tri_start,tri_end,phone2,phone1,phone3))
+                        dict_wav[wav_output].append((utt,tri_start,tri_end,tri_start_in_wav,tri_end_in_wav,phone2,phone1,phone3))
+            out_triphones[key]=dict_wav
+            
+        return out_triphones
+
 
         
 
             
-            
+     

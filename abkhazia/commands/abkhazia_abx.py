@@ -50,7 +50,7 @@ class AbkhaziaAbx(AbstractCoreCommand):
         #corpus.is_noise()
 
         log.info('create the list of triphones')
-        triphones=corpus.phones_timestamps(1,output_dir,alignment=args.alignment,precision=args.precision)
-        
+        triphones=corpus.phones_timestamps(1,output_dir,alignment=args.alignment,precision=args.precision,proba_threshold=0)
+       
 
 

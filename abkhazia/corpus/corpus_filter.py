@@ -102,9 +102,9 @@ class CorpusFilter(object):
 
         # For the THCHS30 corpus, force the speaker selection and 
         # put color to the gender : 
-        #males_to_keep = set(['A08','B08','C08','D08'])
+        males_to_keep = set(['A08','B08'])
         #male = set(['A08','B08','C08','D08','A33','B21','A09','B34','A35','A05'])
-        #noisy = set(['A05','C22','C14','D32','A23','A36','D31','B11'])
+        noisy = set(['A05','C22','C14','D32','A23','A36','D31','B11'])
 
         # For the LibriSpeech corpus, read SPEAKER.TXT to find the genders :
         #male=set()
@@ -128,12 +128,12 @@ class CorpusFilter(object):
 
         
         ### For the THCHS30 corpus, force the selection of male speakers
-        #for spkr in speakers:
-        #    if spkr in males_to_keep:
-        #        sorted_speaker.remove((spkr,spk2dur[spkr]))
-        #        sorted_speaker=[(spkr,spk2dur[spkr])]+sorted_speaker
-        #    if spkr in noisy:
-        #        sorted_speaker.remove((spkr,spk2dur[spkr]))
+        for spkr in speakers:
+            if spkr in males_to_keep:
+                sorted_speaker.remove((spkr,spk2dur[spkr]))
+                sorted_speaker=[(spkr,spk2dur[spkr])]+sorted_speaker
+            #if spkr in noisy:
+            #    sorted_speaker.remove((spkr,spk2dur[spkr]))
 
  
         # Plot the Speech duration distribution, and superimpose a power law
@@ -182,7 +182,7 @@ class CorpusFilter(object):
             #keep the speakers in the "family", to construct the test part
             family_temp=sorted_speaker[0:spk_threshold]
             family=[speaker for speaker,duration in family_temp]
-            #distrib=[dist if names[ind] not in noisy else 0 for (ind,dist) in enumerate(distrib)]
+            distrib=[dist if names[ind] not in noisy else 0 for (ind,dist) in enumerate(distrib)]
         elif function == "nothing":
             distrib=times
         
@@ -216,7 +216,9 @@ class CorpusFilter(object):
         
 
         ## write the names of the "family" speakers, to use them in the test
-        self.write_family_set(family,out_path)
+        if family:
+            self.write_family_set(family,out_path)
+
         return(self.filter_corpus(names,function))
 
     def filter_corpus(self,names,function):
@@ -245,7 +247,10 @@ class CorpusFilter(object):
 
             for utts in spk2utts[speaker]:
                 time+=utt2dur[utts]
+                if utts=='M01_B23_C1_N_te_fr_3' or utts=='M01_B23_C1_N_te_fr_5' or utts=='M01_B23_C1_N_te_fr_4' or utts=='M01_B23_C1_N_te_fr_2'  :
+                    continue
                 if time<limits[speaker] or nb_utt<10:
+
                     utt_ids.append(utts)
                     nb_utt=nb_utt+1 
                 else:

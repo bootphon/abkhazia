@@ -160,13 +160,13 @@ class Corpus(utils.abkhazia_base.AbkhaziaBase):
     def trim(self,corpus_dir,output_dir,function,not_kept_utts):
         CorpusTrimmer(self,not_kept_utts).trim(corpus_dir,output_dir,function,not_kept_utts)
 
-    def phones_timestamps(self,length_context,output_dir,alignment,precision,proba_threshold):
+    def phones_timestamps(self,length_context,output_dir,alignment,precision,proba_threshold,speaker_set,vad):
         return(CorpusTriphones(self).phones_timestamps(length_context,
-            output_dir,alignment,precision,proba_threshold))
+            output_dir,alignment,precision,proba_threshold,speaker_set,vad))
 
-    def create_mini_wavs(self,corpus_dir,duration,alignment,triphones,overlap,in_path,out_path,mean_phone,new_speakers):
+    def create_mini_wavs(self,corpus_dir,duration,alignment,triphones,overlap,in_path,out_path,mean_phone,new_speakers,speaker_set):
         CorpusMiniWavs(self).create_mini_wavs(corpus_dir,duration,alignment,
-                triphones,overlap,in_path,out_path,mean_phone,new_speakers)
+                triphones,overlap,in_path,out_path,mean_phone,new_speakers,speaker_set)
     
     def is_valid(self, njobs=utils.default_njobs()):
         """Return True if the corpus is in a valid state"""
@@ -396,8 +396,8 @@ class Corpus(utils.abkhazia_base.AbkhaziaBase):
 
         return(CorpusSplitChallenge(self,prune=True).splitChallenge(nb_new_speaker,test_dur,out))
 
-    def splitLibrivox(self,in_path):
-        return(CorpusSplitLibrivox(self,prune=True).splitLibrivox(in_path))
+    def splitLibrivox(self,out_path):
+        return(CorpusSplitLibrivox(self,prune=True).splitLibrivox(out_path))
 
     def split(self, train_prop=None, test_prop=None,
               by_speakers=True, random_seed=None):

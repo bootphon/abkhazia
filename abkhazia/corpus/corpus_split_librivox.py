@@ -18,7 +18,7 @@ import ConfigParser
 import random
 import os
 from collections import defaultdict
-from abkhazia.utils import logger, config
+from abkhazia.utils import logger, config, open_utf8
 
 
 class CorpusSplitLibrivox(object):
@@ -69,7 +69,7 @@ class CorpusSplitLibrivox(object):
                        self.size, len(self.speakers))
 
 
-    def splitLibrivox(self,in_path):
+    def splitLibrivox(self,out_path):
         """Split the corpus by utterances regardless of the speakers
 
         Both generated subsets get speech from all the speakers with a
@@ -85,15 +85,35 @@ class CorpusSplitLibrivox(object):
         spk2utts=dict()
         spk2dur=dict()
 
-        train=self.read_text_files(in_path)
+        #train=self.read_text_files(in_path)
         train_utt_ids=[]
         test_utt_ids=[]
+        family=[]
+        new_speakers=[]
+
         for utt,spkr in utts:
-            wav_id=self.corpus.segments[utt][0]
-            if '.'.join([wav_id,'wav']) in set(train):
+            utt_list=utt.split('_')
+            type_spkr=utt_list[3]
+            train_test=utt_list[4]
+            
+            #Split between train or test
+            if train_test=='tr': 
                 train_utt_ids.append(utt)
-            else:
+            elif train_test=='te':
                 test_utt_ids.append(utt)
+            else : 
+                print "neither train or test : check",utt
+            
+            #Write family/new speakers text files
+            if type_spkr=='L':
+                family.append(spkr)
+            elif type_spkr=='N':
+                new_speakers.append(spkr)
+                
+        #write new speakers and family speakers lists
+        self.write_text(family,os.path.join(out_path,'family/family.txt'))
+        self.write_text(new_speakers,os.path.join(out_path,'new_speakers/new_speakers.txt'))
+
         return (self.corpus.subcorpus(train_utt_ids, prune=self.prune),
                 self.corpus.subcorpus(test_utt_ids, prune=self.prune))
 
@@ -104,6 +124,15 @@ class CorpusSplitLibrivox(object):
             for line in train_files:
                 train.append(line.strip('\n'))
         return(train)
+    
+    def write_text(self,alist,name):
+        
+        if not os.path.isdir(os.path.dirname(name)):
+            os.makedirs(os.path.dirname(name))
+        alist=list(set(alist))
+        with open_utf8(name,'w') as fout:
+            for line in alist:
+                fout.write(u'{}\n'.format(line))
 
 
 

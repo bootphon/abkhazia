@@ -53,7 +53,9 @@ class AbkhaziaTriphones(AbstractCoreCommand):
         group.add_argument('-t','--threshold',type=float,metavar="<alignment>",
                 help='''the threshold on the posterior probability. If the
                 phone has a posterior probability under the threshold in 
-                the alignment, we don't take it into account''') 
+                the alignment, we don't take it into account''')
+        group.add_argument('-vd','--vad',type=int,default=0,
+                help='''if want to create the vad check this''')
     @classmethod
     def run(cls,args):
         corpus_dir, output_dir = cls._parse_io_dirs(args)
@@ -62,26 +64,42 @@ class AbkhaziaTriphones(AbstractCoreCommand):
         corpus = Corpus.load(corpus_dir, validate=args.validate, log=log)
         
         #load the new speakers text file:
-        new_spkr_dir=os.path.join(os.path.dirname(os.path.dirname(corpus_dir)),'new_speakers')
-        try : 
-            new_speakers_file=utils.open_utf8(os.path.join(new_spkr_dir,'new_speakers.txt'))
-        except IOError:
-            log.info("New Speakers File Not Found In {}".format(new_spkr_dir))
-            return False
-        new_speakers=[]
-        for spkr in new_speakers_file:
-            spkr=spkr.strip('\n')
-            new_speakers.append(spkr)
+        if args.vad == 0:
+            new_speaker_dir=os.path.join(os.path.dirname(os.path.dirname(output_dir)),'new_speakers/new_speakers.txt')
+            family_dir=os.path.join(os.path.dirname(os.path.dirname(output_dir)),'family/family.txt')
+            family=cls.read_text(family_dir)
+            new_speakers=cls.read_text(new_speaker_dir)
+            family.remove('')
+            new_speakers.remove('')
+            
+            speaker_set=family+new_speakers
+            speaker_set=list(set(speaker_set))
+        else:
+            speaker_set=[wav for wav in corpus.wavs]
         #log.info('create the noise lexicon')
         #corpus.is_noise()
 
         log.info('create the list of triphones')
-        triphones=corpus.phones_timestamps(1,output_dir,alignment=args.alignment,precision=args.precision,proba_threshold=args.threshold)
+        triphones=corpus.phones_timestamps(1,output_dir,alignment=args.alignment,precision=args.precision,proba_threshold=args.threshold,speaker_set=speaker_set,vad=args.vad)
         
-        log.info('write the small wave files')
-        corpus.create_mini_wavs(
-                output_dir,duration=args.length,alignment=args.alignment,
-                triphones=triphones,overlap=args.overlap,
-                in_path=corpus_dir,out_path=output_dir,mean_phone=args.mean_phone,new_speakers=new_speakers)
-
+        if args.vad == 0 :
+            log.info('write the small wave files')
+            corpus.create_mini_wavs(
+                   output_dir,duration=args.length,alignment=args.alignment,
+                    triphones=triphones,overlap=args.overlap,
+                    in_path=corpus_dir,out_path=output_dir,mean_phone=args.mean_phone,new_speakers=new_speakers,speaker_set=speaker_set)
+    
+    @classmethod
+    def read_text(cls,path):
+        """Read the alignment txt file at align_path and return a  
+        dict(speaker,(phone,start,stop))
+        """
+        try:
+            new_speakers_file=utils.open_utf8(path,'r')
+        except IOError:
+            return False
+        new_speakers_read=new_speakers_file.read()
+        new_speakers=new_speakers_read.split('\n')
+            
+        return(new_speakers)
 

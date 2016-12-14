@@ -98,6 +98,13 @@ class CorpusSplitChallenge(object):
         self.spk2utts=spk2utts
         sorted_speaker=sorted(spk2dur.iteritems(), key=lambda(k,v):(v,k))
         new_speakers=set([spkr for spkr,duration in sorted_speaker[0:nb_new_spkr]]) 
+        
+        ## Add males to the new speakers in THCHS30 ##
+        if 'C08' not in new_speakers:
+            new_speakers.add('C08')
+        if 'D08' not in new_speakers:
+            new_speakers.add('D08')
+        noisy=set(['A05','C22','C14','D32','A23','A36','D31','B11'])
 
         train_utt_ids = []
         test_utt_ids = []
@@ -105,6 +112,8 @@ class CorpusSplitChallenge(object):
         # Split the corpus in test/train, to have test_dur min
         # of speech in the test set
         for spkr in speakers:
+            if spkr in noisy :
+                continue
             spk_utts = [utt_id for utt_id, utt_speaker in self.utts
                         if utt_speaker == spkr]
 
