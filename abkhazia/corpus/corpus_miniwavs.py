@@ -57,20 +57,12 @@ class CorpusMiniWavs(object):
         wavs=self.wavs
         wav_input_path=os.path.join(in_path,'wavs')
         
-        # Separate old and new speakers 
-        out_path_old = os.path.join(out_path,'old_speakers')
-        if not os.path.isdir(out_path_old):
-            os.makedirs(out_path_old)
-        with open_utf8(os.path.join(out_path_old,'{}s_old.item'.format(duration)),'w') as out:
+        if not os.path.isdir(out_path):
+            os.makedirs(out_path)
+        with open_utf8(os.path.join(out_path,'{}s.item'.format(duration)),'w') as out:
             ### Write the header ###
             out.write(u'#file onset offset #phone prev-phone next-phone speaker\n')
         
-        out_path_new = os.path.join(out_path,'new_speakers')
-        if not os.path.isdir(out_path_new):
-            os.makedirs(out_path_new)
-        with open_utf8(os.path.join(out_path_new,'{}s_new.item'.format(duration)),'w') as out:
-            ### Write the header ###
-            out.write(u'#file onset offset #phone prev-phone next-phone speaker\n')
         new_speakers=set(new_speakers)
         #We want the output wave files to be named at random !
         out_timestamps=dict()
@@ -117,12 +109,8 @@ class CorpusMiniWavs(object):
         self.log.debug('number of triphones per speaker:  {}'.format(nb_triphones))
         for wav in speaker_set:
             
-            if wav in new_speakers:
-                (names,tri_cor)=self.write_wavs(out_timestamps[wav],output_triphones[wav],out_path_new,in_path,wav,names)
-                self.write_list_triphone(output_triphones[wav],out_path_new,wav,tri_cor,'new',duration)
-            else:
-                (names,tri_cor)=self.write_wavs(out_timestamps[wav],output_triphones[wav],out_path_old,in_path,wav,names)
-                self.write_list_triphone(output_triphones[wav],out_path_old,wav,tri_cor,'old',duration)
+            (names,tri_cor)=self.write_wavs(out_timestamps[wav],output_triphones[wav],out_path,in_path,wav,names)
+            self.write_list_triphone(output_triphones[wav],out_path,wav,tri_cor,duration)
 
     def list_triphones_in_wav(self,triphones,output_timestamps,wav,mean_phone):
         """for each segment of signal, list the triphones in them, and 
@@ -228,7 +216,7 @@ class CorpusMiniWavs(object):
 
 
     def write_list_triphone(self,output_triphones,
-            out_path,wav,triphone_correspondance,distinction,duration):
+            out_path,wav,triphone_correspondance,duration):
         """ Writing the list of triphones that occur in each wave file"""
 
         out_list=[]
@@ -239,7 +227,7 @@ class CorpusMiniWavs(object):
                 wav_name=str(triphone_correspondance[k])
                 temp=(wav_name,v[1],v[2],v[3],v[4],v[5],v[6],v[7],wav)
                 out_list.append(temp)
-        out_path=os.path.join(out_path,'{}s_{}.item'.format(duration,distinction))
+        out_path=os.path.join(out_path,'{}s.item'.format(duration))
         with open_utf8(out_path,'a') as out:
             ### Write the header ###
             #out.write(u'#file onset offset #phone prev-phone next-phone speaker\n')

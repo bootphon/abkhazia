@@ -89,5 +89,5 @@ class AbkhaziaSplit(AbstractCoreCommand):
             by_speakers=args.by_speakers,
             random_seed=args.random_seed)
 
-        #train.save(os.path.join(output_dir, 'train', 'data'))
+        train.save(os.path.join(output_dir, 'train', 'data'))
         test.save(os.path.join(output_dir, 'test', 'data'))

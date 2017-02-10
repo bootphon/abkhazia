@@ -86,10 +86,16 @@ class CorpusSplitChallenge(object):
         spk2dur=dict()
         # Select n "new" speaker for the test part
         spk2utts_temp=defaultdict(list)
+	#noisy=set(['A05','C22','C14','D32','A23','A36','D31','B11'])
+
         for utt,spkr in utts:
+	    #if spkr in noisy : 
+	    #    continue
             utt_start=self.corpus.segments[utt][1]
             spk2utts_temp[spkr].append([utt,utt_start])
         for spkr in speakers:
+	    #if spkr in noisy: 
+	    #	    continue 
             spk2utts_temp[spkr]=sorted(spk2utts_temp[spkr], key=lambda x: x[1])
             spk2utts[spkr]=[utt for utt,utt_start in spk2utts_temp[spkr]]
             duration=sum([utt2dur[utt_id] for utt_id in spk2utts[spkr]])
@@ -98,22 +104,22 @@ class CorpusSplitChallenge(object):
         self.spk2utts=spk2utts
         sorted_speaker=sorted(spk2dur.iteritems(), key=lambda(k,v):(v,k))
         new_speakers=set([spkr for spkr,duration in sorted_speaker[0:nb_new_spkr]]) 
-        
+       	#print len(new_speakers) 
         ## Add males to the new speakers in THCHS30 ##
-        if 'C08' not in new_speakers:
-            new_speakers.add('C08')
-        if 'D08' not in new_speakers:
-            new_speakers.add('D08')
-        noisy=set(['A05','C22','C14','D32','A23','A36','D31','B11'])
-
+        #if 'C08' not in new_speakers:
+        #    new_speakers.add('C08')
+        #if 'D08' not in new_speakers:
+        #    new_speakers.add('D08')
+        	
         train_utt_ids = []
         test_utt_ids = []
 
         # Split the corpus in test/train, to have test_dur min
         # of speech in the test set
         for spkr in speakers:
-            if spkr in noisy :
-                continue
+            #if spkr in noisy :
+	    #	print 'not adding spkr :',spkr
+            #    continue
             spk_utts = [utt_id for utt_id, utt_speaker in self.utts
                         if utt_speaker == spkr]
 
@@ -125,17 +131,17 @@ class CorpusSplitChallenge(object):
             # while the total of speech for this speaker is not 10 minutes,
             # add a randomly picked utt in the test set
             test_utts=[]
-            while (time<10):
-                try : 
-                    utt_ind,utt_id=next(utts)
-                except StopIteration :
-                    break
-                time=time+(utt2dur[utt_id]/60)
-                test_utts.append(utt_id)
-
-            test_set=set(test_utts)
-            if spkr not in new_speakers:
-                train_utts=[utt_id for utt_id in spk_utts if utt_id not in test_set]
+	    if spkr in new_speakers:
+            	while (time<10):
+            	    try : 
+            	        utt_ind,utt_id=next(utts)
+            	    except StopIteration :
+            	        break
+            	    time=time+(utt2dur[utt_id]/60)
+            	    test_utts.append(utt_id)
+		train_utts=[]
+	    elif spkr not in new_speakers:
+                train_utts=[utt_id for utt_id in spk_utts if utt_id]
             else:
                 train_utts=[]
             # add to train and test sets

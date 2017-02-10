@@ -216,8 +216,6 @@ class CorpusFilter(object):
         
 
         ## write the names of the "family" speakers, to use them in the test
-        if family:
-            self.write_family_set(family,out_path)
 
         return(self.filter_corpus(names,function))
 
@@ -247,7 +245,7 @@ class CorpusFilter(object):
 
             for utts in spk2utts[speaker]:
                 time+=utt2dur[utts]
-                if utts=='M01_B23_C1_N_te_fr_3' or utts=='M01_B23_C1_N_te_fr_5' or utts=='M01_B23_C1_N_te_fr_4' or utts=='M01_B23_C1_N_te_fr_2'  :
+                if utts=='M01_B23_C1_N_te_fr_3' or utts == 'M01_B23_C1_N_te_fr_4' or utts == 'M01_B23_C1_N_te_fr_5' or utts == 'M01_B23_C1_N_te_fr_2':
                     continue
                 if time<limits[speaker] or nb_utt<10:
 

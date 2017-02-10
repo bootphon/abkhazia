@@ -78,13 +78,19 @@ def decode(decoder, graph_dir):
     if not os.path.isdir(target_sa):
         os.makedirs(target_sa)
     tempdir_sa = os.path.join(decoder.am_dir, 'decode_fmllr')
-    os.symlink(target_sa, tempdir_sa)
+    try :
+	    os.symlink(target_sa, tempdir_sa)
+    except:
+	    pass
 
     target_si = os.path.join(decoder.recipe_dir, 'decode.si')
     if not os.path.isdir(target_si):
         os.makedirs(target_si)
     tempdir_si = os.path.join(decoder.am_dir, 'decode_fmllr.si')
-    os.symlink(target_si, tempdir_si)
+    try:
+            os.symlink(target_si, tempdir_si)
+    except:
+	    pass
 
     decoder._run_command((
         'steps/decode_fmllr.sh --nj {njobs} --cmd "{cmd}" '

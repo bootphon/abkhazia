@@ -61,10 +61,10 @@ class AbkhaziaSplitChallenge(AbstractCoreCommand):
         corpus.validate()
         # retrieve the test proportion
         if args.librivox==0:
-            train, test, new_speakers = corpus.splitChallenge(
-                    out=os.path.join(output_dir,'new_speakers'),
-                    nb_new_speaker=args.new_speakers,test_dur=args.test_dur)
-            test.new_speakers=new_speakers
+        	train,test, new_speakers = corpus.splitChallenge(
+        	        out=os.path.join(output_dir,'new_speakers'),
+        	        nb_new_speaker=args.new_speakers,test_dur=args.test_dur)
+        	test.new_speakers=new_speakers
         else:
             train,test=corpus.splitLibrivox(output_dir)
 

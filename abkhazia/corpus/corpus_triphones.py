@@ -88,7 +88,7 @@ class CorpusTriphones(object):
 
         self.log.debug('number of triphones per speakers : {}'.format(nb_phones))
         ##create abx item txt file
-        #self.triphone2abx_item(triphones,out_path)
+        self.triphone2abx_item(triphones,output_dir)
 
         return(triphones)
     
@@ -113,22 +113,43 @@ class CorpusTriphones(object):
 
         #with open_utf8('alignement.txt','w') as fout,open_utf8('vad.txt','w') as vad:
         if vad:
-            with open_utf8('alignement.txt','w') as fout,open_utf8('vad.txt','w') as vad:
-                for utt,start,stop,phone in alignment:
-                  '''in the alignment file, the timestamps are given
-                  relative to the begining of the utterance '''
-                  try:
-                      utt_pos=self.corpus.segments[utt][1]
-                      wav=self.corpus.segments[utt][0]
-                  except:
-                      continue
-                  utt_pos=round(utt_pos/precision)*precision
-                  phones[utt2spk[utt]].append((utt,phone,float(start)+utt_pos,float(stop)+utt_pos))
-                  #self.log.debug('phone {}, wav {} , utt {}'.format(phone,wav,utt))
-                  #to output the alignment and the vad
-                  fout.write(u'{} {} {} {}\n'.format(wav,float(start)+utt_pos,float(stop)+utt_pos,phone))
-                  if phone not in set(self.corpus.silences):
-                      vad.write(u'{} {} {}\n'.format(wav,float(start)+utt_pos,float(stop)+utt_pos))
+	    if length_align==5:
+	            with open_utf8('alignement.txt','w') as fout,open_utf8('vad.txt','w') as vad:
+	                for utt,start,stop,proba,phone in alignment:
+	                  '''in the alignment file, the timestamps are given
+	                  relative to the begining of the utterance '''
+	                  try:
+	                      utt_pos=self.corpus.segments[utt][1]
+	                      wav=self.corpus.segments[utt][0]
+	                  except:
+	                      continue
+	                  utt_pos=round(utt_pos/precision)*precision
+			  utt_pos=0
+	                  phones[utt2spk[utt]].append((utt,phone,float(start)+utt_pos,float(stop)+utt_pos))
+	                  #self.log.debug('phone {}, wav {} , utt {}'.format(phone,wav,utt))
+	                  #to output the alignment and the vad
+	                  fout.write(u'{} {} {} {}\n'.format(wav,float(start)+utt_pos,float(stop)+utt_pos,phone))
+	                  if phone not in set(self.corpus.silences):
+	                      vad.write(u'{} {} {}\n'.format(wav,float(start)+utt_pos,float(stop)+utt_pos))
+	
+	    else:
+	            with open_utf8('alignement.txt','w') as fout,open_utf8('vad.txt','w') as vad:
+	                for utt,start,stop,phone in alignment:
+	                  '''in the alignment file, the timestamps are given
+	                  relative to the begining of the utterance '''
+	                  try:
+	                      utt_pos=self.corpus.segments[utt][1]
+	                      wav=self.corpus.segments[utt][0]
+	                  except:
+	                      continue
+	                  utt_pos=round(utt_pos/precision)*precision
+			  utt_pos=0
+	                  phones[utt2spk[utt]].append((utt,phone,float(start)+utt_pos,float(stop)+utt_pos))
+	                  #self.log.debug('phone {}, wav {} , utt {}'.format(phone,wav,utt))
+	                  #to output the alignment and the vad
+	                  fout.write(u'{} {} {} {}\n'.format(wav,float(start)+utt_pos,float(stop)+utt_pos,phone))
+	                  if phone not in set(self.corpus.silences):
+	                      vad.write(u'{} {} {}\n'.format(wav,float(start)+utt_pos,float(stop)+utt_pos))
  
         else:
             if length_align==5:
@@ -215,7 +236,7 @@ class CorpusTriphones(object):
         out_list=[]
         for k in triphones:
             for v in triphones[k]:
-                temp=(v[0],v[4],v[5],v[1],v[2],v[3])
+                temp=(v[0],v[4],v[5],v[1],v[2],v[3],k)
                 out_list.append(temp)
         out_path=os.path.join(out_path,'phones.item')
 
@@ -223,8 +244,8 @@ class CorpusTriphones(object):
         with open_utf8(out_path,'w') as out:
             ###write the header
             out.write(u'#file onset offset #phone prev-phone next-phone speaker\n')
-            for v0,v1,v2,v3,v4,v5 in out_list:
-                out.write(u'{} {} {} {} {} {}\n'.format(v0,v1,v2,v3,v4,v5,v0))
+            for v0,v1,v2,v3,v4,v5,v6 in out_list:
+                out.write(u'{} {} {} {} {} {} {}\n'.format(v0,v1,v2,v3,v4,v5,v6))
 
     def read_family(self,path):
         """Read the alignment txt file at align_path and return a  

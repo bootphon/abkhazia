@@ -66,14 +66,10 @@ class AbkhaziaTriphones(AbstractCoreCommand):
         #load the new speakers text file:
         if args.vad == 0:
             new_speaker_dir=os.path.join(os.path.dirname(os.path.dirname(output_dir)),'new_speakers/new_speakers.txt')
-            family_dir=os.path.join(os.path.dirname(os.path.dirname(output_dir)),'family/family.txt')
-            family=cls.read_text(family_dir)
             new_speakers=cls.read_text(new_speaker_dir)
-            family.remove('')
             new_speakers.remove('')
             
-            speaker_set=family+new_speakers
-            speaker_set=list(set(speaker_set))
+            speaker_set=list(set(new_speakers))
         else:
             speaker_set=[wav for wav in corpus.wavs]
         #log.info('create the noise lexicon')
