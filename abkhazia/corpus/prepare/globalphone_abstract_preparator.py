@@ -83,6 +83,15 @@ class AbstractGlobalPhonePreparator(AbstractPreparator):
         self.wavs = None
         self._erase_dict = self.correct_dictionary()
         self._erase_trs = self.correct_transcription()
+	# for japanese : 
+	#self.kana_to_phone = None
+	self.kana_to_phone = self.parse_kana_to_phone()
+	if self.kana_to_phone :
+            with open(os.path.join(self.input_dir,'unknown_GP.txt'),'ab') as unk_GP:
+                unk_GP.write('phone\tprev_phone\tnext_phone\n')
+	
+
+
 
     def correct_transcription(self):
         return False
@@ -156,11 +165,13 @@ class AbstractGlobalPhonePreparator(AbstractPreparator):
 
             for i, trs in zip(ids, transcriptions):
                 text[i] = trs
+	    
         return text
 
     def make_lexicon(self):
         # parse dictionary lines
         words, transcripts = [], []
+	not_transc=[]
         for line in utils.open_utf8(self.dictionary, 'r').readlines():
             # suppress linebreaks (this does not take into account fancy
             # unicode linebreaks), see
@@ -177,21 +188,30 @@ class AbstractGlobalPhonePreparator(AbstractPreparator):
             # parse phonetic transcription
             trs = self.strip_accolades(u' '.join(line[1:])).split(u' ')
             transcript = []
-            for phone in trs:
-                if phone[0] == u'{':
-                    phn = phone[1:]
-                    assert phn != u'WB', trs
-                elif phone[-1] == u'}':
-                    phn = phone[:-1]
-                    assert phn == u'WB', trs
-                else:
-                    phn = phone
-                    assert phn != u'WB', trs
+	    if self.kana_to_phone :
+                (transcript,not_transcripted) = self.transcript_japanese(trs)
+		not_transc=not_transc+not_transcripted
+            else:
+		print trs
+                for phone in trs:
+                    if phone[0] == u'{':
+                        phn = phone[1:]
+                        assert phn != u'WB', trs
+                    elif phone[-1] == u'}':
+                        phn = phone[:-1]
+                        assert phn == u'WB', trs
+                    else:
+                        phn = phone
+                        assert phn != u'WB', trs
 
-                assert not(u'{' in phn), trs
-                assert not(u'}' in phn), trs
-                if phn != u'WB':
-                    transcript.append(phn)
+                    assert not(u'{' in phn), trs
+                    assert not(u'}' in phn), trs
+                    if phn != u'WB':
+                        transcript.append(phn)
             transcripts.append(u' '.join(transcript))
+	if self.kana_to_phone:
+	    with open(os.path.join(self.input_dir,'unknown_GP.txt'),'ab') as unk_GP:
+	       	for ph1,ph2,ph3 in not_transc:
+	            unk_GP.write('{}\t{}\t{}\n'.format(ph1,ph2,ph3))
 
         return dict(zip(words, transcripts))

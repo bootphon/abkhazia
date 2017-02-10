@@ -52,7 +52,7 @@ except ImportError:
 
 import abkhazia.utils as utils
 from abkhazia.corpus.prepare import AbstractPreparator
-from abkhazia.utils import open_utf8
+
 
 Phone = namedtuple('Phone', 'id type start end')
 Phoneme = namedtuple('Phone', 'id phones start end')
@@ -163,19 +163,19 @@ class CSJPreparator(AbstractPreparator):
 	self.data_files = [f for f in self.data_files
 			   if f[0] == 'S']
 	
- 	self.kana_to_phone = self.parse_kana_to_phone("/home/jkaradayi/kana-to-phon_bootphon.txt")
-       
-	# gather label data TODO parallelize
+        self.data_files = [f for f in self.data_files
+                           if f[0] == 'S']
+
+	
+	# read kana-to-phone
+	self.kana_to_phone = self.parse_kana_to_phone(os.path.join(
+		xml_dir,"kana-to-phon_bootphon.txt"))
+        # gather label data TODO parallelize
         self.log.info('parsing {} xml files'.format(len(self.data_files)))
         self.all_utts = {}
         self.lexicon = {}
-        
-	for data in progressbar.ProgressBar()(self.data_files):
-	    if data in self.data_core_files :
-	        utts = self.parse_core_xml(os.path.join(xml_dir, data + '.xml'))
-	    else :
-		utts = self.parse_non_core_xml(os.path.join(xml_dir,data + '.xml'))
-	    print "xml is", data
+        for data in progressbar.ProgressBar()(self.data_files):
+            utts = self.parse_core_xml(os.path.join(xml_dir, data + '.xml'))
             utts, utt_lexicon = self.extract_basic_transcript(utts)
 
             for utt_id in utts:
@@ -184,11 +184,9 @@ class CSJPreparator(AbstractPreparator):
 
             for word in utt_lexicon:
                 if word not in self.lexicon:
-		    if word=='-' : 
-			continue
                     self.lexicon[word] = utt_lexicon[word]
 
-    def parse_kana_to_phone(self,kana_csv):
+     def parse_kana_to_phone(self,kana_csv):
 	"""Parse katakana phone transcription and pu it in a dict() """	
 	kana_to_phon=dict()
 	with open_utf8(kana_csv,'r') as fin:
@@ -204,76 +202,8 @@ class CSJPreparator(AbstractPreparator):
 			bootphon=="H"
 		kana_to_phon[katakana]=bootphon
 	return(kana_to_phon)
-
-    def parse_core_xml(self, xml_file):
-        """Parse raw transcript"""
-        tree = ET.ElementTree(file=xml_file)
-        talk = tree.getroot()
-        talk_id = talk.attrib["TalkID"]
-        speaker = talk.attrib["SpeakerID"]
-
-        # make sure all speaker-ids have same length
-        if len(speaker) < 4:
-            speaker = "0"*(4-len(speaker)) + speaker
-        else:
-            assert len(speaker) == 4, talk_id
-
-        # using kanji for 'male'
-        gender = 'M' if talk.attrib["SpeakerSex"] == u"男" else 'F'
-        spk_id = gender + speaker
-
-        if talk_id[0] == "D":
-            is_dialog = True
-        else:
-            is_dialog = False
-
-        # Utterance level
-        utts = {}
-        for ipu in talk.iter("IPU"):
-            utt_id = spk_id + u"_" + talk_id + u"_" + ipu.attrib["IPUID"]
-            channel = ipu.attrib["Channel"] if is_dialog else None
-            utt_start = float(ipu.attrib["IPUStartTime"])
-            utt_stop = float(ipu.attrib["IPUEndTime"])
-
-            # Word level - Short Words Units (SUW) are taken as 'words'
-            words = []
-            for suw in ipu.iter("SUW"):
-                # Phoneme level
-                phonemes = []
-                for phoneme in suw.iter("Phoneme"):
-                    phoneme_id = phoneme.attrib["PhonemeEntity"]
-                    # Phone level (detailed phonetic)
-                    phones = []
-                    for phone in phoneme.iter("Phone"):
-                        start = float(phone.attrib["PhoneStartTime"])
-                        stop = float(phone.attrib["PhoneEndTime"])
-                        id = phone.attrib["PhoneEntity"]
-                        phn_class = phone.attrib["PhoneClass"]
-                        phones.append(Phone(id, phn_class, start, stop))
-                    if phones:
-                        phonemes.append(Phoneme(
-                            phoneme_id, phones, phones[0].start, phones[-1].end))
-                    # else:
-                    #     self.log.debug(utt_id)
-                if phonemes:
-                    words.append(Word(
-                        phonemes, phonemes[0].start, phonemes[-1].end))
-                else:
-                    try:
-                        moras = [mora.attrib["MoraEntity"]
-                                 for mora in suw.iter("Mora")]
-                        # self.log.debug(moras)
-                    except:
-                        pass
-                    # self.log.debug(utt_id)
-                    # FIXME understand this
-                    # assert u"φ" in moras, utt_id
-            utts[utt_id] = Utt(words, utt_start, utt_stop, channel)
-        return utts
-
-
     def parse_non_core_xml(self, xml_file):
-        """Parse raw transcript"""
+         """Parse raw transcript"""
         tree = ET.ElementTree(file=xml_file)
         talk = tree.getroot()
         talk_id = talk.attrib["TalkID"]
@@ -463,10 +393,8 @@ class CSJPreparator(AbstractPreparator):
                 #         str(utt.end) + ' - ' +
                 #         str(utt.words[-1].end))
 
-                #start = min(utt.words[0].start, utt.start)
-                #stop = max(utt.words[-1].end, utt.end)
-		start = utt.start
-		stop = utt.end
+                start = min(utt.words[0].start, utt.start)
+                stop = max(utt.words[-1].end, utt.end)
 
                 words = []
                 for word in utt.words:
@@ -474,14 +402,11 @@ class CSJPreparator(AbstractPreparator):
                     phonemes = self.reencode(
                         [phoneme.id for phoneme in word.phonemes], encoding)
 
-                    ###print('-'.join(phonemes))
-                    ###print('-'.join([phoneme.id for phoneme in word.phonemes]))
+                    #print('-'.join(phonemes))
+                    #print('-'.join([phoneme.id for phoneme in word.phonemes]))
                     if phonemes == ['H']:  # just drop these for now
                         pass # TODO log this
                     else:
-			##print phonemes
-			#if phonemes=='':
-				#print 'empty phoneme !!'
                         word = u"-".join(phonemes)
                         if word not in lexicon:
                             lexicon[word] = phonemes
@@ -496,6 +421,7 @@ class CSJPreparator(AbstractPreparator):
         affricates = ['z', 'zy', 'zj', 'c', 'cy', 'cj']
         fricatives = ['s', 'sj', 'sy', 'z', 'zy', 'zj', 'h', 'F', 'hy', 'hj']
         obstruents = affricates + fricatives + stops
+
         phonemes_1 = []
         for phoneme in phonemes:
             # 1 - Noise and rare phonemes
@@ -555,10 +481,7 @@ class CSJPreparator(AbstractPreparator):
                 'hj': 'h',
                 'gj': 'g'
             }
-	    
             out_phns = [mapping[phn] if phn in mapping else phn for phn in out_phns]
-	    if out_phns=="h:":
-		    print phn
             phonemes_1 = phonemes_1 + out_phns
 
         # 4 - Q before obstruent as geminate (long obstruent)
@@ -571,11 +494,8 @@ class CSJPreparator(AbstractPreparator):
             for phoneme in phonemes_1[1:]:
                 out_phn = phoneme
                 if previous == 'Q':
-		    #print phoneme,' in ',phonemes_1
                     assert out_phn != 'Q', "Two successive 'Q' in phoneme sequence"
                     if out_phn in obstruents:
-                        if out_phn=='z' or out_phn=='h':
-			    print out_phn,"is about to receive :", phonemes
                         previous = out_phn + ':'
                     else:
                         # Q considered a glottal stop in other contexts
@@ -611,9 +531,6 @@ class CSJPreparator(AbstractPreparator):
                     previous = out_phn
             if previous != 'H':
                 phonemes_3.append(previous)  # don't forget last item
-	for phh in phonemes_3:
-		if phh=='z:' or phh=="h:":
-			print phonemes_3
         return phonemes_3
 
     def list_audio_files(self):
