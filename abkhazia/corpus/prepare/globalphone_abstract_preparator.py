@@ -87,7 +87,7 @@ class AbstractGlobalPhonePreparator(AbstractPreparator):
 	#self.kana_to_phone = None
 	self.kana_to_phone = self.parse_kana_to_phone()
 	if self.kana_to_phone :
-            with open(os.path.join(self.input_dir,'unknown_GP.txt'),'ab') as unk_GP:
+            with open(os.path.join(self.input_dir,'unknown_GP.txt'),'wb') as unk_GP:
                 unk_GP.write('phone\tprev_phone\tnext_phone\n')
 	
 

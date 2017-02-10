@@ -6,4 +6,4 @@
 	- (R xxx) : on remplace par "?"
 	- reste : on enlève caractère + parenthèse et on garde tout
 [ ] - On enlève les IPU lorsqu'il y a un caractère problèmatique (e.g. "(?" ou "(W" ou autre) dans un des SUW ? 
-
+[ ] - Chercher les transcriptions manquantes pour GlobalPhone (pour l'instant hard codé dans préparateur)
