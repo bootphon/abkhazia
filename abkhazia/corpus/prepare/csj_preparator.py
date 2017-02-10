@@ -168,7 +168,8 @@ class CSJPreparator(AbstractPreparator):
 	self.data_files = [f for f in self.data_files
 			   if f[0] == 'S']
 	
- 	self.kana_to_phone = self.parse_kana_to_phone("/home/jkaradayi/kana-to-phon_bootphon.txt")
+ 	self.kana_to_phone = self.parse_kana_to_phone(
+			os.path.join(self.input_dir,"kana-to-phon_bootphon.txt"))
        
 	# gather label data TODO parallelize
         self.log.info('parsing {} xml files'.format(len(self.data_files)))
