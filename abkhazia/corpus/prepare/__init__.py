@@ -35,6 +35,8 @@ from .globalphone_mandarin_preparator import (
     MandarinPreparator)
 from .globalphone_vietnamese_preparator import (
     VietnamesePreparator)
+from .globalphone_japanese_preparator import (
+    JapanesePreparator)
 
 from .wsj_preparator import (
     WallStreetJournalPreparator,

@@ -31,6 +31,7 @@ from abkhazia.corpus.prepare import (
     LibriSpeechPreparator,
     XitsongaPreparator,
     AbstractGlobalPhonePreparator, MandarinPreparator, VietnamesePreparator,
+    JapanesePreparator,
     WallStreetJournalPreparator, JournalistReadPreparator,
     JournalistSpontaneousPreparator, MainReadPreparator)
 
@@ -354,6 +355,7 @@ class GlobalPhoneFactory(AbstractFactory):
 
     # all the supported languages mapped to their preparators
     preparators = {
+        'japanese': JapanesePreparator,
         'mandarin': MandarinPreparator,
         'vietnamese': VietnamesePreparator
     }
