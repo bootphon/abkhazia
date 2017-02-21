@@ -17,6 +17,7 @@
 """Provides the Corpus class"""
 
 import os
+import matplotlib.pyplot as plt
 
 from abkhazia.corpus.corpus_saver import CorpusSaver
 from abkhazia.corpus.corpus_loader import CorpusLoader
@@ -30,6 +31,7 @@ from abkhazia.corpus.corpus_miniwavs import CorpusMiniWavs
 from abkhazia.corpus.corpus_split_challenge import CorpusSplitChallenge
 from abkhazia.corpus.corpus_split_librivox import CorpusSplitLibrivox
 import abkhazia.utils as utils
+from collections import defaultdict
 #from abkhazia.utils import abkhazia_base, default_njobs, logger
 
 
@@ -150,21 +152,30 @@ class Corpus(utils.abkhazia_base.AbkhaziaBase):
         """
         CorpusValidation(self, njobs=njobs, log=self.log).validate()
 
-    def create_filter(self,out_path,function,nb_speaker=None,plot=True,new_speakers=10):
+    def create_filter(self,out_path,function,nb_speaker=None,plot=True,new_speakers=10,
+            THCHS30=False):
         """Filter the speech duration distribution of the corpus
             
             if plot==True, a plot of the distribution is shown
         """
-        return(CorpusFilter(self).create_filter(out_path,function,nb_speaker,plot,new_speakers))
+        return(CorpusFilter(self).create_filter(out_path,function,nb_speaker,plot,new_speakers,THCHS30))
 
     def trim(self,corpus_dir,output_dir,function,not_kept_utts):
+        """ Remove utterances from the corpus (using sox to trim the wav files) """
+
         CorpusTrimmer(self,not_kept_utts).trim(corpus_dir,output_dir,function,not_kept_utts)
 
-    def phones_timestamps(self,length_context,output_dir,alignment,precision,proba_threshold,speaker_set,vad):
-        return(CorpusTriphones(self).phones_timestamps(length_context,
-            output_dir,alignment,precision,proba_threshold,speaker_set,vad))
+    def phones_timestamps(self,length_context,output_dir,
+            alignment,precision,proba_threshold,speaker_set,vad):
 
-    def create_mini_wavs(self,corpus_dir,duration,alignment,triphones,overlap,in_path,out_path,mean_phone,new_speakers,speaker_set):
+        """Create the list of triphones available in the corpus,
+        with corresponding timestamps)"""
+        return(CorpusTriphones(self).phones_timestamps(length_context, output_dir,alignment,precision,proba_threshold,speaker_set,vad))
+
+    def create_mini_wavs(
+            self,corpus_dir,duration,alignment,triphones,
+            overlap,in_path,out_path,mean_phone,new_speakers,speaker_set):
+        """Create the $duration seconds wav files according to the list of triphones"""
         CorpusMiniWavs(self).create_mini_wavs(corpus_dir,duration,alignment,
                 triphones,overlap,in_path,out_path,mean_phone,new_speakers,speaker_set)
     
@@ -271,7 +282,7 @@ class Corpus(utils.abkhazia_base.AbkhaziaBase):
         return False
 
     def is_noise(self):
-        """ this function asks the user to classify phones as spoken ph         ones or noise. 
+        """ this function asks the user to classify phones as spoken phones or noise. 
         """
           
         yes = set(['yes','y'])
@@ -455,4 +466,65 @@ class Corpus(utils.abkhazia_base.AbkhaziaBase):
         return phonemized
 
     def merge_wavs(self,corpus_dir,output_dir):
+        """ Merge all wav files from same speaker 
+        Returns a corpus with one wav file per speaker """
+
         CorpusMergeWavs(self).merge_wavs(corpus_dir,output_dir)
+
+
+    def plot(self):
+        """ Plot the distribution of speech duration for each
+        speaker in the corpus""" 
+
+        utt_ids, utt_speakers = zip(*self.utt2spk.iteritems())
+        utts = zip(utt_ids, utt_speakers)
+        utt2dur = self.utt2duration() 
+        spk2dur = dict()
+        # Sort Speech duration from longest to shortest
+        spk2utts_temp = defaultdict(list)
+        spk2utts = dict() 
+        for utt,spkr in utts:
+            utt_start = self.segments[utt][1]
+            spk2utts_temp[spkr].append([utt,utt_start])
+        
+        for spkr in utt_speakers:
+            spk2utts_temp[spkr] = sorted(spk2utts_temp[spkr], key=lambda x: x[1])
+            spk2utts[spkr] = [utt for utt,utt_start in spk2utts_temp[spkr]]
+            duration = sum([utt2dur[utt_id] for utt_id in spk2utts[spkr]])
+            spk2dur[spkr] = duration
+ 
+        self.spk2utts = spk2utts
+
+        sorted_speaker = sorted(spk2dur.iteritems(), key=lambda(k,v):(v,k))
+        sorted_speaker.reverse()
+        
+        # Set plot 
+        names = [spk_id for (spk_id,duration) in sorted_speaker]
+        times = [duration for (spk_id,duration) in sorted_speaker]
+        times_reduced = [format(u0/60,'.1f') for u0 in times]
+        font = {'weight' : 'bold', 
+                'size' : 15}
+        plt.rc('font',**font)
+
+        # Get corpus duration
+        total = self.duration(format='seconds')
+        (spk_id0,duration0) = sorted_speaker[0]
+        x_axis = range(0,len(names))
+        
+        # Set barplot
+        barlist = plt.bar(x_axis,times,width=0.7,
+            align="center",label="speech time",color="blue")
+        self.log.info('Speech duration for corpus : %i minutes',sum(times)/60)
+
+        for j,txt in enumerate(times_reduced):
+            
+            plt.annotate(txt,(x_axis[j],times[j]+3),rotation=45)
+                        
+            plt.legend() 
+            plt.xticks(x_axis,names,rotation=45)
+            plt.xlabel('speaker')
+            plt.ylabel('duration (in minutes)',rotation=90)
+        
+        return(plt) 
+
+

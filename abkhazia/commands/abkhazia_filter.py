@@ -49,14 +49,18 @@ class AbkhaziaFilter(AbstractCoreCommand):
             the number of speakers to include in the "family" part''')
         
         group.add_argument(
-            '-p','--plot',type=str,metavar='<plot>',default='False',
+            '--plot',action="store_true",
             help='''If plot==True, a plot of the speech duration distribution and
             of the filtering function will be displayed''')
         
         group.add_argument(
-            '-tr','--trim',type=str,default='True',
+            '--trim',action="store_true",
             help='''if trim==True, the unwanted utterances will be removed from the 
             wav_files, and the segments updated accordingly''')
+        group.add_argument(
+            '--THCHS30', action='store_true', 
+            help='''Set to true if treating the THCHS30 corpus, to avoid 
+            repetition''')
 
         return parser
 
@@ -67,34 +71,18 @@ class AbkhaziaFilter(AbstractCoreCommand):
             os.path.join(output_dir, 'filter.log'), verbose=args.verbose)
 
         corpus = Corpus.load(corpus_dir, validate=args.validate, log=log)
-        #corpus.is_noise()
-
-        # parse the plot,trim and merge arg as a bool
-        if args.plot=="True":
-            plot=True
-        elif args.plot=="False": 
-            plot=False
-        else:
-            plot=False
-        
-        if args.trim=="True":
-            trim=True
-        elif args.trim=="False": 
-            trim=False
-        else:
-            trim=True
-        
-
 
         # retrieve the test proportion
         (output,not_kept_utterances)=corpus.create_filter(
                 output_dir, 
                 function=args.function,
                 nb_speaker=args.nb_speaker,
-                plot=plot,new_speakers=args.new_speakers)
+                plot=args.plot,new_speakers=args.new_speakers,
+                THCHS30=args.THCHS30)
         
         
-        if trim==True:
+        if args.trim:
+            print "trimming"
             output.save(os.path.join(output_dir,args.function,'data'),no_wavs=True,copy_wavs=False)
             output.trim(corpus_dir,output_dir,args.function,not_kept_utterances)
         

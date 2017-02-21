@@ -35,3 +35,4 @@ from abkhazia.commands.abkhazia_triphones import AbkhaziaTriphones
 from abkhazia.commands.abkhazia_split_challenge import AbkhaziaSplitChallenge
 from abkhazia.commands.abkhazia_mergewavs import AbkhaziaMergeWavs
 from abkhazia.commands.abkhazia_abx import AbkhaziaAbx
+from abkhazia.commands.abkhazia_plot import AbkhaziaPlot

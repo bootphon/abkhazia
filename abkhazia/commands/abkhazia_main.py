@@ -41,7 +41,8 @@ from abkhazia.commands import (
     AbkhaziaTriphones,
     AbkhaziaSplitChallenge,
     AbkhaziaMergeWavs,
-    AbkhaziaAbx)
+    AbkhaziaAbx,
+    AbkhaziaPlot)
 
 
 # TODO get that from setup.py
@@ -63,7 +64,8 @@ class Abkhazia(object):
         AbkhaziaTriphones,
         AbkhaziaSplitChallenge,
         AbkhaziaMergeWavs,
-        AbkhaziaAbx
+        AbkhaziaAbx,
+        AbkhaziaPlot
     ]
 
     # a string describing abkhazia and its subcommands

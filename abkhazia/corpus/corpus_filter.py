@@ -46,6 +46,14 @@ class CorpusFilter(object):
     plot : A boolean which, if set to true, enables the plotting
       of the speech distribution and the cutting function
     """
+    # For the THCHS30 corpus, select 150 utt from each text (A, 
+    # B, C, D), from 2 males and 2 females, and 2x50 utterances
+    # from each text, from 4 males and 4 females
+    THCHS30_family = ['A08', 'B08', 'C04', 'D21']
+    THCHS30_outsiders1 = ['A33', 'B06', 'C08', 'D08']
+    THCHS30_outsiders2 = ['A36', 'B02', 'C19', 'D07']
+    limit = {'A': 100, 'B' : 350, 'C' : 600, 'D' : 850}
+     
     def __init__(self, corpus, log=logger.null_logger(),
                  random_seed=None):
         self.log = log
@@ -63,7 +71,8 @@ class CorpusFilter(object):
         self.log.debug('loaded %i utterances from %i speakers',
                        self.size, len(self.speakers))
 
-    def create_filter(self,out_path,function,nb_speaker=None,plot=True,new_speakers=10):
+    def create_filter(self,out_path,function,
+            nb_speaker=None,plot=True,new_speakers=10,THCHS30=False):
         """Prepare the corpus for the cutting
         
         The speakers are sorted by their speech duration. 
@@ -216,8 +225,10 @@ class CorpusFilter(object):
         
 
         ## write the names of the "family" speakers, to use them in the test
-
-        return(self.filter_corpus(names,function))
+        if not THCHS30:
+            return(self.filter_corpus(names,function))
+        else:
+            return(self.filter_THCHS30(names,function))
 
     def filter_corpus(self,names,function):
         """Cut the corpus according to the cutting function specified
@@ -273,6 +284,62 @@ class CorpusFilter(object):
                 if utt_tbegin-offset<0 or utt_tend-offset<0:
                     self.log.info('WARN : offset is greater than utterance boundaries')
                 if utt not in kept_utt_set:
+                    offset=offset+utt2dur[utt]
+                    not_kept_utts[speaker].append((utt,corpus.segments[utt]))
+
+        return(self.corpus.subcorpus(utt_ids,prune=True,name=function,validate=True),
+                not_kept_utts);
+
+    def filter_THCHS30(self,names,function):
+        """split the THCHS30 corpus without having the same text for some speakers
+
+        
+        Return the subcorpus 
+        """
+        limit=self.limit
+        time=0
+        utt_ids=[]
+        spk2utts=self.spk2utts
+        utt2dur=self.utt2dur
+        not_kept_utts=defaultdict(list)
+        corpus=self.corpus
+        
+        
+        # create list of utterances we want to keep, utterances we don't want to keep
+        for speaker in self.THCHS30_family :
+            all_utts = spk2utts[speaker]
+            kept_utts = [utt for utt in all_utts if float(utt.split('_')[1])>limit[speaker[0]]]
+            utt_ids = utt_ids+kept_utts
+
+        for speaker in self.THCHS30_outsiders1:
+            all_utts = spk2utts[speaker]
+            limit_out1=limit[speaker[0]]-50
+            kept_utts = [utt for utt in all_utts if float(utt.split('_')[1])<=limit_out1]
+            utt_ids = utt_ids+kept_utts
+
+        for speaker in self.THCHS30_outsiders2:
+            all_utts = spk2utts[speaker]
+            limit_out1=limit[speaker[0]]-50
+            limit_out2=limit[speaker[0]]
+            kept_utts = [utt for utt in all_utts if limit_out1<float(utt.split('_')[1])<=limit_out2]
+            utt_ids = utt_ids+kept_utts
+           
+
+             
+        # here we build the list of utts we remove, and we adjust the boundaries of
+        # the other utterancess, in order to have correct timestamps
+        for speaker in names: 
+            for utt in spk2utts[speaker]:
+                #for each wav, we compute the cumsum of the lengths of the utts we remove
+                # in order to have correct timestamps for the other utts in the files
+                offset=0
+               
+                wav_id,utt_tbegin,utt_tend=corpus.segments[utt]
+                corpus.segments[utt]=(wav_id,utt_tbegin-offset,utt_tend-offset)
+
+                if utt_tbegin-offset<0 or utt_tend-offset<0:
+                    self.log.info('WARN : offset is greater than utterance boundaries')
+                if utt not in utt_ids:
                     offset=offset+utt2dur[utt]
                     not_kept_utts[speaker].append((utt,corpus.segments[utt]))
 
