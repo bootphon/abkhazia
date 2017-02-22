@@ -171,7 +171,6 @@ class AbstractFactory(object):
             cls._output_dir(args) if args.output_dir is None
             else os.path.abspath(os.path.join(args.output_dir, 'data')))
                       if output_dir is None else output_dir)
-
         preparator.log = utils.logger.get_log(
             os.path.join(output_dir, 'data_preparation.log'), args.verbose)
 
@@ -224,6 +223,29 @@ class XitsongaFactory(AbstractFactory):
 
 class CSJFactory(AbstractFactory):
     preparator = CSJPreparator
+
+    @classmethod
+    def add_parser(cls, subparsers):
+        parser = super(CSJFactory, cls).add_parser(subparsers)
+
+        parser.add_argument(
+                '--clusters', action='store_true',
+                help='enable if you want to keep clusters (e.g. c+y'
+                'as c+y). Else, c+y will be put as (c,y)')
+        parser.add_argument(
+                '--core', action='store_true',
+                help='enable if you want to only treat the core '
+                'files in your directory. If not enabled, all the '
+                'files in your directory will be treated using the '
+                'non-core recipe')
+
+    @classmethod
+    def init_preparator(cls, args):
+        return cls.preparator(
+            args.input_dir,
+            copy_wavs=True,
+            clusters=args.clusters,
+            treat_core=args.core)
 
 
 class ChildesFactory(AbstractFactory):

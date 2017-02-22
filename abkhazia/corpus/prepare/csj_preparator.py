@@ -81,7 +81,8 @@ class CSJPreparator(AbstractPreparator):
     The Corpus of Spontaneous Japanese (CSJ) is a database of spoken
     Japanese. It contains 658 hours of speech consisting of
     approximately 7.5 million words from more than 1,400 speakers.
-    It is publicly available at /corpus_center/csj/misc/preliminary/index_e.html
+    It is publicly available at
+    /corpus_center/csj/misc/preliminary/index_e.html
     '''
 
     url = 'http://www.ninjal.ac.jp/english/products/csj'
@@ -118,13 +119,30 @@ class CSJPreparator(AbstractPreparator):
         # VOT. This explains that gemination cannot occur at the beginning
         # of an utterance no way to determine the duration of closure
         'h': u'h',
-	'h:': u'h:', ## TODO ASK THOMAS IF I SHOULD PUT IT ?
+        'h:': u'h:',  # TODO ASK THOMAS IF I SHOULD PUT IT ?
         'k': u'k',
         'k:': u'k:',
         'm': u'm',
         'n': u'n',
         'p': u'p',
         'p:': u'p:',
+        # TODO ASK THOMAS AND XUAN-NGA !! 
+        'py:': u'py:',
+        'cy:': u'cy:',
+        'dy': u'dy',
+        'gy': u'gy',
+        'cy': u'cy',
+        'hy': u'hy',
+        'py': u'py',
+        'ry': u'ry',
+        'ny': u'ny',
+        'by': u'by',
+        'c': u'c',
+        'c:': u'c:',
+        'ky': u'ky',
+        'ky:': u'ky:',
+        'my': u'my',
+        # TODO ASK THOMAS AND XUAN-NGA
         'r': u'r',
         's': u's',
         's:': u's:',
@@ -135,10 +153,12 @@ class CSJPreparator(AbstractPreparator):
         'w': u'w',  # lip-compression here too...
         'y': u'j',
         'z': u'z',
-	'z:': u'z:',  ## TODO ASK THOMAS IF IS SHOULD PUT IT ? 
+        'z:': u'z:',  # TODO ASK THOMAS IF IS SHOULD PUT IT ?
         'zy': u'ʑ',  # very commonly an affricate...
         'zy:': u'ʑ:'
     }
+    # problematic XML :
+    xml_pb = '/fhgfs/bootphon/projects/perceptual_tuning/CSJ_sample/XML/S05M1406.xml'
 
     # phones are vowels and consonents
     phones = utils.merge_dicts(vowels, consonants)
@@ -147,7 +167,8 @@ class CSJPreparator(AbstractPreparator):
 
     variants = []
 
-    def __init__(self, input_dir,  log=utils.logger.null_logger(), copy_wavs=False):
+    def __init__(self, input_dir,  log=utils.logger.null_logger(),
+                 copy_wavs=False, clusters=False, treat_core=False):
         super(CSJPreparator, self).__init__(input_dir, log)
         self.copy_wavs = copy_wavs
 
@@ -161,55 +182,67 @@ class CSJPreparator(AbstractPreparator):
         xml_dir = os.path.join(self.input_dir, 'XML')
         self.data_files = os.listdir(xml_dir)
         self.data_files = [f.replace('.xml', '') for f in self.data_files]
-	self.non_core_files = [f for f in self.data_files
-			    if f[0] == 'S' and f not in core_files]
+        self.non_core_files = [f for f in self.data_files
+                               if f[0] == 'S' and f not in core_files]
         self.data_core_files = [f for f in self.data_files
-                           if f[0] == 'S' and f in core_files]
-	self.data_files = [f for f in self.data_files
-			   if f[0] == 'S']
-	
- 	self.kana_to_phone = self.parse_kana_to_phone(
-			os.path.join(self.input_dir,"kana-to-phon_bootphon.txt"))
-       
-	# gather label data TODO parallelize
+                                if f[0] == 'S' and f in core_files]
+        self.data_files = [f for f in self.data_files
+                           if f[0] == 'S']
+
+        self.kana_to_phone = self.parse_kana_to_phone(
+            os.path.join(self.input_dir, "kana-to-phon_bootphon.txt"))
+
+        # gather label data TODO parallelize
         self.log.info('parsing {} xml files'.format(len(self.data_files)))
         self.all_utts = {}
         self.lexicon = {}
-        
-	for data in progressbar.ProgressBar()(self.data_files):
-	    if data in self.data_core_files :
-	        utts = self.parse_core_xml(os.path.join(xml_dir, data + '.xml'))
-	    else :
-		utts = self.parse_non_core_xml(os.path.join(xml_dir,data + '.xml'))
-	    print "xml is", data
-            utts, utt_lexicon = self.extract_basic_transcript(utts)
 
+        if treat_core:
+            self.data_files = self.data_core_files
+
+        for data in progressbar.ProgressBar()(self.data_files):
+            if treat_core:
+                print "parsing core xml"
+                utts = self.parse_core_xml(
+                        os.path.join(xml_dir, data + '.xml'))
+            else:
+                print "parsing non core xml"
+                #if not data == 'S05F0612':
+                #    continue
+                #else : 
+                #    print data
+                utts = self.parse_non_core_xml(
+                    os.path.join(xml_dir,data + '.xml'), clusters)
+            print "xml is", data
+            utts, utt_lexicon = self.extract_basic_transcript(utts,
+                                                              clusters)
             for utt_id in utts:
                 assert not(utt_id in self.all_utts), utt_id
                 self.all_utts[utt_id] = utts[utt_id]
 
             for word in utt_lexicon:
                 if word not in self.lexicon:
-		    if word=='-' : 
-			continue
+                    if word=='-' : 
+                        continue
                     self.lexicon[word] = utt_lexicon[word]
 
     def parse_kana_to_phone(self,kana_csv):
-	"""Parse katakana phone transcription and pu it in a dict() """	
-	kana_to_phon=dict()
-	with open_utf8(kana_csv,'r') as fin:
-	    kana_transcript = fin.read()
-	    kana_transcript = kana_transcript.split('\n')
-	    for line in kana_transcript[1:]:
-		if line =='':
-		    continue
-	        phones=line.split('\t')
-		katakana=phones[0].decode('utf8')
-		bootphon=phones[3]
-		if bootphon=='':
-			bootphon=="H"
-		kana_to_phon[katakana]=bootphon
-	return(kana_to_phon)
+        """Parse katakana phone transcription and pu it in a dict() """ 
+        kana_to_phon = dict()
+        kana_csv = '/home/jkaradayi/kana-to-phon_bootphon.txt'
+        with open_utf8(kana_csv, 'r') as fin:
+            kana_transcript = fin.read()
+            kana_transcript = kana_transcript.split('\n')
+            for line in kana_transcript[1:]:
+                if line == '':
+                    continue
+                phones = line.split('\t')
+                katakana = phones[0].decode('utf8')
+                bootphon = phones[3]
+                if bootphon == '':
+                    bootphon == "H"
+                kana_to_phon[katakana] = bootphon
+        return(kana_to_phon)
 
     def parse_core_xml(self, xml_file):
         """Parse raw transcript"""
@@ -277,9 +310,9 @@ class CSJPreparator(AbstractPreparator):
             utts[utt_id] = Utt(words, utt_start, utt_stop, channel)
         return utts
 
-
-    def parse_non_core_xml(self, xml_file):
+    def parse_non_core_xml(self, xml_file, keep_clusters):
         """Parse raw transcript"""
+        print "in parse_non_core_xml"
         tree = ET.ElementTree(file=xml_file)
         talk = tree.getroot()
         talk_id = talk.attrib["TalkID"]
@@ -299,11 +332,12 @@ class CSJPreparator(AbstractPreparator):
             is_dialog = True
         else:
             is_dialog = False
-
-	xml_pb='/fhgfs/bootphon/projects/perceptual_tuning/CSJ_sample/XML/S05M1406.xml'
+        
         # Utterance level
         utts = {}
         for ipu in talk.iter("IPU"):
+            #if not ipu.attrib["IPUID"]=='0178':
+            #    continue
             utt_id = spk_id + u"_" + talk_id + u"_" + ipu.attrib["IPUID"]
             channel = ipu.attrib["Channel"] if is_dialog else None
             utt_start = float(ipu.attrib["IPUStartTime"])
@@ -311,135 +345,148 @@ class CSJPreparator(AbstractPreparator):
 
             # Word level - Short Words Units (SUW) are taken as 'words'
             words = []
-            for suw in ipu.iter("SUW"):
-		# Phoneme level
-                phonemes = []
-		phone = []
-		phones = suw.attrib["PhoneticTranscription"]
-		phones.encode('utf8')
+            for luw in ipu.iter("LUW"):
+                phonemes=[]
+                for suw in luw.iter("SUW"):
+                    # Phoneme level
+                    #phonemes = []
+                    phones = suw.attrib["PhoneticTranscription"]
+                    phones.encode('utf8')
 
-		# in X05M1406.xml, transcription starts a word with H : replace by "?"
-		if xml_file == xml_pb and phones =='ーノ':
-		    phones = '?'
-		# TODO check why causes problem ? supposed to be N H 
-		if  'ンー' in phones : 
-		    phones = '?'
-	        
-		# If phonetic transcription has a "W" or "B"  it means
-		# theres a difference between what is spoken and real word
-		# so choose what is spoken (i.e. in "(W XX ; YY) choose XX)
-		#if "W" in phones or "B" in phones:
-		while ("W" in phones and ";" in phones) or ("B" in phones and ";" in phones) :
-		    split_phones=phones.split(';')
-		    real_phones=split_phones[0].replace('(W ','')
-		    for parts in split_phones[1:]: 
-			# locate the end of the "W/B" ambiguity
-			# and get the end of the phoneme if there's 
-			# something after the "(W ..;..).." 
-			try:
-			    ind=parts.index(')')
-			except:
-			    # there's a case where they forgot the end ")"
-			    ind=len(parts)-1
+                    # in X05M1406.xml, transcription starts a word with H : replace by "?"
+                    if xml_file == self.xml_pb and phones =='ーノ':
+                        phones = '?'
+                    # TODO check why causes problem ? supposed to be N H 
+                    if  'ンー' in phones : 
+                        phones = '?'
+                        
+                    # If phonetic transcription has a "W" or "B"  it means
+                    # theres a difference between what is spoken and real word
+                    # so choose what is spoken (i.e. in "(W XX ; YY) choose XX)
+                    #if "W" in phones or "B" in phones:
+                    while ("W" in phones and ";" in phones) or ("B" in phones and ";" in phones) :
+                        split_phones=phones.split(';')
+                        real_phones=split_phones[0].replace('(W ','')
+                        for parts in split_phones[1:]: 
+                            # locate the end of the "W/B" ambiguity
+                            # and get the end of the phoneme if there's 
+                            # something after the "(W ..;..).." 
+                            try:
+                                ind=parts.index(')')
+                            except:
+                                # there's a case where they forgot the end ")"
+                                ind=len(parts)-1
 
-		        real_phones=real_phones+parts[ind+1:]
-		    phones=real_phones
-		
-		# P indicated a pause and is followed by 20 and ":" numbers, exlude everything
-		if "P" in phones :
-		    ind = phones.index('P')
-		    phones = phones[0:ind]+phones[ind+21:]
+                                real_phones=real_phones+parts[ind+1:]
+                            phones=real_phones
+                    
+                    # P indicated a pause and is followed by 20 and ":" numbers, exlude everything
+                    if "P" in phones :
+                        ind = phones.index('P')
+                        phones = phones[0:ind]+phones[ind+21:]
 
-		# Remove the transcription tags and other unwanted characters (e.g. ',' '-' etc..)
-		word_tags = ['A','B','M','I','S','J','C','L','R','G','F','D','H','Q','R','O','V','W','息','笑','咳','泣']
-		symbols = [',','-','>','<','(',')',' ','×']
-		additional_tags=['1','2','3','4','5','6','7','8','9','0']
-		unwanted=word_tags+symbols+additional_tags
-		flag=0
+                    # Remove the transcription tags and other unwanted characters (e.g. ',' '-' etc..)
+                    word_tags = ['A', 'B', 'M', 'I',
+                                 'S', 'J', 'C', 'L',
+                                 'R', 'G', 'F', 'D',
+                                 'H', 'Q', 'R', 'O',
+                                 'V', 'W', '息', '笑',
+                                 '咳','泣'
+                                ]
+                    symbols = [',', '-', '>', '<', '(', ')', ' ', '×']
+                    additional_tags = ['1', '2', '3', '4',
+                                     '5', '6', '7', '8', '9', '0']
+                    unwanted = word_tags + symbols + additional_tags
 
-		for tag in unwanted:
-		    if tag in phones:
-		        phones=phones.replace(tag,'')
+                    for tag in unwanted:
+                        if tag in phones:
+                            phones=phones.replace(tag, '')
 
-		# use mapping of every symbol in transcription	
-		while len(phones)>0:
-		    phoneme_id1=None
-		    phoneme_id2=None 
-		    # First check if first two symbols are together
-		    if len(phones[0:2])>1 and phones[0:2] in self.kana_to_phone:
-			phoneme_id = self.kana_to_phone[phones[0:2]]
+                    # use mapping of every symbol in transcription  
+                    while len(phones)>0:
+                        phone = []
+                        phoneme_id1 = None
+                        phoneme_id2 = None 
+                        # First check if first two symbols are together
+                        if len(phones[0:2])>1 and phones[0:2] in self.kana_to_phone:
+                            phoneme_id = self.kana_to_phone[phones[0:2]]
+                            phones=phones[2:]
+                        
+                        elif phones[0] in self.kana_to_phone : 
+                            # Else check if the symbol is in kana to phon
+                            phoneme_id = self.kana_to_phone[phones[0]]
+                            phones=phones[1:]
+                        
+                        else :
+                            # If not, let it pass, it will be treated later on    
+                            phoneme_id = phones[0]
+                            if phoneme_id == "?" :
+                                phones=phones[1:]
+                                continue
+                            print "Phone seems to have no mapping, check :", phoneme_id,phones, 
+                            phones=phones[1:]
+                                        
+                        # handle the x+H case
+                        if len(phoneme_id)==3 and phoneme_id[2]=='H':
+                            phoneme_id = phoneme_id[0] + 'H'
+                           
+                        elif (('+' in phoneme_id) and (not keep_clusters) and
+                            (phoneme_id[2] is not 'H')):
+                            # handle the x+x x case
+                            phoneme_id2 = phoneme_id[3]
+                            phoneme_id1 = phoneme_id[0] + phoneme_id[2]
+                            #phoneme_id=None
+                        elif (('+' in phoneme_id) and (keep_clusters) and
+                            (phoneme_id[2] is not 'H')):
+                            # if keep_clusters is enabled, keep the x+x
+                            # (e.g. c+y) as is
+                            try:
+                                phoneme_id2 = phoneme_id[3]
+                                phoneme_id1 = phoneme_id[0:3]
+                            except:
+                                phoneme_id = phoneme_id[0:3]
+                                pass
+                        
+                        if phoneme_id == "Q":
+                            if len(phones) == 0:
+                                phoneme_id = None
+                                continue
+                        
+                        if phoneme_id == 'Nfiller':
+                            # TODO CHECK IF Nfiller is N 
+                            continue
+                        
+                        if phoneme_id2:
+                            phone.append(Phone(
+                                phoneme_id1, '', None, None))
+                            phonemes.append(Phoneme(
+                                phoneme_id1, phone, phone[0].start, phone[-1].end))
 
-			phones=phones[2:]
-		    
-		    elif phones[0] in self.kana_to_phone : 
-			# Else check if the symbol is in kana to phon
-
-			phoneme_id = self.kana_to_phone[phones[0]]
-			if phoneme_id=="H" and xml_file==xml_pb:
-			    flag=1
-
-			phones=phones[1:]
-		    
-		    else :
-			# If not, let it pass, it will be treated later on
-				
-			phoneme_id = phones[0]
-			if phoneme_id == "?" :
-			    phones=phones[1:]
-			    continue
-		        print "Phone seems to have no mapping, check :", phoneme_id,phones, 
-			phones=phones[1:]
-						    
-		    # handle the x+H case
-		    if len(phoneme_id)==3 and phoneme_id[2]=='H':
-			phoneme_id = phoneme_id[0] + 'H'
-			   
-		    elif '+' in phoneme_id and phoneme_id[2] is not 'H':
-		        # handle the x+x x case
-		        phoneme_id2 = phoneme_id[3]
-		        phoneme_id1 = phoneme_id[0] + phoneme_id[2]
-		        phoneme_id=None
-
-		    if phoneme_id=="Q":
-			    if len(phones)==0:
-				phoneme_id=None
-				continue
-
-		    if phoneme_id=='Nfiller':
-			    # TODO CHECK IF Nfiller is N 
-			    continue
-		    
-		    if phoneme_id2:
-			phone.append(Phone(
-			    phoneme_id1,'',None,None))
-			phonemes.append(Phoneme(
-			    phoneme_id1,phone,phone[0].start,phone[-1].end))
-
-			phone.append(Phone(
-			    phoneme_id2,'',None,None))
-			phonemes.append(Phoneme(
-			    phoneme_id2,phone,phone[0].start,phone[-1].end))
-			continue
-		    else:
-		        for char in phoneme_id:
-			    phone.append(Phone(
-			        char,'',None,None))
-			    phonemes.append(Phoneme(
-			        char,phone,phone[0].start,phone[-1].end))
-               
+                            phone.append(Phone(
+                                phoneme_id2, '', None, None))
+                            phonemes.append(Phoneme(
+                                phoneme_id2, phone, phone[0].start, phone[-1].end))
+                            continue
+                        else:
+                            for char in phoneme_id:
+                                phone.append(Phone(
+                                    char, '', None, None))
+                                phonemes.append(Phoneme(
+                                    char, phone, phone[0].start, phone[-1].end))
+                
                 if phonemes:
                     words.append(Word(
                         phonemes, phonemes[0].start, phonemes[-1].end))
-                else:
-                    try:
-                        moras = [mora.attrib["MoraEntity"]
-                                 for mora in suw.iter("Mora")]
-                        # self.log.debug(moras)
-                    except:
-                        pass
-                    # self.log.debug(utt_id)
-                    # FIXME understand this
-                    # assert u"φ" in moras, utt_id
+            else:
+                try:
+                    moras = [mora.attrib["MoraEntity"]
+                             for mora in suw.iter("Mora")]
+                    # self.log.debug(moras)
+                except:
+                    pass
+                # self.log.debug(utt_id)
+                # FIXME understand this
+                # assert u"φ" in moras, utt_id
             utts[utt_id] = Utt(words, utt_start, utt_stop, channel)
         return utts
 
@@ -448,7 +495,7 @@ class CSJPreparator(AbstractPreparator):
     # TODO check consistency of starts, stops, subsequent starts at all levels
     # and the across level consistency
 
-    def extract_basic_transcript(self, utts, encoding=None):
+    def extract_basic_transcript(self, utts, encoding=None, clusters=False):
         lexicon = {}
         new_utts = {}
         for utt_id in utts:
@@ -471,23 +518,24 @@ class CSJPreparator(AbstractPreparator):
 
                 #start = min(utt.words[0].start, utt.start)
                 #stop = max(utt.words[-1].end, utt.end)
-		start = utt.start
-		stop = utt.end
+                start = utt.start
+                stop = utt.end
 
                 words = []
                 for word in utt.words:
                     # use phonemic level
                     phonemes = self.reencode(
-                        [phoneme.id for phoneme in word.phonemes], encoding)
+                        [phoneme.id for phoneme in word.phonemes],
+                        clusters, encoding)
 
                     ###print('-'.join(phonemes))
                     ###print('-'.join([phoneme.id for phoneme in word.phonemes]))
                     if phonemes == ['H']:  # just drop these for now
                         pass # TODO log this
                     else:
-			##print phonemes
-			#if phonemes=='':
-				#print 'empty phoneme !!'
+            ##print phonemes
+            #if phonemes=='':
+                #print 'empty phoneme !!'
                         word = u"-".join(phonemes)
                         if word not in lexicon:
                             lexicon[word] = phonemes
@@ -495,7 +543,7 @@ class CSJPreparator(AbstractPreparator):
                 new_utts[utt_id] = {'words': words, 'start': start, 'end': stop}
         return new_utts, lexicon
 
-    def reencode(self, phonemes, encoding=None):
+    def reencode(self, phonemes, encoding=None, clusters=False):
         vowels = ['a', 'e', 'i', 'o', 'u']
         stops = ['t', 'ty', 'b', 'by', 'g', 'gj', 'gy',
                  'k', 'ky', 'kj', 'p', 'py', 'd', 'dy']
@@ -547,8 +595,12 @@ class CSJPreparator(AbstractPreparator):
                 'gy': 'y',
                 'dy': 'y'
             }
-            if out_phn in seg_1:
+            if out_phn in seg_1 and not clusters:
                 out_phns = [seg_1[out_phn], seg_2[out_phn]]
+            elif "+" in out_phn and clusters:
+                out_phns = [out_phn[0]+out_phn[2]]
+                if out_phn not in self.phones:
+                    self.phones[out_phn] = out_phn
             else:
                 out_phns = [out_phn]
                 # 3 - group allophonic variants according to phonetics
@@ -561,65 +613,63 @@ class CSJPreparator(AbstractPreparator):
                 'hj': 'h',
                 'gj': 'g'
             }
-	    
+        
             out_phns = [mapping[phn] if phn in mapping else phn for phn in out_phns]
-	    if out_phns=="h:":
-		    print phn
+            if out_phns=="h:":
+                print phn
             phonemes_1 = phonemes_1 + out_phns
+            # 4 - Q before obstruent as geminate (long obstruent)
+            if len(phonemes_1) <= 1:
+                phonemes_2 = phonemes_1
+            else:
+                phonemes_2 = []
+                previous = phonemes_1[0]
 
-        # 4 - Q before obstruent as geminate (long obstruent)
-        if len(phonemes_1) <= 1:
-            phonemes_2 = phonemes_1
-        else:
-            phonemes_2 = []
-            previous = phonemes_1[0]
-
-            for phoneme in phonemes_1[1:]:
-                out_phn = phoneme
-                if previous == 'Q':
-		    #print phoneme,' in ',phonemes_1
-                    assert out_phn != 'Q', "Two successive 'Q' in phoneme sequence"
-                    if out_phn in obstruents:
-                        if out_phn=='z' or out_phn=='h':
-			    print out_phn,"is about to receive :", phonemes
-                        previous = out_phn + ':'
+                for phoneme in phonemes_1[1:]:
+                    out_phn = phoneme
+                    if previous == 'Q':
+                #print phoneme,' in ',phonemes_1
+                        assert out_phn != 'Q', "Two successive 'Q' in phoneme sequence"
+                        if out_phn in obstruents:
+                            if out_phn=='z' or out_phn=='h':
+                                print out_phn,"is about to receive :", phonemes
+                            previous = out_phn + ':'
+                        else:
+                            # Q considered a glottal stop in other contexts
+                            phonemes_2.append('Q')
+                            previous = out_phn
                     else:
-                        # Q considered a glottal stop in other contexts
-                        phonemes_2.append('Q')
+                        phonemes_2.append(previous)
                         previous = out_phn
-                else:
-                    phonemes_2.append(previous)
-                    previous = out_phn
-            phonemes_2.append(previous)  # don't forget last item
-
-        # 5 - H after vowel as long vowel
-        if len(phonemes_2) <= 1:
-            # if 'H' in phonemes_2:
-            #     self.log.debug("Isolated H: " + str(phonemes) + str(phonemes_1))
-            phonemes_3 = phonemes_2
-        else:
-            phonemes_3 = []
-            previous = phonemes_2[0]
-            assert not(previous == 'H'), "Word starts with H"
-            for phoneme in phonemes_2[1:]:
-                out_phn = phoneme
-                if out_phn == 'H':
-                    assert previous != 'H', "Two successive 'H' in phoneme sequence"
-                    if previous in vowels:
-                        phonemes_3.append(previous + ':')
+                phonemes_2.append(previous)  # don't forget last item
+            # 5 - H after vowel as long vowel
+            if len(phonemes_2) <= 1:
+                # if 'H' in phonemes_2:
+                #     self.log.debug("Isolated H: " + str(phonemes) + str(phonemes_1))
+                phonemes_3 = phonemes_2
+            else:
+                phonemes_3 = []
+                previous = phonemes_2[0]
+                assert not(previous == 'H'), "Word starts with H"
+                for phoneme in phonemes_2[1:]:
+                    out_phn = phoneme
+                    if out_phn == 'H':
+                        assert previous != 'H', "Two successive 'H' in phoneme sequence"
+                        if previous in vowels:
+                            phonemes_3.append(previous + ':')
+                        else:
+                            assert previous == 'N', "H found after neither N nor vowel"
+                            phonemes_3.append(previous)  # drop H after N
+                        previous = 'H'
                     else:
-                        assert previous == 'N', "H found after neither N nor vowel"
-                        phonemes_3.append(previous)  # drop H after N
-                    previous = 'H'
-                else:
-                    if previous != 'H':
-                        phonemes_3.append(previous)
-                    previous = out_phn
-            if previous != 'H':
-                phonemes_3.append(previous)  # don't forget last item
-	for phh in phonemes_3:
-		if phh=='z:' or phh=="h:":
-			print phonemes_3
+                        if previous != 'H':
+                            phonemes_3.append(previous)
+                        previous = out_phn
+                if previous != 'H':
+                    phonemes_3.append(previous)  # don't forget last item
+            for phh in phonemes_3:
+                if phh=='z:' or phh=="h:":
+                    print phonemes_3
         return phonemes_3
 
     def list_audio_files(self):
