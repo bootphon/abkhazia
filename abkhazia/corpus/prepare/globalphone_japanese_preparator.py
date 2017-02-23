@@ -73,7 +73,7 @@ class JapanesePreparator(AbstractGlobalPhonePreparator):
         # VOT. This explains that gemination cannot occur at the beginning
         # of an utterance no way to determine the duration of closure
         'h': u'h',
-	'h:': u'h:', ## TODO ASK THOMAS IF I SHOULD PUT IT ?
+    'h:': u'h:', ## TODO ASK THOMAS IF I SHOULD PUT IT ?
         'k': u'k',
         'k:': u'k:',
         'm': u'm',
@@ -90,7 +90,7 @@ class JapanesePreparator(AbstractGlobalPhonePreparator):
         'w': u'w',  # lip-compression here too...
         'y': u'j',
         'z': u'z',
-	'z:': u'z:',  ## TODO ASK THOMAS IF IS SHOULD PUT IT ? 
+    'z:': u'z:',  ## TODO ASK THOMAS IF IS SHOULD PUT IT ? 
         'zy': u'ʑ',  # very commonly an affricate...
         'zy:': u'ʑ:'
 
@@ -122,100 +122,99 @@ class JapanesePreparator(AbstractGlobalPhonePreparator):
     
     
     def parse_kana_to_phone(self):
-	"""Parse katakana phone transcription and pu it in a dict() """	
-	kana_to_phon=dict()
-	kana_csv=os.path.join(self.input_dir,'kana-to-phon_bootphon.txt')
-	with open_utf8(kana_csv,'r') as fin:
-	    kana_transcript = fin.read()
-	    kana_transcript = kana_transcript.split('\n')
-	    for line in kana_transcript[1:]:
-		if line =='':
-		    continue
-	        phones=line.split('\t')
-		GP_phone=phones[2].decode('utf8')
-		bootphon=phones[3]
-		if bootphon=='':
-			bootphon=="H"
-		kana_to_phon[GP_phone]=bootphon
-	return(kana_to_phon)
-    def transcript_japanese(self,trs):
+        """Parse katakana phone transcription and pu it in a dict() """ 
+        kana_to_phon=dict()
+        kana_csv=os.path.join(self.input_dir,'kana-to-phon_bootphon.txt')
+        with open_utf8(kana_csv,'r') as fin:
+            kana_transcript = fin.read()
+            kana_transcript = kana_transcript.split('\n')
+            for line in kana_transcript[1:]:
+                if line =='':
+                    continue
+                phones=line.split('\t')
+                GP_phone=phones[2].decode('utf8')
+                bootphon=phones[3]
+                if bootphon=='':
+                    bootphon=="H"
+                kana_to_phon[GP_phone]=bootphon
+        return(kana_to_phon)
+
+    def transcript_japanese(self, trs, clusters):
         """ Go from GP japanese symbol to bootphon symbols.
-	    For each phone, check first if current phone +
-	    next phone are in kana_to_phone, if not, check 
-	    only current phone.
-	"""
-	transcript=[]
-	not_in_kana=[]
-		
-	for ind,phone in enumerate(trs):
-	    phn = self.strip_phone(phone)
-	    if ind<len(trs)-2:
-		third_phone = trs[ind+2]
-		third_phn = self.strip_phone(third_phone)
+        For each phone, check first if current phone +
+        next phone are in kana_to_phone, if not, check 
+        only current phone.
+        """
+        transcript=[]
+        not_in_kana=[]
+        for ind,phone in enumerate(trs):
+            phn = self.strip_phone(phone)
+            if ind<len(trs)-2:
+                # first check the three phones
+                third_phone = trs[ind+2]
+                third_phn = self.strip_phone(third_phone)
 
-		next_phone = trs[ind+1]
-		next_phn = self.strip_phone(next_phone)
-	
-		three_phn = ' '.join([phn,next_phn,third_phn])
-		both_phn = ' '.join([phn,next_phn])
-		if three_phn in self.kana_to_phone :
-		    phn = three_phn
-		if both_phn in self.kana_to_phone : 
-		    phn = both_phn
+                next_phone = trs[ind+1]
+                next_phn = self.strip_phone(next_phone)
+        
+                three_phn = ' '.join([phn,next_phn,third_phn])
+                both_phn = ' '.join([phn,next_phn])
+                if three_phn in self.kana_to_phone :
+                    phn = three_phn
+                if both_phn in self.kana_to_phone : 
+                    #if three phones not in file
+                    # check if two phones are
+                    phn = both_phn
 
-	    elif ind<len(trs)-1:
-	    	next_phone = trs[ind+1]
-		next_phn = self.strip_phone(next_phone)
-	
-		both_phn = ' '.join([phn,next_phn])
-		if both_phn in self.kana_to_phone : 
-		 
-		   phn = both_phn
+            elif ind<len(trs)-1:
+                #check two phones 
+                next_phone = trs[ind+1]
+                next_phn = self.strip_phone(next_phone)
+        
+                both_phn = ' '.join([phn,next_phn])
+                if both_phn in self.kana_to_phone : 
+                    phn = both_phn
+
             if phn in self.kana_to_phone:
+                out_phn = self.kana_to_phone[phn]
 
-	        out_phn = self.kana_to_phone[phn]
+                if out_phn =='Nfiller':
+                    out_phn='N'
+                for char in out_phn:
+                    if not (char=='+'):
+                        transcript.append(char)
+            elif phn=="SIL":
+                transcript.append(phn)
+            else:
+                if not phn == "WB" :
+                    if ind>1:
+                        prev_phn=self.strip_phone(trs[ind-1])
+                    else : 
+                        prev_phn=None
+                    if ind<len(trs)-1:
+                        next_phn=self.strip_phone(trs[ind+1])
+                    else : 
+                        next_phn=None
 
-		if out_phn =='Nfiller':
-		    out_phn='N'
-		for char in out_phn:
-		    if not (char=='+'):
-   		        transcript.append(char)
-	    elif phn=="SIL":
-		transcript.append(phn)
-	    else:
-		#print "phone ",phn," was not in kana_to_phon"
-		if not phn== "WB" :
-		    if ind>1:
-		        prev_phn=self.strip_phone(trs[ind-1])
-		    else : 
-		        prev_phn=None
-		    if ind<len(trs)-1:
-		        next__phn=self.strip_phone(trs[ind+1])
-		    else : 
-		        next_phn=None
-
-		    not_in_kana.append((phn,prev_phn,next_phn))
-        final_transcript=self.reencode(transcript)
-	return(final_transcript,not_in_kana)
-		
-		   
-	
-
+                    not_in_kana.append((phn,prev_phn,next_phn))
+        final_transcript=self.reencode(transcript,clusters)
+        return(final_transcript,not_in_kana)
+        
     def strip_phone(self,phone):
-	""" remove accolades from phone"""
+        """ remove accolades from phone"""
         if phone[0] == u'{':
             phn = phone[1:]
-	    assert phn != u'WB', trs
-	elif phone[-1] == u'}' :
-	    phn = phone[:-1]
-	    assert phn == u'WB', trs
-	else:
-	    phn = phone
-	    assert phn != u'WB', trs
-	phn.replace(' ','')
-	return(phn)
+            assert phn != u'WB', trs
+        elif phone[-1] == u'}' :
+            phn = phone[:-1]
+            assert phn == u'WB', trs
+        else:
+            phn = phone
+            assert phn != u'WB', trs
+        phn.replace(' ','')
+        return(phn)
 
-    def reencode(self, phonemes, encoding=None):
+    def reencode(self, phonemes, encoding=None, clusters=False):
         vowels = ['a', 'e', 'i', 'o', 'u']
         stops = ['t', 'ty', 'b', 'by', 'g', 'gj', 'gy',
                  'k', 'ky', 'kj', 'p', 'py', 'd', 'dy']
@@ -267,8 +266,12 @@ class JapanesePreparator(AbstractGlobalPhonePreparator):
                 'gy': 'y',
                 'dy': 'y'
             }
-            if out_phn in seg_1:
+            if out_phn in seg_1 and not clusters:
                 out_phns = [seg_1[out_phn], seg_2[out_phn]]
+            elif "+" in out_phn and clusters:
+                out_phns = [out_phn[0]+out_phn[2]]
+                if out_phn not in self.phones:
+                    self.phones[out_phn] = out_phn
             else:
                 out_phns = [out_phn]
                 # 3 - group allophonic variants according to phonetics
@@ -281,13 +284,10 @@ class JapanesePreparator(AbstractGlobalPhonePreparator):
                 'hj': 'h',
                 'gj': 'g'
             }
-	    
+        
             out_phns = [mapping[phn] if phn in mapping else phn for phn in out_phns]
-	    if out_phns=="h:":
-		    print phn
             phonemes_1 = phonemes_1 + out_phns
-
-        # 4 - Q before obstruent as geminate (long obstruent)
+            # 4 - Q before obstruent as geminate (long obstruent)
         if len(phonemes_1) <= 1:
             phonemes_2 = phonemes_1
         else:
@@ -297,11 +297,9 @@ class JapanesePreparator(AbstractGlobalPhonePreparator):
             for phoneme in phonemes_1[1:]:
                 out_phn = phoneme
                 if previous == 'Q':
-		    #print phoneme,' in ',phonemes_1
+                    #print phoneme,' in ',phonemes_1
                     assert out_phn != 'Q', "Two successive 'Q' in phoneme sequence"
                     if out_phn in obstruents:
-                        if out_phn=='z' or out_phn=='h':
-			    print out_phn,"is about to receive :", phonemes
                         previous = out_phn + ':'
                     else:
                         # Q considered a glottal stop in other contexts
@@ -311,7 +309,6 @@ class JapanesePreparator(AbstractGlobalPhonePreparator):
                     phonemes_2.append(previous)
                     previous = out_phn
             phonemes_2.append(previous)  # don't forget last item
-
         # 5 - H after vowel as long vowel
         if len(phonemes_2) <= 1:
             # if 'H' in phonemes_2:
@@ -337,7 +334,131 @@ class JapanesePreparator(AbstractGlobalPhonePreparator):
                     previous = out_phn
             if previous != 'H':
                 phonemes_3.append(previous)  # don't forget last item
-	for phh in phonemes_3:
-		if phh=='z:' or phh=="h:":
-			print phonemes_3
         return phonemes_3
+
+    #def reencode(self, phonemes, encoding=None):
+    #    vowels = ['a', 'e', 'i', 'o', 'u']
+    #    stops = ['t', 'ty', 'b', 'by', 'g', 'gj', 'gy',
+    #             'k', 'ky', 'kj', 'p', 'py', 'd', 'dy']
+    #    affricates = ['z', 'zy', 'zj', 'c', 'cy', 'cj']
+    #    fricatives = ['s', 'sj', 'sy', 'z', 'zy', 'zj', 'h', 'F', 'hy', 'hj']
+    #    obstruents = affricates + fricatives + stops
+    #    phonemes_1 = []
+    #    for phoneme in phonemes:
+    #        # 1 - Noise and rare phonemes
+    #        out_phn = phoneme
+    #        # getting rid of very rare phones as vocal noise
+    #        if out_phn in ['kw', 'v', 'Fy']:
+    #            out_phn = 'VN'
+    #        # rewriting FV and VN (fricative voicing and vocal noise) as
+    #        # SPN (spoken noise)
+    #        if out_phn in ['FV', 'VN']:
+    #            out_phn = 'SPN'
+    #        # rewriting ? as NSN (generic noise)
+    #        if out_phn == '?':
+    #            out_phn = 'NSN'
+    #        # 2 - breaking clusters
+    #        seg_1 = {
+    #            'ky': 'k',
+    #            'ty': 't',
+    #            'ry': 'r',
+    #            'cy': 't',
+    #            'cj': 't',
+    #            'c': 't',
+    #            'py': 'p',
+    #            'ny': 'n',
+    #            'by': 'b',
+    #            'my': 'm',
+    #            'hy': 'h',
+    #            'gy': 'g',
+    #            'dy': 'd'
+    #        }
+    #        seg_2 = {
+    #            'ky': 'y',
+    #            'ty': 'y',
+    #            'ry': 'y',
+    #            'cy': 'sy',
+    #            'cj': 'sj',
+    #            'c': 's',
+    #            'py': 'y',
+    #            'ny': 'y',
+    #            'by': 'y',
+    #            'my': 'y',
+    #            'hy': 'y',
+    #            'gy': 'y',
+    #            'dy': 'y'
+    #        }
+    #        if out_phn in seg_1:
+    #            out_phns = [seg_1[out_phn], seg_2[out_phn]]
+    #        else:
+    #            out_phns = [out_phn]
+    #            # 3 - group allophonic variants according to phonetics
+    #        mapping = {
+    #            'zj': 'zy',
+    #            'cj': 'cy',
+    #            'sj': 'sy',
+    #            'nj': 'n',
+    #            'kj': 'k',
+    #            'hj': 'h',
+    #            'gj': 'g'
+    #        }
+    #    
+    #        out_phns = [mapping[phn] if phn in mapping else phn for phn in out_phns]
+    #        if out_phns=="h:":
+    #           print phn
+    #        phonemes_1 = phonemes_1 + out_phns
+
+    #        # 4 - Q before obstruent as geminate (long obstruent)
+    #        if len(phonemes_1) <= 1:
+    #            phonemes_2 = phonemes_1
+    #        else:
+    #            phonemes_2 = []
+    #            previous = phonemes_1[0]
+
+    #            for phoneme in phonemes_1[1:]:
+    #                out_phn = phoneme
+    #                if previous == 'Q':
+    #           #print phoneme,' in ',phonemes_1
+    #                    assert out_phn != 'Q', "Two successive 'Q' in phoneme sequence"
+    #                    if out_phn in obstruents:
+    #                        if out_phn=='z' or out_phn=='h':
+    #                            print out_phn,"is about to receive :", phonemes
+    #                        previous = out_phn + ':'
+    #                    else:
+    #                        # Q considered a glottal stop in other contexts
+    #                        phonemes_2.append('Q')
+    #                        previous = out_phn
+    #                else:
+    #                    phonemes_2.append(previous)
+    #                    previous = out_phn
+    #            phonemes_2.append(previous)  # don't forget last item
+
+    #        # 5 - H after vowel as long vowel
+    #        if len(phonemes_2) <= 1:
+    #            # if 'H' in phonemes_2:
+    #            #     self.log.debug("Isolated H: " + str(phonemes) + str(phonemes_1))
+    #            phonemes_3 = phonemes_2
+    #        else:
+    #            phonemes_3 = []
+    #            previous = phonemes_2[0]
+    #            assert not(previous == 'H'), "Word starts with H"
+    #            for phoneme in phonemes_2[1:]:
+    #                out_phn = phoneme
+    #                if out_phn == 'H':
+    #                    assert previous != 'H', "Two successive 'H' in phoneme sequence"
+    #                    if previous in vowels:
+    #                        phonemes_3.append(previous + ':')
+    #                    else:
+    #                        assert previous == 'N', "H found after neither N nor vowel"
+    #                        phonemes_3.append(previous)  # drop H after N
+    #                    previous = 'H'
+    #                else:
+    #                    if previous != 'H':
+    #                        phonemes_3.append(previous)
+    #                    previous = out_phn
+    #            if previous != 'H':
+    #                phonemes_3.append(previous)  # don't forget last item
+    #    for phh in phonemes_3:
+    #        if phh=='z:' or phh=="h:":
+    #            print phonemes_3
+    #    return phonemes_3
