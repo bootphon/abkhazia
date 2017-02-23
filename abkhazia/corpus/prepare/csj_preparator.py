@@ -201,19 +201,17 @@ class CSJPreparator(AbstractPreparator):
             self.data_files = self.data_core_files
 
         for data in progressbar.ProgressBar()(self.data_files):
+            print "xml :", data
             if treat_core:
-                print "parsing core xml"
                 utts = self.parse_core_xml(
                         os.path.join(xml_dir, data + '.xml'))
             else:
-                print "parsing non core xml"
                 #if not data == 'S05F0612':
                 #    continue
                 #else : 
                 #    print data
                 utts = self.parse_non_core_xml(
                     os.path.join(xml_dir,data + '.xml'), clusters)
-            print "xml is", data
             utts, utt_lexicon = self.extract_basic_transcript(utts,
                                                               clusters)
             for utt_id in utts:
