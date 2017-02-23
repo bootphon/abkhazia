@@ -229,7 +229,6 @@ class CSJPreparator(AbstractPreparator):
     def parse_kana_to_phone(self,kana_csv):
         """Parse katakana phone transcription and pu it in a dict() """ 
         kana_to_phon = dict()
-        kana_csv = '/home/jkaradayi/kana-to-phon_bootphon.txt'
         with open_utf8(kana_csv, 'r') as fin:
             kana_transcript = fin.read()
             kana_transcript = kana_transcript.split('\n')
