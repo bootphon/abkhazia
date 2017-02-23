@@ -73,13 +73,30 @@ class JapanesePreparator(AbstractGlobalPhonePreparator):
         # VOT. This explains that gemination cannot occur at the beginning
         # of an utterance no way to determine the duration of closure
         'h': u'h',
-    'h:': u'h:', ## TODO ASK THOMAS IF I SHOULD PUT IT ?
+        'h:': u'h:',  # TODO ASK THOMAS IF I SHOULD PUT IT ?
         'k': u'k',
         'k:': u'k:',
         'm': u'm',
         'n': u'n',
         'p': u'p',
         'p:': u'p:',
+        # TODO ASK THOMAS AND XUAN-NGA !! 
+        'py:': u'py:',
+        'cy:': u'cy:',
+        'dy': u'dy',
+        'gy': u'gy',
+        'cy': u'cy',
+        'hy': u'hy',
+        'py': u'py',
+        'ry': u'ry',
+        'ny': u'ny',
+        'by': u'by',
+        'c': u'c',
+        'c:': u'c:',
+        'ky': u'ky',
+        'ky:': u'ky:',
+        'my': u'my',
+        # TODO ASK THOMAS AND XUAN-NGA
         'r': u'r',
         's': u's',
         's:': u's:',
@@ -90,12 +107,10 @@ class JapanesePreparator(AbstractGlobalPhonePreparator):
         'w': u'w',  # lip-compression here too...
         'y': u'j',
         'z': u'z',
-    'z:': u'z:',  ## TODO ASK THOMAS IF IS SHOULD PUT IT ? 
+        'z:': u'z:',  # TODO ASK THOMAS IF IS SHOULD PUT IT ?
         'zy': u'ʑ',  # very commonly an affricate...
         'zy:': u'ʑ:'
-
-    }
-
+    }   
     # source for IPA notation:
     # https://en.wikipedia.org/wiki/Tone_%28linguistics%29#Phonetic_notation
     #tones = [
@@ -147,6 +162,11 @@ class JapanesePreparator(AbstractGlobalPhonePreparator):
         """
         transcript=[]
         not_in_kana=[]
+        for ind,phone in enumerate(trs):
+            if phone=="WB}":
+                del trs[ind]
+            if not trs:
+                break
         for ind,phone in enumerate(trs):
             phn = self.strip_phone(phone)
             if ind<len(trs)-2:
@@ -214,7 +234,7 @@ class JapanesePreparator(AbstractGlobalPhonePreparator):
         phn.replace(' ','')
         return(phn)
 
-    def reencode(self, phonemes, encoding=None, clusters=False):
+    def reencode(self, phonemes, encoding=None, clusters=True):
         vowels = ['a', 'e', 'i', 'o', 'u']
         stops = ['t', 'ty', 'b', 'by', 'g', 'gj', 'gy',
                  'k', 'ky', 'kj', 'p', 'py', 'd', 'dy']

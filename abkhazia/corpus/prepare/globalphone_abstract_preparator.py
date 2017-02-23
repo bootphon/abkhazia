@@ -189,8 +189,9 @@ class AbstractGlobalPhonePreparator(AbstractPreparator):
             trs = self.strip_accolades(u' '.join(line[1:])).split(u' ')
             transcript = []
             if self.kana_to_phone:
-                clusters = False
+                clusters = True
                 (transcript,not_transcripted) = self.transcript_japanese(trs, clusters)
+                transcripts.append(u' '.join(transcript))
                 not_transc=not_transc+not_transcripted
             else:
                 print trs
