@@ -158,7 +158,7 @@ class CSJPreparator(AbstractPreparator):
         'zy:': u'ʑ:'
     }
     # problematic XML :
-    xml_pb = '/fhgfs/bootphon/projects/perceptual_tuning/CSJ_sample/XML/S05M1406.xml'
+    xml_pb = 'S05M1406.xml'
 
     # phones are vowels and consonents
     phones = utils.merge_dicts(vowels, consonants)
@@ -309,7 +309,6 @@ class CSJPreparator(AbstractPreparator):
 
     def parse_non_core_xml(self, xml_file, keep_clusters):
         """Parse raw transcript"""
-        print "in parse_non_core_xml"
         tree = ET.ElementTree(file=xml_file)
         talk = tree.getroot()
         talk_id = talk.attrib["TalkID"]
@@ -351,7 +350,8 @@ class CSJPreparator(AbstractPreparator):
                     phones.encode('utf8')
 
                     # in X05M1406.xml, transcription starts a word with H : replace by "?"
-                    if xml_file == self.xml_pb and phones =='ーノ':
+                    xml_name = xml_file.split('/')[-1]
+                    if xml_name == self.xml_pb and phones =='ーノ':
                         phones = '?'
                     # TODO check why causes problem ? supposed to be N H 
                     if  'ンー' in phones : 
