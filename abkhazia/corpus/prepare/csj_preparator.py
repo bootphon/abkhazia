@@ -424,14 +424,17 @@ class CSJPreparator(AbstractPreparator):
                             phones=phones[1:]
                                         
                         # handle the x+H case
-                        if len(phoneme_id)==3 and phoneme_id[2]=='H':
-                            phoneme_id = phoneme_id[0] + 'H'
+                        if ('+' in phoneme_id) and phoneme_id[-1]=='H':
+                            plus_ind = phoneme_id.index('+')
+                            phoneme_id = phoneme_id[0:plus_ind] + 'H'
                            
                         elif (('+' in phoneme_id) and (not keep_clusters) and
                             (phoneme_id[2] is not 'H')):
                             # handle the x+x x case
-                            phoneme_id2 = phoneme_id[3]
-                            phoneme_id1 = phoneme_id[0] + phoneme_id[2]
+                            plus_ind = phoneme_id.index('+')
+                            phoneme_id2 = phoneme_id[plus_ind+2]
+                            phoneme_id1 = phoneme_id[0:plus_ind] + phoneme_id[plus_ind+1]
+                            
                             #phoneme_id=None
                         elif (('+' in phoneme_id) and (keep_clusters) and
                             (phoneme_id[2] is not 'H')):
