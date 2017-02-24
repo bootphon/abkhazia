@@ -86,9 +86,9 @@ class AbstractGlobalPhonePreparator(AbstractPreparator):
         # for japanese : 
         #self.kana_to_phone = None
         self.kana_to_phone = self.parse_kana_to_phone()
-        if self.kana_to_phone :
-                with open(os.path.join(self.input_dir,'unknown_GP.txt'),'wb') as unk_GP:
-                    unk_GP.write('phone\tprev_phone\tnext_phone\n')
+        #if self.kana_to_phone :
+        #        with open(os.path.join(self.input_dir,'unknown_GP.txt'),'wb') as unk_GP:
+        #            unk_GP.write('phone\tprev_phone\tnext_phone\n')
     
 
 
@@ -115,22 +115,43 @@ class AbstractGlobalPhonePreparator(AbstractPreparator):
         # for some languages, there are corrupted wavefiles that we
         # need to exclude from preparation
         self.log.debug('%i audio files excluded', len(self.exclude_wavs))
-
         # src_dir is the 'adc' directory from the GlobalPhone
         # distribution of the language considered
         src_dir = os.path.join(
             self.input_dir, 'GlobalPhone-{0}/{0}/adc'.format(self.language))
-
+        exclude_wavs = self.list_missing_transcripts()
+        exclude_wavs = set(exclude_wavs + self.exclude_wavs)
         shns = [f for f in
                 utils.list_files_with_extension(
                     src_dir, '.adc.shn', abspath=True, realpath=True)
-                if os.path.basename(f).replace('.adc.shn', '')
-                not in self.exclude_wavs]
-
+                if (os.path.basename(f).replace('.adc.shn', '')
+                not in exclude_wavs and not f[2]=='2') ]
         self.wavs = [os.path.basename(shn).replace('.adc.shn', '.wav')
                      for shn in shns]
 
         return zip(shns, self.wavs)
+
+    def list_missing_transcripts(self):
+        ''' Don't treat the wavs that don't have a corresponding
+        transcription'''
+        available_trs = []
+        src_dir = os.path.join(
+            self.input_dir, 'GlobalPhone-{0}/{0}/adc'.format(self.language))
+        for trs in utils.list_directory(self.transcription_dir, abspath=True):
+            spk_id = os.path.splitext(os.path.basename(trs))[0]
+            lines = utils.open_utf8(trs, 'r').readlines()
+            # add utterence id from even lines starting at line 2
+            ids = [spk_id + u'_' + re.sub(ur'\s+|:|;', u'', e)
+                   for e in lines[1::2]]
+            available_trs = available_trs + ids
+        available_trs = set(available_trs)
+
+        for f in utils.list_files_with_extension(
+                src_dir, '.adc.shn', abspath=True, realpath=True):
+            wav_name=os.path.basename(f).replace('.adc.shn','')
+            if wav_name not in available_trs:
+                self.exclude_wavs.append(wav_name)
+        return self.exclude_wavs
 
     def make_segment(self):
         segments = dict()
@@ -216,9 +237,9 @@ class AbstractGlobalPhonePreparator(AbstractPreparator):
                     if phn != u'WB':
                         transcript.append(phn)
                 transcripts.append(u' '.join(transcript))
-        if self.kana_to_phone:
-            with open(os.path.join(self.input_dir,'unknown_GP.txt'),'ab') as unk_GP:
-                for ph1,ph2,ph3 in not_transc:
-                    unk_GP.write('{}\t{}\t{}\n'.format(ph1,ph2,ph3))
+        #if self.kana_to_phone:
+        #    with open(os.path.join(self.input_dir,'unknown_GP.txt'),'ab') as unk_GP:
+        #        for ph1,ph2,ph3 in not_transc:
+        #            unk_GP.write('{}\t{}\t{}\n'.format(ph1,ph2,ph3))
 
         return dict(zip(words, transcripts))
