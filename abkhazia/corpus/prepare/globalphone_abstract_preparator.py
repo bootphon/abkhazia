@@ -186,7 +186,12 @@ class AbstractGlobalPhonePreparator(AbstractPreparator):
             words.append(word)
 
             # parse phonetic transcription
-            trs = self.strip_accolades(u' '.join(line[1:])).split(u' ')
+            try :
+                trs = self.strip_accolades(u' '.join(line[1:])).split(u' ')
+            except:
+                print line
+                print "press key to continue"
+                continue
             transcript = []
             if self.kana_to_phone:
                 clusters = True
