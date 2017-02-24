@@ -155,7 +155,16 @@ class CSJPreparator(AbstractPreparator):
         'z': u'z',
         'z:': u'z:',  # TODO ASK THOMAS IF IS SHOULD PUT IT ?
         'zy': u'ʑ',  # very commonly an affricate...
-        'zy:': u'ʑ:'
+        'zy:': u'ʑ:',
+		#XN's note: during validation, these were seemingly in the dictionary but were not present as phones so I added them
+		u'\u30ee': u'\u30ee',
+		u'\u30a1': u'\u30a1',
+		u'\u30a3': u'\u30a3',
+		u'\u30a9': u'\u30a9',
+		u'.': u'.',
+		u':': u':',
+		u'\u30f4': u'\u30f4',
+		u'P': u'P',
     }
     # problematic XML :
     xml_pb = 'S05M1406.xml'
