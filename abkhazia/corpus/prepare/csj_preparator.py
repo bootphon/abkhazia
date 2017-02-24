@@ -420,7 +420,7 @@ class CSJPreparator(AbstractPreparator):
                             if phoneme_id == "?" :
                                 phones=phones[1:]
                                 continue
-                            print "Phone seems to have no mapping, check :", phoneme_id,phones, 
+                            print "Phone seems to have no mapping, check :", phoneme_id, ' in context :',phones 
                             phones=phones[1:]
                                         
                         # handle the x+H case
