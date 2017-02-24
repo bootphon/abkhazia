@@ -640,14 +640,21 @@ class CSJPreparator(AbstractPreparator):
                         previous = out_phn
                 phonemes_2.append(previous)  # don't forget last item
             # 5 - H after vowel as long vowel
-            if len(phonemes_2) <= 1:
+            if len(phonemes_2) <= 1 :
                 # if 'H' in phonemes_2:
                 #     self.log.debug("Isolated H: " + str(phonemes) + str(phonemes_1))
+                phonemes_3 = phonemes_2
+            elif (phonemes_2[0]=='H' and len(phonemes_2)==2):
+                print "Word starts with H : erasing H"
+                phonemes_2 = phonemes_2[1:]
                 phonemes_3 = phonemes_2
             else:
                 phonemes_3 = []
                 previous = phonemes_2[0]
-                assert not(previous == 'H'), "Word starts with H"
+                #assert not(previous == 'H'), "Word starts with H"
+                if previous == 'H':
+                    print "Word starts with H : erasing H"
+                    phonemes_2 = phonemes_2[1:]
                 for phoneme in phonemes_2[1:]:
                     out_phn = phoneme
                     if out_phn == 'H':
