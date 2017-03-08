@@ -218,7 +218,7 @@ class CSJPreparator(AbstractPreparator):
         if treat_core:
             self.data_files = self.data_core_files
 
-        for data in progressbar.ProgressBar()(self.data_files[1040:]):
+        for data in progressbar.ProgressBar()(self.data_files):
             print "xml :", data
             if treat_core:
                 utts = self.parse_core_xml(
