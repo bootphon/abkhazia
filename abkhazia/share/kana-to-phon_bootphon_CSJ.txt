@@ -1,0 +1,139 @@
+katakana	CSJ	GP	Bootphon
+ア	a	M_ab	a
+イ	i	M_i	i
+ウ	u	M_W	u
+エ	e	M_e	e
+オ	o	M_o	o
+アー	a+H	M_abl	a+H
+いー	i+H	M_il	i+H
+うー	u+H	M_Wl	u+H
+えー	e+H	M_el	e+H
+おー	o+H	M_ol	o+H
+ィー	i+H	M_il	i+H
+イ	i	M_i	i
+ウ	u	M_W	u
+エ	e	M_e	e
+オ	o	M_o	o
+カ	ka	M_k M_ab	ka
+キ	kji	M_k M_i	ki
+ク	ku	M_k M_W	ku
+ケ	ke	M_k M_e	ke
+コ	ko	M_k M_o	ko
+サ	sa	M_s M_ab	sa
+シ	sji	M_S M_i	s+yi
+ス	su	M_s M_W	su
+セ	se	M_s M_e	se
+ソ	so	M_s M_o	so
+タ	ta	M_s M_ab	ta
+チ	cji	M_tS M_i	c+yi
+ツ	cu	M_ts M_W	cu
+テ	te	M_t M_e	te
+ト	to	M_t M_o	to
+ナ	na	M_n M_ab	na
+ニ	nji	M_n M_i	ni
+ヌ	nu	M_n M_W	nu
+ネ	ne	M_n M_e	ne
+ノ	no	M_n M_o	no
+ハ	ha	M_h M_ab	ha
+ヒ	hji	M_h M_i	hi
+フ	Fu	M_f M_W	Fu
+ヘ	he	M_h M_e	he
+ホ	ho	M_h Mo	ho
+マ	ma	M_m M_ab	ma
+ミ	mji	M_m M_i	mi
+ム	mu	M_m M_W	mu
+メ	me	M_m M_e	me
+モ	mo	M_m M_o	mo
+ヤ	ya	M_j M_ab	ya
+ユ	yu	M_j M_W	yu
+ヨ	yo	M_j M_o	yo
+ラ	ra	M_l M_ab	ra
+リ	rji	M_l M_i	ri
+ル	ru	M_l M_W	ru
+レ	re	M_l M_e	re
+ロ	ro	M_l M_o	ro
+ワ	wa	M_w M_ab	wa
+ヲ	wo	M_w M_o	wo
+ン	N	M_nq	Nfiller
+ー	H	???	H	
+ッ	Q	QmoraicC	Q
+ガ	ga	M_g M_ab	ga
+ギ	gji	M_g M_i	gi
+グ	gu	M_g M_W	gu
+ゲ	ge	M_g M_e	ge
+ゴ	go	M_g M_o	go
+ザ	za	M_z M_ab	za
+ジ	zji	M_dZ M_i	z+yi
+ズ	zu	M_z M_W	zu
+ゼ	ze	M_z M_e	ze
+ゾ	zo	M_z M_o	zo
+ダ	da	M_d M_ab	da
+ヂ	zji	M_dZ M_i	z+yi
+ヅ	zu	M_z M_W	zu
+デ	de	M_d M_e	de
+ド	do	M_d M_o	do
+バ	ba	M_b M_ab	ba
+ビ	bi	M_b M_i	bi
+ブ	bu	M_b M_W	bu
+ベ	be	M_b M_e	be
+ボ	bo	M_b M_o	bo
+パ	pa	M_p M_ab	pa
+ピ	pji	M_p M_i	pi
+プ	pu	M_p M_W	pu
+ペ	pe	M_p M_e	pe
+ポ	po	M_p M_o	po
+キャ	kya	M_k M_ab	k+ya
+キュ	kyu	M_k M_W	k+yu
+キョ	kyo	M_k M_o	k+yo
+ギャ	gya	M_g M_j M_ab	g+ya
+ギュ	gyu	M_g M_j M_W	g+yu
+ギョ	gyo	M_g M_j M_o	g+yo
+ファ	Fa	M_f M_a	Fa
+シャ	sya	M_S M_ab	s+ya
+シュ	syu	M_S M_W	s+yu
+ショ	syo	M_S M_o	s+yo
+シェ	syi	M_S M_o	s+yi
+ツェ	cue	M_ts M_W M_e	cue
+ジャ	zya	M_dZ M_ab	z+ya
+ジュ	zyu	M_dZ M_W	z+yu
+ジョ	zyo	M_dZ M_o	z+yo
+チャ	cya	M_tS M_ab	c+ya
+チュ	cyu	M_tS M_W	c+yu
+チョ	cyo	M_tS M_o	c+yo
+ニャ	nya	M_nq M_j M_ab	n+ya
+ニュ	nyu	M_nq M_j M_W	n+yu
+ニョ	nyo	M_nq M_j M_o	n+yo
+ヒャ	hya	M_h M_j M_ab	h+ya
+ヒュ	hyu	M_h M_j M_W	h+yu
+ヒョ	hyo	M_h M_j M_o	h+yo
+ビャ	bya	M_b M_j M_ab	b+ya
+ビュ	byu	M_b M_j M_W	b+yu
+ビョ	byo	M_b M_j M_o	b+yo
+ピャ	pya	M_p M_j M_ab	p+ya
+ピュ	pyu	M_p M_j M_W	p+yu
+ピョ	pyo	M_p M_j M_o	p+yo
+ミャ	mya	M_m M_j M_ab	m+ya
+ミュ	myu	M_m M_j M_W	m+yu
+ミョ	myo	M_m M_j M_o	m+yo
+リャ	rya	M_l M_j M_ab	r+ya
+リュ	ryu	M_l M_j M_W	r+yu
+リョ	ryo	M_l M_j M_o	r+yo
+ティ	ti	M_t M_i	ti
+テュ	tju	M_t M_W	tyu
+ウォ	uo	M_W M_o	uo
+ツァ	cua	M_cu M_a	cua
+ツォ	cuo	M_ts M_W M_o	cuo
+ウィ	ui	M_u M_i	ui
+チェ	gye	M_g M_j M_e	g+ye
+トゥ	tou	M_t M_o M_u	tou
+ドゥ	dou	M_d M_o M_u	dou
+フォ	Fuo	M_f M_W M_o	Fuo
+ディ	dei	M_d M_e M_i	dei	
+ジェ	zyi	M_dZ M_i	z+yi
+フェ	Fue	M_f M_W M_e	Fue
+フィ	Fui	M_f M_W M_e	Fui
+グヮ	guwa	M_g M_W M_w M_ab	guwa
+ウェ	ue	M_u M_e	ue
+デュ	dyu	M_d M_e M_j M_W	d+yu
+スィ	sui	M_s M_W M_i	sui
+ュー	yu+H	M_j M_Wl	yu+H

@@ -397,6 +397,12 @@ class GlobalPhoneFactory(AbstractFactory):
             'supported languages. '.format(cls.preparators.keys()) +
             'Actually only Vietnamese and Mandarin are supported '
             'by abkhazia.')
+        parser.add_argument(
+            '--clusters', action='store_true',
+            help='If language is japanese, setting clusters to true'
+            'forces the preparator to keep phonemes such as "cy" '
+            ' "zy" etc.. together. If --clusters is not enabled'
+            'such phonemes will be seperated, e.g. cy -> c,y .')
 
         return parser
 
@@ -405,7 +411,10 @@ class GlobalPhoneFactory(AbstractFactory):
         preps = []
         for l in args.language:
             prep = cls.preparators[l]
-            p = prep(args.input_dir)
+            if l == 'japanese':
+                p = prep(args.input_dir, args.clusters)
+            else:
+                p = prep(args.input_dir)
             p.njobs = args.njobs
             preps.append(p)
         return preps

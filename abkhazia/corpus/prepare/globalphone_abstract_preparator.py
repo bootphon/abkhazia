@@ -67,7 +67,7 @@ class AbstractGlobalPhonePreparator(AbstractPreparator):
                 'Bad formatting for word or transcript: {0}'.format(expr))
         return expr[1:-1]
 
-    def __init__(self, input_dir, log=utils.logger.null_logger()):
+    def __init__(self, input_dir, log=utils.logger.null_logger(), clusters=False):
         super(AbstractGlobalPhonePreparator, self).__init__(input_dir, log=log)
 
         self.transcription_dir = os.path.join(
@@ -78,20 +78,15 @@ class AbstractGlobalPhonePreparator(AbstractPreparator):
             self.input_dir,
             'GlobalPhoneDict-{}'.format(self.language),
             '{}-GPDict.txt'.format(self.language))
-
+        print clusters
         # init language specificities
         self.wavs = None
         self._erase_dict = self.correct_dictionary()
         self._erase_trs = self.correct_transcription()
         # for japanese : 
         #self.kana_to_phone = None
+        self.clusters = clusters
         self.kana_to_phone = self.parse_kana_to_phone()
-        #if self.kana_to_phone :
-        #        with open(os.path.join(self.input_dir,'unknown_GP.txt'),'wb') as unk_GP:
-        #            unk_GP.write('phone\tprev_phone\tnext_phone\n')
-    
-
-
 
     def correct_transcription(self):
         return False
@@ -207,20 +202,19 @@ class AbstractGlobalPhonePreparator(AbstractPreparator):
             words.append(word)
 
             # parse phonetic transcription
-            try :
-                trs = self.strip_accolades(u' '.join(line[1:])).split(u' ')
-            except:
-                print line
-                print "press key to continue"
-                continue
+            #try :
+            trs = self.strip_accolades(u' '.join(line[1:])).split(u' ')
+            #except:
+            #    print line
+            #    print "press key to continue"
+            #    raw_input()
+            #    continue
             transcript = []
             if self.kana_to_phone:
-                clusters = True
-                (transcript,not_transcripted) = self.transcript_japanese(trs, clusters)
+                (transcript,not_transcripted) = self.transcript_japanese(trs, self.clusters)
                 transcripts.append(u' '.join(transcript))
                 not_transc=not_transc+not_transcripted
             else:
-                print trs
                 for phone in trs:
                     if phone[0] == u'{':
                         phn = phone[1:]
@@ -241,5 +235,4 @@ class AbstractGlobalPhonePreparator(AbstractPreparator):
         #    with open(os.path.join(self.input_dir,'unknown_GP.txt'),'ab') as unk_GP:
         #        for ph1,ph2,ph3 in not_transc:
         #            unk_GP.write('{}\t{}\t{}\n'.format(ph1,ph2,ph3))
-
         return dict(zip(words, transcripts))

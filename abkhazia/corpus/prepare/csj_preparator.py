@@ -199,7 +199,8 @@ class CSJPreparator(AbstractPreparator):
                            if f[0] == 'S']
 
         self.kana_to_phone = self.parse_kana_to_phone(
-            os.path.join(self.input_dir, "kana-to-phon_bootphon.txt"))
+                resource_filename(Requirement.parse('abkhazia'),
+                    'abkhazia/share/kana-to-phone_bootphon_CSJ.txt'))
 
         # gather label data TODO parallelize
         self.log.info('parsing {} xml files'.format(len(self.data_files)))
