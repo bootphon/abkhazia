@@ -552,7 +552,8 @@ class CorpusValidation(object):
                         'utterance {} have a duration of 0'.format(utt_id))
 
                 if not (start >= 0 and stop >= 0 and start <= stop and
-                        start <= duration and stop <= duration):
+                        start <= duration + (1.0/16000) and
+                        stop <= duration + (1.0/16000)):
                     raise IOError(
                         "utterance {} is not whithin boudaries in wav {} "
                         "({} not in {})"
