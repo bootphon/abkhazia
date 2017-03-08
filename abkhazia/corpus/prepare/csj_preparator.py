@@ -133,33 +133,31 @@ class CSJPreparator(AbstractPreparator):
         'p:': u'p:',
         'Q+p': u'Q+p',
         # TODO ASK THOMAS AND XUAN-NGA !! 
-        'py:': u'py:',
-        'Q+py': u'Q+py',
-        'cy:': u'cy:',
-        'Q+cy': u'Q+cy',
-        'dy': u'dy',
-        'gy': u'gy',
-        'cy': u'cy',
-        'hy': u'hy',
-        'py': u'py',
-        'ry': u'ry',
-        'ny': u'ny',
-        'by': u'by',
+        'Q+b': u'Q+b',
+        'Q+p+y': u'Q+p+y',
+        'Q+c+y': u'Q+c+y',
+        'd+y': u'd+y',
+        'g+y': u'g+y',
+        'c+y': u'c+y',
+        'h+y': u'h+y',
+        'p+y': u'p+y',
+        'r+y': u'r+y',
+        'm+y': u'm+y',
+        'n+y': u'n+y',
+        'b+y': u'b+y',
         'c': u'c',
         'c:': u'c:',
         'Q+c': u'Q+c',
-        'ky': u'ky',
-        'ky:': u'ky:',
-        'Q+ky': u'Q+ky',
+        'k+y': u'k+y',
+        'Q+k+y': u'Q+k+y',
         'my': u'my',
         # TODO ASK THOMAS AND XUAN-NGA
         'r': u'r',
         's': u's',
         's:': u's:',
         'Q+s': u'Q+s',
-        'sy': u'ɕ',
-        'sy:': u'ɕ:',
-        'Q+sy': u'Q+sy',
+        's+y': u'ɕ',
+        'Q+s+y': u'Q+s+y',
         't': u't',
         't:': u't:',
         'Q+t': u'Q+t',
@@ -168,11 +166,9 @@ class CSJPreparator(AbstractPreparator):
         'z': u'z',
         'z:': u'z:',  # TODO ASK THOMAS IF IS SHOULD PUT IT ?
         'Q+z': u'Q+z',
-        'zy': u'ʑ',  # very commonly an affricate...
-        'zy:': u'ʑ:',
-        'Q+zy': u'Q+zy'
-    }   
-
+        'z+y': u'ʑ',  # very commonly an affricate...
+        'Q+z+y': u'Q+z+y'
+    }
     
     # XML with bad transcription:
     xml_pb = 'S05M1406.xml'
@@ -667,7 +663,7 @@ class CSJPreparator(AbstractPreparator):
                 #print phoneme,' in ',phonemes_1
                         assert out_phn != 'Q', "Two successive 'Q' in phoneme sequence"
                         if out_phn in obstruents:
-                            previous = 'Q'+out_phn
+                            previous = 'Q+'+out_phn
                         else:
                             # Q considered a glottal stop in other contexts
                             phonemes_2.append('Q')
@@ -697,7 +693,7 @@ class CSJPreparator(AbstractPreparator):
                     if out_phn == 'H':
                         assert previous != 'H', "Two successive 'H' in phoneme sequence"
                         if previous in vowels:
-                            phonemes_3.append(previous + ':')
+                            phonemes_3.append(previous + '+H')
                         else:
                             print previous
                             assert previous == 'N', "H found after neither N nor vowel"
