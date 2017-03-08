@@ -87,24 +87,25 @@ class CSJPreparator(AbstractPreparator):
 
     url = 'http://www.ninjal.ac.jp/english/products/csj'
     audio_format = 'wav'
-
     vowels = {
         'a': u'ä',
         'e': u'e',
         'i': u'i',
         'o': u'o',
         'u': u'ɯ',  # this one has lip-compression
-        'a:': u'ä:',
-        'e:': u'e:',
-        'i:': u'i:',
-        'o:': u'o:',
-        'u:': u'ɯ:'
+        'a+H': u'ä+H',
+        'e+H': u'e+H',
+        'i+H': u'i+H',
+        'o+H': u'o+H',
+        'u+H': u'ɯ+H',
+        'TN': u'TN'
     }
 
     # geminates: look at the effectives
     consonants = {
         'F': u'ɸ',    # not sure about this one
         'F:': u'ɸ:',  # not sure about this one
+        'Q+F': u'Q+F',
         'N': u'ɴ',    # maybe we should transcribe the N like the Q
                       # based on following consonant?
         'Q': u'ʔ',
@@ -112,23 +113,30 @@ class CSJPreparator(AbstractPreparator):
         'b:': u'b:',  # is this really a geminate with a voiced stop ?
         'd': u'd',
         'd:': u'd:',  # is this really a geminate with a voiced stop ?
+        'Q+d': u'Q+d',
         'g': u'g',
         'g:': u'g:',  # is this really a geminate with a voiced stop ?
+        'Q+g': u'Q+g',
         # look at difference between aspiration and gemination: gemination
         # is supposed to affect the duration of closure and aspiration the
         # VOT. This explains that gemination cannot occur at the beginning
         # of an utterance no way to determine the duration of closure
         'h': u'h',
         'h:': u'h:',  # TODO ASK THOMAS IF I SHOULD PUT IT ?
+        'Q+h': u'Q+h',
         'k': u'k',
         'k:': u'k:',
+        'Q+k': u'Q+k',
         'm': u'm',
         'n': u'n',
         'p': u'p',
         'p:': u'p:',
+        'Q+p': u'Q+p',
         # TODO ASK THOMAS AND XUAN-NGA !! 
         'py:': u'py:',
+        'Q+py': u'Q+py',
         'cy:': u'cy:',
+        'Q+cy': u'Q+cy',
         'dy': u'dy',
         'gy': u'gy',
         'cy': u'cy',
@@ -139,34 +147,34 @@ class CSJPreparator(AbstractPreparator):
         'by': u'by',
         'c': u'c',
         'c:': u'c:',
+        'Q+c': u'Q+c',
         'ky': u'ky',
         'ky:': u'ky:',
+        'Q+ky': u'Q+ky',
         'my': u'my',
         # TODO ASK THOMAS AND XUAN-NGA
         'r': u'r',
         's': u's',
         's:': u's:',
+        'Q+s': u'Q+s',
         'sy': u'ɕ',
         'sy:': u'ɕ:',
+        'Q+sy': u'Q+sy',
         't': u't',
         't:': u't:',
+        'Q+t': u'Q+t',
         'w': u'w',  # lip-compression here too...
         'y': u'j',
         'z': u'z',
         'z:': u'z:',  # TODO ASK THOMAS IF IS SHOULD PUT IT ?
+        'Q+z': u'Q+z',
         'zy': u'ʑ',  # very commonly an affricate...
         'zy:': u'ʑ:',
-		#XN's note: during validation, these were seemingly in the dictionary but were not present as phones so I added them
-		u'\u30ee': u'\u30ee',
-		u'\u30a1': u'\u30a1',
-		u'\u30a3': u'\u30a3',
-		u'\u30a9': u'\u30a9',
-		u'.': u'.',
-		u':': u':',
-		u'\u30f4': u'\u30f4',
-		u'P': u'P',
-    }
-    # problematic XML :
+        'Q+zy': u'Q+zy'
+    }   
+
+    
+    # XML with bad transcription:
     xml_pb = 'S05M1406.xml'
 
     # phones are vowels and consonents
@@ -183,7 +191,7 @@ class CSJPreparator(AbstractPreparator):
 
         # load the core_CSJ.txt from the abkhazia installation path
         core = resource_filename(
-            Requirement.parse('abkhazia'), 'abkhazia/share/CSJ_core.txt')
+                    Requirement.parse('abkhazia'), 'abkhazia/share/CSJ_core.txt')
         if not os.path.exists(core):
             raise OSError('core_CSJ not found in {}'.format(core))
         core_files = [l[:-1] for l in open(core, 'r').readlines()]
@@ -210,7 +218,7 @@ class CSJPreparator(AbstractPreparator):
         if treat_core:
             self.data_files = self.data_core_files
 
-        for data in progressbar.ProgressBar()(self.data_files):
+        for data in progressbar.ProgressBar()(self.data_files[1040:]):
             print "xml :", data
             if treat_core:
                 utts = self.parse_core_xml(
@@ -222,6 +230,8 @@ class CSJPreparator(AbstractPreparator):
                 #    print data
                 utts = self.parse_non_core_xml(
                     os.path.join(xml_dir,data + '.xml'), clusters)
+                for utt_id in utts:
+                    utt = utts[utt_id]
             utts, utt_lexicon = self.extract_basic_transcript(utts,
                                                               clusters)
             for utt_id in utts:
@@ -348,7 +358,6 @@ class CSJPreparator(AbstractPreparator):
             channel = ipu.attrib["Channel"] if is_dialog else None
             utt_start = float(ipu.attrib["IPUStartTime"])
             utt_stop = float(ipu.attrib["IPUEndTime"])
-
             # Word level - Short Words Units (SUW) are taken as 'words'
             words = []
             for luw in ipu.iter("LUW"):
@@ -358,6 +367,7 @@ class CSJPreparator(AbstractPreparator):
                     #phonemes = []
                     phones = suw.attrib["PhoneticTranscription"]
                     phones.encode('utf8')
+                    whole_phone = phones
 
                     # in X05M1406.xml, transcription starts a word with H : replace by "?"
                     xml_name = xml_file.split('/')[-1]
@@ -371,28 +381,37 @@ class CSJPreparator(AbstractPreparator):
                     # theres a difference between what is spoken and real word
                     # so choose what is spoken (i.e. in "(W XX ; YY) choose XX)
                     #if "W" in phones or "B" in phones:
-                    while ("W" in phones and ";" in phones) or ("B" in phones and ";" in phones) :
-                        split_phones=phones.split(';')
-                        real_phones=split_phones[0].replace('(W ','')
-                        for parts in split_phones[1:]: 
-                            # locate the end of the "W/B" ambiguity
-                            # and get the end of the phoneme if there's 
-                            # something after the "(W ..;..).." 
-                            try:
-                                ind=parts.index(')')
-                            except:
-                                # there's a case where they forgot the end ")"
-                                ind=len(parts)-1
+                    #while ("W" in phones and ";" in phones) or ("B" in phones and ";" in phones) :
+                    #    split_phones=phones.split(';')
+                    #    real_phones=split_phones[0].replace('(W ','')
+                    #    for parts in split_phones[1:]: 
+                    #        # locate the end of the "W/B" ambiguity
+                    #        # and get the end of the phoneme if there's 
+                    #        # something after the "(W ..;..).." 
+                    #        try:
+                    #            ind=parts.index(')')
+                    #        except:
+                    #            # there's cases where they forgot the end ")"
+                    #            ind=len(parts)-1
 
-                                real_phones=real_phones+parts[ind+1:]
-                            phones=real_phones
-                    
-                    # P indicated a pause and is followed by 20 and ":" numbers, exlude everything
-                    if "P" in phones :
+                    #            real_phones=real_phones+parts[ind+1:]
+                    #        phones=real_phones
+                    if "W" in phones or "?" in phones or "B" in phones or "O" in phones : 
+                        phone = []
+                        phone.append(Phone(
+                                    "TN", '', None, None))
+                        phonemes.append(Phoneme(
+                                    "TN", phone, phone[0].start, phone[-1].end))
+                        continue
+
+                    # P indicated a pause and is followed by 20 and ":" 
+                    # numbers, exlude everything
+                    while "P" in phones :
                         ind = phones.index('P')
                         phones = phones[0:ind]+phones[ind+21:]
 
-                    # Remove the transcription tags and other unwanted characters (e.g. ',' '-' etc..)
+                    # Remove the transcription tags and other 
+                    # unwanted characters (e.g. ',' '-' etc..)
                     word_tags = ['A', 'B', 'M', 'I',
                                  'S', 'J', 'C', 'L',
                                  'R', 'G', 'F', 'D',
@@ -400,9 +419,10 @@ class CSJPreparator(AbstractPreparator):
                                  'V', 'W', '息', '笑',
                                  '咳','泣'
                                 ]
-                    symbols = [',', '-', '>', '<', '(', ')', ' ', '×']
+                    symbols = [',', '-', '>', '<', '(', ')', ' ', '×', '.', ':']
                     additional_tags = ['1', '2', '3', '4',
-                                     '5', '6', '7', '8', '9', '0']
+                                       '5', '6', '7', '8', 
+                                       '9', '0']
                     unwanted = word_tags + symbols + additional_tags
 
                     for tag in unwanted:
@@ -430,16 +450,16 @@ class CSJPreparator(AbstractPreparator):
                             if phoneme_id == "?" :
                                 phones=phones[1:]
                                 continue
-                            print "Phone seems to have no mapping, check :", phoneme_id, ' in context :',phones 
+                            print "Phone seems to have no mapping, check :", phoneme_id, ' in context :', whole_phone
+                            raw_input()
                             phones=phones[1:]
                                         
-                        # handle the x+H case
-                        if ('+' in phoneme_id) and phoneme_id[-1]=='H':
-                            plus_ind = phoneme_id.index('+')
-                            phoneme_id = phoneme_id[0:plus_ind] + 'H'
-                           
-                        elif (('+' in phoneme_id) and (not keep_clusters) and
-                            (phoneme_id[2] is not 'H')):
+                        ## handle the x+H case
+                        #if ('+' in phoneme_id) and phoneme_id[-1]=='H':
+                        #    plus_ind = phoneme_id.index('+')
+                        #    phoneme_id = phoneme_id[0:plus_ind] + 'H'
+                        if (('+' in phoneme_id) and (not keep_clusters) and
+                            not (phoneme_id[-1] == 'H')):
                             # handle the x+x x case
                             plus_ind = phoneme_id.index('+')
                             phoneme_id2 = phoneme_id[plus_ind+2]
@@ -447,7 +467,7 @@ class CSJPreparator(AbstractPreparator):
                             
                             #phoneme_id=None
                         elif (('+' in phoneme_id) and (keep_clusters) and
-                            (phoneme_id[2] is not 'H')):
+                                not (phoneme_id[-1] == 'H')):
                             # if keep_clusters is enabled, keep the x+x
                             # (e.g. c+y) as is
                             try:
@@ -458,13 +478,14 @@ class CSJPreparator(AbstractPreparator):
                                 pass
                         
                         if phoneme_id == "Q":
+                            # If Q is at the end, remove it !
                             if len(phones) == 0:
                                 phoneme_id = None
                                 continue
                         
                         if phoneme_id == 'Nfiller':
-                            # TODO CHECK IF Nfiller is N 
-                            continue
+                            # TODO CHECK IF Nfiller is N
+                            phoneme_id = 'N'
                         
                         if phoneme_id2:
                             phone.append(Phone(
@@ -478,11 +499,17 @@ class CSJPreparator(AbstractPreparator):
                                 phoneme_id2, phone, phone[0].start, phone[-1].end))
                             continue
                         else:
-                            for char in phoneme_id:
+                            if '+' not in phoneme_id:
+                                for char in phoneme_id:
+                                    phone.append(Phone(
+                                        char, '', None, None))
+                                    phonemes.append(Phoneme(
+                                        char, phone, phone[0].start, phone[-1].end))
+                            else:
                                 phone.append(Phone(
-                                    char, '', None, None))
+                                    phoneme_id, '', None, None))
                                 phonemes.append(Phoneme(
-                                    char, phone, phone[0].start, phone[-1].end))
+                                    phoneme_id, phone, phone[0].start, phone[-1].end))
                 
                 if phonemes:
                     words.append(Word(
@@ -534,6 +561,7 @@ class CSJPreparator(AbstractPreparator):
                 words = []
                 for word in utt.words:
                     # use phonemic level
+                    
                     phonemes = self.reencode(
                         [phoneme.id for phoneme in word.phonemes],
                         clusters, encoding)
@@ -554,7 +582,7 @@ class CSJPreparator(AbstractPreparator):
         return new_utts, lexicon
 
     def reencode(self, phonemes, encoding=None, clusters=False):
-        vowels = ['a', 'e', 'i', 'o', 'u']
+        vowels = ['a', 'e', 'i', 'o', 'u','TN']
         stops = ['t', 'ty', 'b', 'by', 'g', 'gj', 'gy',
                  'k', 'ky', 'kj', 'p', 'py', 'd', 'dy']
         affricates = ['z', 'zy', 'zj', 'c', 'cy', 'cj']
@@ -607,10 +635,10 @@ class CSJPreparator(AbstractPreparator):
             }
             if out_phn in seg_1 and not clusters:
                 out_phns = [seg_1[out_phn], seg_2[out_phn]]
-            elif "+" in out_phn and clusters:
-                out_phns = [out_phn[0]+out_phn[2]]
-                if out_phn not in self.phones:
-                    self.phones[out_phn] = out_phn
+            #elif "+" in out_phn and clusters:
+            #    out_phns = [out_phn[0]+out_phn[2]]
+            #    if out_phn not in self.phones:
+            #        self.phones[out_phn] = out_phn
             else:
                 out_phns = [out_phn]
                 # 3 - group allophonic variants according to phonetics
@@ -625,8 +653,6 @@ class CSJPreparator(AbstractPreparator):
             }
         
             out_phns = [mapping[phn] if phn in mapping else phn for phn in out_phns]
-            if out_phns=="h:":
-                print phn
             phonemes_1 = phonemes_1 + out_phns
             # 4 - Q before obstruent as geminate (long obstruent)
             if len(phonemes_1) <= 1:
@@ -641,9 +667,7 @@ class CSJPreparator(AbstractPreparator):
                 #print phoneme,' in ',phonemes_1
                         assert out_phn != 'Q', "Two successive 'Q' in phoneme sequence"
                         if out_phn in obstruents:
-                            if out_phn=='z' or out_phn=='h':
-                                print out_phn,"is about to receive :", phonemes
-                            previous = out_phn + ':'
+                            previous = 'Q'+out_phn
                         else:
                             # Q considered a glottal stop in other contexts
                             phonemes_2.append('Q')
@@ -675,6 +699,7 @@ class CSJPreparator(AbstractPreparator):
                         if previous in vowels:
                             phonemes_3.append(previous + ':')
                         else:
+                            print previous
                             assert previous == 'N', "H found after neither N nor vowel"
                             phonemes_3.append(previous)  # drop H after N
                         previous = 'H'
@@ -684,9 +709,6 @@ class CSJPreparator(AbstractPreparator):
                         previous = out_phn
                 if previous != 'H':
                     phonemes_3.append(previous)  # don't forget last item
-            for phh in phonemes_3:
-                if phh=='z:' or phh=="h:":
-                    print phonemes_3
         return phonemes_3
 
     def list_audio_files(self):

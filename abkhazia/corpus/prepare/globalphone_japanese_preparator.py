@@ -23,6 +23,7 @@ import os
 import abkhazia.utils as utils
 
 from abkhazia.utils import open_utf8
+from pkg_resources import Requirement, resource_filename
 from abkhazia.corpus.prepare.globalphone_abstract_preparator import (
     AbstractGlobalPhonePreparator)
 
@@ -32,7 +33,9 @@ class JapanesePreparator(AbstractGlobalPhonePreparator):
     language = 'Japanese'
 
     name = '-'.join([AbstractGlobalPhonePreparator.name, language]).lower()
-
+    kana_csv_path = resource_filename(
+            Requirement.parse('abkhazia'), 
+            'abkhazia/share/kana-to-phon_Globalphone.txt')
     transcription_key = 'rmn'
     missing_transcripts = [
         'JA223_92','JA223_93','JA223_94','JA223_95',
@@ -167,7 +170,8 @@ class JapanesePreparator(AbstractGlobalPhonePreparator):
     def parse_kana_to_phone(self):
         """Parse katakana phone transcription and pu it in a dict() """ 
         kana_to_phon=dict()
-        kana_csv=os.path.join(self.input_dir,'kana-to-phon_bootphon.txt')
+        #kana_csv=os.path.join(self.input_dir,'kana-to-phon_bootphon.txt')
+        kana_csv = self.kana_csv_path
         with open_utf8(kana_csv,'r') as fin:
             kana_transcript = fin.read()
             kana_transcript = kana_transcript.split('\n')

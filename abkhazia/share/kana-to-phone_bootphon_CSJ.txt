@@ -8,6 +8,7 @@ katakana	CSJ	GP	Bootphon
 いー	i+H	M_il	i+H
 うー	u+H	M_Wl	u+H
 えー	e+H	M_el	e+H
+ェー	e+H	M_el	e+H
 おー	o+H	M_ol	o+H
 ィー	i+H	M_il	i+H
 イ	i	M_i	i
@@ -137,3 +138,8 @@ katakana	CSJ	GP	Bootphon
 デュ	dyu	M_d M_e M_j M_W	d+yu
 スィ	sui	M_s M_W M_i	sui
 ュー	yu+H	M_j M_Wl	yu+H
+ズィ	zui	M_z M_W M_i	zui
+ツィ	cui	M_tS M_W M_i	cui
+ェ	e	M_e	e
+ヴォ	vo	M_v M_o	vo
+ヴァ	va	M_v M_a	va
