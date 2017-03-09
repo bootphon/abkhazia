@@ -71,7 +71,7 @@ class ChildesPreparator(AbstractPreparator):
         'eh': u'ɛ',
         'ey': u'eɪ',
         'ae': u'æ',
-        'aa': u'ɑː',
+        'aa': u'ɑ',
         'aw': u'aʊ',
         'ay': u'aɪ',
         'ah': u'ʌ',
