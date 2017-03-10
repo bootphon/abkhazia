@@ -12,9 +12,12 @@ all the unknown phones in :
 	/input_folder/unknown_GP.txt
 
 ** CSJ
-The CSJ preparator for now still uses the "core" preparator for core
-files, and uses the "non_core" preparator for non_core files. This 
-should be changed in the future, to homogenise the transcription 
+Note that, out of 498 379 utterances, there are 58 845 utterances
+that contain at least one transcription ambiguity ( notated as 
+"(W ... ; ...)" ), and there are 54 484 utterances that contain
+an ambiguous symbol (such as "?" which means the person who 
+transcribed the utterance was not sure). For now, we keep the 
+utterance and replace the whole word by "SPN" (spoken noise)
 
 **TODO
 A list (probably non-exhaustive) of things to do can be found in 

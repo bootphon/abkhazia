@@ -84,7 +84,6 @@ class AbstractGlobalPhonePreparator(AbstractPreparator):
         self._erase_dict = self.correct_dictionary()
         self._erase_trs = self.correct_transcription()
         # for japanese : 
-        #self.kana_to_phone = None
         self.clusters = clusters
         self.kana_to_phone = self.parse_kana_to_phone()
 
@@ -205,9 +204,7 @@ class AbstractGlobalPhonePreparator(AbstractPreparator):
             #try :
             trs = self.strip_accolades(u' '.join(line[1:])).split(u' ')
             #except:
-            #    print line
-            #    print "press key to continue"
-            #    raw_input()
+            #    print "line: ",line," could not be parsed, skipping it"
             #    continue
             transcript = []
             if self.kana_to_phone:
@@ -231,8 +228,4 @@ class AbstractGlobalPhonePreparator(AbstractPreparator):
                     if phn != u'WB':
                         transcript.append(phn)
                 transcripts.append(u' '.join(transcript))
-        #if self.kana_to_phone:
-        #    with open(os.path.join(self.input_dir,'unknown_GP.txt'),'ab') as unk_GP:
-        #        for ph1,ph2,ph3 in not_transc:
-        #            unk_GP.write('{}\t{}\t{}\n'.format(ph1,ph2,ph3))
         return dict(zip(words, transcripts))

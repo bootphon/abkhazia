@@ -98,7 +98,7 @@ class CSJPreparator(AbstractPreparator):
         'i+H': u'i+H',
         'o+H': u'o+H',
         'u+H': u'ɯ+H',
-        'TN': u'TN'
+        'SPN': u'SPN'
     }
 
     # geminates: look at the effectives
@@ -213,7 +213,6 @@ class CSJPreparator(AbstractPreparator):
 
         if treat_core:
             self.data_files = self.data_core_files
-
         for data in progressbar.ProgressBar()(self.data_files):
             print "xml :", data
             if treat_core:
@@ -329,7 +328,6 @@ class CSJPreparator(AbstractPreparator):
         talk = tree.getroot()
         talk_id = talk.attrib["TalkID"]
         speaker = talk.attrib["SpeakerID"]
-
         # make sure all speaker-ids have same length
         if len(speaker) < 4:
             speaker = "0"*(4-len(speaker)) + speaker
@@ -348,13 +346,11 @@ class CSJPreparator(AbstractPreparator):
         # Utterance level
         utts = {}
         for ipu in talk.iter("IPU"):
-            #if not ipu.attrib["IPUID"]=='0178':
-            #    continue
             utt_id = spk_id + u"_" + talk_id + u"_" + ipu.attrib["IPUID"]
             channel = ipu.attrib["Channel"] if is_dialog else None
             utt_start = float(ipu.attrib["IPUStartTime"])
             utt_stop = float(ipu.attrib["IPUEndTime"])
-            # Word level - Short Words Units (SUW) are taken as 'words'
+            # Word level - Long Words Units (SUW) are taken as 'words'
             words = []
             for luw in ipu.iter("LUW"):
                 phonemes=[]
@@ -373,35 +369,19 @@ class CSJPreparator(AbstractPreparator):
                     if  'ンー' in phones : 
                         phones = '?'
                         
-                    # If phonetic transcription has a "W" or "B"  it means
-                    # theres a difference between what is spoken and real word
-                    # so choose what is spoken (i.e. in "(W XX ; YY) choose XX)
-                    #if "W" in phones or "B" in phones:
-                    #while ("W" in phones and ";" in phones) or ("B" in phones and ";" in phones) :
-                    #    split_phones=phones.split(';')
-                    #    real_phones=split_phones[0].replace('(W ','')
-                    #    for parts in split_phones[1:]: 
-                    #        # locate the end of the "W/B" ambiguity
-                    #        # and get the end of the phoneme if there's 
-                    #        # something after the "(W ..;..).." 
-                    #        try:
-                    #            ind=parts.index(')')
-                    #        except:
-                    #            # there's cases where they forgot the end ")"
-                    #            ind=len(parts)-1
-
-                    #            real_phones=real_phones+parts[ind+1:]
-                    #        phones=real_phones
-                    if "W" in phones or "?" in phones or "B" in phones or "O" in phones : 
+                    if "W" in phones or "?" in phones or "B" in phones or "O" in phones :
+                        # if W, ?, B or O appears, we replace the phoneme by SPN (spoken
+                        # noise), since we can't be sure what is the good transcription.
                         phone = []
                         phone.append(Phone(
-                                    "TN", '', None, None))
+                                    "SPN", '', None, None))
                         phonemes.append(Phoneme(
-                                    "TN", phone, phone[0].start, phone[-1].end))
+                                    "SPN", phone, phone[0].start, phone[-1].end))
                         continue
 
                     # P indicated a pause and is followed by 20 and ":" 
                     # numbers, exlude everything
+                    # TODO : replace P by SIL ? 
                     while "P" in phones :
                         ind = phones.index('P')
                         phones = phones[0:ind]+phones[ind+21:]
@@ -450,10 +430,6 @@ class CSJPreparator(AbstractPreparator):
                             raw_input()
                             phones=phones[1:]
                                         
-                        ## handle the x+H case
-                        #if ('+' in phoneme_id) and phoneme_id[-1]=='H':
-                        #    plus_ind = phoneme_id.index('+')
-                        #    phoneme_id = phoneme_id[0:plus_ind] + 'H'
                         if (('+' in phoneme_id) and (not keep_clusters) and
                             not (phoneme_id[-1] == 'H')):
                             # handle the x+x x case
@@ -461,7 +437,6 @@ class CSJPreparator(AbstractPreparator):
                             phoneme_id2 = phoneme_id[plus_ind+2]
                             phoneme_id1 = phoneme_id[0:plus_ind] + phoneme_id[plus_ind+1]
                             
-                            #phoneme_id=None
                         elif (('+' in phoneme_id) and (keep_clusters) and
                                 not (phoneme_id[-1] == 'H')):
                             # if keep_clusters is enabled, keep the x+x
@@ -578,7 +553,7 @@ class CSJPreparator(AbstractPreparator):
         return new_utts, lexicon
 
     def reencode(self, phonemes, encoding=None, clusters=False):
-        vowels = ['a', 'e', 'i', 'o', 'u','TN']
+        vowels = ['a', 'e', 'i', 'o', 'u','SPN']
         stops = ['t', 'ty', 'b', 'by', 'g', 'gj', 'gy',
                  'k', 'ky', 'kj', 'p', 'py', 'd', 'dy']
         affricates = ['z', 'zy', 'zj', 'c', 'cy', 'cj']
