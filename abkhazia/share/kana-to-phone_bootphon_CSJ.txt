@@ -140,6 +140,7 @@ katakana	CSJ	GP	Bootphon
 ュー	yu+H	M_j M_Wl	yu+H
 ズィ	zui	M_z M_W M_i	zui
 ツィ	cui	M_tS M_W M_i	cui
-ェ	e	M_e	e
 ヴォ	vo	M_v M_o	vo
 ヴァ	va	M_v M_a	va
+イェ	ie	M_i M_e	ie
+ニェ	nye	M_nq M_j M_e	n+ye
