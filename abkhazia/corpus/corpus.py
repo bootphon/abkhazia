@@ -23,6 +23,7 @@ from abkhazia.corpus.corpus_saver import CorpusSaver
 from abkhazia.corpus.corpus_loader import CorpusLoader
 from abkhazia.corpus.corpus_validation import CorpusValidation
 from abkhazia.corpus.corpus_split import CorpusSplit
+from abkhazia.corpus.corpus_merge_wavs import CorpusMergeWavs
 import abkhazia.utils as utils
 from collections import defaultdict
 #from abkhazia.utils import abkhazia_base, default_njobs, logger
@@ -425,4 +426,8 @@ class Corpus(utils.abkhazia_base.AbkhaziaBase):
         
         return(plt) 
 
+    def merge_wavs(self,corpus_dir,output_dir):
+        """ Merge all wav files from same speaker 
+        Returns a corpus with one wav file per speaker """
 
+        CorpusMergeWavs(self).merge_wavs(corpus_dir,output_dir)
