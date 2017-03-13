@@ -33,6 +33,7 @@ from abkhazia.commands import (
     AbkhaziaPrepare,
     AbkhaziaFeatures,
     AbkhaziaSplit,
+    AbkhaziaPlot,
     AbkhaziaLanguage,
     AbkhaziaAcoustic,
     AbkhaziaDecode,
@@ -48,6 +49,7 @@ class Abkhazia(object):
     _command_classes = [
         AbkhaziaPrepare,
         AbkhaziaSplit,
+        AbkhaziaPlot,
         AbkhaziaFeatures,
         AbkhaziaLanguage,
         AbkhaziaAcoustic,
