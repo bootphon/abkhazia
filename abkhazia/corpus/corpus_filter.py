@@ -66,12 +66,11 @@ class CorpusFilter(object):
         self.limits = dict()
         self.gender = dict()
         self.spk2utts = dict()
-        self.utt2dur = self.corpus.utt2duration()
         self.log.debug('loaded %i utterances from %i speakers',
                        self.size, len(self.speakers))
 
     def create_filter(self, out_path, function,
-                      nb_speaker=None, plot=True,
+                      nb_speaker=None, 
                       new_speakers=10, THCHS30=False):
         """Prepare the corpus for the cutting
            The speakers are sorted by their speech duration.
@@ -80,24 +79,16 @@ class CorpusFilter(object):
            If plot=True, a plot of the speech duration
            distribution and of the cutting function will be displayed.
         """
-        # utt2dur = self.utt2dur
-        # spk2dur=dict()
-        # speakers=self.speakers
-        # segments=self.corpus.segments
-        # spk2utts=self.spk2utts
-        # utts=self.utts
-        utt_ids, utt_speakers = zip(*self.utt2spk.iteritems())
-        utt2spk = self.utt2spk
-        utts = zip(utt_ids, utt_speakers)
-        utt2dur = self.utt2duration()
+        utt2spk = self.corpus.utt2spk
+        utt2dur = self.corpus.utt2duration()
         spkr2dur = dict()
         self.log.info('sorting speaker by the total duration of speech')
 
         # Sort Speech duration from longest to shortest
         spk2utts_temp = defaultdict(list)
-        spkr2utts = defaultdict(list)
+        spk2utts = defaultdict(list)
 
-        for spkr in utt_speakers:
+        for spkr in self.speakers:
             spkr2dur[spkr] = sum([utt2dur[utt_id]
                                   for utt_id in utt2spk
                                   if utt2spk[utt_id] == spkr])
@@ -174,11 +165,14 @@ class CorpusFilter(object):
            Return the subcorpus
         """
         time = 0
+        utt2dur = self.corpus.utt2duration()
         utt_ids = []
-        spk2utts = self.spk2utts
-        utt2dur = self.utt2dur
+        spk2utts = defaultdict(list)
         not_kept_utts = defaultdict(list)
 
+        # for each speaker, list utterances
+        for utt,spkr in self.utts:
+            spk2utts[spkr].append(utt)
         # create lists of utterances we want to keep,
         # utterances we don't want to keep
         for speaker in names:
@@ -215,13 +209,13 @@ class CorpusFilter(object):
             # and we adjust the boundaries of
             # the other utterances, in order to have correct timestamps
             for utt in spk2utts[speaker]:
-                # for each wav, we compute the cumsum 
+                # for each wav, we compute the cumsum
                 # of the lengths of the utts we remove
-                # in order to have correct timestamps 
-                # for the other utts in the files
+                # in order to have correct timestamps
+                # for the other utts in the files
                 offset = 0
-                wav_id, utt_tbegin, utt_tend=corpus.segments[utt]
-                corpus.segments[utt] = (wav_id, utt_tbegin-offset,
+                wav_id, utt_tbegin, utt_tend = self.corpus.segments[utt]
+                self.corpus.segments[utt] = (wav_id, utt_tbegin-offset,
                                         utt_tend-offset)
 
                 if utt_tbegin-offset < 0 or utt_tend-offset < 0:
@@ -229,7 +223,7 @@ class CorpusFilter(object):
                                   '''than utterance boundaries''')
                 if utt not in kept_utt_set:
                     offset = offset + utt2dur[utt]
-                    not_kept_utts[speaker].append((utt,corpus.segments[utt]))
+                    not_kept_utts[speaker].append((utt, self.corpus.segments[utt]))
 
         return(self.corpus.subcorpus(
                    utt_ids, prune=True,

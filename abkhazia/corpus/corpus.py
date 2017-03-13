@@ -24,6 +24,8 @@ from abkhazia.corpus.corpus_loader import CorpusLoader
 from abkhazia.corpus.corpus_validation import CorpusValidation
 from abkhazia.corpus.corpus_split import CorpusSplit
 from abkhazia.corpus.corpus_merge_wavs import CorpusMergeWavs
+from abkhazia.corpus.corpus_filter import CorpusFilter
+from abkhazia.corpus.corpus_trimmer import CorpusTrimmer
 import abkhazia.utils as utils
 from collections import defaultdict
 #from abkhazia.utils import abkhazia_base, default_njobs, logger
@@ -123,7 +125,7 @@ class Corpus(utils.abkhazia_base.AbkhaziaBase):
         self.silences = []
         self.variants = []
 
-    def save(self, path, no_wavs=False):
+    def save(self, path, no_wavs=False, copy_wavs=True):
         """Save the corpus to the directory `path`
 
         `path` is assumed to be a non existing directory.
@@ -133,7 +135,8 @@ class Corpus(utils.abkhazia_base.AbkhaziaBase):
 
         """
         self.log.info('saving corpus to %s', path)
-        CorpusSaver.save(self, path, no_wavs=no_wavs)
+        CorpusSaver.save(self, path, no_wavs=no_wavs,
+                         copy_wavs=copy_wavs)
 
     def validate(self, njobs=utils.default_njobs()):
         """Validate speech corpus data
@@ -431,3 +434,18 @@ class Corpus(utils.abkhazia_base.AbkhaziaBase):
         Returns a corpus with one wav file per speaker """
 
         CorpusMergeWavs(self).merge_wavs(corpus_dir,output_dir)
+    
+    def create_filter(self, out_path, function,
+            nb_speaker=None, new_speakers=10, THCHS30=False):
+        """Filter the speech duration distribution of the corpus"""
+
+        return(CorpusFilter(self).create_filter(
+            out_path, function, nb_speaker, new_speakers, THCHS30))
+
+    def trim(self, corpus_dir, output_dir, function, not_kept_utts):
+        """ Remove utterances from the corpus
+            (using sox to trim the wav files)"""
+
+        CorpusTrimmer(self).trim(
+                corpus_dir, output_dir, function, not_kept_utts)
+
