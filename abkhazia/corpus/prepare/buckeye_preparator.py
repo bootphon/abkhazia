@@ -48,6 +48,14 @@ class BuckeyePreparator(AbstractPreparator):
     # u'ahn', u'ihn', u'ayn', u'NSN', u'eyn', u'oyn', u'ehn', u'iyn',
     # u'B', u'E', u'uhn', u'aon', u'awn', u'uwn', u'aan', u'ern', u'aen'])
     # Reason: we already collapsed them in the foldings_version
+    
+    # 20th March 2017 update :
+    # Some tags are removed or mapped differently to keep 
+    # a coherence between different corpora. :
+    # - {B_TRANS} and {E_TRANS} are removed sinc they only mark the 
+    # begining and end of the transcription
+    # - VOCNOISE and LAUGH are mapped to SPN (spoken noise)
+    # - NOISE and IVER are mapped to NSN (non spoken noise)
     phones = {
         'iy': u'iː',
         'ih': u'ɪ',
@@ -95,21 +103,21 @@ class BuckeyePreparator(AbstractPreparator):
         'hh': u'h',
         'el': u'l\u0329',
         'tq': u'ʔ',
-        '{B_TRANS}': u'{B_TRANS}',
-        '{E_TRANS}': u'{E_TRANS}',
+        #'{B_TRANS}': u'{B_TRANS}',
+        #'{E_TRANS}': u'{E_TRANS}',
         'CUTOFF': u'CUTOFF',
         'ERROR': u'ERROR',
         'EXCLUDE': u'EXCLUDE',
         'UNKNOWN_WW': u'UNKNOWN_WW',
         'UNKNOWN': u'UNKNOWN',
-        'VOCNOISE': u'VOCNOISE',
+        #'VOCNOISE': u'VOCNOISE',
         'HESITATION_TAG': u'HESITATION_TAG',
         'LENGTH_TAG': u'LENGTH_TAG',
-        'VOCNOISE_WW': u'VOCNOISE_WW',
-        'NOISE': u'NOISE',
-        'NOISE_WW': u'NOISE_WW',
-        'IVER': u'IVER',
-        'LAUGH': u'LAUGH',
+        #'VOCNOISE_WW': u'VOCNOISE_WW',
+        #'NOISE': u'NOISE',
+        #'NOISE_WW': u'NOISE_WW',
+        #'IVER': u'IVER',
+        #'LAUGH': u'LAUGH',
         # 'B': u'B',
         # 'E': u'E',
         # 'ahn': u'ʌ\u0329',
@@ -188,7 +196,6 @@ class BuckeyePreparator(AbstractPreparator):
 
                 current_index = index_offset
                 last_offset = offset
-
         return segments
 
     def make_speaker(self):
@@ -211,6 +218,10 @@ class BuckeyePreparator(AbstractPreparator):
             for idx, line in enumerate(
                     (l.strip() for l in open(utts).readlines()
                      if len(l.strip())), start=1):
+                # Remove {B_TRANS} and {E_TRANS}
+                line = line.replace('{B_TRANS}', '')
+                line = line.replace('{E_TRANS}', '')
+
                 text[utt + '-sent' + str(idx)] = line
 
         # one utterance have "k p's" in text, where "k p" is an
@@ -238,6 +249,18 @@ class BuckeyePreparator(AbstractPreparator):
                         if phn_trs == '':
                             no_trs.add(word)
                         else:
+                            # Replace VOCNOISE/VOCNOISE_WW/LAUGH
+                            # by SPN:
+                            phn_trs = phn_trs.replace('VOCNOISE_WW', 'SPN')
+                            phn_trs = phn_trs.replace('VOCNOISE', 'SPN')
+                            phn_trs = phn_trs.replace('LAUGH', 'SPN')
+
+                            # Replace IVER/NOISE/NOISE_WW by NSN:
+                            phn_trs = phn_trs.replace('IVER', 'NSN')
+                            phn_trs = phn_trs.replace('NOISE_WW', 'NSN')
+                            phn_trs = phn_trs.replace('NOISE', 'NSN')
+
+                            # Don't transcrib
                             dict_word[word] = phn_trs
 
         really_no_trs = [t for t in no_trs if t not in dict_word]
@@ -308,7 +331,6 @@ def validate_phone_alignment(corpus, alignment, log=utils.logger.get_log()):
 
     """
     error_utts = set()
-
     # check all utterances one by one
     for utt in corpus.utts():
         # corpus side
@@ -339,3 +361,6 @@ def validate_phone_alignment(corpus, alignment, log=utils.logger.get_log()):
 
     log.info('alignment is valid for all utterances')
     return True
+
+
+

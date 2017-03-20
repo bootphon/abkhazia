@@ -32,7 +32,8 @@ REQUIREMENTS = [] if ON_RTD else [
     'pytest',
     'Sphinx',
     'h5features>=1.2',
-    'phonemizer>=0.2'
+    'phonemizer>=0.2',
+    'matplotlib'
 ]
 
 setup(

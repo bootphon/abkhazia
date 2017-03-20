@@ -98,7 +98,7 @@ class CSJPreparator(AbstractPreparator):
         'i+H': u'i+H',
         'o+H': u'o+H',
         'u+H': u'ɯ+H',
-        'SPN': u'SPN'
+        'yu+H': u'yu+H'
     }
 
     # geminates: look at the effectives
@@ -553,7 +553,7 @@ class CSJPreparator(AbstractPreparator):
         return new_utts, lexicon
 
     def reencode(self, phonemes, encoding=None, clusters=False):
-        vowels = ['a', 'e', 'i', 'o', 'u','SPN']
+        vowels = ['a', 'e', 'i', 'o', 'u']
         stops = ['t', 'ty', 'b', 'by', 'g', 'gj', 'gy',
                  'k', 'ky', 'kj', 'p', 'py', 'd', 'dy']
         affricates = ['z', 'zy', 'zj', 'c', 'cy', 'cj']
@@ -671,7 +671,7 @@ class CSJPreparator(AbstractPreparator):
                             phonemes_3.append(previous + '+H')
                         else:
                             print previous
-                            assert previous == 'N', "H found after neither N nor vowel"
+                            assert previous == 'N' or previous == 'SPN', "H found after neither N nor vowel"
                             phonemes_3.append(previous)  # drop H after N
                         previous = 'H'
                     else:

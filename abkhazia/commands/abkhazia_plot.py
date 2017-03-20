@@ -37,4 +37,5 @@ class AbkhaziaPlot(AbstractCoreCommand):
         corpus_plot = corpus.plot()
 
         corpus_plot.show()
+        corpus_plot.savefig(os.path.join(output_dir,'plot.png'))
         
