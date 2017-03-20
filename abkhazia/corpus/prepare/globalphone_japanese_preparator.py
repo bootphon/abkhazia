@@ -211,7 +211,7 @@ class JapanesePreparator(AbstractGlobalPhonePreparator):
             elif phn=="SIL":
                 transcript.append(phn)
             else:
-                print "phn is:",phn,": and phn in kana :", phn in self.kana_to_phone
+                print "phn is:",phn,", and phn in kana :", phn in self.kana_to_phone
                 if not phn == "WB" :
                     if ind>1:
                         prev_phn=self.strip_phone(trs[ind-1])
@@ -242,7 +242,6 @@ class JapanesePreparator(AbstractGlobalPhonePreparator):
         return(phn)
 
     def reencode(self, phonemes, encoding=None, clusters=False):
-        print clusters
         vowels = ['a', 'e', 'i', 'o', 'u']
         stops = ['t', 'ty', 'b', 'by', 'g', 'gj', 'gy',
                  'k', 'ky', 'kj', 'p', 'py', 'd', 'dy']
@@ -363,3 +362,20 @@ class JapanesePreparator(AbstractGlobalPhonePreparator):
             if previous != 'H':
                 phonemes_3.append(previous)  # don't forget last item
         return phonemes_3
+
+
+    def bootphon_dictionary(self):
+        ''' The japanese dictionnary given by globalphone 
+            is incomplete, and using it leads to a lot of 
+            out of vocabulary words. Change to one 
+            constructed by us (see details of how in 
+            the perceptual tuning repository on gitlab)
+            from those out of vocabulary words
+        '''
+        self.dictionary = kana_csv_path = resource_filename(
+            Requirement.parse('abkhazia'), 
+            'abkhazia/share/Japanese-GPDict.txt')
+        print '''Some "phones" in the japanese lexicon will create errors,
+        this is normal'''
+        return True
+

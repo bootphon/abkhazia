@@ -78,9 +78,9 @@ class AbstractGlobalPhonePreparator(AbstractPreparator):
             self.input_dir,
             'GlobalPhoneDict-{}'.format(self.language),
             '{}-GPDict.txt'.format(self.language))
-        print clusters
         # init language specificities
         self.wavs = None
+        self.new_dictionary = self.bootphon_dictionary()
         self._erase_dict = self.correct_dictionary()
         self._erase_trs = self.correct_transcription()
         # for japanese : 
@@ -192,7 +192,6 @@ class AbstractGlobalPhonePreparator(AbstractPreparator):
             # unicode linebreaks), see
             # http://stackoverflow.com/questions/3219014
             line = re.sub(u'\r\n?|\n', u'', line).split(u' ')
-
             # parse word
             word = self.strip_accolades(line[0])
             if u'{' in word or u'}' in word:
