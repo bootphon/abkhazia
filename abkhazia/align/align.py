@@ -33,9 +33,12 @@ two alignment recipes, the Align recipe seems to add more silences.
 import gzip
 import os
 import shutil
-
+import operator
+import time
+import numpy as np
 import abkhazia.utils as utils
 import abkhazia.abstract_recipe as abstract_recipe
+from operator import itemgetter
 from abkhazia.language import check_language_model, read_int2phone
 from abkhazia.acoustic import check_acoustic_model
 from abkhazia.features import Features
@@ -333,46 +336,97 @@ class Align(abstract_recipe.AbstractRecipe):
                    for k, v in self.corpus.lexicon.iteritems()}
 
         words = []
+        t0=time.time()
         for utt_id, utt_align in self._read_utts(phones):
             idx = 0
             # for each word in transcription, parse it's aligned
             # phones and add the word after the first phone belonging
             # to that word.
-            for word in text[utt_id]:
-                try:
-                    wlen = len(lexicon[word])
-                except KeyError:  # the word isn't in lexicon
-                    self.log.warning(
-                        'ignoring out of lexicon word: %s', word)
-
-                # from idx, we eat wlen phones (+ any silence phone)
-                begin = True
-                try:
-                    while wlen > 0:
-                        aligned = utt_align[idx]
-                        if aligned.split()[-1] in self.corpus.silences:
-                            words.append('{}'.format(aligned))
-                        else:
-                            words.append('{} {}'.format(
-                                aligned, word if begin else ''))
-                            wlen -= 1
-                            begin = False
-                        idx += 1
-                except IndexError:
-                    # TODO fix that bug!!
-                    self.log.error(
-                        'failed to export phones AND words, ignoring words '
-                        '(this is a bug in abkhazia)')
-                    self.log.debug(' '.join((
-                        str(len(utt_align)), str(idx), str(begin),
-                        str(wlen), str(word), str(lexicon[word]))))
-                    return phones
+            utt_words = self.phone_word_dtw(utt_align,text[utt_id])
+            words += utt_words
+        t1=time.time()
+        print "dtw took",t1-t0
         return words
 
     def _export_words(self, int2phone, ali, post):
         """Export alignment at word level only"""
         return [w for w in self._read_words(
             self._export_phones_and_words(int2phone, ali, post))]
+
+    def phone_word_dtw(self, utt_align, text):
+        """ Get the word level alignment from the phone level
+            alignment and the lexicon """
+        lexicon = {k: v.strip().split()
+                   for k, v in self.corpus.lexicon.iteritems()}
+
+        list_phones = []
+        word_pos = []
+        word_alignment = []
+        alignment = [aligned.split(' ')[-1] for aligned in utt_align]
+
+        # create list of all the phones using the lexicon
+        for word in text:
+            try:
+                list_phones += lexicon[word]
+                word_pos += [word] * len(lexicon[word])
+            except KeyError:
+                continue
+
+        # init dtw matrix
+        dtw = np.zeros((len(alignment),len(list_phones)))
+        dtw[0,:] = np.inf
+        dtw[:,0] = np.inf
+        dtw[0,0] = 0
+
+        # compute dtw costs
+        for i in range(1,len(alignment)):
+            for j in range(1,len(list_phones)):
+                cost = int(not alignment[i] == list_phones[j])
+                dtw[i,j] = cost + min([dtw[i-1,j], dtw[i,j-1], dtw[i-1, j-1]])
+        word_alignment.append(word_pos[-1])
+
+        # go backward to get the best path
+        i = len(alignment) - 1
+        j = len(list_phones) - 1
+        path = []
+        while (not i == 0 and not j == 0):
+            options = [dtw[i-1,j], dtw[i,j-1], dtw[i-1, j-1]]
+            idx, val = min(enumerate(options), key=itemgetter(1))
+            if idx == 0:
+                i = i-1
+                word_alignment.append(word_pos[j])
+                path.append((i,j,word_pos[j]))
+                continue
+            elif idx == 1:
+                word_alignment.pop()
+                word_alignment.append(word_pos[j-1])
+                j = j-1
+                path.append((i,j,word_pos[j]))
+                continue
+            elif idx == 2:
+                word_alignment.append(word_pos[j-1])
+                i = i-1
+                j = j-1
+                path.append((i,j,word_pos[j]))
+                continue
+
+        # return alignment with words
+        word_alignment.reverse()
+
+        prev_word = ''
+        complete_alignment = []
+        for utt,word in zip(utt_align, word_alignment):
+            if word == prev_word:
+                prev_word = word
+                complete_alignment.append(utt)
+                continue
+            else:
+                prev_word = word
+                complete_alignment.append(u'{} {}'.format(utt,word))
+
+        #complete_alignment = ['{} {}'.format(utt,word)
+        #        for utt, word in zip(utt_align,word_alignment)]
+        return complete_alignment
 
 
 class AlignNoLattice(Align):

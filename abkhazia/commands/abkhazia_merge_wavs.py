@@ -24,7 +24,8 @@ import abkhazia.utils as utils
 class AbkhaziaMergeWavs(AbstractCoreCommand):
     '''This class implements the 'abkhazia merge_wavs' command'''
     name = 'merge_wavs'
-    description = 'Filter the speech duration distribution of the corpus'
+    description = '''For each speaker in the corpus,'''\
+                  '''merge all wav files for this speaker'''
 
     @classmethod
     def add_parser(cls, subparsers):
@@ -32,12 +33,6 @@ class AbkhaziaMergeWavs(AbstractCoreCommand):
         parser, _ = super(AbkhaziaMergeWavs, cls).add_parser(subparsers)
 
         group = parser.add_argument_group('merge_wavs arguments')
-    
-        #group.add_argument(
-        #    '-m','--merge',type=str,default='True',
-        #    help='''if merge==True, all wav files that corresponds to one speaker 
-        #    will be merged, so that in the output folder there are only one wave
-        #    file per speaker''')
 
         return parser
 
