@@ -27,6 +27,7 @@ from .buckeye_preparator import BuckeyePreparator
 from .childes_preparator import ChildesPreparator
 from .csj_preparator import CSJPreparator
 from .librispeech_preparator import LibriSpeechPreparator
+from .wolof_preparator import WolofPreparator
 from .xitsonga_preparator import XitsongaPreparator
 
 from .globalphone_abstract_preparator import (

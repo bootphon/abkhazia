@@ -30,6 +30,7 @@ from abkhazia.corpus.prepare import (
     CSJPreparator,
     LibriSpeechPreparator,
     XitsongaPreparator,
+    WolofPreparator,
     AbstractGlobalPhonePreparator, MandarinPreparator, VietnamesePreparator,
     JapanesePreparator,
     WallStreetJournalPreparator, JournalistReadPreparator,
@@ -433,6 +434,10 @@ class GlobalPhoneFactory(AbstractFactory):
             cls._run_preparator(args, prep)
 
 
+class WolofFactory(AbstractFactory):
+    preparator = WolofPreparator
+
+
 class AbkhaziaPrepare(AbstractCommand):
     name = 'prepare'
     description = 'prepare a speech corpus for use with abkhazia'
@@ -445,6 +450,7 @@ class AbkhaziaPrepare(AbstractCommand):
         GlobalPhoneFactory,
         LibriSpeechFactory,
         WallStreetJournalFactory,
+        WolofFactory,
         XitsongaFactory
     )}
 
