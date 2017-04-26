@@ -28,7 +28,6 @@ from abkhazia.corpus.corpus_filter import CorpusFilter
 from abkhazia.corpus.corpus_trimmer import CorpusTrimmer
 import abkhazia.utils as utils
 from collections import defaultdict
-#from abkhazia.utils import abkhazia_base, default_njobs, logger
 
 
 class Corpus(utils.abkhazia_base.AbkhaziaBase):
@@ -383,29 +382,29 @@ class Corpus(utils.abkhazia_base.AbkhaziaBase):
 
     def plot(self):
         """ Plot the distribution of speech duration for each
-        speaker in the corpus""" 
+        speaker in the corpus"""
 
         utt_ids, utt_speakers = zip(*self.utt2spk.iteritems())
         utt2spk = self.utt2spk
         utts = zip(utt_ids, utt_speakers)
-        utt2dur = self.utt2duration() 
+        utt2dur = self.utt2duration()
         spkr2dur = dict()
 
         # Sort Speech duration from longest to shortest
         spk2utts_temp = defaultdict(list)
-        spkr2utts = defaultdict(list) 
-        
+        spkr2utts = defaultdict(list)
+
         for spkr in utt_speakers:
             spkr2dur[spkr] = sum([utt2dur[utt_id] for utt_id in utt2spk if utt2spk[utt_id] == spkr])
-        
+
         sorted_speaker = sorted(spkr2dur.iteritems(), key=lambda(k,v):(v,k))
         sorted_speaker.reverse()
-        
-        # Set plot parameters 
+
+        # Set plot parameters
         names = [spk_id for (spk_id, duration) in sorted_speaker]
         times = [duration for (spk_id, duration) in sorted_speaker]
         times_in_minutes = [format(u0/60,'.1f') for u0 in times]
-        font = {'weight' : 'bold', 
+        font = {'weight' : 'bold',
                 'size' : 15}
         plt.rc('font',**font)
 
@@ -413,28 +412,28 @@ class Corpus(utils.abkhazia_base.AbkhaziaBase):
         total = self.duration(format='seconds')
         #(spk_id0, duration0) = sorted_speaker[0]
         x_axis = range(0,len(names))
-        
+
         # Set barplot
         barlist = plt.bar(x_axis,times,width=0.7,
             align="center",label="speech time",color="blue")
         self.log.info('Speech duration for corpus : %i minutes',sum(times)/60)
 
         for j,txt in enumerate(times_in_minutes):
-            # add legends and annotation to plot 
+            # add legends and annotation to plot
             plt.annotate(txt,(x_axis[j],times[j]+3),rotation=45)
-            plt.legend() 
+            plt.legend()
             plt.xticks(x_axis,names,rotation=45)
             plt.xlabel('speaker')
             plt.ylabel('duration (in minutes)',rotation=90)
-        
-        return(plt) 
+
+        return(plt)
 
     def merge_wavs(self,corpus_dir,output_dir):
-        """ Merge all wav files from same speaker 
+        """ Merge all wav files from same speaker
         Returns a corpus with one wav file per speaker """
 
         CorpusMergeWavs(self).merge_wavs(corpus_dir,output_dir)
-    
+
     def create_filter(self, out_path, function,
             nb_speaker=None, new_speakers=10, THCHS30=False):
         """Filter the speech duration distribution of the corpus"""
@@ -448,4 +447,3 @@ class Corpus(utils.abkhazia_base.AbkhaziaBase):
 
         CorpusTrimmer(self).trim(
                 corpus_dir, output_dir, function, not_kept_utts)
-

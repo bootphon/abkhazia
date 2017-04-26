@@ -15,8 +15,9 @@
      ARPA-MIT N-gram format
    - Syllabification of each utterance
 ** features
-- [ ] convertion ark to h5f is slow, can we do parallel ark to RAM, and
+- convertion ark to h5f is slow, can we do parallel ark to RAM, and
   sequential RAM to h5features?
+- or implement a parallel writer in h5features!
 ** language
 *** Where is the --prune-lexicon option ? --prune-lexicon false
 Could be useful when using a lexicon that is tailored to the corpus
@@ -77,7 +78,7 @@ Those messages are actually logged in debug level, should be smater to be warnon
 *** TODO Have completion setup during installation (or configuration?)
 *** TODO Have a test_commands module for testing command line interface!
 *** TODO Remove the wiki page on github, as we have now a readthedoc site
-* Open bugs [0/4]
+* Open bugs [0/6]
 ** TODO acoustic with delta features
 *** problem
     Acoustic modeling fails when built on features with deltas. This is
@@ -97,3 +98,6 @@ Those messages are actually logged in debug level, should be smater to be warnon
    debug the --transform-dir option for nnet decoding (need to be on
    top of align_fmllr?) this eat trans.* files if features are LDA, or
    raw_trans.* if features are raw.
+** TODO QXcbConnection: Could not connect to display localhost:10.0
+   maybe related to matplotlib, MB get this error when importing
+   abkhazia in ipython from a ssh (no X) remote connexion.

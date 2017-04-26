@@ -95,8 +95,15 @@ def ark_to_h5f(ark_files, h5_file, h5_group='features',
     AssertionError if the `h5_group` already exists in the `h5_file`
 
     """
+    ark_files = list(ark_files)
+
     assert h5_group not in h5py.File(h5_file), \
         'group {} already exists in {}'.format(h5_group, h5_file)
+
+    log.debug('converting %s ark file%s to h5features in %s/%s',
+              len(ark_files),
+              's' if len(ark_files) else '',
+              h5_file, h5_group)
 
     with h5f.Writer(h5_file) as fout:
         for ark in ark_files:
@@ -206,25 +213,22 @@ def dict_to_ark(arkfile, data, format='text'):
 #
 
 
+def _ark_to_data(arkfile, sample_frequency=100, tstart=0.0125):
+    """ark to h5features.Data"""
+    d = ark_to_dict(arkfile)
+
+    times = [np.arange(val.shape[0], dtype=float) / sample_frequency + tstart
+             for val in d.values()]
+
+    return h5f.Data(d.keys(), times, d.values())
+
+
 def _is_binary(arkfile):
     """Return True if the ark is binary, False if text"""
     # from https://stackoverflow.com/questions/898669
     textchars = bytearray(
         {7, 8, 9, 10, 12, 13, 27} | set(range(0x20, 0x100)) - {0x7f})
     return bool(open(arkfile, 'rb').read(1024).translate(None, textchars))
-
-
-def _ark_to_data(arkfile, sample_frequency=100, tstart=0.0125):
-    """ark to h5features.Data"""
-    d = ark_to_dict(arkfile)
-
-    items = d.keys()
-    features = d.values()
-    times = map(
-        lambda d: np.arange(d.shape[0], dtype=float) / sample_frequency +
-        tstart, d.values())
-
-    return h5f.Data(items, times, features)
 
 
 def _ark_to_dict_binary(arkfile):

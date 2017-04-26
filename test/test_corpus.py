@@ -21,15 +21,15 @@ from abkhazia.corpus import Corpus
 def test_save_corpus(tmpdir, corpus):
     assert corpus.is_valid()
     corpus_saved = os.path.join(str(tmpdir), 'corpus')
-    corpus.save(corpus_saved)
+    corpus.save(corpus_saved, copy_wavs=False)
     assert os.path.isfile(os.path.join(corpus_saved, 'meta.txt'))
 
     d = Corpus.load(corpus_saved)
     assert d.is_valid()
     assert corpus.lexicon == d.lexicon
-    assert corpus.wavs == d.wavs
     assert corpus.segments == d.segments
     assert corpus.phones == d.phones
+    assert corpus.wavs == d.wavs
 
 
 def test_empty():
