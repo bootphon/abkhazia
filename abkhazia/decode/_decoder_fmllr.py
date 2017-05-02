@@ -53,12 +53,15 @@ def decode(decoder, graph_dir):
     decoder.log.info('fmllr decoding and computing WER')
 
     # generate option string for decoding
-    decode_opts = ' '.join('--{} {}'.format(n, str(o))
-                           for n, o in decoder.decode_opts.iteritems())
+    decode_opts = ' '.join(
+        '--{} {}'.format(n, str(o))
+        for n, o in decoder.decode_opts.iteritems())
 
     # generate option string for scoring
-    score_opts = ' '.join('--{} {}'.format(n, str(o))
-                          for n, o in decoder.score_opts.iteritems())
+    score_opts = ' '.join(
+        '--{} {}'.format(n, str(o))
+        for n, o in decoder.score_opts.iteritems())
+
     # add the reverse flag if enabled in the mkgraph options
     if decoder.mkgraph_opts['reverse'].value:
         score_opts += ' --reverse true'
@@ -73,32 +76,32 @@ def decode(decoder, graph_dir):
     # TODO This is an error to assume write permission in
     # decoder.am_dir!! Instead we must copy (link) the required files
     # to decoder.recipe_dir (as in _decoder_nnet)
+    try:
+        target_sa = os.path.join(decoder.recipe_dir, 'decode')
+        if not os.path.isdir(target_sa):
+            os.makedirs(target_sa)
+        tempdir_sa = os.path.join(decoder.am_dir, 'decode_fmllr')
+        os.symlink(target_sa, tempdir_sa)
 
-    target_sa = os.path.join(decoder.recipe_dir, 'decode')
-    if not os.path.isdir(target_sa):
-        os.makedirs(target_sa)
-    tempdir_sa = os.path.join(decoder.am_dir, 'decode_fmllr')
-    os.symlink(target_sa, tempdir_sa)
+        target_si = os.path.join(decoder.recipe_dir, 'decode.si')
+        if not os.path.isdir(target_si):
+            os.makedirs(target_si)
+        tempdir_si = os.path.join(decoder.am_dir, 'decode_fmllr.si')
+        os.symlink(target_si, tempdir_si)
 
-    target_si = os.path.join(decoder.recipe_dir, 'decode.si')
-    if not os.path.isdir(target_si):
-        os.makedirs(target_si)
-    tempdir_si = os.path.join(decoder.am_dir, 'decode_fmllr.si')
-    os.symlink(target_si, tempdir_si)
-
-    decoder._run_command((
-        'steps/decode_fmllr.sh --nj {njobs} --cmd "{cmd}" '
-        '{decode_opts} --scoring-opts "{score_opts}" '
-        '{graph} {data} {decode}'.format(
-            njobs=decoder.njobs,
-            cmd=utils.config.get('kaldi', 'decode-cmd'),
-            decode_opts=decode_opts,
-            score_opts=_score.format(
-                decoder.score_opts, decoder.mkgraph_opts),
-            graph=graph_dir,
-            data=os.path.join(decoder.recipe_dir, 'data', decoder.name),
-            decode=tempdir_sa)))
-
-    # remove the two symlinks we created in input am_dir
-    utils.remove(tempdir_si)
-    utils.remove(tempdir_sa)
+        decoder._run_command((
+            'steps/decode_fmllr.sh --nj {njobs} --cmd "{cmd}" '
+            '{decode_opts} --scoring-opts "{score_opts}" '
+            '{graph} {data} {decode}'.format(
+                njobs=decoder.njobs,
+                cmd=utils.config.get('kaldi', 'decode-cmd'),
+                decode_opts=decode_opts,
+                score_opts=_score.format(
+                    decoder.score_opts, decoder.mkgraph_opts),
+                graph=graph_dir,
+                data=os.path.join(decoder.recipe_dir, 'data', decoder.name),
+                decode=tempdir_sa)))
+    finally:
+        # remove the two symlinks we created in input am_dir
+        utils.remove(tempdir_si)
+        utils.remove(tempdir_sa)
