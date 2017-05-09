@@ -452,3 +452,24 @@ class AlignNoLattice(Align):
                 os.path.join(path, ali_file.replace('ali', 'best')))
 
         self._ali_to_phones()
+
+
+def utterances_posterior_scoring(alignment_file, score_fun=np.prod):
+    """Estimate a score for each utterance based on posteriograms
+
+    For each utterances, extracts all its posteriors as a list of
+    floats and apply the function `score_fun` to it.
+
+    :param alignmement_file: The path to an alignment file with
+      posteriors.  Each line in the must must be: "utt-id tstart tstop
+      posterior phone [word]", we consider only column 1 and column 4.
+
+    :param score_fun: any function (list of floats) -> float
+
+    :return: a generator of (utt-id, score) returning the obtained
+      score for each utterance defined in the alignment file.
+
+    """
+    for utt, alignment in Align._read_utts(alignment_file):
+        posteriors = [float(line.split(' ')[3]) for line in alignment]
+        yield utt, score_fun(posteriors)
