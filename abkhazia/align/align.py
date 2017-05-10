@@ -390,7 +390,7 @@ class Align(abstract_recipe.AbstractRecipe):
                                           list_phones[utt_id],
                                           word_pos[utt_id], utt_align)
                                          for utt_id, utt_align in utts)
-                t1=time.time()
+            t1=time.time()
             print "dtw took",t1-t0
         return words
 
