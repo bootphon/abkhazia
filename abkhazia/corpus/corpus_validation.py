@@ -15,10 +15,16 @@
 """Provides the CorpusValidation class"""
 
 import collections
-import datetime
 import os
 
 from abkhazia.utils import duplicates, logger, wav, default_njobs
+
+
+def resume_list(l, n=20):
+    """Display only the `n` first element of a list"""
+    return '{}{}'.format(
+        l[:n], '' if len(l) <= n else
+        ' ... and {} more!!!'.format(len(l) - n))
 
 
 class CorpusValidation(object):
@@ -89,9 +95,10 @@ class CorpusValidation(object):
         self.validate_lexicon(inventory)
 
         self.log.debug("corpus validated: ready for use with abkhazia")
-        self.log.info("corpus total duration: %s from %s speakers",
-                      self.corpus.duration(format='datetime'),
-                      len(self.corpus.spks()))
+        self.log.info(
+            "corpus of %d utterances from %s speakers, total duration: %s",
+            len(self.corpus.utts()), len(self.corpus.spks()),
+            self.corpus.duration(format='datetime'))
         return meta
 
     def validate_wavs(self):
@@ -105,7 +112,16 @@ class CorpusValidation(object):
         if wrong_extensions:
             raise IOError(
                 "The following wavs do not have a '.wav' extension: {}"
-                .format(wrong_extensions))
+                .format(resume_list(wrong_extensions)))
+
+        # ensure all the wavs are here
+        not_here = [
+            k for k, v in wavs.items() if not os.path.isfile(v)]
+
+        if not_here:
+            raise IOError(
+                "The following wavs do not exist: {}{}".format(
+                    resume_list(not_here)))
 
         # get meta information on the wavs
         meta = wav.scan(wavs.values(), njobs=self.njobs)
@@ -115,21 +131,21 @@ class CorpusValidation(object):
         empty_files = [w for w in wavs.keys() if meta[w].nframes == 0]
         if empty_files:
             raise IOError("The following files are empty: {}"
-                          .format(empty_files))
+                          .format(resume_list(empty_files)))
 
         weird_rates = [w for w in wavs.keys() if meta[w].rate != 16000]
         if weird_rates:
             raise IOError(
                 "Currently only files sampled at 16,000 Hz "
                 "are supported. The following files are sampled "
-                "at other frequencies: {0}".format(weird_rates))
+                "at other frequencies: {0}".format(resume_list(weird_rates)))
 
         non_mono = [w for w in wavs.keys() if meta[w].nbc != 1]
         if non_mono:
             raise IOError(
                 "Currently only mono files are supported. "
                 "The following files have more than "
-                "one channel: {0}".format(non_mono))
+                "one channel: {0}".format(resume_list(non_mono)))
 
         # in bytes: 16 bit == 2 bytes
         non_16bit = [w for w in wavs.keys() if meta[w].width != 2]
@@ -138,13 +154,13 @@ class CorpusValidation(object):
                 "Currently only files encoded on 16 bits are "
                 "supported. The following files are not encoded "
                 "in this format: {0}"
-                .format(non_16bit))
+                .format(resume_list(non_16bit)))
 
         compressed = [w for w in wavs.keys() if meta[w].comptype != 'NONE']
         if compressed:
             raise IOError(
                 "The following files are compressed: {0}"
-                .format(compressed))
+                .format(resume_list(compressed)))
 
         return meta
 
@@ -195,7 +211,8 @@ class CorpusValidation(object):
         if short_wavs:
             self.log.debug(
                 "The following utterances are less than 100 ms long and "
-                "won't be used in kaldi recipes: {}".format(short_wavs))
+                "won't be used in kaldi recipes: {}".format(
+                    resume_list(short_wavs)))
 
     def validate_speakers(self):
         """Checking speakers from corpus.utt2spk"""
@@ -290,7 +307,7 @@ class CorpusValidation(object):
         # TODO check xsampa compatibility and/or compatibility
         # with articulatory features databases of IPA or just basic
         # IPA correctness
-        self.log.debug(')checking phones')
+        self.log.debug('checking phones')
         phones = self.corpus.phones.keys()
         ipas = self.corpus.phones.values()
 

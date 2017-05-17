@@ -112,7 +112,7 @@ class Corpus(utils.abkhazia_base.AbkhaziaBase):
         return CorpusLoader.load(cls, corpus_dir, validate=validate, log=log)
 
     def __init__(self, log=utils.logger.null_logger()):
-        """Init an empty corpus"""
+        """Initialize an empty corpus"""
         super(Corpus, self).__init__(log=log)
 
         self.wavs = dict()
@@ -124,16 +124,30 @@ class Corpus(utils.abkhazia_base.AbkhaziaBase):
         self.silences = []
         self.variants = []
 
-    def save(self, path, no_wavs=False, copy_wavs=True):
+    def save(self, path, no_wavs=False, copy_wavs=True, force=False):
         """Save the corpus to the directory `path`
 
-        `path` is assumed to be a non existing directory.
+        :param str path: The output directory is assumed to be a non
+            existing directory (or use force=True to overwrite it).
 
-        If `no_wavs` if True, dont save the wavs (ie don't write wavs
-        subdir)
+        :param bool no_wavs: when True, dont save the wavs (ie don't
+            write wavs subdir in `path`)
+
+        :param bool copy_wavs: when True, make a copy of the wavs
+            instead of symbolic links
+
+        :param bool force: when True, overwrite `path` if it is
+            already existing
+
+        :raise: OSError if force=False and `path` already exists
 
         """
         self.log.info('saving corpus to %s', path)
+
+        if force and os.path.exists(path):
+            self.log.warning('overwriting existing path: %s', path)
+            utils.remove(path)
+
         CorpusSaver.save(self, path, no_wavs=no_wavs,
                          copy_wavs=copy_wavs)
 
@@ -381,61 +395,56 @@ class Corpus(utils.abkhazia_base.AbkhaziaBase):
         return phonemized
 
     def plot(self):
-        """ Plot the distribution of speech duration for each
-        speaker in the corpus"""
-
+        """Plot the distribution of speech duration for each speaker"""
         utt_ids, utt_speakers = zip(*self.utt2spk.iteritems())
-        utt2spk = self.utt2spk
-        utts = zip(utt_ids, utt_speakers)
         utt2dur = self.utt2duration()
         spkr2dur = dict()
 
-        # Sort Speech duration from longest to shortest
-        spk2utts_temp = defaultdict(list)
-        spkr2utts = defaultdict(list)
-
         for spkr in utt_speakers:
-            spkr2dur[spkr] = sum([utt2dur[utt_id] for utt_id in utt2spk if utt2spk[utt_id] == spkr])
+            spkr2dur[spkr] = sum(
+                [utt2dur[utt_id] for utt_id in self.utt2spk
+                 if self.utt2spk[utt_id] == spkr])
 
-        sorted_speaker = sorted(spkr2dur.iteritems(), key=lambda(k,v):(v,k))
+        sorted_speaker = sorted(spkr2dur.iteritems(), key=lambda(k, v): (v, k))
         sorted_speaker.reverse()
 
         # Set plot parameters
         names = [spk_id for (spk_id, duration) in sorted_speaker]
         times = [duration for (spk_id, duration) in sorted_speaker]
-        times_in_minutes = [format(u0/60,'.1f') for u0 in times]
-        font = {'weight' : 'bold',
-                'size' : 15}
-        plt.rc('font',**font)
+        times_in_minutes = [format(u0 / 60, '.1f') for u0 in times]
+        font = {'weight': 'bold',
+                'size': 15}
+        plt.rc('font', **font)
 
         # Get corpus duration
-        total = self.duration(format='seconds')
-        #(spk_id0, duration0) = sorted_speaker[0]
-        x_axis = range(0,len(names))
+        # total = self.duration(format='seconds')
+        # (spk_id0, duration0) = sorted_speaker[0]
+        x_axis = range(0, len(names))
 
-        # Set barplot
-        barlist = plt.bar(x_axis,times,width=0.7,
-            align="center",label="speech time",color="blue")
-        self.log.info('Speech duration for corpus : %i minutes',sum(times)/60)
+        # Set barplot
+        # barlist = plt.bar(
+        #     x_axis, times, width=0.7,
+        #     align="center", label="speech time", color="blue")
+        self.log.info('Speech duration for corpus : %i minutes', sum(times)/60)
 
-        for j,txt in enumerate(times_in_minutes):
+        for j, txt in enumerate(times_in_minutes):
             # add legends and annotation to plot
-            plt.annotate(txt,(x_axis[j],times[j]+3),rotation=45)
+            plt.annotate(txt, (x_axis[j], times[j]+3), rotation=45)
             plt.legend()
-            plt.xticks(x_axis,names,rotation=45)
+            plt.xticks(x_axis, names, rotation=45)
             plt.xlabel('speaker')
-            plt.ylabel('duration (in minutes)',rotation=90)
+            plt.ylabel('duration (in minutes)', rotation=90)
 
         return(plt)
 
-    def merge_wavs(self,corpus_dir,output_dir):
+    def merge_wavs(self, corpus_dir, output_dir):
         """ Merge all wav files from same speaker
         Returns a corpus with one wav file per speaker """
 
-        CorpusMergeWavs(self).merge_wavs(corpus_dir,output_dir)
+        CorpusMergeWavs(self).merge_wavs(corpus_dir, output_dir)
 
     def create_filter(self, out_path, function,
-            nb_speaker=None, new_speakers=10, THCHS30=False):
+                      nb_speaker=None, new_speakers=10, THCHS30=False):
         """Filter the speech duration distribution of the corpus"""
 
         return(CorpusFilter(self).create_filter(

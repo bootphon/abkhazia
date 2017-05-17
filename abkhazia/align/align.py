@@ -174,14 +174,15 @@ class Align(abstract_recipe.AbstractRecipe):
         """
         self.log.info('extracting best path in lattice')
         self._run_command(
-            '{0} JOB=1:{1} {2}/log/best_path.JOB.log '
-            'lattice-best-path --acoustic-scale={3} '
-            '"ark:gunzip -c {2}/lat.JOB.gz|" "ark:|gzip -c >{2}/tra.JOB.gz" '
-            '"ark:|gzip -c >{2}/best.JOB.gz"'.format(
-                os.path.join('utils', utils.config.get('kaldi', 'train-cmd')),
-                self.njobs,
-                self._target_dir(),
-                self.acoustic_scale))
+            '{cmd} JOB=1:{njobs} {dir}/log/best_path.JOB.log '
+            'lattice-best-path --acoustic-scale={scale} '
+            '"ark:gunzip -c {dir}/lat.JOB.gz|" "ark:|gzip -c >{dir}/tra.JOB.gz" '
+            '"ark:|gzip -c >{dir}/best.JOB.gz"'.format(
+                cmd=os.path.join(
+                    'utils', utils.config.get('kaldi', 'train-cmd')),
+                njobs=self.njobs,
+                dir=self._target_dir(),
+                scale=self.acoustic_scale))
 
     def _ali_to_phones(self):
         """Run ali-to-phones Kaldi binary
@@ -401,7 +402,7 @@ class Align(abstract_recipe.AbstractRecipe):
         """Export alignment at word level only"""
         return [w for w in self._read_words(
             self._export_phones_and_words(int2phone, ali, post))]
-    
+
     @staticmethod
     def phone_word_dtw(self, utt_align, text):
         """ Get the word level alignment from the phone level
