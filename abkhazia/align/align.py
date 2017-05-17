@@ -64,7 +64,7 @@ class Align(abstract_recipe.AbstractRecipe):
         self.am_dir = None
 
         # alignment parameters
-        self.level = 'both'  # 'both', 'word' or 'phone'
+        self.level = 'both'  # 'both', 'words' or 'phones'
         self.acoustic_scale = 0.1
         self.with_posteriors = False
 
@@ -122,7 +122,7 @@ class Align(abstract_recipe.AbstractRecipe):
     def _check_level(self):
         """Raise IOError on bad alignment level"""
         if self.level not in ['both', 'words', 'phones']:
-            raise IOError("alignment level must be in 'phone', 'word' or "
+            raise IOError("alignment level must be in 'phones', 'words' or "
                           "'both', it is '{}'".format(self.level))
 
     def _check_with_posteriors(self):
@@ -252,7 +252,10 @@ class Align(abstract_recipe.AbstractRecipe):
     def _read_alignment(phonemap, ali, post):
         """Tokenize raw kaldi alignment output"""
         for utt_id, line in ali.iteritems():
-            # TODO make this a parameter (with the 0.01 above)
+            # TODO make this a parameter (with the 0.01 above), or
+            # read it from the features instance. This is the center
+            # time of the first window, as specified when computing
+            # the features.
             start = 0.0125
 
             if post:
