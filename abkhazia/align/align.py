@@ -38,10 +38,14 @@ import time
 import numpy as np
 import abkhazia.utils as utils
 import abkhazia.abstract_recipe as abstract_recipe
+from abkhazia.utils.best_path_dtw import dtw
+from collections import defaultdict
 from operator import itemgetter
 from abkhazia.language import check_language_model, read_int2phone
 from abkhazia.acoustic import check_acoustic_model
 from abkhazia.features import Features
+
+from joblib import Parallel, delayed
 
 
 # TODO check alignment: which utt have been transcribed, have silence
@@ -339,23 +343,66 @@ class Align(abstract_recipe.AbstractRecipe):
                    for k, v in self.corpus.lexicon.iteritems()}
 
         words = []
+
         t0=time.time()
-        for utt_id, utt_align in self._read_utts(phones):
-            idx = 0
-            # for each word in transcription, parse it's aligned
-            # phones and add the word after the first phone belonging
-            # to that word.
-            utt_words = self.phone_word_dtw(utt_align,text[utt_id])
-            words += utt_words
-        t1=time.time()
-        print "dtw took",t1-t0
+        #try:
+        utts = [(utt_id, utt_align) for utt_id, utt_align in self._read_utts(phones)]
+
+        list_phones = defaultdict(list)
+        word_pos = defaultdict(list)
+        utt_alignment = [aligned.split(' ')[-1] for aligned in utt_align]
+
+        # create list of all the phones using the lexicon
+        for word in text[utt_id]:
+            try:
+                list_phones[utt_id] += lexicon[word]
+                word_pos[utt_id] += [word] * len(lexicon[word])
+            except KeyError:
+                continue
+
+        try:
+            for utt_id, utt_align in self._read_utts(phones):
+                idx = 0
+                # for each word in transcription, parse it's aligned
+                # phones and add the word after the first phone belonging
+                # to that word.
+                for word in text[utt_id]:
+                    try:
+                        wlen = len(lexicon[word])
+                    except KeyError:  # the word isn't in lexicon
+                        self.log.warning(
+                            'ignoring out of lexicon word: %s', word)
+
+                    # from idx, we eat wlen phones (+ any silence phone)
+                    begin = True
+
+                    while wlen > 0 and idx<len(utt_align):
+                        aligned = utt_align[idx]
+                        if aligned.split()[-1] in self.corpus.silences:
+                            words.append('{}'.format(aligned))
+                        else:
+                            words.append('{} {}'.format(
+                                aligned, word if begin else ''))
+                            wlen -= 1
+                            begin = False
+                        idx += 1
+        except IndexError:
+            Parallel(self.njobs)(
+                delayed(dtw)([aligned.split(' ')[-1]
+                                          for aligned in utt_align],
+                                          list_phones[utt_id],
+                                          word_pos[utt_id], utt_align)
+                                         for utt_id, utt_align in utts)
+            t1=time.time()
+            print "dtw took",t1-t0
         return words
 
     def _export_words(self, int2phone, ali, post):
         """Export alignment at word level only"""
         return [w for w in self._read_words(
             self._export_phones_and_words(int2phone, ali, post))]
-
+    
+    @staticmethod
     def phone_word_dtw(self, utt_align, text):
         """ Get the word level alignment from the phone level
             alignment and the lexicon """

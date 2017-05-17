@@ -208,15 +208,15 @@ class CorpusFilter(object):
             # here we build the list of utts we remove,
             # and we adjust the boundaries of
             # the other utterances, in order to have correct timestamps
+            offset = 0
             for utt in spk2utts[speaker]:
                 # for each wav, we compute the cumsum
                 # of the lengths of the utts we remove
                 # in order to have correct timestamps
                 # for the other utts in the files
-                offset = 0
                 wav_id, utt_tbegin, utt_tend = self.corpus.segments[utt]
-                self.corpus.segments[utt] = (wav_id, utt_tbegin-offset,
-                                        utt_tend-offset)
+                self.corpus.segments[utt] = (wav_id, utt_tbegin - offset,
+                                        utt_tend - offset)
 
                 if utt_tbegin-offset < 0 or utt_tend-offset < 0:
                     self.log.info('''WARN : offset is greater'''
@@ -224,7 +224,6 @@ class CorpusFilter(object):
                 if utt not in kept_utt_set:
                     offset = offset + utt2dur[utt]
                     not_kept_utts[speaker].append((utt, self.corpus.segments[utt]))
-
         return(self.corpus.subcorpus(
                    utt_ids, prune=True,
                    name=function,validate=True),
