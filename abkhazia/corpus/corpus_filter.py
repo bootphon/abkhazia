@@ -171,8 +171,17 @@ class CorpusFilter(object):
         not_kept_utts = defaultdict(list)
 
         # for each speaker, list utterances
+        #for utt,spkr in self.utts:
+        #    spk2utts[spkr].append(utt)
+        
+        spk2utts_temp=defaultdict(list)
         for utt,spkr in self.utts:
-            spk2utts[spkr].append(utt)
+            utt_start = self.corpus.segments[utt][1]
+            spk2utts_temp[spkr].append([utt, utt_start])
+        for spkr in self.speakers:
+            spk2utts_temp[spkr] = sorted(spk2utts_temp[spkr], key=lambda x: x[1])
+            spk2utts[spkr] = [utt for utt,utt_start in spk2utts_temp[spkr]]
+
         # create lists of utterances we want to keep,
         # utterances we don't want to keep
         for speaker in names:
@@ -184,7 +193,6 @@ class CorpusFilter(object):
                                      reverse=True)
             ascending_utts = sorted(utt_and_dur,
                                     key=lambda utt_and_dur: utt_and_dur[1])
-
             nb_utt = 0
             if limits[speaker] == 0:
                 continue
@@ -215,15 +223,19 @@ class CorpusFilter(object):
                 # in order to have correct timestamps
                 # for the other utts in the files
                 wav_id, utt_tbegin, utt_tend = self.corpus.segments[utt]
-                self.corpus.segments[utt] = (wav_id, utt_tbegin - offset,
-                                        utt_tend - offset)
 
                 if utt_tbegin-offset < 0 or utt_tend-offset < 0:
+
                     self.log.info('''WARN : offset is greater'''
                                   '''than utterance boundaries''')
                 if utt not in kept_utt_set:
+
                     offset = offset + utt2dur[utt]
                     not_kept_utts[speaker].append((utt, self.corpus.segments[utt]))
+                else:
+                    self.corpus.segments[utt] = (wav_id, utt_tbegin - offset,
+                                        utt_tend - offset)
+
         return(self.corpus.subcorpus(
                    utt_ids, prune=True,
                    name=function,validate=True),
@@ -281,9 +293,13 @@ class CorpusFilter(object):
                                         utt_tend - offset)
 
                 if utt_tbegin - offset < 0 or utt_tend - offset < 0:
+                    print utt_tbegin
+                    print offset
+                    print utt_tend
+                    print offset
                     self.log.info(
                             '''WARN : offset is greater'''
-                            '''than utterance boundaries''')
+                            ''' than utterance boundaries''')
                 if utt not in utt_ids:
                     offset = offset + utt2dur[utt]
                     not_kept_utts[speaker].append((utt, corpus.segments[utt]))
