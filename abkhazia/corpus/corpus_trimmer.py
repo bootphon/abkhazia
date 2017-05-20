@@ -45,6 +45,7 @@ class CorpusTrimmer(object):
         self.corpus = corpus
 
         utt_ids, utt_speakers = zip(*self.corpus.utt2spk.iteritems())
+        self.utts = zip(utt_ids, utt_speakers)
         self.speakers = set(utt_speakers)
 
     def trim(self, corpus_dir, output_dir, function, not_kept_utts):
@@ -57,6 +58,10 @@ class CorpusTrimmer(object):
             subprocess.check_output(shlex.split('which sox'))
         except:
             raise OSError('sox is not installed on your system')
+
+        spk2utts = defaultdict(list)
+        for utt,spkr in self.utts:
+            spk2utts[spkr].append(utt)
 
         # get input and output wav paths
         corpus_dir = os.path.abspath(corpus_dir)
@@ -72,7 +77,20 @@ class CorpusTrimmer(object):
 
         # remove utterances from the wavs using sox
         for speaker in self.speakers:
+            print speaker
             utt_to_remove = not_kept_utts[speaker]
+            
+            # if speaker doesn't have utt to remove, copy file
+            if utt_to_remove == []:
+                wavs_to_copy = set([self.corpus.segments[utt][0] for
+                                utt in spk2utts[speaker]])
+                for wav in wavs_to_copy:
+                    wav_name = '.'.join([wav, 'wav'])
+                    wav_input_path = '/'.join([wav_dir, wav_name])
+                    wav_output_path = '/'.join([output_wav_dir, wav_name])
+
+                    shutil.copyfile(wav_input_path,wav_output_path)
+               
 
             # don't trim utterances for wave file that won't be kept at all
             wavs_output = [(wav_id, start, stop)
@@ -97,7 +115,7 @@ class CorpusTrimmer(object):
                 wav_name = '.'.join([wav, 'wav'])
                 wav_input_path = '/'.join([wav_dir, wav_name])
                 wav_output_path = '/'.join([output_wav_dir, wav_name])
-
+                
                 # Create string of timestamps to remove to pass as
                 # arguments to sox
                 timestamps = ''
@@ -108,13 +126,12 @@ class CorpusTrimmer(object):
                 # call sox to trim part of the signal
                 list_command = ['sox', wav_input_path,
                                 wav_output_path, 'trim 0', timestamps]
-                command = ' '.join(list_command)
 
+                command = ' '.join(list_command)
                 process = subprocess.Popen(
                         shlex.split(command), stdout=subprocess.PIPE,
                         stderr=subprocess.PIPE)
                 stdout, stderr = process.communicate()
-
                 if stdout:
                     self.log.debug(stdout)
                 if stderr:
