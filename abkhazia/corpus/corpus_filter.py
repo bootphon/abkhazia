@@ -164,7 +164,6 @@ class CorpusFilter(object):
         """Cut the corpus according to the cutting function specified
            Return the subcorpus
         """
-        time = 0
         utt2dur = self.corpus.utt2duration()
         utt_ids = []
         spk2utts = defaultdict(list)
@@ -196,6 +195,8 @@ class CorpusFilter(object):
             nb_utt = 0
             if limits[speaker] == 0:
                 continue
+            time = 0
+
             # keep adding utterances until we reach the limit
             # TODO Create generator and change for/if in while
             for utts in spk2utts[speaker]:
