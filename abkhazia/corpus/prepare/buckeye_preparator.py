@@ -48,30 +48,30 @@ class BuckeyePreparator(AbstractPreparator):
     # u'ahn', u'ihn', u'ayn', u'NSN', u'eyn', u'oyn', u'ehn', u'iyn',
     # u'B', u'E', u'uhn', u'aon', u'awn', u'uwn', u'aan', u'ern', u'aen'])
     # Reason: we already collapsed them in the foldings_version
-    
+
     # 20th March 2017 update :
-    # Some tags are removed or mapped differently to keep 
+    # Some tags are removed or mapped differently to keep
     # a coherence between different corpora. :
-    # - {B_TRANS} and {E_TRANS} are removed sinc they only mark the 
+    # - {B_TRANS} and {E_TRANS} are removed sinc they only mark the
     # begining and end of the transcription
     # - VOCNOISE and LAUGH are mapped to SPN (spoken noise)
     # - NOISE and IVER are mapped to NSN (non spoken noise)
     phones = {
-        'iy': u'iː',
-        'ih': u'ɪ',
-        'eh': u'ɛ',
-        'ey': u'eɪ',
-        'ae': u'æ',
         'aa': u'ɑː',
-        'aw': u'aʊ',
-        'ay': u'aɪ',
+        'ae': u'æ',
         'ah': u'ʌ',
         'ao': u'ɔː',
+        'aw': u'aʊ',
+        'ay': u'aɪ',
+        'eh': u'ɛ',
+        'er': u'ɝ',
+        'ey': u'eɪ',
+        'iy': u'iː',
+        'ih': u'ɪ',
         'oy': u'ɔɪ',
         'ow': u'oʊ',
         'uh': u'ʊ',
         'uw': u'uː',
-        'er': u'ɝ',
         'jh': u'ʤ',
         'ch': u'ʧ',
         'b': u'b',
@@ -92,49 +92,20 @@ class BuckeyePreparator(AbstractPreparator):
         'm': u'm',
         'n': u'n',
         'ng': u'ŋ',
-        'em': u'm\u0329',
         'nx': u'ɾ\u0303',
-        'en': u'n\u0329',
-        'eng': u'ŋ\u0329',
         'l': u'l',
         'r': u'r',
         'w': u'w',
         'y': u'j',
         'hh': u'h',
-        'el': u'l\u0329',
         'tq': u'ʔ',
-        #'{B_TRANS}': u'{B_TRANS}',
-        #'{E_TRANS}': u'{E_TRANS}',
         'CUTOFF': u'CUTOFF',
         'ERROR': u'ERROR',
         'EXCLUDE': u'EXCLUDE',
         'UNKNOWN_WW': u'UNKNOWN_WW',
         'UNKNOWN': u'UNKNOWN',
-        #'VOCNOISE': u'VOCNOISE',
         'HESITATION_TAG': u'HESITATION_TAG',
         'LENGTH_TAG': u'LENGTH_TAG',
-        #'VOCNOISE_WW': u'VOCNOISE_WW',
-        #'NOISE': u'NOISE',
-        #'NOISE_WW': u'NOISE_WW',
-        #'IVER': u'IVER',
-        #'LAUGH': u'LAUGH',
-        # 'B': u'B',
-        # 'E': u'E',
-        # 'ahn': u'ʌ\u0329',
-        # 'iyn': u'iː\u0329',
-        # 'eyn': u'eɪ\u0329',
-        # 'oyn': u'ɔɪ\u0329',
-        # 'ehn': u'ɛ\u0329',
-        # 'uhn': u'ʊ\u0329',
-        # 'ayn': u'aɪ\u0329',
-        # 'own': u'oʊ\u0329',
-        # 'awn': u'aʊ\u0329',
-        # 'aon': u'ɔː\u0329',
-        # 'aan': u'ɑː\u0329',
-        # 'ihn': u'ɪ\u0329',
-        # 'ern': u'ɝ\u0329',
-        # 'uwn': u'uː\u0329',
-        # 'aen': u'æ\u0329',
     }
 
     silences = [u"SIL_WW", u"NSN"]  # SPN and SIL will be added automatically
@@ -235,33 +206,35 @@ class BuckeyePreparator(AbstractPreparator):
         no_trs = set()
         for utts in self._list_files('.words_fold'):
             for line in open(utts, 'r').readlines():
-                format_match = re.match(
-                    r'\s\s+(.*)\s+(121|122)\s(.*)', line)
+                match = re.match(
+                    r'\s\s+(.*)\s+(121|122)\s(.*);(.*); (.*); (.*)', line)
 
-                if format_match:
-                    word_trs = format_match.group(3)
-                    word_format_match = re.match(
-                        "(.*); (.*); (.*); (.*)", word_trs)
+                if match:
+                    word = match.group(3)
+                    phones = match.group(5)
 
-                    if word_format_match:
-                        word = word_format_match.group(1)
-                        phn_trs = word_format_match.group(3)
-                        if phn_trs == '':
-                            no_trs.add(word)
-                        else:
-                            # Replace VOCNOISE/VOCNOISE_WW/LAUGH
-                            # by SPN:
-                            phn_trs = phn_trs.replace('VOCNOISE_WW', 'SPN')
-                            phn_trs = phn_trs.replace('VOCNOISE', 'SPN')
-                            phn_trs = phn_trs.replace('LAUGH', 'SPN')
+                    # fold phones together (em -> m, el -> l, en -> n
+                    # and eng -> ng)
+                    phones = phones.replace('em', 'm')
+                    phones = phones.replace('el', 'l')
+                    phones = phones.replace('en', 'n')
+                    phones = phones.replace('eng', 'ng')
 
-                            # Replace IVER/NOISE/NOISE_WW by NSN:
-                            phn_trs = phn_trs.replace('IVER', 'NSN')
-                            phn_trs = phn_trs.replace('NOISE_WW', 'NSN')
-                            phn_trs = phn_trs.replace('NOISE', 'NSN')
+                    # Replace VOCNOISE/VOCNOISE_WW/LAUGH by SPN
+                    phones = phones.replace('VOCNOISE_WW', 'SPN')
+                    phones = phones.replace('VOCNOISE', 'SPN')
+                    phones = phones.replace('LAUGH', 'SPN')
 
-                            # Don't transcrib
-                            dict_word[word] = phn_trs
+                    # Replace IVER/NOISE/NOISE_WW by NSN
+                    phones = phones.replace('IVER', 'NSN')
+                    phones = phones.replace('NOISE_WW', 'NSN')
+                    phones = phones.replace('NOISE', 'NSN')
+
+                    # add the word to lexicon
+                    if phones:
+                        dict_word[word] = phones
+                    else:
+                        no_trs.add(word)
 
         really_no_trs = [t for t in no_trs if t not in dict_word]
         if really_no_trs:
@@ -271,7 +244,6 @@ class BuckeyePreparator(AbstractPreparator):
         return dict_word
 
 
-#
 # TODO The following code is dedicated to manual alignments. It should
 # be more integrated with abkhazia (mayebe have a
 # BuckeyeAlignedPreparator child class?). See also
@@ -361,6 +333,3 @@ def validate_phone_alignment(corpus, alignment, log=utils.logger.get_log()):
 
     log.info('alignment is valid for all utterances')
     return True
-
-
-
