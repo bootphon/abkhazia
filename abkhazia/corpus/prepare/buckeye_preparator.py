@@ -15,11 +15,81 @@
 # along with abkhazia. If not, see <http://www.gnu.org/licenses/>.
 """Data preparation for the revised Buckeye corpus"""
 
+import collections
+import joblib
 import os
 import re
 
 import abkhazia.utils as utils
 from abkhazia.corpus.prepare import AbstractPreparator
+
+
+def _split_raw_utt(raw_utt):
+    split_re = ('<CUTOFF-.+?>|<EXCLUDE-.+?>|<HES-.+?>|<Hes-.+?>|'
+                '<EXT-.+?>|<EXt-.+?>|<EXT_.+?>|<LAUGH-.+?>|<LAUGH>|<ERROR.*?>')
+    return [u.strip() for u in re.split(split_re, raw_utt)]
+
+_Word = collections.namedtuple('Word', 'word, time')
+
+
+def _load_word(line):
+    """Return a pair (word/time) for a line from a *.words_fold file"""
+    match = re.match(
+        r'\s*(.*)\s+(121|122)\s(.*);(.*); (.*); (.*)', line)
+    assert match, line
+
+    return _Word(word=match.group(3), time=float(match.group(1)))
+
+
+def _parse_utterances(txt_file, phn_file, log):
+    segments = dict()
+    utt2spk = dict()
+    text = dict()
+
+    # log.info('loading %s', os.path.basename(txt_file))
+
+    # /path/to/.../s2202b.txt -> s2202b
+    speaker_id = os.path.splitext(os.path.basename(txt_file))[0]
+
+    # load the current files
+    txt_data = [l.strip() for l in open(txt_file, 'r') if l.strip()]
+    phn_data = [_load_word(l)
+                for l in open(phn_file, 'r').readlines()[9:]
+                if l.strip()]
+
+    # check we have the same number of words in txt and phn
+    if len(phn_data) != sum(len(l.split()) for l in txt_data if l):
+        raise AssertionError(
+            '{} and {} have a different word count, exiting'
+            .format(txt_file, phn_file))
+
+    # split raw utterances (lines) into cleaned subutterances
+    utterances = [
+        l for l in
+        sum([_split_raw_utt(line) for line in txt_data], []) if l]
+    phn_index = 0
+    for utt_index, utt_txt in enumerate(utterances, start=1):
+        utt_id = '{}-sent{}'.format(speaker_id, utt_index)
+        utt_words = utt_txt.split()
+
+        while utt_words[0] != phn_data[phn_index].word:
+            # self.log.warning('skipping %s', phn_data[phn_index].word)
+            phn_index += 1
+
+        tstart = phn_data[phn_index-1].time if phn_index else 0
+        phn_index += len(utt_words) - 1
+        assert phn_data[phn_index].word == utt_words[-1], \
+            'match error: {}\t{}'.format(
+                phn_data[phn_index].word, utt_words[-1])
+
+        tstop = phn_data[phn_index].time
+        phn_index += 1
+
+        segments[utt_id] = (speaker_id, tstart, tstop)
+        utt2spk[utt_id] = speaker_id
+        text[utt_id] = re.sub('{(B|E)_TRANS}', '', utt_txt)
+
+    return (segments, utt2spk, text)
 
 
 class BuckeyePreparator(AbstractPreparator):
@@ -56,6 +126,10 @@ class BuckeyePreparator(AbstractPreparator):
     # begining and end of the transcription
     # - VOCNOISE and LAUGH are mapped to SPN (spoken noise)
     # - NOISE and IVER are mapped to NSN (non spoken noise)
+    #
+    # June 2017 update :
+    # - The following folds are folded: em -> m, en -> n, eng -> ng
+    #   and el -> l
     phones = {
         'aa': u'ɑː',
         'ae': u'æ',
@@ -92,7 +166,6 @@ class BuckeyePreparator(AbstractPreparator):
         'm': u'm',
         'n': u'n',
         'ng': u'ŋ',
-        'nx': u'ɾ\u0303',
         'l': u'l',
         'r': u'r',
         'w': u'w',
@@ -108,14 +181,35 @@ class BuckeyePreparator(AbstractPreparator):
         'LENGTH_TAG': u'LENGTH_TAG',
     }
 
-    silences = [u"SIL_WW", u"NSN"]  # SPN and SIL will be added automatically
+    silences = [u"NSN"]  # SPN and SIL will be added automatically
 
     variants = []  # could use lexical stress variants...
 
     def __init__(self, input_dir, log=utils.logger.null_logger(),
-                 copy_wavs=False):
+                 copy_wavs=False, njobs=4):
         super(BuckeyePreparator, self).__init__(input_dir, log=log)
         self.copy_wavs = copy_wavs
+
+        self.segments = dict()
+        self.text = dict()
+        self.utt2spk = dict()
+
+        # the input text and lexicon files we will parse
+        txt_files = self._list_files('.txt', exclude=['readme'])
+        phn_files = [f.replace('.txt', '.words_fold') for f in txt_files]
+
+        # for each pair of text/lexicon files, update the
+        # segments/text/utt2spk dictionaries
+        res = joblib.Parallel(
+            n_jobs=njobs, verbose=0, backend="threading")(
+                joblib.delayed(_parse_utterances)
+                (txt_file, phn_file, self.log)
+                for txt_file, phn_file in zip(txt_files, phn_files))
+
+        for s, u, t in res:
+            self.segments.update(s)
+            self.utt2spk.update(u)
+            self.text.update(t)
 
     def _list_files(self, ext, exclude=None, abspath=False, realpath=False):
         files = utils.list_files_with_extension(
@@ -130,118 +224,69 @@ class BuckeyePreparator(AbstractPreparator):
         return self._list_files('.wav', abspath=True, realpath=True)
 
     def make_segment(self):
-        segments = dict()
-        for utts in self._list_files('.txt', exclude=['readme']):
-            bname = os.path.basename(utts)
-            utt = bname.replace('.txt', '')
-            length_utt = [
-                len(line.strip().split()) for line in
-                open(utts, 'r').readlines() if len(line.strip())]
-
-            words = utts.replace('txt', 'words_fold')
-            lines = open(words, 'r').readlines()
-            del lines[:9]
-
-            assert len(lines) == sum(length_utt),\
-                '{} {}'.format(len(lines), sum(length_utt))
-
-            last_offset = '0.000'
-            current_index = 0
-            for n in range(len(length_utt)):
-                onset = last_offset
-
-                index_offset = length_utt[n] + current_index
-                offset_line = lines[index_offset-1]
-                match_offset = re.match(
-                    r'\s\s+(.*)\s+(121|122)\s(.*)',
-                    offset_line)
-                if not match_offset:
-                    raise IOError(
-                        'offset not matched {}'
-                        .format(offset_line))
-
-                offset = match_offset.group(1)
-
-                segments[utt + '-sent' + str(n+1)] = (
-                    utt, float(onset), float(offset))
-
-                current_index = index_offset
-                last_offset = offset
-        return segments
+        return self.segments
 
     def make_speaker(self):
-        utt2spk = dict()
-        for utts in self._list_files('.txt', exclude=['readme']):
-            bname = os.path.basename(utts)
-            utt = bname.replace('.txt', '')
-            lines = [l.strip() for l in open(utts, 'r').readlines()
-                     if len(l.strip())]
-            speaker_id = re.sub(r"[0-9][0-9](a|b)\.txt", "", bname)
-            for idx, _ in enumerate(lines, start=1):
-                utt2spk[utt + '-sent' + str(idx)] = speaker_id
-        return utt2spk
+        return self.utt2spk
 
     def make_transcription(self):
-        text = dict()
-        for utts in self._list_files('.txt', exclude=['readme']):
-            bname = os.path.basename(utts)
-            utt = os.path.splitext(bname)[0]
-            for idx, line in enumerate(
-                    (l.strip() for l in open(utts).readlines()
-                     if len(l.strip())), start=1):
-                # Remove {B_TRANS} and {E_TRANS}
-                line = line.replace('{B_TRANS}', '')
-                line = line.replace('{E_TRANS}', '')
-
-                text[utt + '-sent' + str(idx)] = line
-
-        # one utterance have "k p's" in text, where "k p" is an
-        # acronym in this context. Because "p's" is processed as OOV, we
-        # simply replace it by "p"
-        text['s2202b-sent15'] = text['s2202b-sent15'].replace("p's", "p")
-        return text
+        t = self.text
+        t['s2202b-sent29'] = t['s2202b-sent29'].replace("p's", "p")
+        return t
 
     def make_lexicon(self):
+        """Build the buckeye lexicon from the *.words_fold files"""
         lexicon = dict()
         no_lexicon = set()
-        for utts in self._list_files('.words_fold'):
-            for line in open(utts, 'r').readlines():
-                match = re.match(
-                    r'\s\s+(.*)\s+(121|122)\s(.*);(.*); (.*); (.*)', line)
 
-                if match:
-                    word = match.group(3)
-                    phones = match.group(5)
+        files = self._list_files('.words_fold')
+        for line in (l for f in files for l in open(f, 'r')):
+            match = re.match(
+                r'\s\s+(.*)\s+(121|122)\s(.*);(.*); (.*); (.*)', line)
 
-                    # fold phones together (em -> m, el -> l, en -> n
-                    # and eng -> ng)
-                    phones = phones.replace('em', 'm')
-                    phones = phones.replace('el', 'l')
-                    phones = phones.replace('en', 'n')
-                    phones = phones.replace('eng', 'ng')
+            if match:
+                word = match.group(3)
+                phones = match.group(5)
 
-                    # Replace VOCNOISE/VOCNOISE_WW/LAUGH by SPN
-                    phones = phones.replace('VOCNOISE_WW', 'SPN')
-                    phones = phones.replace('VOCNOISE', 'SPN')
-                    phones = phones.replace('LAUGH', 'SPN')
+                # merge phones together
+                phones = phones.replace('em', 'm')
+                phones = phones.replace('el', 'l')
+                phones = phones.replace('en', 'n')
+                phones = phones.replace('eng', 'ng')
+                phones = phones.replace('nx', 'dx')
 
-                    # Replace IVER/NOISE/NOISE_WW by NSN
-                    phones = phones.replace('IVER', 'NSN')
-                    phones = phones.replace('NOISE_WW', 'NSN')
-                    phones = phones.replace('NOISE', 'NSN')
+                # replace VOCNOISE/VOCNOISE_WW/LAUGH by SPN
+                phones = phones.replace('UNKNOWN_WW', 'SPN')
+                phones = phones.replace('UNKNOWN', 'SPN')
+                phones = phones.replace('VOCNOISE_WW', 'SPN')
+                phones = phones.replace('VOCNOISE', 'SPN')
+                phones = phones.replace('LAUGH', 'SPN')
 
-                    # add the word to lexicon
-                    if phones:
-                        lexicon[word] = phones
-                    else:
-                        no_lexicon.add(word)
+                # replace IVER/NOISE/NOISE_WW by NSN
+                phones = phones.replace('NOISE_WW', 'NSN')
+                phones = phones.replace('NOISE', 'NSN')
+                phones = phones.replace('IVER', 'NSN')
 
+                # add the word to lexicon
+                if phones:
+                    # TODO Here we can check if (and when) we have
+                    # several transcriptions per word (alternate
+                    # pronunciations) and choose the most FREQUENT
+                    # one. Here we are keeping only the most RECENT.
+                    lexicon[word] = phones
+                else:
+                    no_lexicon.add(word)
+
+        # detect the words with no transcription
         really_no_lexicon = [t for t in no_lexicon if t not in lexicon]
         if really_no_lexicon:
             self.log.debug(
                 'following words have no transcription in lexicon: {}'
                 .format(really_no_lexicon))
-        return lexicon
+
+        # retain only the words present in the text
+        corpus_words = set(w for u in self.text.values() for w in u.split())
+        return {k: v for k, v in lexicon.iteritems() if k in corpus_words}
 
 
 # TODO The following code is dedicated to manual alignments. It should
@@ -256,7 +301,7 @@ class BuckeyePreparator(AbstractPreparator):
 # are concerned.
 
 class GetAlignment(object):
-    """Function wrapper to extract Buckeye alignments at utterance level"""
+    """Extract Buckeye manual phone alignments at utterance level"""
     def __init__(self, buckeye_dir):
         self.alignment = {}
         self.buckeye_dir = buckeye_dir
