@@ -45,7 +45,7 @@ Utt = namedtuple('Utt', 'words start end channel')
 
 class SPSCSJPreparator(AbstractPreparator):
     """convert the CSJ corpus to the abkhazia format"""
-    name = 'csj'
+    name = 'sps_csj'
     description = 'Corpus of Spontaneous Japanese'
 
     long_description = '''
