@@ -88,7 +88,8 @@ class SPSCSJPreparator(AbstractPreparator):
         'Q+t': u't:',
         'c': u't͡s',
         'Q+c': u't͡s:',
-        'c+y': u't͡ɕ',  # no long version occuring in the corpus?
+        'c+y': u't͡ɕ',
+        'Q+c+y': u't͡ɕ:',
         's': u's',
         'Q+s': u's:',
         's+y': u'ɕ',
@@ -812,12 +813,13 @@ def postprocessN(phonemes, previous_segment_last_phone=None):
 #########################################################
 
 def break_cluster(phone, clusters):
+    # this is completely ad hoc
     if phone in clusters:
         l = phone.split('+')
     else:
         l = [phone]
     return l
-    
+
 
 def break_glides_clusters(utts):
     # we do not use directly the bootphon Japanese phoneset,
@@ -825,7 +827,9 @@ def break_glides_clusters(utts):
     # k+y g+y n+y h+y b+y p+y m+y r+y t+y d+y
     # (i.e we consider the glide y as a separate phoneme)
     clusters = ['k+y', 'g+y', 'n+y', 'h+y', 'b+y',
-                'p+y', 'm+y', 'r+y', 't+y', 'd+y']    
+                'p+y', 'm+y', 'r+y', 't+y', 'd+y',
+                'Q+k+y', 'Q+g+y', 'Q+h+y', 'Q+b+y',
+                'Q+p+y', 'Q+t+y', 'Q+d+y']    
     for utt_id in utts:
         utt = utts[utt_id]
         luws = utt.words
