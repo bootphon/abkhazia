@@ -122,7 +122,7 @@ class SPSCSJPreparator(AbstractPreparator):
 
     def __init__(self, input_dir,  log=utils.logger.null_logger(),
                  copy_wavs=False):
-        super(CSJPreparator, self).__init__(input_dir, log)
+        super(SPSCSJPreparator, self).__init__(input_dir, log)
         self.copy_wavs = copy_wavs
         # select laymen talks only
         xml_dir = os.path.join(self.input_dir, 'XML')
