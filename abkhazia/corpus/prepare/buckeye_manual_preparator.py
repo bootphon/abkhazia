@@ -418,6 +418,8 @@ def parse_corpus(phone_files, word_files):
         utt_id = record_id + "_" + str(ident)
         assert not(utt_id in text)
         text[utt_id] = " ".join([word.replace(" ", "-") for word in utt.words])
-        segments[utt_id] = (record_id + '.wav', utt.start, utt.end)
+        # Rogntudju!!! There is a violation of the standard specification right here !!!!
+        #segments[utt_id] = (record_id + '.wav', utt.start, utt.end)
+        segments[utt_id] = (record_id, utt.start, utt.end)
         utt2spk[utt_id] = speaker_id  
     return segments, utt2spk, text
