@@ -30,7 +30,7 @@ from abkhazia.corpus.prepare import AbstractPreparator
 class BuckeyeManualPreparator(AbstractPreparator):
     """Convert the Buckeye corpus to the abkhazia format"""
 
-    name = 'buckeye'
+    name = 'buckeye_manual'
     url = 'http://buckeyecorpus.osu.edu'
     audio_format = 'wav'
     description = 'Buckeye Corpus of conversational speech'
