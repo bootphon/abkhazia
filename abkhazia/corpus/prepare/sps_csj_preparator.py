@@ -160,6 +160,43 @@ class SPSCSJPreparator(AbstractPreparator):
         print('{:.2f}% of {} utts successfully parsed'.format(proportion, N))
 
 
+    def parse_xml(self, xml_file):
+        """Parse raw transcript"""
+        tree = ET.ElementTree(file=xml_file)
+        talk = tree.getroot()
+        talk_id = talk.attrib["TalkID"]
+        speaker = talk.attrib["SpeakerID"]
+        # make sure all speaker-ids have same length
+        if len(speaker) < 4:
+            speaker = "0"*(4-len(speaker)) + speaker
+        else:
+            assert len(speaker) == 4, talk_id
+
+        # using kanji for 'male'
+        gender = 'M' if talk.attrib["SpeakerSex"] == u"男" else 'F'
+        spk_id = gender + speaker
+        
+        # Utterance level
+        nb_utts = 0;
+        nb_parsed_utts = 0;
+        utts = {}
+        for ipu in talk.iter("IPU"):
+            nb_utts = nb_utts + 1
+            utt_id = spk_id + u"_" + talk_id + u"_" + ipu.attrib["IPUID"]
+            channel = None
+            utt_start = float(ipu.attrib["IPUStartTime"])
+            utt_stop = float(ipu.attrib["IPUEndTime"])
+            ipu_id = ipu.attrib["IPUID"]
+            words, parse_successful = self.parse_ipu(ipu, ipu_id)
+            if parse_successful:
+                utts[utt_id] = Utt(words, utt_start, utt_stop, channel)
+                nb_parsed_utts = nb_parsed_utts + 1
+        #proportion = 100.*nb_parsed_utts/float(nb_utts)
+        #print('{:.2f} percent of {} utts successfully parsed'.format(proportion,
+        #                                                            nb_utts))
+        return utts, nb_parsed_utts, nb_utts
+
+
     def parse_ipu(self, ipu, ipu_id):
         # Word level - Long Words Units (LUW) are taken as 'words'
         words = []
@@ -204,43 +241,6 @@ class SPSCSJPreparator(AbstractPreparator):
             #print(words)
             pass
         return words, parse_successful
-
-
-    def parse_xml(self, xml_file):
-        """Parse raw transcript"""
-        tree = ET.ElementTree(file=xml_file)
-        talk = tree.getroot()
-        talk_id = talk.attrib["TalkID"]
-        speaker = talk.attrib["SpeakerID"]
-        # make sure all speaker-ids have same length
-        if len(speaker) < 4:
-            speaker = "0"*(4-len(speaker)) + speaker
-        else:
-            assert len(speaker) == 4, talk_id
-
-        # using kanji for 'male'
-        gender = 'M' if talk.attrib["SpeakerSex"] == u"男" else 'F'
-        spk_id = gender + speaker
-        
-        # Utterance level
-        nb_utts = 0;
-        nb_parsed_utts = 0;
-        utts = {}
-        for ipu in talk.iter("IPU"):
-            nb_utts = nb_utts + 1
-            utt_id = spk_id + u"_" + talk_id + u"_" + ipu.attrib["IPUID"]
-            channel = None
-            utt_start = float(ipu.attrib["IPUStartTime"])
-            utt_stop = float(ipu.attrib["IPUEndTime"])
-            ipu_id = ipu.attrib["IPUID"]
-            words, parse_successful = self.parse_ipu(ipu, ipu_id)
-            if parse_successful:
-                utts[utt_id] = Utt(words, utt_start, utt_stop, channel)
-                nb_parsed_utts = nb_parsed_utts + 1
-        #proportion = 100.*nb_parsed_utts/float(nb_utts)
-        #print('{:.2f} percent of {} utts successfully parsed'.format(proportion,
-        #                                                            nb_utts))
-        return utts, nb_parsed_utts, nb_utts
 
 
     def lexicalize(self, utts):
@@ -628,7 +628,7 @@ def kana2phones(kanas):
     # Third: some post-processing to get to Bootphon format for Japanese
     # phonetic transcriptions
     if parse_successful:
-        phonemes, parse_successful = mergeHQsuw(phonemes)  
+        phonemes, parse_successful = mergeHQluw(phonemes)  
     #previous_LUW_last_phone = None    
     old_phonemes = phonemes
     phonemes = []
@@ -656,7 +656,7 @@ def kana2phones(kanas):
     return phonemes
 
 
-def mergeHQsuw(phonemes):
+def mergeHQluw(phonemes):
     """
     We don't want words finishing with Q or starting with H 
     because we are using a phoneset where these phones do no occur
@@ -815,7 +815,10 @@ def postprocessN(phonemes, previous_segment_last_phone=None):
 def break_cluster(phone, clusters):
     # this is completely ad hoc
     if phone in clusters:
-        l = phone.split('+')
+        if 'Q' in phone:
+            l = [phone[:3], phone[4]]
+        else:
+            l = phone.split('+')
     else:
         l = [phone]
     return l
@@ -833,12 +836,9 @@ def break_glides_clusters(utts):
     for utt_id in utts:
         utt = utts[utt_id]
         luws = utt.words
-        new_luws = [
-                    [
+        new_luws = [[
                      e for phone in luw_phones
-                     for e in break_cluster(phone, clusters)
-                    ]
-                    for luw_phones in luws
-                   ] 
+                            for e in break_cluster(phone, clusters)
+                    ] for luw_phones in luws] 
         utts[utt_id] = Utt(new_luws, utt.start, utt.end, utt.channel)
     return utts
