@@ -124,7 +124,7 @@ class BuckeyeManualPreparator(AbstractPreparator):
 
     def __init__(self, input_dir, log=utils.logger.null_logger(),
                  copy_wavs=False):
-        super(BuckeyePreparator, self).__init__(input_dir, log=log)
+        super(BuckeyeManualPreparator, self).__init__(input_dir, log=log)
         self.copy_wavs = copy_wavs
         # the input files we will parse
         phone_files = self._list_files('.phones_fold')
