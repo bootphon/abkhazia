@@ -83,7 +83,7 @@ class SPSCSJPreparator(AbstractPreparator):
         'n': u'n',
         'N': u'ɴ',
         'd': u'd',
-        'Q+d': u'd:',
+        #'Q+d': u'd:',
         't': u't',
         'Q+t': u't:',
         'c': u't͡s',
@@ -95,23 +95,84 @@ class SPSCSJPreparator(AbstractPreparator):
         's+y': u'ɕ',
         'Q+s+y': u'ɕ:',
         'z': u'z',  # fricative or affricate
-        'Q+z': u'z:',  # fricative or affricate
+        #'Q+z': u'z:',  # fricative or affricate
         'z+y': u'ʑ',  # fricative or affricate 
-        'Q+z+y': u'ʑ:',  # fricative or affricate
+        #'Q+z+y': u'ʑ:',  # fricative or affricate
         'F': u'ɸ',
-        'Q+F': u'ɸ:',
+        #'Q+F': u'ɸ:',
         'h': u'h',
-        'Q+h': u'h:',
+        #'Q+h': u'h:',
         'g': u'g',
-        'Q+g': u'g:',
+        #'Q+g': u'g:',
         'k': u'k',
         'Q+k': u'k:',
         'p': u'p',
         'Q+p': u'p:',
         'r': u'r',
-        'b': u'b',
-        'Q+b': u'b:'
+        'b': u'b'
+        #'Q+b': u'b:'
     }
+
+    """
+    Frequencies of the various phones in the corpus
+    produced by this recipe, before dropping infrequent
+    phones:
+
+        [('a', 1244643),
+         ('o', 930707),
+         ('i', 809173),
+         ('e', 624466),
+         ('k', 535058),
+         ('n', 518087),
+         ('u', 499639),
+         ('t', 445306),
+         ('m', 337715),
+         ('r', 326103),
+         ('s', 297367),
+         ('d', 285754),
+         ('N', 276768),
+         ('o+H', 189680),
+         ('s+y', 186292),
+         ('y', 164743),
+         ('g', 162616),
+         ('Q+t', 108847),
+         ('w', 108092),
+         ('h', 92601),
+         ('u+H', 82833),
+         ('e+H', 81238),
+         ('z+y', 76611),
+         ('b', 72008),
+         ('c+y', 60997),
+         ('c', 54208),
+         ('z', 36106),
+         ('a+H', 31660),
+         ('i+H', 23952),
+         ('F', 20939),
+         ('Q+k', 18819),
+         ('p', 13239),
+         ('Q+p', 10359),
+         ('Q+s+y', 4791),
+         ('Q+s', 4062),
+         ('Q+c+y', 2851),
+         ('Q+c', 1155),
+         ('Q+d', 276),
+         ('Q+g', 125),
+         ('Q+F', 116),
+         ('Q+h', 84),
+         ('Q+z+y', 56),
+         ('Q+z', 24),
+         ('Q+b', 16)]
+
+    To be able to train reliable phone models, we decided to
+    drop from the corpus all utterances involving phones with
+    less than 1000 occurrences (see 'remove_utts_with_phones' in
+    __init__).
+    In terms of frequency of occurrence,
+    the most frequent of these phones has frequency 0.0000316
+    (around 3 occurrences per 100 000 phones).
+
+    The removed phones are: Q+b, Q+g, Q+d, Q+F, Q+h, Q+z, Q+z+y
+    """
 
     # phones are vowels and consonents
     phones = utils.merge_dicts(vowels, consonants)
@@ -147,11 +208,14 @@ class SPSCSJPreparator(AbstractPreparator):
             # k+y g+y n+y h+y b+y p+y m+y r+y t+y d+y
             # (i.e we consider the glide y as a separate phoneme)
             utts = break_glides_clusters(utts)
+            # removing very infrequent phones 
+            utts, nb_removed = remove_utts_with_phones(utts, infrequent_phones)
+            self.log.info('Removed {} utts with infrequent phones'.format(nb_removed))
+            N_parsed = N_parsed - nb_removed
             utts, utt_lexicon = self.lexicalize(utts)
             for utt_id in utts:
                 assert not(utt_id in self.all_utts), utt_id
                 self.all_utts[utt_id] = utts[utt_id]
-
             for word in utt_lexicon:
                 if word not in self.lexicon:
                     self.lexicon[word] = utt_lexicon[word]
@@ -812,6 +876,7 @@ def postprocessN(phonemes, previous_segment_last_phone=None):
 ############### Custom post-processing ##################
 #########################################################
 
+
 def break_cluster(phone, clusters):
     # this is completely ad hoc
     if phone in clusters:
@@ -842,3 +907,22 @@ def break_glides_clusters(utts):
                     ] for luw_phones in luws] 
         utts[utt_id] = Utt(new_luws, utt.start, utt.end, utt.channel)
     return utts
+
+
+def remove_utts_with_phones(utts, infrequent_phones):
+    # see comments below the phone inventory at the top of this file
+    infrequent_phones = ['Q+d','Q+g', 'Q+F', 'Q+h', 'Q+z+y', 'Q+z', 'Q+b']
+    utts2remove = []
+    for utt_id in utts:
+        drop_utt = False
+        utt = utts[utt_id]
+        luws = utt.words
+        for luw_phones in luws:
+            if any([phone in infrequent_phones for phone in luw_phones])
+                drop_utt= True
+                break
+        if drop_utt:
+            utts2remove.append(utt_id)
+    for utt_id in utts2remove:
+        del utts[utt_id]
+    return utts, len(utts2remove)
