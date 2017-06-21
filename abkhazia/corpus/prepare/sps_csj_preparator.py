@@ -165,7 +165,7 @@ class SPSCSJPreparator(AbstractPreparator):
 
     To be able to train reliable phone models, we decided to
     drop from the corpus all utterances involving phones with
-    less than 1000 occurrences (see 'remove_utts_with_phones' in
+    less than 1000 occurrences (see 'remove_infrequent_phones' in
     __init__).
     In terms of frequency of occurrence,
     the most frequent of these phones has frequency 0.0000316
@@ -209,7 +209,7 @@ class SPSCSJPreparator(AbstractPreparator):
             # (i.e we consider the glide y as a separate phoneme)
             utts = break_glides_clusters(utts)
             # removing very infrequent phones 
-            utts, nb_removed = remove_utts_with_phones(utts, infrequent_phones)
+            utts, nb_removed = remove_infrequent_phones(utts)
             self.log.info('Removed {} utts with infrequent phones'.format(nb_removed))
             N_parsed = N_parsed - nb_removed
             utts, utt_lexicon = self.lexicalize(utts)
@@ -909,7 +909,7 @@ def break_glides_clusters(utts):
     return utts
 
 
-def remove_utts_with_phones(utts, infrequent_phones):
+def remove_infrequent_phones(utts):
     # see comments below the phone inventory at the top of this file
     infrequent_phones = ['Q+d','Q+g', 'Q+F', 'Q+h', 'Q+z+y', 'Q+z', 'Q+b']
     utts2remove = []
@@ -918,7 +918,7 @@ def remove_utts_with_phones(utts, infrequent_phones):
         utt = utts[utt_id]
         luws = utt.words
         for luw_phones in luws:
-            if any([phone in infrequent_phones for phone in luw_phones])
+            if any([phone in infrequent_phones for phone in luw_phones]):
                 drop_utt= True
                 break
         if drop_utt:
