@@ -34,7 +34,8 @@ from abkhazia.corpus.prepare import (
     AbstractGlobalPhonePreparator, MandarinPreparator, VietnamesePreparator,
     JapanesePreparator,
     WallStreetJournalPreparator, JournalistReadPreparator,
-    JournalistSpontaneousPreparator, MainReadPreparator, SPSCSJPreparator)
+    JournalistSpontaneousPreparator, MainReadPreparator, SPSCSJPreparator,
+    BuckeyeManualPreparator)
 
 
 class AbstractFactory(object):
@@ -216,6 +217,10 @@ class AbstractFactoryWithCMU(AbstractFactory):
 
 class BuckeyeFactory(AbstractFactory):
     preparator = BuckeyePreparator
+
+
+class BuckeyeManualFactory(AbstractFactory):
+    preparator = BuckeyeManualPreparator
 
 
 class XitsongaFactory(AbstractFactory):
@@ -456,7 +461,8 @@ class AbkhaziaPrepare(AbstractCommand):
         WallStreetJournalFactory,
         WolofFactory,
         XitsongaFactory,
-        SPSCSJFactory
+        SPSCSJFactory,
+        BuckeyeManualFactory
     )}
 
     @classmethod

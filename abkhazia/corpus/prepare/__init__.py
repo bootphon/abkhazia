@@ -30,6 +30,7 @@ from .librispeech_preparator import LibriSpeechPreparator
 from .wolof_preparator import WolofPreparator
 from .xitsonga_preparator import XitsongaPreparator
 from .sps_csj_preparator import SPSCSJPreparator
+from .buckeye_manual_preparator import BuckeyeManualPreparator
 
 from .globalphone_abstract_preparator import (
     AbstractGlobalPhonePreparator)
