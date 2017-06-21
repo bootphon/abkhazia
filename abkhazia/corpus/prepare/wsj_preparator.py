@@ -242,7 +242,7 @@ class WallStreetJournalPreparator(AbstractPreparatorWithCMU):
         'N': u'n',
         'NG': u'ŋ',
         'L': u'l',
-        'R': u'r',
+        'R': u'ɹ',
         'W': u'w',
         'Y': u'j',
         'HH': u'h'
