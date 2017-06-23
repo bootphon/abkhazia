@@ -34,7 +34,8 @@ from abkhazia.corpus.prepare import (
     AbstractGlobalPhonePreparator, MandarinPreparator, VietnamesePreparator,
     JapanesePreparator,
     WallStreetJournalPreparator, JournalistReadPreparator,
-    JournalistSpontaneousPreparator, MainReadPreparator)
+    JournalistSpontaneousPreparator, MainReadPreparator, SPSCSJPreparator,
+    BuckeyeManualPreparator)
 
 
 class AbstractFactory(object):
@@ -216,6 +217,10 @@ class AbstractFactoryWithCMU(AbstractFactory):
 
 class BuckeyeFactory(AbstractFactory):
     preparator = BuckeyePreparator
+
+
+class BuckeyeManualFactory(AbstractFactory):
+    preparator = BuckeyeManualPreparator
 
 
 class XitsongaFactory(AbstractFactory):
@@ -438,6 +443,10 @@ class WolofFactory(AbstractFactory):
     preparator = WolofPreparator
 
 
+class SPSCSJFactory(AbstractFactory):
+    preparator = SPSCSJPreparator
+
+
 class AbkhaziaPrepare(AbstractCommand):
     name = 'prepare'
     description = 'prepare a speech corpus for use with abkhazia'
@@ -451,7 +460,9 @@ class AbkhaziaPrepare(AbstractCommand):
         LibriSpeechFactory,
         WallStreetJournalFactory,
         WolofFactory,
-        XitsongaFactory
+        XitsongaFactory,
+        SPSCSJFactory,
+        BuckeyeManualFactory
     )}
 
     @classmethod
