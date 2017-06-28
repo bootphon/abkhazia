@@ -177,7 +177,7 @@ class SPSCSJPreparator(AbstractPreparator):
     # phones are vowels and consonents
     phones = utils.merge_dicts(vowels, consonants)
 
-    silences = ['SPN', 'NSN']
+    silences = []
 
     variants = []
 
