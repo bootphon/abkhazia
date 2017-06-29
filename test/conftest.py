@@ -30,7 +30,7 @@ HERE = os.path.abspath(os.path.dirname(__file__))
 
 
 @pytest.yield_fixture(scope='session')
-def corpus(n=100):
+def corpus(n=1000):
     """Return a corpus made of `n` first utts of Buckeye
 
     This little corpus is the base of all corpus dependant tests. The
