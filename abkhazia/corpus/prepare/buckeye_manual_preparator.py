@@ -117,7 +117,7 @@ class BuckeyeManualPreparator(AbstractPreparator):
     Total: 810009 (the 8534 nx are divided into n + t)
 
     """
-    silences = [u"NSN"]  # SPN and SIL will be added automatically
+    silences = []  # SPN and SIL will be added automatically
 
     variants = []
 
