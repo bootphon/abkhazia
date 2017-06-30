@@ -67,13 +67,12 @@ class CorpusMergeWavs(object):
 
         spk2utts = dict()
         segments = self.corpus.segments
-        wavs = self.corpus.wavs
         utt2spk = self.corpus.utt2spk
         utt2dur = self.corpus.utt2duration()
         
         # get input and output wav dir
         wav_output_dir = os.path.join(output_dir,'data/wavs')
-        wav_dir = os.path.join(corpus_dir,'wavs')
+        wav_dir = self.corpus.wav_folder
 
         if not os.path.isdir(wav_dir):
             raise IOError('invalid corpus: not found{}'.format(wav_dir))
@@ -176,12 +175,14 @@ class CorpusMergeWavs(object):
             output_wave.close()
         
         #verify that the merger worked and update wave set
+        self.corpus.wav_folder = wav_output_dir
+        self.corpus.wavs = set()
         for spkr in self.speakers:
             wav_name = '.'.join([spkr, 'wav'])
             wav_out_path = '/'.join([wav_output_dir, wav_name])
         
         
-            self.corpus.wavs[spkr] = wav_out_path
+            self.corpus.wavs.add(wav_name)
             if os.path.isfile(wav_out_path):
                 duration = 0
                 with contextlib.closing(wave.open(wav_out_path, 'r')) as f:

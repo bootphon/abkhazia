@@ -57,11 +57,21 @@ class CorpusSaver(object):
         symlinks
 
         """
-        os.makedirs(path)
+        assert not(os.path.exists(path)), "Wav folder already exists {}".format(path)
+        # remove any trailing slash etc. for corect dirname behavior
+        path = os.path.abspath(path)
+        parent_dir = os.path.dirname(path)
+        if not os.path.exists(parent_dir):
+            os.makedirs(parent_dir)
 
-        func = shutil.copy if copy_wavs is True else os.symlink
-        for wav in (os.path.realpath(w) for w in corpus.wavs.itervalues()):
-            func(wav, os.path.join(path, os.path.basename(wav)))
+        if copy_wavs:
+            for w in corpus.wavs:
+                wav = os.path.realpath(os.path.join(corpus.wav_folder, w))
+                shutil.copy(wav, os.path.join(path, w))
+        else:
+            source = os.path.realpath(corpus.wav_folder)
+            link_name = path
+            os.symlink(source, link_name)
 
     @staticmethod
     def save_lexicon(corpus, path):
