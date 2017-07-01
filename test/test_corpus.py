@@ -17,6 +17,7 @@
 import os
 from abkhazia.corpus import Corpus
 
+import pytest
 
 def test_save_corpus(tmpdir, corpus):
     assert corpus.is_valid()
@@ -82,6 +83,15 @@ def test_split_by_speakers(corpus):
     assert len(set.intersection(set(d.spks()), set(e.spks()))) == 0
     assert len(set.intersection(set(corpus.utts()), set(e.utts()))) == \
         len(e.utts())
+
+
+@pytest.mark.parametrize('by_speaker', [True, False])
+def test_split_less_than_1(corpus, by_speaker):
+    # here we split a corpus and takke 10% for test and 10% for train
+    d, e = corpus.split(0.1, 0.1, by_speaker)
+    assert len(d.utts()) + len(e.utts()) < len(corpus.utts())
+    assert len(d.utts()) > 0
+    assert len(e.utts()) > 0
 
 
 def test_spk2utt():
