@@ -1,3 +1,5 @@
+TODO this should be become issue in the github repo
+
 * Feature requests
 ** preparators
 - [X] GlobalPhone & CSJ : Laisser la possibilité de choisir de garder
@@ -115,3 +117,14 @@ Those messages are actually logged in debug level, should be smater to be warnon
 ** TODO QXcbConnection: Could not connect to display localhost:10.0
    maybe related to matplotlib, MB get this error when importing
    abkhazia in ipython from a ssh (no X) remote connexion.
+* prepare_lang branch [1/2]
+** DONE AM does not depend on LM [3/3]
+- [X] write a prepare_lang.sh standalone wrapper
+- [X] independant call to prepare_lang in AM classes
+- [X] update the command line API in consequence
+** TODO fix decode and align [0/4]
+- [ ] check for phonesets compatibility between AM/LM
+- [ ] refactor core ? (lm_dir or independant call to prepare_lang ?)
+- [ ] pass all the tests
+- [ ] add tests for cross use of AMs/LMs
+- [ ] update the command line API in consequence

@@ -36,16 +36,18 @@ import shutil
 import operator
 import time
 import numpy as np
+
+from collections import defaultdict
+from joblib import Parallel, delayed
+from operator import itemgetter
+
 import abkhazia.utils as utils
 import abkhazia.abstract_recipe as abstract_recipe
 from abkhazia.utils.best_path_dtw import dtw
-from collections import defaultdict
-from operator import itemgetter
+
 from abkhazia.language import check_language_model, read_int2phone
 from abkhazia.acoustic import check_acoustic_model
 from abkhazia.features import Features
-
-from joblib import Parallel, delayed
 
 
 # TODO check alignment: which utt have been transcribed, have silence

@@ -30,7 +30,7 @@ HERE = os.path.abspath(os.path.dirname(__file__))
 
 
 @pytest.yield_fixture(scope='session')
-def corpus(n=1000):
+def corpus(n=50):
     """Return a corpus made of `n` first utts of Buckeye
 
     This little corpus is the base of all corpus dependant tests. The
@@ -98,11 +98,19 @@ def lm_word(corpus, tmpdir_factory):
 
 
 @pytest.fixture(scope='session')
-def am_mono(corpus, features, lm_word, tmpdir_factory):
+def lang_args():
+    return {'level': 'word',
+            'silence_probability': 0.5,
+            'position_dependent_phones': False,
+            'keep_tmp_dirs': True}
+
+
+@pytest.fixture(scope='session')
+def am_mono(corpus, features, tmpdir_factory, lang_args):
     output_dir = str(tmpdir_factory.mktemp('am_mono'))
     flog = os.path.join(output_dir, 'am_mono.log')
     log = utils.logger.get_log(flog)
-    am = acoustic.Monophone(corpus, lm_word, features, output_dir, log=log)
+    am = acoustic.Monophone(corpus, features, output_dir, lang_args, log=log)
 
     am.options['total-gaussians'].value = 20
     am.options['num-iterations'].value = 3
@@ -112,12 +120,12 @@ def am_mono(corpus, features, lm_word, tmpdir_factory):
 
 
 @pytest.fixture(scope='session')
-def am_tri(corpus, features, lm_word, am_mono, tmpdir_factory):
+def am_tri(corpus, features, am_mono, tmpdir_factory, lang_args):
     output_dir = str(tmpdir_factory.mktemp('am_tri'))
     flog = os.path.join(output_dir, 'am_tri.log')
     log = utils.logger.get_log(flog)
     am = acoustic.Triphone(
-        corpus, lm_word, features, am_mono, output_dir, log=log)
+        corpus, features, am_mono, output_dir, lang_args, log=log)
 
     am.options['total-gaussians'].value = 20
     am.options['num-iterations'].value = 3
@@ -131,12 +139,12 @@ def am_tri(corpus, features, lm_word, am_mono, tmpdir_factory):
 
 
 @pytest.fixture(scope='session')
-def am_trisa(corpus, features, lm_word, am_tri, tmpdir_factory):
+def am_trisa(corpus, features, am_tri, tmpdir_factory, lang_args):
     output_dir = str(tmpdir_factory.mktemp('am_trisa'))
     flog = os.path.join(output_dir, 'am_trisa.log')
     log = utils.logger.get_log(flog)
     am = acoustic.TriphoneSpeakerAdaptive(
-        corpus, lm_word, features, am_tri, output_dir, log=log)
+        corpus, features, am_tri, output_dir, lang_args, log=log)
 
     am.options['total-gaussians'].value = 20
     am.options['num-iterations'].value = 3
@@ -151,12 +159,12 @@ def am_trisa(corpus, features, lm_word, am_tri, tmpdir_factory):
 
 
 @pytest.fixture(scope='session')
-def am_nnet(corpus, features, lm_word, am_trisa, tmpdir_factory):
+def am_nnet(corpus, features, am_trisa, tmpdir_factory, lang_args):
     output_dir = str(tmpdir_factory.mktemp('am_nnet'))
     flog = os.path.join(output_dir, 'am_nnet.log')
     log = utils.logger.get_log(flog)
     am = acoustic.NeuralNetwork(
-        corpus, lm_word, features, am_trisa, output_dir, log=log)
+        corpus, features, am_trisa, output_dir, lang_args, log=log)
 
     am.options['num-epochs'].value = 2
     am.options['num-epochs-extra'].value = 1

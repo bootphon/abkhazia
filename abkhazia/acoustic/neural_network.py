@@ -26,8 +26,8 @@ import abkhazia.kaldi as kaldi
 class NeuralNetwork(AbstractAcousticModel):
     """Wrapper on Kaldi egs/wsj/s5/steps/nnet2/train_pnorm_fast.sh
 
-    Training is done on an abkhazia corpus, from previously computed
-    language and acoustic models.
+    Training is done on an abkhazia corpus, from a previously computed
+    acoustic model.
 
     The following options are not forwarded from Kaldi to Abkhazia:
     get_egs_stage, online_ivector_dir, stage, cleanup, egs_dir,
@@ -142,10 +142,10 @@ class NeuralNetwork(AbstractAcousticModel):
     # options forwarded to get_egs.sh
     _egs_options = ['num-utts-subset']
 
-    def __init__(self, corpus, lm_dir, feats_dir, am_dir,
-                 output_dir, log=utils.logger.null_logger):
+    def __init__(self, corpus, feats_dir, am_dir,
+                 output_dir, lang_args, log=utils.logger.null_logger):
         super(NeuralNetwork, self).__init__(
-            corpus, lm_dir, feats_dir, output_dir, log=log)
+            corpus, feats_dir, output_dir, lang_argslog=log)
 
         self.am_dir = os.path.abspath(am_dir)
         utils.check_directory(
@@ -198,7 +198,7 @@ class NeuralNetwork(AbstractAcousticModel):
                 nnet_opts, io_opt, egs_opts, num_threads_opt, combine_opt,
                 '{data} {lang} {origin} {target}'.format(
                     data=self.data_dir,
-                    lang=self.lm_dir,
+                    lang=self.lang_dir,
                     origin=self.am_dir,
                     target=target))))
 

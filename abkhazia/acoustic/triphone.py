@@ -86,10 +86,10 @@ class Triphone(AbstractAcousticModel):
             help='Target number of Gaussians at the end of training'),
     )}
 
-    def __init__(self, corpus, lm_dir, feats_dir, mono_dir,
-                 output_dir, log=utils.logger.null_logger):
+    def __init__(self, corpus, feats_dir, mono_dir,
+                 output_dir, lang_args, log=utils.logger.null_logger):
         super(Triphone, self).__init__(
-            corpus, lm_dir, feats_dir, output_dir, log=log)
+            corpus, feats_dir, output_dir, lang_args, log=log)
 
         self.mono_dir = os.path.abspath(mono_dir)
         utils.check_directory(
@@ -133,7 +133,7 @@ class Triphone(AbstractAcousticModel):
                 careful=self._opt('careful'),
                 boost=self._opt('boost-silence'),
                 data=self.data_dir,
-                lang=self.lm_dir,
+                lang=self.lang_dir,
                 origin=self.mono_dir,
                 target=output_dir))
         self._run_am_command(command, output_dir, message)
@@ -170,7 +170,7 @@ class Triphone(AbstractAcousticModel):
                 numleaves=self._opt('num-leaves'),
                 totgauss=self._opt('total-gaussians'),
                 data=self.data_dir,
-                lang=self.lm_dir,
+                lang=self.lang_dir,
                 origin=ali_dir,
                 target=target))
         self._run_am_command(command, target, message)

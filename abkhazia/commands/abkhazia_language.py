@@ -39,8 +39,7 @@ class AbkhaziaLanguage(AbstractKaldiCommand):
         group.add_argument(
             '-s', '--silence-probability', default=0.5,
             metavar='<float>', type=float,
-            help='usually 0.0 or 0.5, default is %(default)s'
-            'default is a silence probability of 0.5)')
+            help='usually 0.0 or 0.5, default is %(default)s')
 
         group.add_argument(
             '-w', '--word-position-dependent', action='store_true',
