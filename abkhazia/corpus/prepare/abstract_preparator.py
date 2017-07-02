@@ -104,8 +104,9 @@ class AbstractPreparator(object):
         self.log.debug('reading from %s', self.input_dir)
 
         c = self.corpus
-        c.wavs = self.make_wavs(wavs_dir)
+        c.wav_folder = self.make_wavs(wavs_dir)
         c.segments = self.make_segment()
+        c.wavs = {w for w, _, _ in c.segments.itervalues()}
         c.lexicon = self.make_lexicon()
         c.text = self.make_transcription()
         c.utt2spk = self.make_speaker()
@@ -226,10 +227,8 @@ class AbstractPreparator(object):
                 self.njobs, verbose=5, copy=self.copy_wavs)
             self.log.debug('finished converting wavs')
 
-        # finally build the corpus wavs dictionary
-        return {os.path.splitext(os.path.basename(w))[0]: w
-                for w in utils.list_files_with_extension(
-                        wavs_dir, '.wav', abspath=True, realpath=False)}
+        # finally return the wav folder path
+        return wavs_dir
 
     ############################################
     #

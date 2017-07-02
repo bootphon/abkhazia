@@ -44,9 +44,9 @@ class CorpusLoader(object):
         corpus = corpus_cls()
         corpus.log = log
         corpus.meta = data['meta']
-        corpus.wavs = cls.load_wavs(data['wavs'])
+        corpus.wav_folder = data['wavs']
         corpus.lexicon = cls.load_lexicon(data['lexicon'])
-        corpus.segments = cls.load_segments(data['segments'])
+        corpus.segments, corpus.wavs = cls.load_segments(data['segments'])
         corpus.text = cls.load_text(data['text'])
         corpus.phones = cls.load_phones(data['phones'])
         corpus.silences = cls.load_silences(data['silences'])
@@ -90,18 +90,6 @@ class CorpusLoader(object):
         return data
 
     @staticmethod
-    def load_wavs(path):
-        """Return a dict of wav files found in `path`
-
-        `path` is assumed to be an existing directory, every files
-        other than wavs are ignored.
-
-        """
-        return {os.path.splitext(os.path.basename(wav))[0]:
-                os.path.realpath(wav) for wav in
-                utils.list_files_with_extension(path, '.wav', abspath=True)}
-
-    @staticmethod
     def load_lexicon(path):
         """Return a dict of word to phones entries loaded from `path`
 
@@ -114,6 +102,7 @@ class CorpusLoader(object):
     @staticmethod
     def load_segments(path):
         """Return a dict of utterance ids mapped to (wav, tbegin, tend)
+        and the set of all required wav files 
 
         `path` is assumed to be a segments file, usually named
         'segments.txt'. If there is only one utterance per wav, tbegin
@@ -126,7 +115,9 @@ class CorpusLoader(object):
                     else (p, float(l[1]), float(l[2])))
 
         lines = (line.strip().split() for line in utils.open_utf8(path, 'r'))
-        return {line[0]: wav_tuple(line[1:]) for line in lines}
+        segments = {line[0]: wav_tuple(line[1:]) for line in lines}
+        wavs = {w + '.wav' for w, _, _ in segments.itervalues()}
+        return segments, wavs
 
     @staticmethod
     def load_text(path):

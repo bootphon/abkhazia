@@ -104,10 +104,16 @@ class CorpusValidation(object):
     def validate_wavs(self):
         """Corpus wavs must be mono 16KHz, 16 bit PCM"""
         self.log.debug("checking wavs")
-        wavs = self.corpus.wavs
+        wav_folder = self.corpus.wav_folder
+        wavs = [os.path.join(wav_folder, w)
+                for w in self.corpus.wavs]
+
+        if not(os.path.isdir(wav_folder)):
+            raise IOError("Wav folder {} does not exist"
+                          .format(wav_folder))
 
         wrong_extensions = [
-            w for w in wavs.values() if os.path.splitext(w)[1] != ".wav"]
+            w for w in wavs if os.path.splitext(w)[1] != ".wav"]
 
         if wrong_extensions:
             raise IOError(
@@ -116,31 +122,32 @@ class CorpusValidation(object):
 
         # ensure all the wavs are here
         not_here = [
-            k for k, v in wavs.items() if not os.path.isfile(v)]
+            w for w in wavs if not os.path.isfile(w)]
 
         if not_here:
             raise IOError(
-                "The following wavs do not exist: {}{}".format(
+                "The following wavs do not exist: {}".format(
                     resume_list(not_here)))
 
         # get meta information on the wavs
-        meta = wav.scan(wavs.values(), njobs=self.njobs)
+        meta = wav.scan(wavs, njobs=self.njobs)
         meta = dict((os.path.splitext(os.path.basename(k))[0], v)
                     for k, v in meta.iteritems())
 
-        empty_files = [w for w in wavs.keys() if meta[w].nframes == 0]
+        wav_ids = [os.path.splitext(w)[0] for w in self.corpus.wavs]
+        empty_files = [w for w in wav_ids if meta[w].nframes == 0]
         if empty_files:
             raise IOError("The following files are empty: {}"
                           .format(resume_list(empty_files)))
 
-        weird_rates = [w for w in wavs.keys() if meta[w].rate != 16000]
+        weird_rates = [w for w in wav_ids if meta[w].rate != 16000]
         if weird_rates:
             raise IOError(
                 "Currently only files sampled at 16,000 Hz "
                 "are supported. The following files are sampled "
                 "at other frequencies: {0}".format(resume_list(weird_rates)))
 
-        non_mono = [w for w in wavs.keys() if meta[w].nbc != 1]
+        non_mono = [w for w in wav_ids if meta[w].nbc != 1]
         if non_mono:
             raise IOError(
                 "Currently only mono files are supported. "
@@ -148,7 +155,7 @@ class CorpusValidation(object):
                 "one channel: {0}".format(resume_list(non_mono)))
 
         # in bytes: 16 bit == 2 bytes
-        non_16bit = [w for w in wavs.keys() if meta[w].width != 2]
+        non_16bit = [w for w in wav_ids if meta[w].width != 2]
         if non_16bit:
             raise IOError(
                 "Currently only files encoded on 16 bits are "
@@ -156,7 +163,7 @@ class CorpusValidation(object):
                 "in this format: {0}"
                 .format(resume_list(non_16bit)))
 
-        compressed = [w for w in wavs.keys() if meta[w].comptype != 'NONE']
+        compressed = [w for w in wav_ids if meta[w].comptype != 'NONE']
         if compressed:
             raise IOError(
                 "The following files are compressed: {0}"
@@ -181,22 +188,23 @@ class CorpusValidation(object):
                 .format(_duplicates))
 
         # all referenced wavs are in wav folder
+        ref_wavs = {wav + '.wav' for wav in utt_wavs}
         missing_wavefiles = set.difference(
-            set(utt_wavs), set(self.corpus.wavs.keys()))
+            ref_wavs, self.corpus.wavs)
         if missing_wavefiles:
             raise IOError(
                 "The following wavefiles are referenced "
                 "in segments but are not in wavs {}"
                 .format(missing_wavefiles))
 
-        if(len(set(utt_wavs)) == len(utt_wavs) and
+        if(len(ref_wavs) == len(utt_wavs) and
            all([e is None for e in starts]) and
            all([e is None for e in stops])):
             # simple case, with one utterance per file and no explicit
             # timestamps provided just get list of files that are very
             # short (less than 0.1s)
-            short_wavs = [utt_id for utt_id, wav in zip(utt_ids, utt_wavs)
-                          if meta[wav].duration < self.wav_min_duration]
+            short_wavs = [utt_id for utt_id, w in zip(utt_ids, utt_wavs)
+                          if meta[w].duration < self.wav_min_duration]
         else:
             # more complicated case :find all utterances (plus
             # timestamps) associated to each wavefile and for each

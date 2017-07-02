@@ -42,13 +42,16 @@ class Corpus(utils.abkhazia_base.AbkhaziaBase):
     Attributes
     ==========
 
-    wavs: dict(wav_id, path)
+    wav_folder: str
+    ---------------
+
+    - folder where wav files associated to the corpus are stored
+
+    wavs: set(wav_basename)
     ------------------------
 
-    - corpus wav files
-    - wav_id is usually the file basename without extension, path is
-      the absolute path to the file
-    - exemple: ('s01', '/path/to/wavs/s01.wav')
+    - basename of the corpus wav files
+    - exemple: ('s01.wav')
 
     lexicon: dict(word, phones)
     ---------------------------
@@ -115,7 +118,8 @@ class Corpus(utils.abkhazia_base.AbkhaziaBase):
         """Initialize an empty corpus"""
         super(Corpus, self).__init__(log=log)
 
-        self.wavs = dict()
+        self.wav_folder = ''
+        self.wavs = set()
         self.lexicon = dict()
         self.segments = dict()
         self.text = dict()
@@ -219,7 +223,8 @@ class Corpus(utils.abkhazia_base.AbkhaziaBase):
         utt2dur = dict()
         for utt, (wav, start, stop) in self.segments.iteritems():
             start = 0 if start is None else start
-            stop = utils.wav.duration(self.wavs[wav]) if stop is None else stop
+            wav_path = os.path.join(self.wav_folder, wav + '.wav')
+            stop = utils.wav.duration(wav_path) if stop is None else stop
             utt2dur[utt] = stop - start
         return utt2dur
 
@@ -286,8 +291,8 @@ class Corpus(utils.abkhazia_base.AbkhaziaBase):
         corpus.silences = self.silences
         corpus.variants = self.variants
 
-        corpus.wavs = {k: os.path.realpath(v)
-                       for k, v in self.wavs.iteritems()}
+        corpus.wav_folder = self.wav_folder
+        corpus.wavs = self.wavs
 
         corpus.segments = dict()
         corpus.text = dict()
@@ -323,8 +328,7 @@ class Corpus(utils.abkhazia_base.AbkhaziaBase):
 
         # prune wavs from pruned segments
         wavs = set(self.wav2utt().iterkeys())
-        self.wavs = {key: value for key, value in self.wavs.iteritems()
-                     if key in wavs}
+        self.wavs  = {wav + '.wav' for wav in wavs}
 
         # prune lexicon from pruned text
         words = self.words(in_lexicon=False)
