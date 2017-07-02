@@ -65,7 +65,7 @@ class CorpusTrimmer(object):
 
         # get input and output wav paths
         corpus_dir = os.path.abspath(corpus_dir)
-        wav_dir = os.path.join(corpus_dir, 'wavs')
+        wav_dir = self.corpus.wav_folder
         if not os.path.isdir(wav_dir):
             raise IOError('invalid corpus: not found{}'.format(path))
 
@@ -93,9 +93,10 @@ class CorpusTrimmer(object):
                
 
             # don't trim utterances for wave file that won't be kept at all
+            wav_ids = [os.path.splitext(w)[0] for w in self.corpus.wavs]
             wavs_output = [(wav_id, start, stop)
                            for utt_id, (wav_id, start, stop)
-                           in utt_to_remove if wav_id in self.corpus.wavs]
+                           in utt_to_remove if wav_id in wav_ids]
 
             wavs_start_dict = defaultdict(list)
             wavs_stop_dict = defaultdict(list)

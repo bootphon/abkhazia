@@ -51,8 +51,9 @@ def test_subcorpus(corpus):
     assert e.is_valid()
 
     assert len(d.wavs) <= len(e.wavs)
-    for w in d.wavs.iterkeys():
+    for w in d.wavs:
         assert w in e.wavs
+    assert d.wav_folder == e.wav_folder
 
 
 def test_split(corpus):
