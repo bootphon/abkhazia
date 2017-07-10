@@ -71,8 +71,13 @@ def test_split(corpus):
 
 
 def test_split_tiny_train(corpus):
-    train, testing = corpus.split(train_prop=0.1)
+    train, testing = corpus.split(train_prop=0.25, by_speakers=False)
     assert len(train.utts()) < len(testing.utts())
+    assert len(train.spks()) == len(testing.spks())
+
+    train, testing = corpus.split(train_prop=0.25, by_speakers=True)
+    assert len(train.utts()) < len(testing.utts())
+    assert len(train.spks()) < len(testing.spks())
 
 
 def test_split_by_speakers(corpus):
@@ -88,11 +93,15 @@ def test_split_by_speakers(corpus):
 
 @pytest.mark.parametrize('by_speaker', [True, False])
 def test_split_less_than_1(corpus, by_speaker):
-    # here we split a corpus and takke 10% for test and 10% for train
-    d, e = corpus.split(0.1, 0.1, by_speaker)
+    d, e = corpus.split(0.25, 0.5, by_speaker)
+
     assert len(d.utts()) + len(e.utts()) < len(corpus.utts())
     assert len(d.utts()) > 0
     assert len(e.utts()) > 0
+
+    # very low proportion -> the resulting corpus is empty
+    with pytest.raises(IOError):
+        d, _ = corpus.split(1e-30)
 
 
 def test_spk2utt():

@@ -26,12 +26,63 @@ from abkhazia.features import Features
 from abkhazia.language import LanguageModel
 import abkhazia.acoustic as acoustic
 
-HERE = os.path.abspath(os.path.dirname(__file__))
 
+# utterances from Buckeye composing the test corpus (4 speakers, 12
+# utterances each, total duration of 10:08)
+buckeye_utterances = [
+	's0101a-sent1',
+	's0101a-sent10',
+	's0101a-sent11',
+	's0101a-sent12',
+	's0101a-sent13',
+	's0101a-sent14',
+	's0101a-sent15',
+	's0101a-sent16',
+	's0101a-sent17',
+	's0101a-sent18',
+	's0101a-sent19',
+	's0101a-sent2',
+	's0101b-sent1',
+	's0101b-sent10',
+	's0101b-sent11',
+	's0101b-sent12',
+	's0101b-sent13',
+	's0101b-sent14',
+	's0101b-sent15',
+	's0101b-sent16',
+	's0101b-sent17',
+	's0101b-sent18',
+	's0101b-sent19',
+	's0101b-sent2',
+	's0102a-sent1',
+	's0102a-sent10',
+	's0102a-sent11',
+	's0102a-sent12',
+	's0102a-sent13',
+	's0102a-sent14',
+	's0102a-sent15',
+	's0102a-sent16',
+	's0102a-sent17',
+	's0102a-sent18',
+	's0102a-sent19',
+	's0102a-sent2',
+	's0102b-sent1',
+	's0102b-sent10',
+	's0102b-sent11',
+	's0102b-sent12',
+	's0102b-sent13',
+	's0102b-sent14',
+	's0102b-sent15',
+	's0102b-sent16',
+	's0102b-sent17',
+	's0102b-sent18',
+	's0102b-sent19',
+	's0102b-sent2'
+]
 
 @pytest.yield_fixture(scope='session')
-def corpus(n=50):
-    """Return a corpus made of `n` first utts of Buckeye
+def corpus(tmpdir_factory):
+    """Return a corpus made of Buckeye
 
     This little corpus is the base of all corpus dependant tests. The
     session scope ensures the corpus is initialized only once for all
@@ -43,33 +94,28 @@ def corpus(n=50):
     prepared in its buckeye/data subfolder.
 
     """
-    try:
-        tmpdir = os.path.join(HERE, 'prepared_wavs')
+    tmpdir = str(tmpdir_factory.mktemp('corpus'))
 
-        # first try to load any prepared buckeye
-        buckeye = os.path.join(
-            utils.config.get('abkhazia', 'data-directory'),
-            'buckeye', 'data')
-        if os.path.isdir(buckeye):
-            corpus = Corpus.load(buckeye)
+    # first try to load any prepared buckeye
+    buckeye = os.path.join(
+        utils.config.get('abkhazia', 'data-directory'),
+        'buckeye', 'data')
+    if os.path.isdir(buckeye):
+        corpus = Corpus.load(buckeye)
 
-        else:  # prepare the whole buckeye corpus
-            buckeye = utils.config.get('corpus', 'buckeye-directory')
-            corpus = BuckeyePreparator(buckeye).prepare(tmpdir)
-            corpus.validate()
+    else:  # prepare the whole buckeye corpus
+        buckeye = utils.config.get('corpus', 'buckeye-directory')
+        corpus = BuckeyePreparator(buckeye).prepare(tmpdir)
 
-        # select utterances from 1 to n from the whole buckeye, take the
-        # whole if n is 0
-        if n != 0:
-            utts = corpus.utts()[:n]
-            subcorpus = corpus.subcorpus(utts)
-        else:
-            subcorpus = corpus
-        yield subcorpus
+    corpus = corpus.subcorpus(buckeye_utterances)
+    corpus.meta.name = 'Abkhazia test corpus'
+    corpus.validate()
 
-    finally:
-        # remove any prepared wavs
-        utils.remove(tmpdir, safe=True)
+    assert len(corpus.utts()) == len(buckeye_utterances)
+    assert len(corpus.spks()) == len(set(utt.split('-')[0] for utt in buckeye_utterances))
+    assert sorted(corpus.utts()) == buckeye_utterances
+
+    return corpus
 
 
 @pytest.fixture(scope='session')
