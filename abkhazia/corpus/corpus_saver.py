@@ -56,15 +56,17 @@ class CorpusSaver(object):
         If `copy_wavs` is True, copy the wavs in `path` else make
         symlinks
 
+        :raise IOError: if `path` already exists
+
         """
-        assert not(os.path.exists(path)), "Wav folder already exists {}".format(path)
-        # remove any trailing slash etc. for corect dirname behavior
+        if os.path.exists(path):
+            raise IOError('Wav folder already exists {}'.format(path))
+
+        # remove any trailing slash etc. for correct dirname behavior
         path = os.path.abspath(path)
-        parent_dir = os.path.dirname(path)
-        if not os.path.exists(parent_dir):
-            os.makedirs(parent_dir)
 
         if copy_wavs:
+            os.makedirs(path)
             for w in corpus.wavs:
                 wav = os.path.realpath(os.path.join(corpus.wav_folder, w))
                 shutil.copy(wav, os.path.join(path, w))

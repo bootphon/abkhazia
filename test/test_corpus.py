@@ -19,10 +19,12 @@ from abkhazia.corpus import Corpus
 
 import pytest
 
-def test_save_corpus(tmpdir, corpus):
+
+@pytest.mark.parametrize('copy_wavs', [True, False])
+def test_save_corpus(tmpdir, corpus, copy_wavs):
     assert corpus.is_valid()
-    corpus_saved = os.path.join(str(tmpdir), 'corpus')
-    corpus.save(corpus_saved, copy_wavs=False)
+    corpus_saved = str(tmpdir.mkdir('corpus-{}'.format(copy_wavs)))
+    corpus.save(corpus_saved, copy_wavs=copy_wavs)
     assert os.path.isfile(os.path.join(corpus_saved, 'meta.txt'))
 
     d = Corpus.load(corpus_saved)
@@ -89,6 +91,13 @@ def test_split_by_speakers(corpus):
     assert len(set.intersection(set(d.spks()), set(e.spks()))) == 0
     assert len(set.intersection(set(corpus.utts()), set(e.utts()))) == \
         len(e.utts())
+
+
+@pytest.mark.parametrize('copy_wavs', [True, False])
+def test_split_and_save(corpus, copy_wavs, tmpdir):
+    a, b = corpus.split(train_prop=0.25)
+    a.save(str(tmpdir.mkdir('a')), copy_wavs=copy_wavs)
+    b.save(str(tmpdir.mkdir('b')), copy_wavs=copy_wavs)
 
 
 @pytest.mark.parametrize('by_speaker', [True, False])
