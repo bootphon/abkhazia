@@ -131,24 +131,26 @@ def features(corpus, tmpdir_factory):
 
 
 @pytest.fixture(scope='session')
-def lm_word(corpus, tmpdir_factory):
-    """Return a directory with bigram word LM computed from the test corpus"""
-    output_dir = str(tmpdir_factory.mktemp('lm_word'))
-    flog = os.path.join(output_dir, 'language.log')
-    log = utils.logger.get_log(flog)
-    lm = LanguageModel(corpus, output_dir, log=log)
-    lm.level = 'word'
-    lm.order = 2
-    lm.compute()
-    return output_dir
-
-
-@pytest.fixture(scope='session')
 def lang_args():
     return {'level': 'word',
             'silence_probability': 0.5,
             'position_dependent_phones': False,
             'keep_tmp_dirs': True}
+
+
+@pytest.fixture(scope='session')
+def lm_word(corpus, lang_args, tmpdir_factory):
+    """Return a directory with bigram word LM computed from the test corpus"""
+    output_dir = str(tmpdir_factory.mktemp('lm_word'))
+    flog = os.path.join(output_dir, 'language.log')
+    log = utils.logger.get_log(flog)
+    lm = LanguageModel(corpus, output_dir, log=log)
+    lm.level = lang_args['level']
+    lm.silence_probability = lang_args['silence_probability']
+    lm.position_dependent_phones = lang_args['position_dependent_phones']
+    lm.order = 2
+    lm.compute()
+    return output_dir
 
 
 @pytest.fixture(scope='session')

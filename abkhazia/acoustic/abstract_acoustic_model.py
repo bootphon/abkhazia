@@ -47,7 +47,20 @@ def model_type(am_dir):
 
 def check_acoustic_model(am_dir):
     """Raise IOError if final.mdl is not in am_dir"""
-    utils.check_directory(am_dir, ['final.mdl'], name='acoustic model')
+    utils.check_directory(
+        am_dir,
+        ['final.mdl'],
+        name='acoustic model')
+
+    utils.check_directory(
+        os.path.join(am_dir, 'lang'),
+        ['L.fst', 'phones.txt', 'words.txt'],
+        name='lang')
+
+    utils.check_directory(
+        os.path.join(am_dir, 'lang', 'phones'),
+        ['silence.csl', 'disambig.int'],
+        name='lang/phones')
 
 
 class AbstractAcousticModel(AbstractRecipe):
@@ -83,7 +96,7 @@ class AbstractAcousticModel(AbstractRecipe):
 
         self.input_dir = os.path.abspath(input_dir)
         self.data_dir = os.path.join(self.recipe_dir, 'data', 'acoustic')
-        self.lang_dir = os.path.join(self.recipe_dir, 'data', 'lang')
+        self.lang_dir = os.path.join(self.output_dir, 'lang')
         self.lang_args = lang_args
 
     def check_parameters(self):
@@ -117,7 +130,7 @@ class AbstractAcousticModel(AbstractRecipe):
         # copy features scp files in the recipe_dir
         Features.export_features(self.input_dir, self.data_dir)
 
-        # create lang directory with L.fst TODO forward all parameters
+        # create lang directory with L.fst
         l = self.lang_args
         prepare_lang.prepare_lang(
             self.corpus,

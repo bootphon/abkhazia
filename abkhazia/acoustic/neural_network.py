@@ -145,7 +145,7 @@ class NeuralNetwork(AbstractAcousticModel):
     def __init__(self, corpus, feats_dir, am_dir,
                  output_dir, lang_args, log=utils.logger.null_logger):
         super(NeuralNetwork, self).__init__(
-            corpus, feats_dir, output_dir, lang_argslog=log)
+            corpus, feats_dir, output_dir, lang_args, log=log)
 
         self.am_dir = os.path.abspath(am_dir)
         utils.check_directory(

@@ -122,9 +122,21 @@ Those messages are actually logged in debug level, should be smater to be warnon
 - [X] write a prepare_lang.sh standalone wrapper
 - [X] independant call to prepare_lang in AM classes
 - [X] update the command line API in consequence
-** TODO fix decode and align [0/4]
+** TODO fix decode and align [2/5]
+- [X] pass all the tests
+- [X] refactor core ? (lm_dir or independant call to prepare_lang ?)
+  -> am now exports the lang folder
 - [ ] check for phonesets compatibility between AM/LM
-- [ ] refactor core ? (lm_dir or independant call to prepare_lang ?)
-- [ ] pass all the tests
 - [ ] add tests for cross use of AMs/LMs
 - [ ] update the command line API in consequence
+
+*** notes
+required files by mkgraph.sh are
+  - AM $lang/L.fst
+  - LM $lang/G.fst
+  - AM/LM $lang/phones.txt
+  - AM? $lang/words.txt
+  - AM/LM? $lang/phones/silence.csl
+  - AM/LM? $lang/phones/disambig.int
+  - AM $model/final.mdl
+  - AM $model/tree

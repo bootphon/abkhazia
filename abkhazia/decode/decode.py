@@ -12,7 +12,7 @@
 #
 # You should have received a copy of the GNU General Public License
 # along with abkhazia. If not, see <http://www.gnu.org/licenses/>.
-"""Decode unknown speech on a trained  model"""
+"""Decode unknown speech on a trained acoustic model"""
 
 import os
 import shutil

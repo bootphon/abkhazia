@@ -55,13 +55,6 @@ class _AmBase(AbstractKaldiCommand):
         parser.formatter_class = argparse.RawDescriptionHelpFormatter
         parser.description = cls.long_description()
 
-        # # add parameters for source directories (language model,
-        # # features and (except for monophone) input dir)
-        # dir_group.add_argument(
-        #     '-l', '--language-model', metavar='<lm-dir>', default=None,
-        #     help='''the language model recipe directory, data is read from
-        #     <lm-dir>/language/lang, if not specified use <lm-dir>=<corpus>.''')
-
         lex = parser.add_argument_group('lexixon parameters')
         lex.add_argument(
             '-s', '--silence-probability', default=0.5,
@@ -70,10 +63,9 @@ class _AmBase(AbstractKaldiCommand):
 
         lex.add_argument(
             '-w', '--word-position-dependent', action='store_true',
-            help='''Should be set to true or false depending on whether the
-            language model produced is destined to be used with an acoustic
-            model trained with or without word position dependent
-            variants of the phones.''')
+            help='''If specified the produced language model is destined to be used
+            with an acoustic model trained with word position
+            dependent variants of the phones.''')
 
         lex.add_argument(
             '-l', '--lang-level', default='word',
@@ -110,15 +102,17 @@ class _AmBase(AbstractKaldiCommand):
             verbose=args.verbose)
         corpus = Corpus.load(corpus_dir, validate=args.validate, log=log)
 
-        # # get back the language model directory TODO use cls._parse_aux_dir
-        # lang = (os.path.join(os.path.dirname(corpus_dir), 'language')
-        #         if args.language_model is None
-        #         else os.path.abspath(args.language_model))
-
         # get back the features directory TODO use cls._parse_aux_dir
         feats = (os.path.join(os.path.dirname(corpus_dir), 'features')
                  if args.features is None
                  else os.path.abspath(args.features))
+
+        # pack the prepare_lang related arguments
+        lang_args = {
+            'level': args.lang_level,
+            'silence_probability': args.silence_probability,
+            'position_dependent_phones': args.word_position_dependent,
+            'keep_tmp_dirs': True if args.recipe else False}
 
         # instanciate and setup the kaldi recipe with standard args
         if cls.am_class is not acoustic.Monophone:
@@ -130,9 +124,9 @@ class _AmBase(AbstractKaldiCommand):
                 else os.path.abspath(args.input_dir))
 
             recipe = cls.am_class(
-                corpus, feats, input_dir, output_dir, log=log)
+                corpus, feats, input_dir, output_dir, lang_args, log=log)
         else:
-            recipe = cls.am_class(corpus, feats, output_dir, log=log)
+            recipe = cls.am_class(corpus, feats, output_dir, lang_args, log=log)
 
         recipe.njobs = args.njobs
         if args.recipe:
