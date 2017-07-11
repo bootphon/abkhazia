@@ -84,6 +84,9 @@ class CorpusSplit(object):
         number of utterances by speaker in each set matching the
         number of utterances by speaker in the whole corpus.
 
+        We can have train_prop + test_prop < 1, in that case part of
+        the source corpus is ignored.
+
         Return a pair (train, testing) of Corpus instances
 
         """
@@ -101,15 +104,17 @@ class CorpusSplit(object):
             #         .format(speaker, len(spk_utts)))
 
             n_train = int(round(len(spk_utts) * train_prop))
+            n_test = int(round(len(spk_utts) * test_prop))
 
             self.log.debug(
                 'spliting %i utterances from speaker %s -> '
                 '%i for train, %i for test',
-                len(spk_utts), speaker, n_train, len(spk_utts) - n_train)
+                len(spk_utts), speaker, n_train, n_test)
 
             # sample train and test utterances at random for this speaker
-            train_utts = random.sample(spk_utts, n_train)
-            test_utts = list(set.difference(set(spk_utts), set(train_utts)))
+            random.shuffle(spk_utts)
+            train_utts = spk_utts[:n_train]
+            test_utts = spk_utts[n_train:n_train + n_test]
 
             # add to train and test sets
             train_utt_ids += train_utts
@@ -138,24 +143,30 @@ class CorpusSplit(object):
         random.shuffle(speakers)
 
         # split from a subpart of the randomized speakers
-        n_train_speakers = int(round(train_prop * len(self.speakers)))
-        return self.split_from_speakers_list(speakers[:n_train_speakers])
+        n_train = int(round(train_prop * len(self.speakers)))
+        n_test = int(round(test_prop * len(self.speakers)))
+        return self.split_from_speakers_list(
+            speakers[:n_train],
+            speakers[n_train:n_train + n_test])
 
-    def split_from_speakers_list(self, train_speakers):
+    def split_from_speakers_list(self, train_speakers, test_speakers):
         """Split the corpus from a list of speakers in the train set
 
-        Speakers in the list go in train set, other speakers go in
+        Speakers in the list go in train set, test speakers go in
         testing set. Unregistered speakers raise a RuntimeError.
 
         Return a pair (train, testing) of Corpus instances
 
         """
-
-        unknown = [spk for spk in train_speakers if spk not in self.speakers]
-        if unknown != []:
-            raise RuntimeError(
-                "The following speakers specified in train_speakers "
-                "are not found in the corpus: {}".format(unknown))
+        # assert we have no unknown speakers
+        for speakers, message in (
+                (train_speakers, 'train_speakers'),
+                (train_speakers, 'train_speakers')):
+            unknown = [spk for spk in speakers if spk not in self.speakers]
+            if unknown != []:
+                raise RuntimeError(
+                    "The following speakers specified in {} "
+                    "are not found in the corpus: {}".format(message, unknown))
 
         train_utt_ids = []
         test_utt_ids = []
@@ -166,12 +177,16 @@ class CorpusSplit(object):
             if speaker in train_speakers:
                 train_utt_ids += spk_utts
                 msg = 'train'
-            else:
+            elif speaker in test_speakers:
                 test_utt_ids += spk_utts
                 msg = 'test'
-            self.log.debug(
-                '%i utterances from speaker %s -> %s',
-                len(spk_utts), speaker, msg)
+            else:
+                msg = None
+
+            if msg:
+                self.log.debug(
+                    '%i utterances from speaker %s -> %s',
+                    len(spk_utts), speaker, msg)
 
         return (self.corpus.subcorpus(train_utt_ids, prune=self.prune),
                 self.corpus.subcorpus(test_utt_ids, prune=self.prune))
@@ -180,7 +195,8 @@ class CorpusSplit(object):
         """Return 'regularized' proportions of test and train data
 
         Return the tuple (test_prop, train_prop), ensures they are in
-        [0, 1] and their sum is 1. If None, return the default values.
+        [0, 1] and their sum is below or equal to 1. If None, return
+        the default values.
 
         """
         # set default proportion values
@@ -198,8 +214,8 @@ class CorpusSplit(object):
         self.log.debug('proportion for train is %f', train_prop)
         self.log.debug('proportion for test is %f', test_prop)
 
-        if test_prop + train_prop != 1:
+        if test_prop + train_prop > 1:
             raise RuntimeError(
-                'sum of test and train proportion is not 1')
+                'sum of test and train proportion is > 1')
 
         return train_prop, test_prop

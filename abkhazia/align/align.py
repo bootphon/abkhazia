@@ -254,22 +254,32 @@ class Align(abstract_recipe.AbstractRecipe):
                 (l.replace('[', '').replace(']', '').split() for l in data)}
 
     @staticmethod
-    def _read_alignment(phonemap, ali, post):
+    def _read_alignment(phonemap, ali, post,
+                        first_frame_center_time=.0125, frame_width=0.025, frame_spacing=0.01):
         """Tokenize raw kaldi alignment output"""
         for utt_id, line in ali.iteritems():
             # TODO make this a parameter (with the 0.01 above), or
             # read it from the features instance. This is the center
             # time of the first window, as specified when computing
             # the features.
-            start = 0.0125
+            start = first_frame_center_time - frame_width/2.
+            current_frame_center_time = first_frame_center_time
 
             if post:
                 utt_post = [float(p) for p in post[utt_id].split()]
 
-            for pair in line.strip().split(' ; '):
+            pairs = line.strip().split(' ; ')
+            nb_pairs = len(pairs)
+            for i, pair in enumerate(pairs):
                 code, nframes = pair.split(' ')
                 nframes = int(nframes)
-                stop = start + 0.01*nframes
+                if i == nb_pairs-1:
+                    # last phone
+                    stop = current_frame_center_time + frame_spacing*(nframes-1.) + frame_width/2.
+                    current_frame_center_time = None
+                else:
+                    stop = current_frame_center_time + frame_spacing*(nframes-0.5)
+                    current_frame_center_time = stop + 0.5*frame_spacing
 
                 if post:
                     mpost = sum(utt_post[:nframes]) / nframes

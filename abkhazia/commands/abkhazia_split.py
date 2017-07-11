@@ -35,8 +35,7 @@ class AbkhaziaSplit(AbstractCoreCommand):
 
         group = parser.add_argument_group('split arguments')
 
-        prop = group.add_mutually_exclusive_group()
-        prop.add_argument(
+        group.add_argument(
             '-t', '--test-prop', type=float, metavar='<test>',
             default=None,
             help='''a float between 0.0 and 1.0, represent the proportion of the
@@ -45,7 +44,7 @@ class AbkhaziaSplit(AbstractCoreCommand):
             <train>.  If <train> is not specified, <test> is set to
             {}'''.format(cls.default_test_proportion))
 
-        prop.add_argument(
+        group.add_argument(
             '-T', '--train-prop', default=None, type=float, metavar='<train>',
             help='''a float between 0.0 and 1.0, represent the proportion of the
             dataset to include in the train set. If not specified, the
