@@ -84,6 +84,8 @@ class Abkhazia2Kaldi(object):
         utt2spk, segments and wav.scp files.
 
         """
+        # TODO we have already that somewhere in validator (or in
+        # features?)
         return [utt for utt, dur in corpus.utt2duration().iteritems()
                 if dur >= min_duration]
 

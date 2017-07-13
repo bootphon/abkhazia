@@ -1,4 +1,4 @@
-# Copyright 2016 Thomas Schatz, Xuan-Nga Cao, Mathieu Bernard
+# Copyright 2016, 2017 Thomas Schatz, Xuan-Nga Cao, Mathieu Bernard
 #
 # This file is part of abkhazia: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -51,6 +51,8 @@ def kaldi_path():
 
     # was a bug -> error while loading shared libraries: libfstscript.so.1
     fstlib = os.path.join(kaldiroot, 'tools', 'openfst', 'lib')
+    libfstscript = os.path.join(fstlib, 'libfstscript.so.1')
+    assert os.path.exists(libfstscript)
     try:
         env['LD_LIBRARY_PATH'] = ':'.join([env['LD_LIBRARY_PATH'], fstlib])
     except KeyError:

@@ -19,10 +19,12 @@ from abkhazia.corpus import Corpus
 
 import pytest
 
-def test_save_corpus(tmpdir, corpus):
+
+@pytest.mark.parametrize('copy_wavs', [True, False])
+def test_save_corpus(tmpdir, corpus, copy_wavs):
     assert corpus.is_valid()
-    corpus_saved = os.path.join(str(tmpdir), 'corpus')
-    corpus.save(corpus_saved, copy_wavs=False)
+    corpus_saved = str(tmpdir.mkdir('corpus-{}'.format(copy_wavs)))
+    corpus.save(corpus_saved, copy_wavs=copy_wavs)
     assert os.path.isfile(os.path.join(corpus_saved, 'meta.txt'))
 
     d = Corpus.load(corpus_saved)
@@ -71,8 +73,13 @@ def test_split(corpus):
 
 
 def test_split_tiny_train(corpus):
-    train, testing = corpus.split(train_prop=0.1)
+    train, testing = corpus.split(train_prop=0.25, by_speakers=False)
     assert len(train.utts()) < len(testing.utts())
+    assert len(train.spks()) == len(testing.spks())
+
+    train, testing = corpus.split(train_prop=0.25, by_speakers=True)
+    assert len(train.utts()) < len(testing.utts())
+    assert len(train.spks()) < len(testing.spks())
 
 
 def test_split_by_speakers(corpus):
@@ -86,13 +93,24 @@ def test_split_by_speakers(corpus):
         len(e.utts())
 
 
+@pytest.mark.parametrize('copy_wavs', [True, False])
+def test_split_and_save(corpus, copy_wavs, tmpdir):
+    a, b = corpus.split(train_prop=0.25)
+    a.save(str(tmpdir.mkdir('a')), copy_wavs=copy_wavs)
+    b.save(str(tmpdir.mkdir('b')), copy_wavs=copy_wavs)
+
+
 @pytest.mark.parametrize('by_speaker', [True, False])
 def test_split_less_than_1(corpus, by_speaker):
-    # here we split a corpus and takke 10% for test and 10% for train
-    d, e = corpus.split(0.1, 0.1, by_speaker)
+    d, e = corpus.split(0.25, 0.5, by_speaker)
+
     assert len(d.utts()) + len(e.utts()) < len(corpus.utts())
     assert len(d.utts()) > 0
     assert len(e.utts()) > 0
+
+    # very low proportion -> the resulting corpus is empty
+    with pytest.raises(IOError):
+        d, _ = corpus.split(1e-30)
 
 
 def test_spk2utt():
