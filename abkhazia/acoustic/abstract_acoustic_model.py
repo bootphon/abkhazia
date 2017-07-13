@@ -12,13 +12,14 @@
 #
 # You should have received a copy of the GNU General Public License
 # along with abkhazia. If not, see <http://www.gnu.org/licenses/>.
+""""Abstract base class of acoustic models trainers"""
 
 import os
 import shutil
 
 from abkhazia.features import Features
-from abkhazia.language import check_language_model
 from abkhazia.abstract_recipe import AbstractRecipe
+from abkhazia.utils import prepare_lang
 import abkhazia.utils as utils
 import abkhazia.kaldi as kaldi
 
@@ -46,21 +47,32 @@ def model_type(am_dir):
 
 def check_acoustic_model(am_dir):
     """Raise IOError if final.mdl is not in am_dir"""
-    utils.check_directory(am_dir, ['final.mdl'], name='acoustic model')
+    utils.check_directory(
+        am_dir,
+        ['final.mdl'],
+        name='acoustic model')
+
+    utils.check_directory(
+        os.path.join(am_dir, 'lang'),
+        ['L.fst', 'phones.txt', 'words.txt'],
+        name='lang')
+
+    utils.check_directory(
+        os.path.join(am_dir, 'lang', 'phones'),
+        ['silence.csl', 'disambig.int'],
+        name='lang/phones')
 
 
 class AbstractAcousticModel(AbstractRecipe):
     """Abstract base class of acoustic models trainers
 
     Instantiates and run a Kaldi recipe to train a HMM-GMM model on an
-    abkhazia corpus, along with attached features and language model.
+    abkhazia corpus, along with attached features.
 
     Parameters:
     -----------
 
     corpus (Corpus): abkhazia corpus to process
-
-    lm_dir (str): path to the language model directory
 
     src_dir (str): path to the source directory (the model `n-1`), or
     a features_dir (if n=1, i.e. on monophone models)
@@ -77,23 +89,30 @@ class AbstractAcousticModel(AbstractRecipe):
 
     options = NotImplemented
 
-    def __init__(self, corpus, lm_dir, input_dir,
-                 output_dir, log=utils.logger.null_logger):
+    def __init__(self, corpus, input_dir, output_dir, lang_args,
+                 log=utils.logger.null_logger):
         super(AbstractAcousticModel, self).__init__(
             corpus, output_dir, log=log)
 
         self.input_dir = os.path.abspath(input_dir)
-        self.lm_dir = os.path.abspath(lm_dir)
         self.data_dir = os.path.join(self.recipe_dir, 'data', 'acoustic')
+        self.lang_dir = os.path.join(self.output_dir, 'lang')
+        self.lang_args = lang_args
 
     def check_parameters(self):
-        """Check language model and features are valid, setup metadata"""
+        """Check features are valid, setup metadata"""
         super(AbstractAcousticModel, self).check_parameters()
-        check_language_model(self.lm_dir)
 
+        # check lang_args are OK
+        l = self.lang_args
+        assert l['level'] in ('word', 'phone')
+        assert l['silence_probability'] <= 1 and l['silence_probability'] > 0
+        assert isinstance(l['position_dependent_phones'], bool)
+        assert isinstance(l['keep_tmp_dirs'], bool)
+
+        # write the meta.txt file
         self.meta.source += '\n'.join((
             'input directory:\t{}'.format(self.input_dir),
-            'language model directory:\t{}'.format(self.lm_dir),
             'acoustic model type:\t{}'.format(self.model_type)))
 
     def set_option(self, name, value):
@@ -110,6 +129,17 @@ class AbstractAcousticModel(AbstractRecipe):
 
         # copy features scp files in the recipe_dir
         Features.export_features(self.input_dir, self.data_dir)
+
+        # create lang directory with L.fst
+        l = self.lang_args
+        prepare_lang.prepare_lang(
+            self.corpus,
+            self.lang_dir,
+            level=l['level'],
+            silence_probability=l['silence_probability'],
+            position_dependent_phones=l['position_dependent_phones'],
+            keep_tmp_dirs=l['keep_tmp_dirs'],
+            log=self.log)
 
     def export(self):
         """Copy model files to output_dir"""
@@ -140,9 +170,5 @@ class AbstractAcousticModel(AbstractRecipe):
         self._run_command(command, verbose=False)
 
     def _opt(self, name):
-        """Return the value of an option given its name
-
-        TODO this method is DEPRECATED, remove it!!
-
-        """
+        """Return the value of an option given its name"""
         return str(self.options[name])

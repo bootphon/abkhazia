@@ -96,10 +96,10 @@ class TriphoneSpeakerAdaptive(AbstractAcousticModel):
             help='Target number of Gaussians at the end of training'),
     )}
 
-    def __init__(self, corpus, lm_dir, feats_dir, tri_dir,
-                 output_dir, log=utils.logger.null_logger):
+    def __init__(self, corpus, feats_dir, tri_dir,
+                 output_dir, lang_args, log=utils.logger.null_logger):
         super(TriphoneSpeakerAdaptive, self).__init__(
-            corpus, lm_dir, feats_dir, output_dir, log=log)
+            corpus, feats_dir, output_dir, lang_args, log=log)
 
         self.tri_dir = os.path.abspath(tri_dir)
         utils.check_directory(
@@ -142,7 +142,7 @@ class TriphoneSpeakerAdaptive(AbstractAcousticModel):
                 boost=self._opt('boost-silence'),
                 fmllr=self._opt('fmllr-update-type'),
                 data=self.data_dir,
-                lang=self.lm_dir,
+                lang=self.lang_dir,
                 origin=self.tri_dir,
                 target=align_dir))
         self._run_am_command(command, align_dir, message)
@@ -195,7 +195,7 @@ class TriphoneSpeakerAdaptive(AbstractAcousticModel):
                 silence=self._opt('silence-weight'),
                 fmllriters=self._opt('fmllr-iterations'),
                 data=self.data_dir,
-                lang=self.lm_dir,
+                lang=self.lang_dir,
                 origin=ali_dir,
                 target=target))
         self._run_am_command(command, target, message)

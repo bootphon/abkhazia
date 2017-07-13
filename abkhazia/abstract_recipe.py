@@ -93,7 +93,7 @@ class AbstractRecipe(utils.abkhazia_base.AbkhaziaBase):
     def _run_command(self, command, verbose=True):
         """Run the command as a subprocess in a Kaldi environment"""
         if verbose is True:
-            self.log.debug('running %s', command)
+            self.log.info('running %s', command)
 
         utils.jobs.run(
             command,

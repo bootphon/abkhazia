@@ -26,12 +26,12 @@ from .conftest import assert_no_expr_in_log, assert_expr_in_log
 
 # There was a bug with more than 9 jobs (when more than 9 available
 # cores/nodes)
-@pytest.mark.parametrize('njobs', [4, 11])
-def test_acoustic_njobs(corpus, features, lm_word, njobs, tmpdir):
+@pytest.mark.parametrize('njobs', [4])  # , 11])
+def test_acoustic_njobs(corpus, features, njobs, tmpdir, lang_args):
     output_dir = str(tmpdir.mkdir('am-mono'))
     flog = os.path.join(output_dir, 'am-mono.log')
     log = utils.logger.get_log(flog)
-    am = acoustic.Monophone(corpus, lm_word, features, output_dir, log)
+    am = acoustic.Monophone(corpus, features, output_dir, lang_args, log)
 
     am.njobs = njobs
     am.options['total-gaussians'].value = 10
@@ -58,14 +58,14 @@ def test_acoustic_njobs(corpus, features, lm_word, njobs, tmpdir):
 
 
 # monophone needs features with cmvn, check it works
-def test_monophone_cmvn_good(corpus, features, lm_word, tmpdir):
+def test_monophone_cmvn_good(corpus, features, tmpdir, lang_args):
     output_dir = str(tmpdir.mkdir('am_mono'))
-    am = acoustic.Monophone(corpus, lm_word, features, output_dir)
+    am = acoustic.Monophone(corpus, features, output_dir, lang_args)
     am.check_parameters()
 
 
 # check monophone fails without cmvn
-def test_monophone_cmvn_bad(corpus, lm_word, tmpdir):
+def test_monophone_cmvn_bad(corpus, tmpdir, lang_args):
     features_dir = str(tmpdir.mkdir('feats'))
     feat = features.Features(corpus, features_dir)
     feat.use_pitch = False
@@ -74,7 +74,7 @@ def test_monophone_cmvn_bad(corpus, lm_word, tmpdir):
     feat.compute()
 
     output_dir = str(tmpdir.mkdir('am_mono'))
-    am = acoustic.Monophone(corpus, lm_word, features_dir, output_dir)
+    am = acoustic.Monophone(corpus, features_dir, output_dir, lang_args)
     with pytest.raises(IOError) as err:
         am.check_parameters()
     assert 'cmvn' in str(err)

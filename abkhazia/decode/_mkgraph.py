@@ -15,7 +15,7 @@
 """Wrapper on egs/wsj/s5/utils/mkgraph.sh
 
 Instantiate a full decoding graph (HCLG), 'quinphone' option is
-ignored for now
+not forwarded from kaldi to abkhazia for now.
 
 """
 
@@ -37,7 +37,7 @@ def options():
             help='Build a time-reversed H transducer'))}
 
 
-def mkgraph(decoder):
+def mkgraph(decoder, verbose=True):
     decoder.log.info('computing full decoding graph')
 
     opts = decoder.mkgraph_opts
@@ -46,7 +46,7 @@ def mkgraph(decoder):
     if not os.path.isdir(target):
         os.makedirs(target)
 
-    decoder._run_command((
+    command = (
         '{cmd} {log} utils/mkgraph.sh {mono} {reverse} '
         '--transition-scale {tscale} --self-loop-scale {slscale} '
         '{lang} {model} {graph}'.format(
@@ -59,6 +59,8 @@ def mkgraph(decoder):
             slscale=str(opts['self-loop-scale']),
             lang=decoder.lm_dir,
             model=decoder.am_dir,
-            graph=target)))
+            graph=target))
+
+    decoder._run_command(command, verbose=verbose)
 
     return target

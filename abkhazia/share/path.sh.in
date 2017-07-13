@@ -15,6 +15,7 @@ KALDIBIN=$KALDIBIN:$KALDISRC/kwsbin:$KALDISRC/ivectorbin
 KALDIBIN=$KALDIBIN:$KALDISRC/online2bin:$KALDISRC/sgmm2bin
 
 FSTBIN=$KALDI_ROOT/tools/openfst/bin
+FSTLIB=$KALDI_ROOT/tools/openfst/lib
 
 PLATFORM=i686-m64  # default path for Unix machines
 [ $(uname) == "Darwin" ] && PLATFORM=macosx
@@ -32,3 +33,4 @@ export IRSTLM=$KALDI_ROOT/tools/irstlm 	# for LM building
 SCRIPTS=$kaldi_local:$kaldi_utils:$kaldi_steps
 
 export PATH=$PATH:$KALDIBIN:$FSTBIN:$LMBIN:$SCRIPTS
+export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:$FSTLIB

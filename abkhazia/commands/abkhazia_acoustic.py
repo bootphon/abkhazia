@@ -55,12 +55,24 @@ class _AmBase(AbstractKaldiCommand):
         parser.formatter_class = argparse.RawDescriptionHelpFormatter
         parser.description = cls.long_description()
 
-        # add parameters for source directories (language model,
-        # features and (except for monophone) input dir)
-        dir_group.add_argument(
-            '-l', '--language-model', metavar='<lm-dir>', default=None,
-            help='''the language model recipe directory, data is read from
-            <lm-dir>/language/lang, if not specified use <lm-dir>=<corpus>.''')
+        lex = parser.add_argument_group('lexixon parameters')
+        lex.add_argument(
+            '-s', '--silence-probability', default=0.5,
+            metavar='<float>', type=float,
+            help='usually 0.0 or 0.5, default is %(default)s')
+
+        lex.add_argument(
+            '-w', '--word-position-dependent', action='store_true',
+            help='''If specified the produced language model is destined to be used
+            with an acoustic model trained with word position
+            dependent variants of the phones.''')
+
+        lex.add_argument(
+            '-l', '--lang-level', default='word',
+            help="compute the AM either at phone-level or word-level, "
+            "default is '%(default)s'",
+            metavar='<phone|word>', choices=['phone', 'word'])
+
 
         dir_group.add_argument(
             '-f', '--features', metavar='<feats-dir>', default=None,
@@ -90,15 +102,17 @@ class _AmBase(AbstractKaldiCommand):
             verbose=args.verbose)
         corpus = Corpus.load(corpus_dir, validate=args.validate, log=log)
 
-        # get back the language model directory TODO use cls._parse_aux_dir
-        lang = (os.path.join(os.path.dirname(corpus_dir), 'language')
-                if args.language_model is None
-                else os.path.abspath(args.language_model))
-
         # get back the features directory TODO use cls._parse_aux_dir
         feats = (os.path.join(os.path.dirname(corpus_dir), 'features')
                  if args.features is None
                  else os.path.abspath(args.features))
+
+        # pack the prepare_lang related arguments
+        lang_args = {
+            'level': args.lang_level,
+            'silence_probability': args.silence_probability,
+            'position_dependent_phones': args.word_position_dependent,
+            'keep_tmp_dirs': True if args.recipe else False}
 
         # instanciate and setup the kaldi recipe with standard args
         if cls.am_class is not acoustic.Monophone:
@@ -110,9 +124,9 @@ class _AmBase(AbstractKaldiCommand):
                 else os.path.abspath(args.input_dir))
 
             recipe = cls.am_class(
-                corpus, lang, feats, input_dir, output_dir, log=log)
+                corpus, feats, input_dir, output_dir, lang_args, log=log)
         else:
-            recipe = cls.am_class(corpus, lang, feats, output_dir, log=log)
+            recipe = cls.am_class(corpus, feats, output_dir, lang_args, log=log)
 
         recipe.njobs = args.njobs
         if args.recipe:
@@ -135,9 +149,8 @@ class _AmMono(_AmBase):
     am_class = acoustic.Monophone
     prev_step = None  # monophone is built directly on features
     _long_description = '''
-        Training a monophone HMM-GMM acoustic model on a corpus, with an
-        attached language model and features (<lm-dir> and <feat-dir>
-        options respectively).
+        Training a monophone HMM-GMM acoustic model on a corpus, with
+        attached features (<feat-dir> option).
 
         Other training options, such as the number of
         Gaussians or iterations, are specified in the "training
@@ -154,20 +167,20 @@ class _AmTri(_AmBase):
     am_class = acoustic.Triphone
     prev_step = ('mono', 'monophone')
     _long_description = '''
-        Training a triphone HMM-GMM acoustic model on a corpus, with
-        an attached language model (the <lm-dir> option).
+        Training a triphone HMM-GMM acoustic model on a corpus.
 
         The model is trained on a monophone model, coming from the
-        "abkhazia acoustic monophone" command and specified by the <mono-dir>
-        option.
+        "abkhazia acoustic monophone" command and specified by the
+        <mono-dir> option.
 
-        Other training options, such as the number of
-        Gaussians or iterations, are specified in the "training
-        parameters" section (see below).
+        Other training options, such as the number of Gaussians or
+        iterations, are specified in the "training parameters" section
+        (see below).
 
         The trained model is wrote in a directory specified by the
         <output-dir> option. It can then feed the "abkhazia align",
-        "abkhazia decode" or "abkhazia acoustic triphone-sa" commands.'''
+        "abkhazia decode" or "abkhazia acoustic triphone-sa"
+        commands.'''
 
 
 class _AmTriSa(_AmBase):
@@ -177,19 +190,20 @@ class _AmTriSa(_AmBase):
     prev_step = ('tri', 'triphone')
     _long_description = '''
         Training a triphone speaker adaptive HMM-GMM acoustic model on a
-        corpus, with an attached language model (the <lm-dir> option).
+        corpus.
 
         The model is trained on a triphone model, coming from the
-        "abkhazia acoustic triphone" command and specified by the <tri-dir>
-        option.
+        "abkhazia acoustic triphone" command and specified by the
+        <tri-dir> option.
 
-        Other training options, such as the number of
-        Gaussians or iterations, are specified in the "training
-        parameters" section (see below).
+        Other training options, such as the number of Gaussians or
+        iterations, are specified in the "training parameters" section
+        (see below).
 
         The trained model is wrote in a directory specified by the
         <output-dir> option. It can then feed the "abkhazia align",
-        "abkhazia decode" or "abkhazia acoustic triphone-dnn" commands.'''
+        "abkhazia decode" or "abkhazia acoustic triphone-dnn"
+        commands.'''
 
 
 class _AmDnn(_AmBase):
@@ -199,7 +213,7 @@ class _AmDnn(_AmBase):
     prev_step = ('am', 'acoustic-model')
     _long_description = '''
         Training a neural netwok with pnorm nonlinearities on a
-        corpus, with an attached language model (the <lm-dir> option).
+        corpus.
 
         The model is trained on top of a previously computed HMM-GMM
         acoustic model, specified by the <am-dir> option.

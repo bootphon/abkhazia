@@ -22,6 +22,7 @@ from abkhazia.acoustic.abstract_acoustic_model import (
     AbstractAcousticModel)
 import abkhazia.kaldi as kaldi
 
+
 class Monophone(AbstractAcousticModel):
     """Wrapper on Kaldi egs/wsj/s5/steps/train_mono.sh
 
@@ -68,10 +69,10 @@ class Monophone(AbstractAcousticModel):
                      14, 16, 18, 20, 23, 26, 29, 32, 35, 38],
             help='Iterations on which to align features on the model'))}
 
-    def __init__(self, corpus, lm_dir, feats_dir,
-                 output_dir, log=utils.logger.null_logger):
+    def __init__(self, corpus, feats_dir, output_dir, lang_args,
+                 log=utils.logger.null_logger()):
         super(Monophone, self).__init__(
-            corpus, lm_dir, feats_dir, output_dir, log=log)
+            corpus, feats_dir, output_dir, lang_args, log=log)
 
     def check_parameters(self):
         super(Monophone, self).check_parameters()
@@ -93,7 +94,7 @@ class Monophone(AbstractAcousticModel):
             '--acoustic-scale={acoustic} --self-loop-scale={selfloop}" '
             '--num-iters {niters} --max-iter-inc {maxinc} --totgauss {ngauss} '
             '--careful {careful} --boost-silence {boost} '
-            '--realign-iters {realign} {data} {lm} {target}'
+            '--realign-iters {realign} {data} {lang} {target}'
             .format(
                 njobs=self.njobs,
                 cmd=utils.config.get('kaldi', 'train-cmd'),
@@ -107,6 +108,6 @@ class Monophone(AbstractAcousticModel):
                 boost=self._opt('boost-silence'),
                 realign=self._opt('realign-iterations'),
                 data=self.data_dir,
-                lm=self.lm_dir,
+                lang=self.lang_dir,
                 target=target))
         self._run_am_command(command, target, message)
