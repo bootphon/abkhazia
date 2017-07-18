@@ -319,6 +319,9 @@ class CorpusValidation(object):
         phones = self.corpus.phones.keys()
         ipas = self.corpus.phones.values()
 
+        if len(phones) == 0:
+            raise IOError('The phones inventory is empty')
+
         if u'SIL' in phones:
             raise IOError(
                 "'SIL' symbol is reserved for indicating "

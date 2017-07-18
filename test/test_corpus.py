@@ -123,3 +123,10 @@ def test_phonemize_text(corpus, tmpdir):
     phones = corpus.phonemize_text()
     assert sorted(phones.keys()) == sorted(corpus.utts())
     assert len(phones) == len(corpus.text)
+
+
+def test_phonemize_corpus(corpus):
+    c = corpus.phonemize()
+    assert c.is_valid()
+    assert all([k == v for k, v in c.lexicon.items() if k != '<unk>'])
+    assert len(c.lexicon) == len(c.phones) + 1  # <unk>

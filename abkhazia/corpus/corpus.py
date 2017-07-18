@@ -376,6 +376,33 @@ class Corpus(utils.abkhazia_base.AbkhaziaBase):
                      else spliter.split_by_speakers)
         return split_fun(train_prop, test_prop)
 
+
+    def phonemize(self):
+        """Return a phonemized version of the corpus
+
+        All the word related data is removed from the original
+        corpus. Lexicon becomes a mapping phone -> phone and the text
+        is phonemized (see the phonemize_text method).
+
+        The returned corpus have same wavs, segments, utt2spk, phones,
+        silences and variants than the original "word" corpus.
+
+        """
+        corpus = Corpus()
+        corpus.meta.source = self.meta.source
+        corpus.meta.name = 'phonemized version of ' + self.meta.name
+        corpus.wav_folder = self.wav_folder
+        corpus.wavs = self.wavs
+        corpus.segments = self.segments
+        corpus.phones = self.phones
+        corpus.utt2spk = self.utt2spk
+        corpus.silences = self.silences
+        corpus.variants = self.variants
+        corpus.lexicon = {p: p for p in corpus.phones.keys()}
+        corpus.text = self.phonemize_text()
+        return corpus
+
+
     def phonemize_text(self):
         """Return a phonemized version of self.text
 
