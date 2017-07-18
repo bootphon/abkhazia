@@ -94,29 +94,6 @@ Those messages are actually logged in debug level, should be smater to be warnon
 *** TODO Have completion setup during installation (or configuration?)
 *** TODO Have a test_commands module for testing command line interface!
 *** TODO Remove the wiki page on github, as we have now a readthedoc site
-* Open bugs [0/6]
-** TODO acoustic with delta features
-*** problem
-    Acoustic modeling fails when built on features with deltas. This is
-    caused by bad features dimension.
-*** solution
- - assert no delta in features in init (get back the dim or
- delta order from feat-to-dim ?)
- - OR split deltas from raw when computing features
-** TODO comments in config file
-   'data-directory: #/something' actually creates the ./#/someting directory
-** TODO align --post --with-words
-   Update the probabilities estimation to be on words, not on phones
-** TODO align export phones and words
-   The code that parses words from phones is not accurate (see
-   the _export_phones_and_words method in Align)
-** TODO acoustic nnet
-   debug the --transform-dir option for nnet decoding (need to be on
-   top of align_fmllr?) this eat trans.* files if features are LDA, or
-   raw_trans.* if features are raw.
-** TODO QXcbConnection: Could not connect to display localhost:10.0
-   maybe related to matplotlib, MB get this error when importing
-   abkhazia in ipython from a ssh (no X) remote connexion.
 * prepare_lang branch [1/2]
 ** DONE AM does not depend on LM [3/3]
 - [X] write a prepare_lang.sh standalone wrapper
@@ -129,7 +106,6 @@ Those messages are actually logged in debug level, should be smater to be warnon
 - [ ] check for phonesets compatibility between AM/LM
 - [ ] add tests for cross use of AMs/LMs
 - [ ] update the command line API in consequence
-
 *** notes
 required files by mkgraph.sh are
   - AM $lang/L.fst
