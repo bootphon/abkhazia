@@ -83,6 +83,7 @@ class CorpusSaver(object):
 
     @staticmethod
     def save_segments(corpus, path):
+        """Save the corpus segments in `path`"""
         with open_utf8(path, 'w') as out:
             for k, v in sorted(corpus.segments.iteritems()):
                 # different case with/without timestamps

@@ -30,11 +30,11 @@ from abkhazia.utils import logger, config
 
 class CorpusMergeWavs(object):
     """A class for merging the wavs files together for each speaker,
-    at the end of this class, one .wav file = one speaker. This 
+    at the end of this class, one .wav file = one speaker. This
     class also edits the segment to have a correction alignment, and
     wavs.
-    
-    
+
+
     corpus : The abkhazia corpus to filter. The corpus is assumed
       to be valid.
 
@@ -69,7 +69,7 @@ class CorpusMergeWavs(object):
         segments = self.corpus.segments
         utt2spk = self.corpus.utt2spk
         utt2dur = self.corpus.utt2duration()
-        
+
         # get input and output wav dir
         wav_output_dir = os.path.join(output_dir,'data/wavs')
         wav_dir = self.corpus.wav_folder
@@ -78,11 +78,11 @@ class CorpusMergeWavs(object):
             raise IOError('invalid corpus: not found{}'.format(wav_dir))
         if not os.path.isdir(wav_output_dir):
             os.makedirs(wav_output_dir)
-        
+
         spk2dur = dict()
         spk2wavs = dict()
         spk2wav_dur = dict()
-        
+
         # get utterances durations
         for spkr in self.speakers:
             spk_utts = [utt_id for utt_id, utt_speaker in self.utts if utt_speaker == spkr]
@@ -91,20 +91,20 @@ class CorpusMergeWavs(object):
             spk2utts[spkr] = spk_utts
             self.log.debug('for speaker {}, total duration is {}'.format(
                             spkr,duration/60))
-        
+
             wav_utt = [segments[utt][0] for utt in spk2utts[spkr]]
-            
+
             # we want unique values in the list of wav :
             wav_utt = sorted(list(set(wav_utt)))
             spk2wavs[spkr] = wav_utt
-        
+
             #first wav file in the list doesn't have an offset
             spk2wav_dur[spkr] = []
             spk2wav_dur[spkr].append(0)
             for wav in wav_utt:
                 wav_name = '.'.join([wav,'wav'])
                 wav_path = '/'.join([wav_dir,wav_name])
-                
+
                 # get wav stats
                 with contextlib.closing(wave.open(wav_path,'r')) as wav_file:
                     frames = wav_file.getnframes()
@@ -112,13 +112,13 @@ class CorpusMergeWavs(object):
                     duration = frames / float(rate)
                     self.log.debug('wav file {wav} has a duration of {dur}'.format(
                             wav=wav_name,dur=duration))
-        
+
                 spk2wav_dur[spkr].append(duration)
-        
+
             spk2wav_dur[spkr] = np.cumsum(spk2wav_dur[spkr])
-            
-        
-        
+
+
+
             #update segments
             for utt in spk2utts[spkr]:
                 utt_wav_id = segments[utt][0]
@@ -126,7 +126,7 @@ class CorpusMergeWavs(object):
                 wav_dur_dict = dict(zip(spk2wavs[spkr],spk2wav_dur_temp))
                 offset = wav_dur_dict[utt_wav_id]
                 finale_wav_id = spkr
-        
+
                 if segments[utt][1] is not None:
                     start = segments[utt][1]
                     stop = segments[utt][2]
@@ -135,27 +135,27 @@ class CorpusMergeWavs(object):
                     # doesn't list the timestamps.
                     start = 0
                     stop = utt2dur[utt]
-                   
+
                 segments[utt] = finale_wav_id, start + offset, stop + offset
                 #the name of the finale wave file will be spkr.wav (ex s01.wav)
-                  
-        # update corpus values 
+
+        # update corpus values
         self.corpus.segments = segments
-        
-        #merge the wavs 
-        spk2list_wav_to_merge = dict() 
+
+        #merge the wavs
+        spk2list_wav_to_merge = dict()
         for spkr in self.speakers:
-            
+
             # create the list of waves we want to merge
             wav_name = '.'.join([spkr,'wav'])
             wav_out_path = '/'.join([wav_output_dir,wav_name])
             list_wav_to_merge = []
-        
+
             for wav in spk2wavs[spkr]:
                 wav_to_merge = '.'.join([wav, 'wav'])
                 wav_to_merge = '/'.join([wav_dir, wav_to_merge])
                 list_wav_to_merge.append(wav_to_merge)
-            
+
             # create the output wave
             spk2list_wav_to_merge[spkr]=list_wav_to_merge
             data=[]
@@ -171,17 +171,17 @@ class CorpusMergeWavs(object):
             output_wave.setparams(data[0][0])
             for nb in range(len(spk2wavs[spkr])):
                 output_wave.writeframes(data[nb][1])
-        
+
             output_wave.close()
-        
+
         #verify that the merger worked and update wave set
         self.corpus.wav_folder = wav_output_dir
         self.corpus.wavs = set()
         for spkr in self.speakers:
             wav_name = '.'.join([spkr, 'wav'])
             wav_out_path = '/'.join([wav_output_dir, wav_name])
-        
-        
+
+
             self.corpus.wavs.add(wav_name)
             if os.path.isfile(wav_out_path):
                 duration = 0
@@ -189,7 +189,7 @@ class CorpusMergeWavs(object):
                     frames = f.getnframes()
                     rate = f.getframerate()
                     duration = frames/float(rate)
-        
+
                 # check if the length of the output is the sum of the wave files lengths
                 if not duration<spk2wav_dur[spkr][-1] + (1.0/16000) \
                         or not  duration>spk2wav_dur[spkr][-1] - (1.0/16000):
@@ -198,7 +198,6 @@ class CorpusMergeWavs(object):
                     raise IOError(
                             '''the merged wave length is different'''
                             '''from the sum of the initial wave file''')
-                    
+
         # validate the corpus
         self.corpus.validate()
-        

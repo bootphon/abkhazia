@@ -104,17 +104,17 @@ class CorpusValidation(object):
     def validate_wavs(self):
         """Corpus wavs must be mono 16KHz, 16 bit PCM"""
         self.log.debug("checking wavs")
+
         wav_folder = self.corpus.wav_folder
-        wavs = [os.path.join(wav_folder, w)
-                for w in self.corpus.wavs]
-
         if not(os.path.isdir(wav_folder)):
-            raise IOError("Wav folder {} does not exist"
-                          .format(wav_folder))
+            raise IOError(
+                "Wav folder {} does not exist".format(wav_folder))
 
+        wavs = [os.path.join(wav_folder, w) for w in self.corpus.wavs]
+
+        # ensure all the files have the wav extension
         wrong_extensions = [
             w for w in wavs if os.path.splitext(w)[1] != ".wav"]
-
         if wrong_extensions:
             raise IOError(
                 "The following wavs do not have a '.wav' extension: {}"
@@ -123,7 +123,6 @@ class CorpusValidation(object):
         # ensure all the wavs are here
         not_here = [
             w for w in wavs if not os.path.isfile(w)]
-
         if not_here:
             raise IOError(
                 "The following wavs do not exist: {}".format(
@@ -131,23 +130,22 @@ class CorpusValidation(object):
 
         # get meta information on the wavs
         meta = wav.scan(wavs, njobs=self.njobs)
-        meta = dict((os.path.splitext(os.path.basename(k))[0], v)
+        meta = dict((os.path.basename(k), v)
                     for k, v in meta.iteritems())
 
-        wav_ids = [os.path.splitext(w)[0] for w in self.corpus.wavs]
-        empty_files = [w for w in wav_ids if meta[w].nframes == 0]
+        empty_files = [w for w in self.corpus.wavs if meta[w].nframes == 0]
         if empty_files:
             raise IOError("The following files are empty: {}"
                           .format(resume_list(empty_files)))
 
-        weird_rates = [w for w in wav_ids if meta[w].rate != 16000]
+        weird_rates = [w for w in self.corpus.wavs if meta[w].rate != 16000]
         if weird_rates:
             raise IOError(
                 "Currently only files sampled at 16,000 Hz "
                 "are supported. The following files are sampled "
                 "at other frequencies: {0}".format(resume_list(weird_rates)))
 
-        non_mono = [w for w in wav_ids if meta[w].nbc != 1]
+        non_mono = [w for w in self.corpus.wavs if meta[w].nbc != 1]
         if non_mono:
             raise IOError(
                 "Currently only mono files are supported. "
@@ -155,7 +153,7 @@ class CorpusValidation(object):
                 "one channel: {0}".format(resume_list(non_mono)))
 
         # in bytes: 16 bit == 2 bytes
-        non_16bit = [w for w in wav_ids if meta[w].width != 2]
+        non_16bit = [w for w in self.corpus.wavs if meta[w].width != 2]
         if non_16bit:
             raise IOError(
                 "Currently only files encoded on 16 bits are "
@@ -163,7 +161,7 @@ class CorpusValidation(object):
                 "in this format: {0}"
                 .format(resume_list(non_16bit)))
 
-        compressed = [w for w in wav_ids if meta[w].comptype != 'NONE']
+        compressed = [w for w in self.corpus.wavs if meta[w].comptype != 'NONE']
         if compressed:
             raise IOError(
                 "The following files are compressed: {0}"
@@ -188,9 +186,8 @@ class CorpusValidation(object):
                 .format(_duplicates))
 
         # all referenced wavs are in wav folder
-        ref_wavs = {wav + '.wav' for wav in utt_wavs}
-        missing_wavefiles = set.difference(
-            ref_wavs, self.corpus.wavs)
+        ref_wavs = set(utt_wavs)
+        missing_wavefiles = set.difference(ref_wavs, self.corpus.wavs)
         if missing_wavefiles:
             raise IOError(
                 "The following wavefiles are referenced "

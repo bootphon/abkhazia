@@ -152,8 +152,7 @@ class Corpus(utils.abkhazia_base.AbkhaziaBase):
             self.log.warning('overwriting existing path: %s', path)
             utils.remove(path)
 
-        CorpusSaver.save(self, path, no_wavs=no_wavs,
-                         copy_wavs=copy_wavs)
+        CorpusSaver.save(self, path, no_wavs=no_wavs, copy_wavs=copy_wavs)
 
     def validate(self, njobs=utils.default_njobs()):
         """Validate speech corpus data
@@ -204,7 +203,7 @@ class Corpus(utils.abkhazia_base.AbkhaziaBase):
 
         """
         # init an empty list for all wavs
-        wav2utt = {wav: [] for wav, _, _ in self.segments.itervalues()}
+        wav2utt = {wav: [] for wav, _, _ in self.segments.values()}
 
         def _float(t):
             return None if t is None else float(t)
@@ -223,7 +222,7 @@ class Corpus(utils.abkhazia_base.AbkhaziaBase):
         utt2dur = dict()
         for utt, (wav, start, stop) in self.segments.iteritems():
             start = 0 if start is None else start
-            wav_path = os.path.join(self.wav_folder, wav + '.wav')
+            wav_path = os.path.join(self.wav_folder, wav)
             stop = utils.wav.duration(wav_path) if stop is None else stop
             utt2dur[utt] = stop - start
         return utt2dur
@@ -328,7 +327,8 @@ class Corpus(utils.abkhazia_base.AbkhaziaBase):
 
         # prune wavs from pruned segments
         wavs = set(self.wav2utt().iterkeys())
-        self.wavs  = {wav + '.wav' for wav in wavs}
+        # self.wavs  = {wav + '.wav' for wav in wavs}
+        self.wavs  = {wav for wav in wavs}
 
         # prune lexicon from pruned text
         words = self.words(in_lexicon=False)

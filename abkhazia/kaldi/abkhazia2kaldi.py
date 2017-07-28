@@ -171,7 +171,7 @@ class Abkhazia2Kaldi(object):
         wavs = set(w for w, _, _ in self.corpus.segments.itervalues())
         with open_utf8(target, 'w') as out:
             for wav in sorted(wavs):
-                wav_path = os.path.join(self.corpus.wav_folder, wav + '.wav')
+                wav_path = os.path.join(self.corpus.wav_folder, wav)
                 out.write(u'{} {}\n'.format(wav, wav_path))
 
     def setup_wav_folder(self):

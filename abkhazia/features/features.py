@@ -199,8 +199,8 @@ class Features(abstract_recipe.AbstractRecipe):
         with open(os.path.join(self.output_dir, 'wav.scp'), 'w') as scp:
             for line in open(origin, 'r'):
                 key = line.strip().split(' ')[0]
-                assert key + '.wav' in self.corpus.wavs
-                wav = os.path.join(self.corpus.wav_folder, key + '.wav')
+                assert key in self.corpus.wavs
+                wav = os.path.join(self.corpus.wav_folder, key)
                 scp.write('{} {}\n'.format(key, wav))
 
 

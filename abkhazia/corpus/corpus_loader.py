@@ -102,21 +102,28 @@ class CorpusLoader(object):
     @staticmethod
     def load_segments(path):
         """Return a dict of utterance ids mapped to (wav, tbegin, tend)
-        and the set of all required wav files 
+        and the set of all required wav files
 
         `path` is assumed to be a segments file, usually named
         'segments.txt'. If there is only one utterance per wav, tbegin
         and tend are None.
 
+        Append the '.wav' extension to the segments wav-ids if they
+        are missing.
+
         """
-        def wav_tuple(l):
-            p = os.path.splitext(l[0])[0]
-            return ((p, None, None) if len(l) == 1
-                    else (p, float(l[1]), float(l[2])))
+        def _wav_tuple(l):
+            wav = l[0]
+            if os.path.splitext(wav)[1] != '.wav':
+                wav += '.wav'
+
+            return ((wav, None, None) if len(l) == 1
+                    else (wav, float(l[1]), float(l[2])))
 
         lines = (line.strip().split() for line in utils.open_utf8(path, 'r'))
-        segments = {line[0]: wav_tuple(line[1:]) for line in lines}
-        wavs = {w + '.wav' for w, _, _ in segments.itervalues()}
+        segments = {line[0]: _wav_tuple(line[1:]) for line in lines}
+
+        wavs = {w[0] for w in segments.values()}
         return segments, wavs
 
     @staticmethod
