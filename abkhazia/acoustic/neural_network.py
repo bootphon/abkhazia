@@ -61,9 +61,11 @@ class NeuralNetwork(AbstractAcousticModel):
         kaldi.options.make_option(
             'bias-stddev', default=0.5, type=float, help=''),
         kaldi.options.make_option(
-            'pnorm-input-dim', default=3000, type=int, help=''),
+            'pnorm-input-dim', default=3000, type=int,
+            help='Must be pnorm-input-dim % pnorm-output-dim == 0'),
         kaldi.options.make_option(
-            'pnorm-output-dim', default=300, type=int, help=''),
+            'pnorm-output-dim', default=300, type=int,
+            help='Must be pnorm-input-dim % pnorm-output-dim == 0'),
 
         kaldi.options.make_option(
             'p', default=2, type=float, help='p in p-norm'),
@@ -150,6 +152,16 @@ class NeuralNetwork(AbstractAcousticModel):
         self.am_dir = os.path.abspath(am_dir)
         utils.check_directory(
             self.am_dir, ['tree', 'final.mdl', 'ali.1.gz'])
+
+    def check_parameters(self):
+        """Check options are valid"""
+        super(NeuralNetwork, self).check_parameters()
+
+        idim = self.options['pnorm-input-dim'].value
+        odim = self.options['pnorm-output-dim'].value
+        assert idim % odim == 0, (
+            'Must be pnorm-input-dim % pnorm-output-dim == 0, but it is '
+            'pnorm-input-dim={} and pnorm-output-dim={}'.format(idim, odim))
 
     def run(self):
         self._train_pnorm_fast()
