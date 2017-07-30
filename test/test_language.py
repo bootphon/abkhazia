@@ -12,7 +12,7 @@
 #
 # You should have received a copy of the GNU General Public License
 # along with abkhazia. If not, see <http://www.gnu.org/licenses/>.
-"""Test of the abkhazia.models.language_model module"""
+"""Test of the abkhazia.language.language_model module"""
 
 import os
 import pytest
@@ -50,17 +50,22 @@ def test_lm(level, order, corpus, tmpdir):
     assert_no_expr_in_log(flog, 'error')
 
 
-@pytest.mark.parametrize('prob', [0, 0.5])
+@pytest.mark.parametrize('prob', [0, 0.5, 0.99, 1, 1.1])
 def test_silence_probability(prob, corpus, tmpdir):
     output_dir = str(tmpdir.mkdir('lang'))
     flog = os.path.join(output_dir, 'language.log')
     log = utils.logger.get_log(flog)
     lm = language_model.LanguageModel(corpus, output_dir, log=log)
     lm.level = 'word'
-    lm.order = 3
+    lm.order = 2
     lm.silence_probability = prob
-    lm.create()
-    lm.run()
-    lm.export()
-    language_model.check_language_model(output_dir)
-    assert_no_expr_in_log(flog, 'error')
+
+    if prob >= 1 or prob < 0:
+        with pytest.raises(RuntimeError):
+            lm.create()
+    else:
+        lm.create()
+        lm.run()
+        lm.export()
+        language_model.check_language_model(output_dir)
+        assert_no_expr_in_log(flog, 'error')

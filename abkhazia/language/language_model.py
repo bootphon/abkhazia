@@ -88,7 +88,7 @@ class LanguageModel(abstract_recipe.AbstractRecipe):
     order (int): n in n-gram, order of the processed language model
 
     silence_probability (float): do all computations or focus on main
-        ones. Must be in [0, 1], (usually 0.0 or 0.5, 0.5 is the
+        ones. Must be in [0, 1[, (usually 0.0 or 0.5, 0.5 is the
         default from kaldi wsj/utils/prepare_lang.sh).
 
     position_dependent_phones (bool): Should be set to True or
@@ -152,7 +152,7 @@ class LanguageModel(abstract_recipe.AbstractRecipe):
     def _check_silence_probability(self):
         if self.silence_probability >= 1 or self.silence_probability < 0:
             raise RuntimeError(
-                'silence probability must be in [0, 1], it is {}'
+                'silence probability must be in [0, 1[, it is {}'
                 .format(self.silence_probability))
 
     def _check_position_dependent(self):
