@@ -43,13 +43,13 @@ def test_empty():
 
 
 def test_subcorpus(corpus):
-    d = corpus.subcorpus(corpus.utts()[:10])
+    d = corpus.subcorpus(corpus.utts()[:5])
     assert '<unk>' in d.lexicon
-    assert len(d.utts()) == 10
+    assert len(d.utts()) == 5
     assert d.is_valid()
 
-    e = corpus.subcorpus(corpus.utts()[:10], prune=False)
-    assert len(e.utts()) == 10
+    e = corpus.subcorpus(corpus.utts()[:5], prune=False)
+    assert len(e.utts()) == 5
     assert e.is_valid()
 
     assert len(d.wavs) <= len(e.wavs)
@@ -74,7 +74,7 @@ def test_split(corpus):
 
 def test_split_tiny_train(corpus):
     train, testing = corpus.split(train_prop=0.25, by_speakers=False)
-    assert len(train.utts()) < len(testing.utts())
+    assert len(train.utts()) <= len(testing.utts())
     assert len(train.spks()) == len(testing.spks())
 
     train, testing = corpus.split(train_prop=0.25, by_speakers=True)
@@ -104,7 +104,7 @@ def test_split_and_save(corpus, copy_wavs, tmpdir):
 def test_split_less_than_1(corpus, by_speaker):
     d, e = corpus.split(0.25, 0.5, by_speaker)
 
-    assert len(d.utts()) + len(e.utts()) < len(corpus.utts())
+    assert len(d.utts()) + len(e.utts()) <= len(corpus.utts())
     assert len(d.utts()) > 0
     assert len(e.utts()) > 0
 

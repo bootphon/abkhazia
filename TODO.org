@@ -48,12 +48,14 @@
 - [X] write a prepare_lang.sh standalone wrapper
 - [X] independant call to prepare_lang in AM classes
 - [X] update the command line API in consequence
-** TODO fix decode and align [2/5]
+** TODO fix decode and align [3/7]
 - [X] pass all the tests
-- [X] refactor core ? (lm_dir or independant call to prepare_lang ?)
-  -> am now exports the lang folder
+- [X] refactor core -> am now exports the lang folder
+- [X] optionally disable the scoring in decode
+      forward --skip-scoring from kaldi to abkhazia
 - [ ] check for phonesets compatibility between AM/LM
 - [ ] add tests for cross use of AMs/LMs
+- [ ] add tests for wpd decoding
 - [ ] update the command line API in consequence
 ** notes
 required files by mkgraph.sh are

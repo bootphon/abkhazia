@@ -54,13 +54,14 @@ def decode(decoder, graph_dir):
 
         decoder._run_command((
             'steps/decode.sh --nj {njobs} --cmd "{cmd}" '
-            '--model {model} {decode_opts} --scoring-opts "{score_opts}" '
-            '{graph} {data} {decode}'.format(
+            '--model {model} {decode_opts} {skip_scoring} '
+            '--scoring-opts "{score_opts}" {graph} {data} {decode}'.format(
                 njobs=decoder.njobs,
                 cmd=utils.config.get('kaldi', 'decode-cmd'),
                 # TODO .mdl or .alimdl ?
                 model=os.path.join(decoder.am_dir, 'final.mdl'),
                 decode_opts=decode_opts,
+                skip_scoring=_score.skip_scoring(decoder.score_opts),
                 score_opts=_score.format(
                     decoder.score_opts, decoder.mkgraph_opts),
                 graph=graph_dir,

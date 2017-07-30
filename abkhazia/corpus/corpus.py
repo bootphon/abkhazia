@@ -27,7 +27,6 @@ from abkhazia.corpus.corpus_merge_wavs import CorpusMergeWavs
 from abkhazia.corpus.corpus_filter import CorpusFilter
 from abkhazia.corpus.corpus_trimmer import CorpusTrimmer
 import abkhazia.utils as utils
-from collections import defaultdict
 
 
 class Corpus(utils.abkhazia_base.AbkhaziaBase):
@@ -314,33 +313,31 @@ class Corpus(utils.abkhazia_base.AbkhaziaBase):
 
         The pruning operation delete undesired data from utterances
         listed in self.utts(). It removes any segment, text, wav with
-        an unknown utterance id. It prune the lexicon and phones from
-        the pruned text.
+        an unknown utterance id. It finally prunes the lexicon and
+        phones from the pruned text.
 
         """
         utts = set(self.utts())
 
         # prune utterance indexed dicts from the utterances list
         for d in (self.segments, self.text, self.utt2spk):
-            d = {key: value for key, value in d.iteritems()
+            d = {key: value for key, value in d.items()
                  if key in utts}
 
         # prune wavs from pruned segments
-        wavs = set(self.wav2utt().iterkeys())
-        # self.wavs  = {wav + '.wav' for wav in wavs}
-        self.wavs  = {wav for wav in wavs}
+        self.wavs = {wav for wav in set(self.wav2utt().keys())}
 
         # prune lexicon from pruned text
         words = self.words(in_lexicon=False)
-        self.lexicon = {key: value for key, value in self.lexicon.iteritems()
+        self.lexicon = {key: value for key, value in self.lexicon.items()
                         if key in words}
         # make sure <unk> is still here (needed by Kaldi programs)
         self.lexicon['<unk>'] = 'SPN'
 
         # prune phones from pruned lexicon
-        phones = set(phone for phones in self.lexicon.itervalues()
+        phones = set(phone for phones in self.lexicon.values()
                      for phone in phones.split())
-        self.phones = {key: value for key, value in self.phones.iteritems()
+        self.phones = {key: value for key, value in self.phones.items()
                        if key in phones}
 
     def split(self, train_prop=None, test_prop=None,
@@ -376,7 +373,6 @@ class Corpus(utils.abkhazia_base.AbkhaziaBase):
                      else spliter.split_by_speakers)
         return split_fun(train_prop, test_prop)
 
-
     def phonemize(self):
         """Return a phonemized version of the corpus
 
@@ -401,7 +397,6 @@ class Corpus(utils.abkhazia_base.AbkhaziaBase):
         corpus.lexicon = {p: p for p in corpus.phones.keys()}
         corpus.text = self.phonemize_text()
         return corpus
-
 
     def phonemize_text(self):
         """Return a phonemized version of self.text

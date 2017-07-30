@@ -27,60 +27,67 @@ from abkhazia.language import LanguageModel
 import abkhazia.acoustic as acoustic
 
 
-# utterances from Buckeye composing the test corpus (4 speakers, 12
-# utterances each, total duration of 10:08)
+def assert_no_expr_in_log(flog, expr='error'):
+    """Raise if `expr` is found in flog"""
+    assert os.path.isfile(flog)
+
+    matched_lines = [line for line in open(flog, 'r')
+                     if re.search(expr, line.lower())]
+
+    if matched_lines:
+        print matched_lines
+        assert len(matched_lines) == 0
+
+
+def assert_expr_in_log(flog, expr):
+    """Raise if `expr` is found in flog"""
+    assert os.path.isfile(flog)
+
+    matched_lines = [line for line in open(flog, 'r')
+                     if re.search(expr, line.lower())]
+    assert len(matched_lines)
+
+
+# utterances from Buckeye composing the TRAIN corpus for the tests
 buckeye_utterances = [
-	's0101a-sent1',
-	's0101a-sent10',
-	's0101a-sent11',
-	's0101a-sent12',
-	's0101a-sent13',
-	's0101a-sent14',
-	's0101a-sent15',
-	's0101a-sent16',
-	's0101a-sent17',
-	's0101a-sent18',
-	's0101a-sent19',
-	's0101a-sent2',
-	's0101b-sent1',
-	's0101b-sent10',
-	's0101b-sent11',
-	's0101b-sent12',
-	's0101b-sent13',
-	's0101b-sent14',
-	's0101b-sent15',
-	's0101b-sent16',
-	's0101b-sent17',
-	's0101b-sent18',
-	's0101b-sent19',
-	's0101b-sent2',
-	's0102a-sent1',
-	's0102a-sent10',
-	's0102a-sent11',
-	's0102a-sent12',
-	's0102a-sent13',
-	's0102a-sent14',
-	's0102a-sent15',
-	's0102a-sent16',
-	's0102a-sent17',
-	's0102a-sent18',
-	's0102a-sent19',
-	's0102a-sent2',
-	's0102b-sent1',
-	's0102b-sent10',
-	's0102b-sent11',
-	's0102b-sent12',
-	's0102b-sent13',
-	's0102b-sent14',
-	's0102b-sent15',
-	's0102b-sent16',
-	's0102b-sent17',
-	's0102b-sent18',
-	's0102b-sent19',
-	's0102b-sent2'
+    's0101b-sent23',
+    's0101b-sent24',
+    's0102a-sent16',
+    's0102a-sent17',
+    's0102b-sent18',
+    's0102b-sent19',
 ]
 
-@pytest.yield_fixture(scope='session')
+
+# utterances from Buckeye composing the TEST corpus for the tests
+buckeye_utterances_test = [
+    's4003b-sent15',
+]
+
+
+def prepare_corpus(utts, tmpdir):
+    # first try to load any prepared buckeye
+    buckeye = os.path.join(
+        utils.config.get('abkhazia', 'data-directory'),
+        'buckeye', 'data')
+    if os.path.isdir(buckeye):
+        corpus = Corpus.load(buckeye)
+
+    else:  # prepare the whole buckeye corpus
+        buckeye = utils.config.get('corpus', 'buckeye-directory')
+        corpus = BuckeyePreparator(buckeye).prepare(tmpdir)
+
+    corpus = corpus.subcorpus(utts)
+    corpus.validate()
+
+    assert sorted(corpus.utts()) == utts
+    assert len(corpus.utts()) == len(utts)
+    assert len(corpus.spks()) == len(set(utt.split('-')[0] for utt in utts))
+
+    return corpus
+
+
+@pytest.fixture(scope='session')
 def corpus(tmpdir_factory):
     """Return a corpus made of Buckeye
 
@@ -94,35 +101,35 @@ def corpus(tmpdir_factory):
     prepared in its buckeye/data subfolder.
 
     """
-    tmpdir = str(tmpdir_factory.mktemp('corpus'))
+    return prepare_corpus(
+        buckeye_utterances,
+        str(tmpdir_factory.mktemp('corpus')))
 
-    # first try to load any prepared buckeye
-    buckeye = os.path.join(
-        utils.config.get('abkhazia', 'data-directory'),
-        'buckeye', 'data')
-    if os.path.isdir(buckeye):
-        corpus = Corpus.load(buckeye)
 
-    else:  # prepare the whole buckeye corpus
-        buckeye = utils.config.get('corpus', 'buckeye-directory')
-        corpus = BuckeyePreparator(buckeye).prepare(tmpdir)
-
-    corpus = corpus.subcorpus(buckeye_utterances)
-    corpus.meta.name = 'Abkhazia test corpus'
-    corpus.validate()
-
-    assert len(corpus.utts()) == len(buckeye_utterances)
-    assert len(corpus.spks()) == len(set(utt.split('-')[0] for utt in buckeye_utterances))
-    assert sorted(corpus.utts()) == buckeye_utterances
-
-    return corpus
+@pytest.fixture(scope='session')
+def corpus2(tmpdir_factory):
+    return prepare_corpus(
+        buckeye_utterances_test,
+        str(tmpdir_factory.mktemp('corpus2')))
 
 
 @pytest.fixture(scope='session')
 def features(corpus, tmpdir_factory):
-    """Return a directory with MFCC features computed from the test corpus"""
+    """Return a directory with MFCC features computed from corpus"""
     output_dir = str(tmpdir_factory.mktemp('features'))
     feat = Features(corpus, output_dir)
+    feat.use_pitch = False
+    feat.use_cmvn = True
+    feat.delta_order = 0
+    feat.compute()
+    return output_dir
+
+
+@pytest.fixture(scope='session')
+def features2(corpus2, tmpdir_factory):
+    """Return a directory with MFCC features computed from corpus2"""
+    output_dir = str(tmpdir_factory.mktemp('features2'))
+    feat = Features(corpus2, output_dir)
     feat.use_pitch = False
     feat.use_cmvn = True
     feat.delta_order = 0
@@ -140,11 +147,26 @@ def lang_args():
 
 @pytest.fixture(scope='session')
 def lm_word(corpus, lang_args, tmpdir_factory):
-    """Return a directory with bigram word LM computed from the test corpus"""
+    """Return a directory with bigram word LM computed from corpus"""
     output_dir = str(tmpdir_factory.mktemp('lm_word'))
     flog = os.path.join(output_dir, 'language.log')
     log = utils.logger.get_log(flog)
     lm = LanguageModel(corpus, output_dir, log=log)
+    lm.level = lang_args['level']
+    lm.silence_probability = lang_args['silence_probability']
+    lm.position_dependent_phones = lang_args['position_dependent_phones']
+    lm.order = 2
+    lm.compute()
+    return output_dir
+
+
+@pytest.fixture(scope='session')
+def lm_word2(corpus2, lang_args, tmpdir_factory):
+    """Return a directory with bigram word LM computed from corpus2"""
+    output_dir = str(tmpdir_factory.mktemp('lm_word'))
+    flog = os.path.join(output_dir, 'language.log')
+    log = utils.logger.get_log(flog)
+    lm = LanguageModel(corpus2, output_dir, log=log)
     lm.level = lang_args['level']
     lm.silence_probability = lang_args['silence_probability']
     lm.position_dependent_phones = lang_args['position_dependent_phones']
@@ -160,8 +182,8 @@ def am_mono(corpus, features, tmpdir_factory, lang_args):
     log = utils.logger.get_log(flog)
     am = acoustic.Monophone(corpus, features, output_dir, lang_args, log=log)
 
-    am.options['total-gaussians'].value = 20
-    am.options['num-iterations'].value = 3
+    am.options['total-gaussians'].value = 5
+    am.options['num-iterations'].value = 2
     am.options['realign-iterations'].value = [1]
     am.compute()
     return output_dir
@@ -175,10 +197,10 @@ def am_tri(corpus, features, am_mono, tmpdir_factory, lang_args):
     am = acoustic.Triphone(
         corpus, features, am_mono, output_dir, lang_args, log=log)
 
-    am.options['total-gaussians'].value = 20
-    am.options['num-iterations'].value = 3
+    am.options['total-gaussians'].value = 5
+    am.options['num-iterations'].value = 2
     am.options['realign-iterations'].value = [1]
-    am.options['num-leaves'].value = 100
+    am.options['num-leaves'].value = 20
     am.compute()
 
     acoustic.check_acoustic_model(output_dir)
@@ -194,11 +216,11 @@ def am_trisa(corpus, features, am_tri, tmpdir_factory, lang_args):
     am = acoustic.TriphoneSpeakerAdaptive(
         corpus, features, am_tri, output_dir, lang_args, log=log)
 
-    am.options['total-gaussians'].value = 20
-    am.options['num-iterations'].value = 3
-    am.options['realign-iterations'].value = [2]
+    am.options['total-gaussians'].value = 5
+    am.options['num-iterations'].value = 2
+    am.options['realign-iterations'].value = [1]
     am.options['fmllr-iterations'].value = [1]
-    am.options['num-leaves'].value = 100
+    am.options['num-leaves'].value = 20
     am.compute()
 
     acoustic.check_acoustic_model(output_dir)
@@ -218,9 +240,9 @@ def am_nnet(corpus, features, am_trisa, tmpdir_factory, lang_args):
     am.options['num-epochs-extra'].value = 1
     am.options['num-hidden-layers'].value = 1
     am.options['num-iters-final'].value = 1
-    am.options['pnorm-input-dim'].value = 100
-    am.options['pnorm-output-dim'].value = 10
-    am.options['num-utts-subset'].value = 20
+    am.options['pnorm-input-dim'].value = 1
+    am.options['pnorm-output-dim'].value = 1
+    am.options['num-utts-subset'].value = 2
     am.compute()
 
     acoustic.check_acoustic_model(output_dir)
@@ -228,24 +250,3 @@ def am_nnet(corpus, features, am_trisa, tmpdir_factory, lang_args):
     # generate errors (but this do not impact the recipe)
     # # assert_no_expr_in_log(flog, 'error')
     return output_dir
-
-
-def assert_no_expr_in_log(flog, expr='error'):
-    """Raise if `expr` is found in flog"""
-    assert os.path.isfile(flog)
-
-    matched_lines = [line for line in open(flog, 'r')
-                     if re.search(expr, line.lower())]
-
-    if matched_lines:
-        print matched_lines
-    assert len(matched_lines) == 0
-
-
-def assert_expr_in_log(flog, expr):
-    """Raise if `expr` is found in flog"""
-    assert os.path.isfile(flog)
-
-    matched_lines = [line for line in open(flog, 'r')
-                     if re.search(expr, line.lower())]
-    assert len(matched_lines)

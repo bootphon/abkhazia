@@ -56,7 +56,6 @@ class Decode(abstract_recipe.AbstractRecipe):
             raise IOError(
                 '''cannot setup decoder, acoustic model
                 and decoder type are not compatible''')
-
         self._decoder = decoders[self._decoder_type]
 
         self.mkgraph_opts = _mkgraph.options()

@@ -87,13 +87,15 @@ def decode(decoder, graph_dir):
 
     decoder._run_command((
         'steps/nnet2/decode.sh --nj {njobs} --cmd "{cmd}" {decode_opts} '
-        '--parallel-opts "{paral}" --scoring-opts "{score_opts}" '
+        '--parallel-opts "{paral}" '
+        '{skip_scoring} --scoring-opts "{score_opts}" '
         '{graph} {data} {decode}'.format(
             njobs=decoder.njobs,
             cmd=utils.config.get('kaldi', 'decode-cmd'),
             decode_opts=decode_opts,
             paral='--num-threads {}'.format(
                 decoder.decode_opts['num-threads'].value),
+            skip_scoring=_score.skip_scoring(decoder.score_opts),
             score_opts=_score.format(decoder.score_opts, decoder.mkgraph_opts),
             graph=graph_dir,
             data=os.path.join(decoder.recipe_dir, 'data', decoder.name),

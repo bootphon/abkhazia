@@ -15,82 +15,95 @@
 """Test of the abkhazia.decode module"""
 
 import os
+import pytest
 
 import abkhazia.decode as decode
 import abkhazia.utils as utils
+
 from .conftest import assert_no_expr_in_log
 
 
-def test_decode_mono(corpus, lm_word, features, am_mono, tmpdir):
-    output_dir = str(tmpdir.mkdir('decode-mono'))
-    flog = os.path.join(output_dir, 'decode-mono.log')
-    log = utils.logger.get_log(flog)
+#
+# Basic tests, decode a single utterance from the train corpus. Uses
+# all the levels of acoustic models.
+#
+
+
+def wrapper_test_decode(name, options, corpus, lm, feats, am, tmpdir,
+                        skip_scoring=False):
+    # decode only the first utterance (just make the test faster)
+    corpus = corpus.subcorpus([corpus.utts()[0]])
+    output_dir = str(tmpdir.mkdir('decode-{}'.format(name)))
+    flog = os.path.join(output_dir, 'decode-{}.log'.format(name))
 
     decoder = decode.Decode(
-        corpus, lm_word, features, am_mono, output_dir, log=log)
-    decoder.decode_opts['max-active'].value = 70
-    decoder.decode_opts['beam'].value = 3
-    decoder.decode_opts['lattice-beam'].value = 2
+        corpus, lm, feats, am, output_dir, log=utils.logger.get_log(flog))
+    for k, v in options.items():
+        decoder.decode_opts[k].value = v
+    if skip_scoring:
+        decoder.score_opts['skip-scoring'] = True
     decoder.compute()
 
-    # check if we have no error and a WER file
+    # check if we have no error in log
     assert_no_expr_in_log(flog, 'error')
-    assert os.path.isfile(
+
+    # check we have word error rates if scoring
+    scoring = os.path.isfile(
         os.path.join(output_dir, 'scoring_kaldi', 'best_wer'))
+    assert scoring if not skip_scoring else not scoring
 
 
-def test_decode_tri(corpus, lm_word, features, am_tri, tmpdir):
-    output_dir = str(tmpdir.mkdir('decode-tri'))
-    flog = os.path.join(output_dir, 'decode-tri.log')
-    log = utils.logger.get_log(flog)
-
-    decoder = decode.Decode(
-        corpus, lm_word, features, am_tri, output_dir, log=log)
-    decoder.decode_opts['max-active'].value = 15
-    decoder.decode_opts['beam'].value = 2
-    decoder.decode_opts['lattice-beam'].value = 1
-    decoder.compute()
-
-    # check if we have no error and a WER file
-    assert_no_expr_in_log(flog, 'error')
-    assert os.path.isfile(
-        os.path.join(output_dir, 'scoring_kaldi', 'best_wer'))
+@pytest.mark.parametrize('skip_scoring', [True, False])
+def test_decode_mono(
+        corpus, lm_word, features, am_mono, tmpdir, skip_scoring):
+    options = {'max-active': 5, 'beam': 2, 'lattice-beam': 1}
+    wrapper_test_decode(
+        'mono', options, corpus, lm_word, features, am_mono,
+        tmpdir, skip_scoring)
 
 
-def test_decode_trisa(corpus, lm_word, features, am_trisa, tmpdir):
-    output_dir = str(tmpdir.mkdir('decode-trisa'))
-    flog = os.path.join(output_dir, 'decode-trisa.log')
-    log = utils.logger.get_log(flog)
-
-    decoder = decode.Decode(
-        corpus, lm_word, features, am_trisa, output_dir, log=log)
-    decoder.decode_opts['max-active'].value = 15
-    decoder.decode_opts['beam'].value = 2
-    decoder.decode_opts['first-max-active'].value = 10
-    decoder.decode_opts['first-beam'].value = 1
-    decoder.decode_opts['lattice-beam'].value = 1
-    decoder.compute()
-
-    # check if we have no error and a WER file
-    assert_no_expr_in_log(flog, 'error')
-    assert os.path.isfile(
-        os.path.join(output_dir, 'scoring_kaldi', 'best_wer'))
+@pytest.mark.parametrize('skip_scoring', [True, False])
+def test_decode_tri(
+        corpus, lm_word, features, am_tri, tmpdir, skip_scoring):
+    options = {'max-active': 5, 'beam': 2, 'lattice-beam': 1}
+    wrapper_test_decode(
+        'tri', options, corpus, lm_word, features, am_tri,
+        tmpdir, skip_scoring)
 
 
-def test_decode_nnet(corpus, lm_word, features, am_nnet, tmpdir):
-    output_dir = str(tmpdir.mkdir('decode-nnet'))
-    flog = os.path.join(output_dir, 'decode-nnet.log')
-    log = utils.logger.get_log(flog)
+@pytest.mark.parametrize('skip_scoring', [True, False])
+def test_decode_trisa(
+        corpus, lm_word, features, am_trisa, tmpdir, skip_scoring):
+    options = {'max-active': 2, 'beam': 1, 'lattice-beam': 1,
+               'first-beam': 1, 'first-max-active': 2}
+    wrapper_test_decode(
+        'trisa', options, corpus, lm_word, features, am_trisa,
+        tmpdir, skip_scoring)
 
-    decoder = decode.Decode(
-        corpus, lm_word, features, am_nnet, output_dir, log=log)
-    decoder.decode_opts['beam'].value = 2
-    decoder.decode_opts['min-active'].value = 2
-    decoder.decode_opts['max-active'].value = 70
-    decoder.decode_opts['lattice-beam'].value = 1
-    decoder.compute()
 
-    # check if we have no error and a WER file
-    assert_no_expr_in_log(flog, 'error')
-    assert os.path.isfile(
-        os.path.join(output_dir, 'scoring_kaldi', 'best_wer'))
+@pytest.mark.parametrize('skip_scoring', [True, False])
+def test_decode_nnet(
+        corpus, lm_word, features, am_nnet, tmpdir, skip_scoring):
+    options = {'min-active': 1, 'max-active': 2, 'beam': 2, 'lattice-beam': 1}
+    wrapper_test_decode(
+        'nnet', options, corpus, lm_word, features, am_nnet,
+        tmpdir, skip_scoring)
+
+
+#
+# Tests using separate corpora or crossing LM/AM
+#
+
+
+# LM and AM from corpus1, decode corpus2
+def test_decode_corpus2(corpus2, features2, am_mono, lm_word, tmpdir):
+    wrapper_test_decode(
+        'corpus2', {'max-active': 15, 'beam': 3, 'lattice-beam': 2},
+        corpus2, lm_word, features2, am_mono, tmpdir)
+
+
+# AM from corpus1, LM from corpus2, decode corpus2
+def test_crossing_lm_am(corpus2, features2, am_mono, lm_word2, tmpdir):
+    wrapper_test_decode(
+        'lmam', {'max-active': 15, 'beam': 3, 'lattice-beam': 2},
+        corpus2, lm_word2, features2, am_mono, tmpdir)

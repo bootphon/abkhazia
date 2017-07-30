@@ -91,11 +91,12 @@ def decode(decoder, graph_dir):
 
         decoder._run_command((
             'steps/decode_fmllr.sh --nj {njobs} --cmd "{cmd}" '
-            '{decode_opts} --scoring-opts "{score_opts}" '
+            '{decode_opts} {skip_scoring} --scoring-opts "{score_opts}" '
             '{graph} {data} {decode}'.format(
                 njobs=decoder.njobs,
                 cmd=utils.config.get('kaldi', 'decode-cmd'),
                 decode_opts=decode_opts,
+                skip_scoring=_score.skip_scoring(decoder.score_opts),
                 score_opts=_score.format(
                     decoder.score_opts, decoder.mkgraph_opts),
                 graph=graph_dir,
