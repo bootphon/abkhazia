@@ -114,7 +114,7 @@ class CorpusValidation(object):
 
         # ensure all the files have the wav extension
         wrong_extensions = [
-            w for w in wavs if os.path.splitext(w)[1] != ".wav"]
+            w for w in wavs if not w.endswith(".wav")]
         if wrong_extensions:
             raise IOError(
                 "The following wavs do not have a '.wav' extension: {}"
@@ -132,6 +132,10 @@ class CorpusValidation(object):
         meta = wav.scan(wavs, njobs=self.njobs)
         meta = dict((os.path.basename(k), v)
                     for k, v in meta.iteritems())
+        missing_meta = set.difference(self.corpus.wavs, meta.keys())
+        if missing_meta:
+            raise IOError('Cannot retrieve metadata for the following '
+                          'wavs: {}'.format(resume_list(missing_meta)))
 
         empty_files = [w for w in self.corpus.wavs if meta[w].nframes == 0]
         if empty_files:
@@ -161,7 +165,8 @@ class CorpusValidation(object):
                 "in this format: {0}"
                 .format(resume_list(non_16bit)))
 
-        compressed = [w for w in self.corpus.wavs if meta[w].comptype != 'NONE']
+        compressed = [w for w in self.corpus.wavs
+                      if meta[w].comptype != 'NONE']
         if compressed:
             raise IOError(
                 "The following files are compressed: {0}"
@@ -174,9 +179,10 @@ class CorpusValidation(object):
         self.log.debug("checking segments")
         segments = self.corpus.segments
         utt_ids = segments.keys()
-        utt_wavs = [w[0] for w in segments.itervalues()]
-        starts = [w[1] for w in segments.itervalues()]
-        stops = [w[2] for w in segments.itervalues()]
+        utt_wavs = [w[0] if w[0].endswith('.wav') else w[0] + '.wav'
+                    for w in segments.values()]
+        starts = [w[1] for w in segments.values()]
+        stops = [w[2] for w in segments.values()]
 
         # unique utterance-ids
         _duplicates = duplicates(utt_ids)
