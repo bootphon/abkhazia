@@ -70,7 +70,7 @@ class AbstractPreparator(object):
         except ConfigParser.NoOptionError:
             return None
 
-    # TODO njobs as parameter,
+    # TODO njobs as parameter
     def __init__(self, input_dir, log=utils.logger.null_logger()):
         self.njobs = utils.default_njobs(local=True)
         self.log = log
@@ -106,7 +106,8 @@ class AbstractPreparator(object):
         c = self.corpus
         c.wav_folder = self.make_wavs(wavs_dir)
         c.segments = self.make_segment()
-        c.wavs = {w for w, _, _ in c.segments.itervalues()}
+        c.wavs = {w + '.wav' if not w.endswith('.wav') else w
+                  for w, _, _ in c.segments.values()}
         c.lexicon = self.make_lexicon()
         c.text = self.make_transcription()
         c.utt2spk = self.make_speaker()

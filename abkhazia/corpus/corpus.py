@@ -325,7 +325,8 @@ class Corpus(utils.abkhazia_base.AbkhaziaBase):
                  if key in utts}
 
         # prune wavs from pruned segments
-        self.wavs = {wav for wav in set(self.wav2utt().keys())}
+        self.wavs = {wav if wav.endswith('.wav') else wav + '.wav'
+                     for wav in set(self.wav2utt().keys())}
 
         # prune lexicon from pruned text
         words = self.words(in_lexicon=False)

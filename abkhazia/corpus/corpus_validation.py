@@ -20,11 +20,12 @@ import os
 from abkhazia.utils import duplicates, logger, wav, default_njobs
 
 
-def resume_list(l, n=20):
+def resume_list(l, n=10):
     """Display only the `n` first element of a list"""
+    l = list(l)
     return '{}{}'.format(
         l[:n], '' if len(l) <= n else
-        ' ... and {} more!!!'.format(len(l) - n))
+        ' ... and {} more.'.format(len(l) - n))
 
 
 class CorpusValidation(object):
@@ -80,7 +81,6 @@ class CorpusValidation(object):
 
         """
         self.log.info('validating corpus')
-
         if len(self.corpus.utts()) == 0:
             raise IOError('corpus is empty')
 
@@ -109,12 +109,10 @@ class CorpusValidation(object):
         if not(os.path.isdir(wav_folder)):
             raise IOError(
                 "Wav folder {} does not exist".format(wav_folder))
-
         wavs = [os.path.join(wav_folder, w) for w in self.corpus.wavs]
 
         # ensure all the files have the wav extension
-        wrong_extensions = [
-            w for w in wavs if os.path.splitext(w)[1] != ".wav"]
+        wrong_extensions = [w for w in wavs if not w.endswith(".wav")]
         if wrong_extensions:
             raise IOError(
                 "The following wavs do not have a '.wav' extension: {}"
@@ -130,8 +128,12 @@ class CorpusValidation(object):
 
         # get meta information on the wavs
         meta = wav.scan(wavs, njobs=self.njobs)
-        meta = dict((os.path.basename(k), v)
-                    for k, v in meta.iteritems())
+        meta = {os.path.basename(k): v for k, v in meta.iteritems()}
+
+        missing_meta = set.difference(self.corpus.wavs, meta.keys())
+        if missing_meta:
+            raise IOError('Cannot retrieve metadata for the following '
+                          'wavs: {}'.format(resume_list(missing_meta)))
 
         empty_files = [w for w in self.corpus.wavs if meta[w].nframes == 0]
         if empty_files:
@@ -161,7 +163,8 @@ class CorpusValidation(object):
                 "in this format: {0}"
                 .format(resume_list(non_16bit)))
 
-        compressed = [w for w in self.corpus.wavs if meta[w].comptype != 'NONE']
+        compressed = [w for w in self.corpus.wavs
+                      if meta[w].comptype != 'NONE']
         if compressed:
             raise IOError(
                 "The following files are compressed: {0}"
@@ -174,9 +177,10 @@ class CorpusValidation(object):
         self.log.debug("checking segments")
         segments = self.corpus.segments
         utt_ids = segments.keys()
-        utt_wavs = [w[0] for w in segments.itervalues()]
-        starts = [w[1] for w in segments.itervalues()]
-        stops = [w[2] for w in segments.itervalues()]
+        utt_wavs = [w[0] if w[0].endswith('.wav') else w[0] + '.wav'
+                    for w in segments.values()]
+        starts = [w[1] for w in segments.values()]
+        stops = [w[2] for w in segments.values()]
 
         # unique utterance-ids
         _duplicates = duplicates(utt_ids)
@@ -504,43 +508,52 @@ class CorpusValidation(object):
                 'There are {} word types with homophones in the pronunciation '
                 'dictionary'.format(sum(duplicate_transcripts.values())))
 
-            # self.log.debug(
-            #     "List of homophonic phone sequences in lexicon "
-            #     "with number of corresponding word types: {0}"
-            #     .format(self._strcounts2unicode(
-            #         duplicate_transcripts.most_common())))
+            self.log.debug(
+                "List of homophonic phone sequences in lexicon "
+                "with number of corresponding word types: {0}"
+                .format(resume_list(self._strcounts2unicode(
+                    duplicate_transcripts.most_common()))))
 
-            # Commented because it takes a lot of times for certain corpora
-            # Maybe put it as an option
+            # # Commented because it takes a lot of times for certain corpora
+            # # Maybe put it as an option
             # # get word types:
             # #    - found in transcriptions
-            # #    - with at least one homophonic word type also found in transcriptions
+            # #    - with at least one homophonic word type also found
+            # #      in transcriptions
             # homophonic_sequences = duplicate_transcripts.keys()
             # homophony_groups = {}
             # for homo_transcript in homophonic_sequences:
-            #     homo_group = [word for word, transcript in zip(dict_words, str_transcripts) \
-            #                 if transcript == homo_transcript and word in used_word_types]
+            #     homo_group = [word for word, transcript
+            #                   in zip(dict_words, str_transcripts)
+            #                   if transcript == homo_transcript
+            #                   and word in used_word_types]
             #     if len(homo_group) > 1:
             #         homophony_groups[homo_transcript] = homo_group
-            # nb_homo_types = sum([len(homo_group) for homo_group in homophony_groups.values()])
-            # log.warning(
-            #     (
-            #     u"{0} word types found in transcriptions with "
-            #     u"at least one homophone also found in transcriptions "
-            #     u"out of {1} word types in total"
-            #     ).format(nb_homo_types, len(used_word_types))
-            # )
-            # nb_homo_tokens = sum([sum([used_word_counts[word] for word in homo_group]) for homo_group in homophony_groups.values()])
-            # log.warning((u"{0} corresponding word tokens out of {1} total").format(nb_homo_tokens, len(used_words)))
-            # l = [", ".join([word + u": " + unicode(used_word_counts[word]) for word in group]) for group in homophony_groups.values()]
-            # s = "\n".join(l)
-            # log.warning(
-            #     (
-            #     u"List of groups of homophonic word types "
-            #     u"(including only types actually found in transcriptions) "
-            #     u"with number of occurences of each member of each group:\n{0}"
-            #     ).format(s)
-            # )
+
+            # nb_homo_types = sum([len(v) for v in homophony_groups.values()])
+            # self.log.warning(
+            #     "{0} word types found in transcriptions with "
+            #     "at least one homophone also found in transcriptions "
+            #     "out of {1} word types in total").format(
+            #         nb_homo_types, len(used_word_types))
+
+            # nb_homo_tokens = sum([
+            #     sum([used_word_counts[word] for word in group])
+            #     for group in homophony_groups.values()])
+
+            # self.log.warning(
+            #     "{0} corresponding word tokens out of {1} total".format(
+            #         nb_homo_tokens, len(used_words)))
+
+            # l = [", ".join([
+            #     word + u": " + unicode(used_word_counts[word])
+            #     for word in group]) for group in homophony_groups.values()]
+
+            # self.log.warning(
+            #     "List of groups of homophonic word types "
+            #     "(including only types actually found in transcriptions) "
+            #     "with number of occurences of each member of each group:\n{}"
+            #     .format(resume_list(l)))
 
         # ooi phones
         used_phones = [phone for trans_phones in transcriptions
@@ -568,6 +581,8 @@ class CorpusValidation(object):
         short_utts = []
         warning = False
         for _wav, utts in self.corpus.wav2utt().iteritems():
+            if not _wav.endswith('.wav'):
+                _wav = _wav + '.wav'
             duration = meta[_wav].duration
 
             # check all utterances are within wav boundaries
