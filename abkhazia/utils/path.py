@@ -112,3 +112,10 @@ def symlink_files(files, destdir):
         dest = os.path.join(destdir, os.path.basename(src))
         if not os.path.isfile(dest):
             os.symlink(src, dest)
+
+
+def append_ext(path, ext='.wav'):
+    """Append the suffix `ext` to `path` if missing"""
+    if not path.endswith(ext):
+        path = path + ext
+    return path

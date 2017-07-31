@@ -16,7 +16,8 @@
 
 import os
 import shutil
-from abkhazia.utils import open_utf8
+
+from abkhazia.utils import open_utf8, append_ext
 
 
 class CorpusSaver(object):
@@ -86,6 +87,9 @@ class CorpusSaver(object):
         """Save the corpus segments in `path`"""
         with open_utf8(path, 'w') as out:
             for k, v in sorted(corpus.segments.iteritems()):
+                # make sure we have the '.wav' extension
+                v = (append_ext(v[0], '.wav'), v[1], v[2])
+
                 # different case with/without timestamps
                 v = (v[0] if v[1] is None and v[2] is None
                      else u'{} {} {}'.format(v[0], v[1], v[2]))

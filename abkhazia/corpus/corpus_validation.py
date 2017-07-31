@@ -17,7 +17,7 @@
 import collections
 import os
 
-from abkhazia.utils import duplicates, logger, wav, default_njobs
+from abkhazia.utils import duplicates, logger, wav, default_njobs, append_ext
 
 
 def resume_list(l, n=10):
@@ -177,10 +177,16 @@ class CorpusValidation(object):
         self.log.debug("checking segments")
         segments = self.corpus.segments
         utt_ids = segments.keys()
-        utt_wavs = [w[0] if w[0].endswith('.wav') else w[0] + '.wav'
-                    for w in segments.values()]
+        utt_wavs = [w[0] for w in segments.values()]
         starts = [w[1] for w in segments.values()]
         stops = [w[2] for w in segments.values()]
+
+        # wav extension in segments
+        _no_wavs_extension = [w for w in utt_wavs if not w.endswith('.wav')]
+        if _no_wavs_extension:
+            raise IOError(
+                'There is wav-ids in segmetns without .wav extension: {}'
+                .format(resume_list(_no_wavs_extension)))
 
         # unique utterance-ids
         _duplicates = duplicates(utt_ids)
@@ -220,8 +226,8 @@ class CorpusValidation(object):
         if short_wavs:
             self.log.debug(
                 "The following utterances are less than 100 ms long and "
-                "won't be used in kaldi recipes: {}".format(
-                    resume_list(short_wavs)))
+                "won't be used in kaldi recipes: {}"
+                .format(resume_list(short_wavs)))
 
     def validate_speakers(self):
         """Checking speakers from corpus.utt2spk"""
@@ -581,8 +587,6 @@ class CorpusValidation(object):
         short_utts = []
         warning = False
         for _wav, utts in self.corpus.wav2utt().iteritems():
-            if not _wav.endswith('.wav'):
-                _wav = _wav + '.wav'
             duration = meta[_wav].duration
 
             # check all utterances are within wav boundaries

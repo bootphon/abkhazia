@@ -36,8 +36,6 @@ class Corpus(utils.abkhazia_base.AbkhaziaBase):
     provides methods/attritutes to interact with it in a consistent
     and safe way.
 
-    TODO implement variants phones
-
     Attributes
     ==========
 
@@ -46,7 +44,7 @@ class Corpus(utils.abkhazia_base.AbkhaziaBase):
 
     - folder where wav files associated to the corpus are stored
 
-    wavs: set(wav_basename)
+    wavs: set(wav_id)
     ------------------------
 
     - basename of the corpus wav files
@@ -66,7 +64,7 @@ class Corpus(utils.abkhazia_base.AbkhaziaBase):
     - tbegin and tend are None if the wav file contains a single
       utterance, else they correspond to begin and end times in the
       wav (in seconds, as float)
-    - exemple: ('s01u01', ('s01', 0, 0.75))
+    - exemple: ('s01u01', ('s01.wav', 0, 0.75))
 
     text: dict(utt_id, str)
     -----------------------
@@ -95,6 +93,7 @@ class Corpus(utils.abkhazia_base.AbkhaziaBase):
     variants: list(str)
     -------------------
 
+    TODO implement variants phones
     - alternative phones variants (not yet implemented)
     - exemple: []
 
@@ -195,7 +194,7 @@ class Corpus(utils.abkhazia_base.AbkhaziaBase):
         return spk2utt
 
     def wav2utt(self):
-        """Return a dict of wav ids mapped to utterances/timestamps they contain
+        """Return a dict of wav-ids mapped to utterances/timestamps they contain
 
         The values of the returned dict are tuples (utt-id, tstart,
         tend). Built on self.segments.
@@ -325,8 +324,7 @@ class Corpus(utils.abkhazia_base.AbkhaziaBase):
                  if key in utts}
 
         # prune wavs from pruned segments
-        self.wavs = {wav if wav.endswith('.wav') else wav + '.wav'
-                     for wav in set(self.wav2utt().keys())}
+        self.wavs = {utils.append_ext(w) for w in set(self.wav2utt().keys())}
 
         # prune lexicon from pruned text
         words = self.words(in_lexicon=False)

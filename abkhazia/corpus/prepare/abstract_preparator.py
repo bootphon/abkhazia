@@ -103,11 +103,13 @@ class AbstractPreparator(object):
         self.log.info('converting %s to abkhazia', self.name)
         self.log.debug('reading from %s', self.input_dir)
 
+        # populate the corpus, ensure the wav-ids in segment have a
+        # '.wav' extension
         c = self.corpus
+        c.segments = {k: (utils.append_ext(v[0], '.wav'), v[1], v[2])
+                      for k, v in self.make_segment().items()}
         c.wav_folder = self.make_wavs(wavs_dir)
-        c.segments = self.make_segment()
-        c.wavs = {w + '.wav' if not w.endswith('.wav') else w
-                  for w, _, _ in c.segments.values()}
+        c.wavs = {w for w, _, _ in c.segments.values()}
         c.lexicon = self.make_lexicon()
         c.text = self.make_transcription()
         c.utt2spk = self.make_speaker()
@@ -288,7 +290,7 @@ class AbstractPreparator(object):
     def make_segment(self):
         """Create utterance file
 
-        Populate self.segments_file with the list of all utterances
+        Populate self.segments with the list of all utterances
         with the name of the associated wavefiles.
 
         If there is more than one utterance per file, the start and
@@ -302,7 +304,7 @@ class AbstractPreparator(object):
     def make_speaker(self):
         """Create speaker file
 
-        Populate self.speaker_file with the list of all utterances
+        Populate self.speaker with the list of all utterances
         with a unique identifier for the associated speaker.
 
         utt2spk.txt: <utterance-id> <speaker-id>
@@ -313,7 +315,7 @@ class AbstractPreparator(object):
     def make_transcription(self):
         """Create transcription file
 
-        Populate self.transcription_file with the transcription in
+        Populate self.text with the transcription in
         word units for each utterance
 
         text.txt: <utterance-id> <word1> <word2> ... <wordn>
