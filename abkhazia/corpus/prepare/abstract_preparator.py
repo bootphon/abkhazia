@@ -1,4 +1,4 @@
-# Copyright 2016 Thomas Schatz, Xuan-Nga Cao, Mathieu Bernard
+# Copyright 2016, 2017 Thomas Schatz, Xuan-Nga Cao, Mathieu Bernard
 #
 # This file is part of abkhazia: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -190,6 +190,9 @@ class AbstractPreparator(object):
         and output files.
 
         """
+        # resolve the full path to wavs_dir
+        wavs_dir = os.path.realpath(wavs_dir)
+
         # get the list of input and output files to prepare
         inputs = []
         outputs = []
