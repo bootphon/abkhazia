@@ -46,10 +46,7 @@ def test_lm(level, order, wpd, corpus, tmpdir):
     lm.order = order
     lm.position_dependent_phones = wpd
     lm.create()
-
-    print('environ ' + str(len(os.environ)))
     lm.run()
-    print('environ ' + str(len(os.environ)))
     lm.export()
 
     # check the excpeted files are here

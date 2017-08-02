@@ -43,7 +43,9 @@ def kaldi_path():
         os.path.join(kaldiroot, 'tools', 'sctk', 'bin')])
 
     try:
-        env['PATH'] = ':'.join([env['PATH'], kaldibin, fstbin, lmbin])
+        for p in (kaldibin, fstbin, lmbin):
+            if p not in env['PATH']:
+                env['PATH'] = ':'.join([env['PATH'], p])
     except KeyError:  # PATH isn't in the environment, should not occur
         env['PATH'] = ':'.join([kaldibin, fstbin, lmbin])
 
