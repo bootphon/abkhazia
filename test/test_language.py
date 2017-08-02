@@ -25,7 +25,8 @@ from .conftest import assert_no_expr_in_log
 
 levels = ['phone', 'word']
 orders = range(1, 4)
-params = [(l, o) for l in levels for o in orders]
+wpd = [False, True]
+params = [(l, o, w) for l in levels for o in orders for w in wpd]
 
 
 def test_srilm_path():
@@ -35,19 +36,42 @@ def test_srilm_path():
     utils.jobs.run('which ngram', env=kaldi.path.kaldi_path())
 
 
-@pytest.mark.parametrize('level, order', params)
-def test_lm(level, order, corpus, tmpdir):
+@pytest.mark.parametrize('level, order, wpd', params)
+def test_lm(level, order, wpd, corpus, tmpdir):
     output_dir = str(tmpdir.mkdir('lang'))
     flog = os.path.join(output_dir, 'language.log')
     log = utils.logger.get_log(flog)
     lm = language_model.LanguageModel(corpus, output_dir, log=log)
     lm.level = level
     lm.order = order
+    lm.position_dependent_phones = wpd
     lm.create()
+
+    print('environ ' + str(len(os.environ)))
     lm.run()
+    print('environ ' + str(len(os.environ)))
     lm.export()
+
+    # check the excpeted files are here
     language_model.check_language_model(output_dir)
+
+    # no error in log
     assert_no_expr_in_log(flog, 'error')
+
+    # phone_map.txt is here
+    phonemap = os.path.join(output_dir, 'local', 'phone_map.txt')
+    assert os.path.isfile(phonemap)
+
+    # all the phones in the corpus are in phonemap
+    phonemap = [l.strip().split() for l in utils.open_utf8(phonemap, 'r')]
+    phonemap = {l[0]: l[1:] for l in phonemap}
+    assert all(p in phonemap.keys() for p in corpus.phones.keys())
+
+    # 1 or 4/5 rows according to word position dependant phones
+    if wpd:
+        assert all(len(p) >= 4 and len(p) < 6 for p in phonemap.values())
+    else:
+        assert all(len(p) == 1 for p in phonemap.values())
 
 
 @pytest.mark.parametrize('prob', [0, 0.5, 0.99, 1, 1.1])

@@ -67,6 +67,8 @@ required files by mkgraph.sh are
   - AM/LM? $lang/phones/disambig.int
   - AM $model/final.mdl
   - AM $model/tree
+** questions
+--word-position-dependent option only relevant for phone level in language ?
 * Minor changes [0/8]
 ** TODO upgrade the bootphon/kaldi repo
 ** TODO add cuda support in the install_kaldi.sh script
