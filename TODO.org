@@ -43,7 +43,7 @@
   (for instance, specifically retrain silence models, or retrain on a
   bunch of new corpus)
 - [ ] questions vs data-driven option (is it for tree building ?)
-* prepare_lang branch [1/2]
+* phonetic_learning branch [1/2]
 ** DONE AM does not depend on LM [3/3]
 - [X] write a prepare_lang.sh standalone wrapper
 - [X] independant call to prepare_lang in AM classes
@@ -51,11 +51,14 @@
 ** TODO fix decode and align [3/7]
 - [X] pass all the tests
 - [X] refactor core -> am now exports the lang folder
-- [X] optionally disable the scoring in decode
-      forward --skip-scoring from kaldi to abkhazia
+- [X] optionally disable the scoring in decode. Forward --skip-scoring
+  from kaldi to abkhazia
+- [ ] add tests for cross use of AMs/LMs. Build corpus_A and corpus_B
+  from buckeye, with phones(B) not included in phones(A). Then AM(A),
+  LM(B), decode(B on A). We expect an issue building the HCLG graph.
+- [ ] add tests for wpd decoding. Try to decode AM/LM_wpd, AM_wpd/LM
+  and AM_wpd/LM_wpd
 - [ ] check for phonesets compatibility between AM/LM
-- [ ] add tests for cross use of AMs/LMs
-- [ ] add tests for wpd decoding
 - [ ] update the command line API in consequence
 ** notes
 required files by mkgraph.sh are
