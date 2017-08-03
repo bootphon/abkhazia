@@ -26,7 +26,7 @@ from .conftest import assert_no_expr_in_log, assert_expr_in_log
 
 # There was a bug with more than 9 jobs (when more than 9 available
 # cores/nodes)
-@pytest.mark.parametrize('njobs', [4])  # , 11])
+@pytest.mark.parametrize('njobs', [4, 11])
 def test_acoustic_njobs(corpus, features, njobs, tmpdir, lang_args):
     output_dir = str(tmpdir.mkdir('am-mono'))
     flog = os.path.join(output_dir, 'am-mono.log')
@@ -78,3 +78,18 @@ def test_monophone_cmvn_bad(corpus, tmpdir, lang_args):
     with pytest.raises(IOError) as err:
         am.check_parameters()
     assert 'cmvn' in str(err)
+
+
+@pytest.mark.parametrize('level', ['phone', 'word'])
+def test_monophone_word_position_dependant(corpus, features, level, tmpdir):
+    output_dir = str(tmpdir.mkdir('am_mono_wpd'))
+    flog = os.path.join(output_dir, 'am_mono.log')
+    log = utils.logger.get_log(flog)
+
+    lang_args = {'level': level,
+                 'silence_probability': 0.5,
+                 'position_dependent_phones': True,
+                 'keep_tmp_dirs': True}
+
+    am = acoustic.Monophone(corpus, features, output_dir, lang_args)
+    am.compute()

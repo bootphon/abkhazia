@@ -94,15 +94,11 @@ def prepare_lang(
     # (some slight customizations of the script are necessary to
     # decode with a phone loop language model when word position
     # dependent phone variants have been trained).
-    script_prepare_lm = os.path.join(
-        a2k.kaldi_root, 'egs', 'wsj', 's5', 'utils', 'prepare_lang.sh')
-
-    script_prepare_lm_wpdpl = os.path.join(
-        a2k.share_dir, 'prepare_lang_wpdpl.sh')
-
-    script = (script_prepare_lm_wpdpl
-              if level == 'phone' and position_dependent_phones
-              else script_prepare_lm)
+    if level == 'phone' and position_dependent_phones:
+        script = os.path.join(a2k.share_dir, 'prepare_lang_wpdpl.sh')
+    else:
+        script = os.path.join(
+            a2k.kaldi_root, 'egs', 'wsj', 's5', 'utils', 'prepare_lang.sh')
 
     # generate the bash command we will run
     command = (

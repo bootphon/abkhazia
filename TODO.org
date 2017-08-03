@@ -58,7 +58,8 @@
   LM(B), decode(B on A). We expect an issue building the HCLG graph.
 - [ ] add tests for wpd decoding. Try to decode AM/LM_wpd, AM_wpd/LM
   and AM_wpd/LM_wpd
-- [ ] check for phonesets compatibility between AM/LM
+- [ ] in decode: check for phonesets compatibility between AM/LM
+- [ ] update the language recipe (prepare_lang, check corpus at phone level)
 - [ ] update the command line API in consequence
 ** notes
 required files by mkgraph.sh are
@@ -71,7 +72,8 @@ required files by mkgraph.sh are
   - AM $model/final.mdl
   - AM $model/tree
 ** questions
---word-position-dependent option only relevant for phone level in language ?
+- Is the --word-position-dependent option only relevant for phone level models ?
+- When incompatible phones, decoding must fail ?
 * Minor changes [0/8]
 ** TODO upgrade the bootphon/kaldi repo
 ** TODO add cuda support in the install_kaldi.sh script

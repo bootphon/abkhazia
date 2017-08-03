@@ -176,38 +176,44 @@ class LanguageModel(abstract_recipe.AbstractRecipe):
 
     def _prepare_lang(self):
         """Prepare the corpus data for language modeling"""
-        # First need to do a prepare_lang in the desired folder to get
-        # to use the right "phone" or "word" lexicon irrespective of
-        # what was used as a lexicon in training. If
-        # word_position_dependent is true and the lm is at the phone
-        # level, use prepare_lang_wpdpl.sh in the local folder,
-        # otherwise we fall back to the original utils/prepare_lang.sh
-        # (some slight customizations of the script are necessary to
-        # decode with a phone loop language model when word position
-        # dependent phone variants have been trained).
-        self.log.info('preprocessing corpus')
+        utils.prepare_lang.prepare_lang(
+            self.corpus, self.recipe_dir, level=self.level,
+            silence_probability=self.silence_probability,
+            position_dependent_phones=self.position_dependent_phones,
+            keep_tmp_dirs=True, log=self.log)
 
-        script_prepare_lm = os.path.join(
-            self.recipe_dir, 'utils/prepare_lang.sh')
+        # # First need to do a prepare_lang in the desired folder to get
+        # # to use the right "phone" or "word" lexicon irrespective of
+        # # what was used as a lexicon in training. If
+        # # word_position_dependent is true and the lm is at the phone
+        # # level, use prepare_lang_wpdpl.sh in the local folder,
+        # # otherwise we fall back to the original utils/prepare_lang.sh
+        # # (some slight customizations of the script are necessary to
+        # # decode with a phone loop language model when word position
+        # # dependent phone variants have been trained).
+        # self.log.info('preprocessing corpus')
 
-        share_dir = pkg_resources.resource_filename(
-            pkg_resources.Requirement.parse('abkhazia'), 'abkhazia/share')
-        script_prepare_lm_wpdpl = os.path.join(
-            share_dir, 'prepare_lang_wpdpl.sh')
+        # script_prepare_lm = os.path.join(
+        #     self.recipe_dir, 'utils/prepare_lang.sh')
 
-        script = (script_prepare_lm_wpdpl
-                  if self.level == 'phone' and
-                  utils.str2bool(self.position_dependent_phones) is True
-                  else script_prepare_lm)
+        # share_dir = pkg_resources.resource_filename(
+        #     pkg_resources.Requirement.parse('abkhazia'), 'abkhazia/share')
+        # script_prepare_lm_wpdpl = os.path.join(
+        #     share_dir, 'prepare_lang_wpdpl.sh')
 
-        self._run_command(
-            script + ' --position-dependent-phones {0}'
-            ' --sil-prob {1} {2} "<unk>" {3} {4}'.format(
-                self.position_dependent_phones,
-                self.silence_probability,
-                os.path.join(self.a2k._local_path()),
-                os.path.join(self.output_dir, 'local'),
-                self.output_dir))
+        # script = (script_prepare_lm_wpdpl
+        #           if self.level == 'phone' and
+        #           utils.str2bool(self.position_dependent_phones) is True
+        #           else script_prepare_lm)
+
+        # self._run_command(
+        #     script + ' --position-dependent-phones {0}'
+        #     ' --sil-prob {1} {2} "<unk>" {3} {4}'.format(
+        #         self.position_dependent_phones,
+        #         self.silence_probability,
+        #         os.path.join(self.a2k._local_path()),
+        #         os.path.join(self.output_dir, 'local'),
+        #         self.output_dir))
 
     def _compile_fst(self, G_txt, G_fst):
         """Compile and sort a text FST to kaldi binary FST
@@ -418,10 +424,10 @@ class LanguageModel(abstract_recipe.AbstractRecipe):
         """Initialize the recipe data in `self.recipe_dir`"""
         self.check_parameters()
 
-        # setup phones
-        self.a2k.setup_phones()
-        self.a2k.setup_silences()
-        self.a2k.setup_variants()
+        # # setup phones
+        # self.a2k.setup_phones()
+        # self.a2k.setup_silences()
+        # self.a2k.setup_variants()
 
         # setup lexicon and text depending on word/phone ngram level
         text = self.a2k.setup_text()
@@ -436,8 +442,8 @@ class LanguageModel(abstract_recipe.AbstractRecipe):
             self.a2k.setup_phone_lexicon()
 
         # setup data files common to both levels
-        self.a2k.setup_kaldi_folders()
-        self.a2k.setup_machine_specific_scripts()
+        # self.a2k.setup_kaldi_folders()
+        # self.a2k.setup_machine_specific_scripts()
         self._setup_prepare_lang_wpdpl()
 
     def run(self):
