@@ -23,6 +23,7 @@ import tempfile
 
 import abkhazia.utils as utils
 import abkhazia.abstract_recipe as abstract_recipe
+from abkhazia.corpus.corpus_saver import CorpusSaver
 from abkhazia.language.arpa import ARPALanguageModel
 from abkhazia.kaldi import kaldi_path
 
@@ -160,60 +161,16 @@ class LanguageModel(abstract_recipe.AbstractRecipe):
         self.position_dependent_phones = utils.bool2str(
             self.position_dependent_phones)
 
-    def _setup_prepare_lang_wpdpl(self):
-        """Prepare language/lang/ folder for word position dependent models"""
-        local = os.path.join(self.recipe_dir, 'local')
-        if not os.path.isdir(local):
-            os.makedirs(local)
+        # if wpd requested, make sure the corpus is at phone level
+        if self.position_dependent_phones and not self.corpus.is_phonemized():
+            self.log.warning(
+                'You are requiring a word position dependant phones '
+                'language model but the corpus is at word level!')
+            self.log.warning('Converting the corpus from words to phones...')
+            self.corpus = self.corpus.phonemize()
 
-        share = pkg_resources.resource_filename(
-            pkg_resources.Requirement.parse('abkhazia'), 'abkhazia/share')
-
-        for target in ('prepare_lang_wpdpl.sh', 'validate_lang_wpdpl.pl'):
-            shutil.copy(
-                os.path.join(share, target),
-                os.path.join(local, target))
-
-    def _prepare_lang(self):
-        """Prepare the corpus data for language modeling"""
-        utils.prepare_lang.prepare_lang(
-            self.corpus, self.recipe_dir, level=self.level,
-            silence_probability=self.silence_probability,
-            position_dependent_phones=self.position_dependent_phones,
-            keep_tmp_dirs=True, log=self.log)
-
-        # # First need to do a prepare_lang in the desired folder to get
-        # # to use the right "phone" or "word" lexicon irrespective of
-        # # what was used as a lexicon in training. If
-        # # word_position_dependent is true and the lm is at the phone
-        # # level, use prepare_lang_wpdpl.sh in the local folder,
-        # # otherwise we fall back to the original utils/prepare_lang.sh
-        # # (some slight customizations of the script are necessary to
-        # # decode with a phone loop language model when word position
-        # # dependent phone variants have been trained).
-        # self.log.info('preprocessing corpus')
-
-        # script_prepare_lm = os.path.join(
-        #     self.recipe_dir, 'utils/prepare_lang.sh')
-
-        # share_dir = pkg_resources.resource_filename(
-        #     pkg_resources.Requirement.parse('abkhazia'), 'abkhazia/share')
-        # script_prepare_lm_wpdpl = os.path.join(
-        #     share_dir, 'prepare_lang_wpdpl.sh')
-
-        # script = (script_prepare_lm_wpdpl
-        #           if self.level == 'phone' and
-        #           utils.str2bool(self.position_dependent_phones) is True
-        #           else script_prepare_lm)
-
-        # self._run_command(
-        #     script + ' --position-dependent-phones {0}'
-        #     ' --sil-prob {1} {2} "<unk>" {3} {4}'.format(
-        #         self.position_dependent_phones,
-        #         self.silence_probability,
-        #         os.path.join(self.a2k._local_path()),
-        #         os.path.join(self.output_dir, 'local'),
-        #         self.output_dir))
+    # def _setup_prepare_lang_wpdpl(self):
+    #     """Prepare language/lang/ folder for word position dependent models"""
 
     def _compile_fst(self, G_txt, G_fst):
         """Compile and sort a text FST to kaldi binary FST
@@ -364,7 +321,7 @@ class LanguageModel(abstract_recipe.AbstractRecipe):
             # of utt. These can cause determinization failures of CLG
             # [ends up being epsilon cycles].
             lm_txt = os.path.join(tempdir, lm_base + '.txt')
-            # self.log.debug('unzip %s to %s', arpa_lm, lm_txt)
+            self.log.debug('unzip %s to %s', arpa_lm, lm_txt)
             with utils.open_utf8(lm_txt, 'w') as fp:
                 for line in gzip.open(arpa_lm, 'rb'):
                     if not (re.search('<s> <s>', line) or
@@ -424,32 +381,19 @@ class LanguageModel(abstract_recipe.AbstractRecipe):
         """Initialize the recipe data in `self.recipe_dir`"""
         self.check_parameters()
 
-        # # setup phones
-        # self.a2k.setup_phones()
-        # self.a2k.setup_silences()
-        # self.a2k.setup_variants()
-
-        # setup lexicon and text depending on word/phone ngram level
-        text = self.a2k.setup_text()
         lm_text = os.path.join(self.a2k._local_path(), 'lm_text.txt')
-        if self.level == 'word':
-            shutil.copy(text, lm_text)
-            self.a2k.setup_lexicon()
-        else:  # phone level
-            with utils.open_utf8(lm_text, 'w') as out:
-                for k, v in sorted(self.corpus.phonemize_text().iteritems()):
-                    out.write(u'{} {}\n'.format(k, v))
-            self.a2k.setup_phone_lexicon()
+        CorpusSaver.save_text(self.corpus, lm_text)
 
-        # setup data files common to both levels
-        # self.a2k.setup_kaldi_folders()
-        # self.a2k.setup_machine_specific_scripts()
-        self._setup_prepare_lang_wpdpl()
+        utils.prepare_lang.prepare_lang(
+            self.corpus, self.recipe_dir,
+            silence_probability=self.silence_probability,
+            position_dependent_phones=self.position_dependent_phones,
+            keep_tmp_dirs=True, log=self.log)
+
+        self.log.info('recipe created in %s', self.recipe_dir)
 
     def run(self):
         """Run the created recipe and compute the language model"""
-        self._prepare_lang()
-
         def _local(f):
             return os.path.join(self.a2k._local_path(), f)
         g_txt = _local('G.txt')
@@ -464,7 +408,7 @@ class LanguageModel(abstract_recipe.AbstractRecipe):
             # provided in input_dir: compute it from corpus text
             if not os.path.isfile(g_arpa):
                 self._compute_lm(g_arpa)
-            self._format_lm(g_arpa, g_fst)
+                self._format_lm(g_arpa, g_fst)
 
     def export(self):
         super(LanguageModel, self).export()

@@ -126,7 +126,9 @@ def test_phonemize_text(corpus, tmpdir):
 
 
 def test_phonemize_corpus(corpus):
+    assert not corpus.is_phonemized()
     c = corpus.phonemize()
+    assert c.is_phonemized()
     assert c.is_valid()
     assert all([k == v for k, v in c.lexicon.items() if k != '<unk>'])
     assert len(c.lexicon) == len(c.phones) + 1  # <unk>

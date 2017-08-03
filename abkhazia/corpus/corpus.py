@@ -372,12 +372,15 @@ class Corpus(utils.abkhazia_base.AbkhaziaBase):
                      else spliter.split_by_speakers)
         return split_fun(train_prop, test_prop)
 
-    def phonemize(self):
+    def phonemize(self, validate=False):
         """Return a phonemized version of the corpus
 
         All the word related data is removed from the original
         corpus. Lexicon becomes a mapping phone -> phone and the text
         is phonemized (see the phonemize_text method).
+
+        If `validate` is True, the phonemized corpus is validated
+        before being returned.
 
         The returned corpus have same wavs, segments, utt2spk, phones,
         silences and variants than the original "word" corpus.
@@ -395,6 +398,10 @@ class Corpus(utils.abkhazia_base.AbkhaziaBase):
         corpus.variants = self.variants
         corpus.lexicon = {p: p for p in corpus.phones.keys()}
         corpus.text = self.phonemize_text()
+
+        if validate:
+            corpus.validate()
+
         return corpus
 
     def phonemize_text(self):
@@ -418,6 +425,10 @@ class Corpus(utils.abkhazia_base.AbkhaziaBase):
                     phones.append(self.lexicon['<unk>'])
             phonemized[utt_id] = ' '.join(phones)
         return phonemized
+
+    def is_phonemized(self):
+        """Return True if the corpus is at phone level, False at word level"""
+        return sorted(self.phones.keys()) == sorted(self.lexicon.keys())
 
     def plot(self):
         """Plot the distribution of speech duration for each speaker"""

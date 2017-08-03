@@ -177,6 +177,7 @@ class AbstractRecipe(utils.abkhazia_base.AbkhaziaBase):
         This method must be specialized in child classes.
 
         """
+        self.log.info('exporting to %s', self.output_dir)
         self.meta.save(os.path.join(self.output_dir, 'meta.txt'))
 
     def compute(self):

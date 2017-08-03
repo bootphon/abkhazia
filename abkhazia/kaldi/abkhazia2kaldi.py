@@ -95,29 +95,29 @@ class Abkhazia2Kaldi(object):
         CorpusSaver.save_lexicon(self.corpus, target)
         return target
 
-    def setup_phone_lexicon(self):
-        """Create data/local/self.name/lexicon.txt"""
-        local_path = self._local_path()
-        target = os.path.join(local_path, 'lexicon.txt')
+    # def setup_phone_lexicon(self):
+    #     """Create data/local/self.name/lexicon.txt"""
+    #     local_path = self._local_path()
+    #     target = os.path.join(local_path, 'lexicon.txt')
 
-        # get list of phones (including silence and non-silence phones)
-        phones = []
-        for origin in (
-                os.path.join(local_path, 'silence_phones.txt'),
-                os.path.join(local_path, 'nonsilence_phones.txt')):
-            phones += [line.strip()
-                       for line in open_utf8(origin, 'r').xreadlines()]
+    #     # get list of phones (including silence and non-silence phones)
+    #     phones = []
+    #     for origin in (
+    #             os.path.join(local_path, 'silence_phones.txt'),
+    #             os.path.join(local_path, 'nonsilence_phones.txt')):
+    #         phones += [line.strip()
+    #                    for line in open_utf8(origin, 'r').xreadlines()]
 
-        # create 'phone' lexicon
-        with open_utf8(target, 'w') as out:
-            for word in phones:
-                out.write(u'{0} {0}\n'.format(word))
-            # add <unk> word, in case one wants to use the phone loop
-            # lexicon for training it also is necessary if one doesn't
-            # want to modify the validating scripts too much
-            out.write(u'<unk> SPN\n')
+    #     # create 'phone' lexicon
+    #     with open_utf8(target, 'w') as out:
+    #         for word in phones:
+    #             out.write(u'{0} {0}\n'.format(word))
+    #         # add <unk> word, in case one wants to use the phone loop
+    #         # lexicon for training it also is necessary if one doesn't
+    #         # want to modify the validating scripts too much
+    #         out.write(u'<unk> SPN\n')
 
-        return target
+    #     return target
 
     def setup_phones(self):
         """Create data/local/self.name/nonsilence_phones.txt"""
@@ -145,7 +145,6 @@ class Abkhazia2Kaldi(object):
         """Create text in data directory"""
         target = os.path.join(self._output_path(), 'text')
         CorpusSaver.save_text(self.corpus, target)
-        return target
 
     def setup_utt2spk(self):
         """Create utt2spk and spk2utt in data directory"""

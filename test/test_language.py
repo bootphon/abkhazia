@@ -45,6 +45,13 @@ def test_lm(level, order, wpd, corpus, tmpdir):
     lm.level = level
     lm.order = order
     lm.position_dependent_phones = wpd
+
+    # word level + position dependant is invalid
+    if wpd and level == 'word':
+        with pytest.raises(RuntimeError):
+            lm.create()
+        return
+
     lm.create()
     lm.run()
     lm.export()

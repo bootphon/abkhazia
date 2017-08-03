@@ -23,7 +23,6 @@ from abkhazia.kaldi import kaldi_path, Abkhazia2Kaldi
 def prepare_lang(
         corpus,
         output_dir,
-        level='word',
         silence_probability=0.5,
         position_dependent_phones=False,
         keep_tmp_dirs=False,
@@ -42,18 +41,17 @@ def prepare_lang(
     output_dir (path): directory where to write prepared files,
       created if nonexisting.
 
-    level ('word' or 'phone'): set to 'word' (the default) to prepare
-      the corpus at word level, or 'phon' to prepare it at phone
-      level. The prepared data will be used to train language and
-      acoustic models at either word or phone level.
-
     silence_probability (float): The probability to have a silence
       phone. Usually 0.0 or 0.5, default is 0.5.
 
     position_dependent_phones (bool): default to False. Should be set
-      to true or false depending on whether the language model
+      to True or False depending on whether the language model
       produced is destined to be used with an acoustic model trained
-      with or without word position dependent variants of the phones.
+      with or without word position dependent variants of the
+      phones. When set to True, the `corpus` must be at phones level,
+      ie we have corpus.is_phonemized() == True. If the corpus is at
+      word level, asking for position dependent phones raise an
+      RuntimeError.
 
     keep_tmp_dir (bool): default to False. If true, keep the
       directories 'recipe' and 'local' in `output_dir`, if false
@@ -68,24 +66,32 @@ def prepare_lang(
     The return code of the Kaldi prepare_lang script. 0 for success,
     any other for error.
 
+    Raise:
+    ------
+
+    RuntimeError if the corpus is at word level and
+    `position_dependent_phones` is True.
+
     """
+    if position_dependent_phones and not corpus.is_phonemized():
+        raise RuntimeError(
+            'position dependant phones required but '
+            'the corpus is at word level. Use corpus.phonemize() '
+            'to convert your corpus at phone level.')
+
     output_dir = os.path.abspath(output_dir)
     log.info('preparing lexicon in %s (L.fst)...', output_dir)
 
-    # init the kaldi recipe in output_dir/recipe
+    # init the kaldi recipe in output_dir/lang
     a2k = Abkhazia2Kaldi(
-        corpus, os.path.join(output_dir, 'recipe'), name='dict', log=log)
+        corpus, os.path.join(output_dir, 'lang'), name='dict', log=log)
 
     a2k.setup_phones()
     a2k.setup_silences()
     a2k.setup_variants()
     a2k.setup_kaldi_folders()
     a2k.setup_machine_specific_scripts()
-
-    if level == 'word':
-        a2k.setup_lexicon()
-    else:
-        a2k.setup_phone_lexicon()
+    a2k.setup_lexicon()
 
     # choosing the script according to level and word position
     # dependent phones. If word_position_dependent is true and the lm
@@ -94,8 +100,15 @@ def prepare_lang(
     # (some slight customizations of the script are necessary to
     # decode with a phone loop language model when word position
     # dependent phone variants have been trained).
-    if level == 'phone' and position_dependent_phones:
+    if position_dependent_phones:
+        log.debug('word position dependant setup for lang directory')
+
         script = os.path.join(a2k.share_dir, 'prepare_lang_wpdpl.sh')
+
+        os.makedirs(os.path.join(a2k.recipe_dir, 'local'))
+        os.symlink(
+            os.path.join(a2k.share_dir, 'validate_lang_wpdpl.pl'),
+            os.path.join(a2k.recipe_dir, 'local', 'validate_lang_wpdpl.pl'))
     else:
         script = os.path.join(
             a2k.kaldi_root, 'egs', 'wsj', 's5', 'utils', 'prepare_lang.sh')
