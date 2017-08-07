@@ -16,7 +16,6 @@
 
 import gzip
 import os
-import pkg_resources
 import re
 import shutil
 import tempfile
@@ -25,7 +24,7 @@ import abkhazia.utils as utils
 import abkhazia.abstract_recipe as abstract_recipe
 from abkhazia.corpus.corpus_saver import CorpusSaver
 from abkhazia.language.arpa import ARPALanguageModel
-from abkhazia.kaldi import kaldi_path
+from abkhazia.kaldi import kaldi_path, prepare_lang
 
 
 def check_language_model(lm_dir):
@@ -34,7 +33,6 @@ def check_language_model(lm_dir):
         lm_dir,
         ['oov.int', 'G.fst', 'G.arpa.gz', 'phones.txt'],
         name='language model')
-
 
 def read_params(lm_dir):
     """Parse the file `lm_dir`/params.txt and return a pair (lm_level, lm_order)
@@ -92,10 +90,10 @@ class LanguageModel(abstract_recipe.AbstractRecipe):
         ones. Must be in [0, 1[, (usually 0.0 or 0.5, 0.5 is the
         default from kaldi wsj/utils/prepare_lang.sh).
 
-    position_dependent_phones (bool): Should be set to True or
-        False depending on whether the language model produced is
-        destined to be used with an acoustic model trained with or
-        without word position dependent variants of the phones
+    position_dependent_phones (bool): Should be set to True or False
+        depending on whether the language model produced is destined
+        to be used with an acoustic model trained with or without word
+        position dependent variants of the phones. Default to False.
 
     Exemple:
     --------
@@ -115,7 +113,7 @@ class LanguageModel(abstract_recipe.AbstractRecipe):
 
     def __init__(self, corpus, output_dir,
                  level='word', order=2, silence_probability=0.5,
-                 position_dependent_phones=True,
+                 position_dependent_phones=False,
                  log=utils.logger.null_logger()):
         super(LanguageModel, self).__init__(corpus, output_dir, log=log)
 
@@ -129,6 +127,10 @@ class LanguageModel(abstract_recipe.AbstractRecipe):
         self.order = order
         self.silence_probability = silence_probability
         self.position_dependent_phones = position_dependent_phones
+
+        # Output of kaldi.prepare_lang, a prerequisite for language
+        # modeling
+        self.lang_dir = os.path.join(self.recipe_dir, 'lang')
 
     def _check_level(self):
         level_choices = ['word', 'phone']
@@ -168,9 +170,6 @@ class LanguageModel(abstract_recipe.AbstractRecipe):
                 'language model but the corpus is at word level!')
             self.log.warning('Converting the corpus from words to phones...')
             self.corpus = self.corpus.phonemize()
-
-    # def _setup_prepare_lang_wpdpl(self):
-    #     """Prepare language/lang/ folder for word position dependent models"""
 
     def _compile_fst(self, G_txt, G_fst):
         """Compile and sort a text FST to kaldi binary FST
@@ -308,7 +307,7 @@ class LanguageModel(abstract_recipe.AbstractRecipe):
         """
         self.log.info('converting ARPA to FST')
 
-        words_txt = os.path.join(self.output_dir, 'words.txt')
+        words_txt = os.path.join(self.lang_dir, 'words.txt')
         for _file in (arpa_lm, words_txt):
             if not os.path.isfile(_file):
                 raise IOError('excpected input file {} to exist'.format(_file))
@@ -381,11 +380,14 @@ class LanguageModel(abstract_recipe.AbstractRecipe):
         """Initialize the recipe data in `self.recipe_dir`"""
         self.check_parameters()
 
+        self.a2k.setup_kaldi_folders()
+        self.a2k.setup_machine_specific_scripts()
+
         lm_text = os.path.join(self.a2k._local_path(), 'lm_text.txt')
         CorpusSaver.save_text(self.corpus, lm_text)
 
-        utils.prepare_lang.prepare_lang(
-            self.corpus, self.recipe_dir,
+        prepare_lang(
+            self.corpus, self.lang_dir,
             silence_probability=self.silence_probability,
             position_dependent_phones=self.position_dependent_phones,
             keep_tmp_dirs=True, log=self.log)
@@ -413,6 +415,15 @@ class LanguageModel(abstract_recipe.AbstractRecipe):
     def export(self):
         super(LanguageModel, self).export()
 
+        # export oov.int and phones.txt from the lang folder
+        shutil.copy(os.path.join(self.lang_dir, 'oov.int'), self.output_dir)
+        shutil.copy(os.path.join(self.lang_dir, 'phones.txt'), self.output_dir)
+
+        # export the lang/local folder
+        shutil.move(os.path.join(self.lang_dir, 'local'), self.output_dir)
+        os.symlink(os.path.join(self.output_dir, 'local'),
+                   os.path.join(self.lang_dir, 'local'))
+
         # G.arpa.gz is needed for acoustic modeling
         for g in ('G.arpa.gz', 'G.fst'):
             origin = os.path.join(
@@ -422,4 +433,9 @@ class LanguageModel(abstract_recipe.AbstractRecipe):
 
         # write a little file with LM parameters
         with open(os.path.join(self.output_dir, 'params.txt'), 'w') as param:
-            param.write('{} {}\n'.format(self.level, self.order))
+            param.write('\n'.join((
+                'level: {}'.format(self.level),
+                'order: {}'.format(self.order),
+                'silence_probability: {}'.format(self.silence_probability),
+                'position_dependent_phones: {}'.format(
+                    self.position_dependent_phones))))

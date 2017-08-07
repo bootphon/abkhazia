@@ -30,8 +30,10 @@ def prepare_lang(
     """Wrapper on the Kaldi wsj/utils/prepare_lang.sh script
 
     Create the directory `output_dir` and populate it as described in
-    http://kaldi-asr.org/doc/data_prep.html#data_prep_lang_creating. It
-    produces (among other files) the L.fst part of the HCLG model.
+    http://kaldi-asr.org/doc/data_prep.html#data_prep_lang_creating. Following
+    Kaldi conventions, this `output_dir` should be named 'lang' but
+    this is not required by abkhazia. The script produces among other
+    files the lexicon part (L.fst) of the HCLG model.
 
     Parameters:
     -----------
@@ -73,7 +75,7 @@ def prepare_lang(
     `position_dependent_phones` is True.
 
     """
-    if position_dependent_phones and not corpus.is_phonemized():
+    if position_dependent_phones is True and not corpus.is_phonemized():
         raise RuntimeError(
             'position dependant phones required but '
             'the corpus is at word level. Use corpus.phonemize() '
@@ -82,9 +84,8 @@ def prepare_lang(
     output_dir = os.path.abspath(output_dir)
     log.info('preparing lexicon in %s (L.fst)...', output_dir)
 
-    # init the kaldi recipe in output_dir/lang
-    a2k = Abkhazia2Kaldi(
-        corpus, os.path.join(output_dir, 'lang'), name='dict', log=log)
+    # init the kaldi recipe in output_dir
+    a2k = Abkhazia2Kaldi(corpus, output_dir, name='dict', log=log)
 
     a2k.setup_phones()
     a2k.setup_silences()
@@ -100,7 +101,7 @@ def prepare_lang(
     # (some slight customizations of the script are necessary to
     # decode with a phone loop language model when word position
     # dependent phone variants have been trained).
-    if position_dependent_phones:
+    if position_dependent_phones is True:
         log.debug('word position dependant setup for lang directory')
 
         script = os.path.join(a2k.share_dir, 'prepare_lang_wpdpl.sh')

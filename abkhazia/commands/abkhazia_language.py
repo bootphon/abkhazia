@@ -37,16 +37,10 @@ class AbkhaziaLanguage(AbstractKaldiCommand):
         group = parser.add_argument_group('language model parameters')
 
         group.add_argument(
-            '-s', '--silence-probability', default=0.5,
-            metavar='<float>', type=float,
-            help='usually 0.0 or 0.5, default is %(default)s')
-
-        group.add_argument(
-            '-w', '--word-position-dependent', action='store_true',
-            help='''Should be set to true or false depending on whether the
-            language model produced is destined to be used with an acoustic
-            model trained with or without word position dependent
-            variants of the phones.''')
+            '-l', '--model-level', default='word',
+            help="compute either a phone-level or a word-level language "
+            "model, default is '%(default)s'",
+            metavar='<phone|word>', choices=['phone', 'word'])
 
         group.add_argument(
             '-n', '--model-order', type=int, metavar='<int>', default=2,
@@ -54,10 +48,15 @@ class AbkhaziaLanguage(AbstractKaldiCommand):
             'default is %(default)s')
 
         group.add_argument(
-            '-l', '--model-level', default='word',
-            help="compute either a phone-level or a word-level language "
-            "model, default is '%(default)s'",
-            metavar='<phone|word>', choices=['phone', 'word'])
+            '-s', '--silence-probability', default=0.5,
+            metavar='<float>', type=float,
+            help='usually 0.0 or 0.5, default is %(default)s')
+
+        group.add_argument(
+            '-w', '--word-position-dependent', action='store_true',
+            help='''use this option if the language model produced is destined
+            to be used with an acoustic model trained with or without word
+            position dependent variants of the phones.''')
 
     @classmethod
     def run(cls, args):
@@ -73,5 +72,10 @@ class AbkhaziaLanguage(AbstractKaldiCommand):
             order=args.model_order, level=args.model_level,
             position_dependent_phones=args.word_position_dependent,
             silence_probability=args.silence_probability)
+
+        # when --recipe option is used, do not delete the intermediate
+        # files at the end
         recipe.delete_recipe = False if args.recipe else True
+
+        # compute the language model from the input corpus
         recipe.compute()

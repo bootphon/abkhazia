@@ -17,3 +17,4 @@ from .path import kaldi_path
 from .abkhazia2kaldi import Abkhazia2Kaldi
 from .options import *
 from .ark import *
+from .prepare_lang import prepare_lang

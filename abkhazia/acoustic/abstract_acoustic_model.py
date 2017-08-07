@@ -19,7 +19,6 @@ import shutil
 
 from abkhazia.features import Features
 from abkhazia.abstract_recipe import AbstractRecipe
-from abkhazia.utils import prepare_lang
 import abkhazia.utils as utils
 import abkhazia.kaldi as kaldi
 
@@ -132,7 +131,7 @@ class AbstractAcousticModel(AbstractRecipe):
 
         # create lang directory with L.fst
         l = self.lang_args
-        prepare_lang.prepare_lang(
+        kaldi.prepare_lang(
             self.corpus,
             self.lang_dir,
             level=l['level'],
