@@ -117,7 +117,8 @@ class XitsongaPreparator(AbstractPreparator):
 
     variants = []  # could use lexical stress variants...
 
-    def __init__(self, input_dir, log=utils.logger.null_logger(), copy_wavs=False):
+    def __init__(self, input_dir,
+                 log=utils.logger.null_logger(), copy_wavs=False):
         super(XitsongaPreparator, self).__init__(input_dir, log)
         self.copy_wavs = copy_wavs
         self._wavs = None
@@ -135,6 +136,9 @@ class XitsongaPreparator(AbstractPreparator):
 
     def make_segment(self):
         segments = dict()
+        if not self._wavs:
+            self.list_audio_files()
+
         for wav in self._wavs:
             utt_id = os.path.splitext(os.path.basename(wav))[0]
             segments[utt_id] = (utt_id, None, None)
