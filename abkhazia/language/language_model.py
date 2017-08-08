@@ -417,14 +417,15 @@ class LanguageModel(abstract_recipe.AbstractRecipe):
     def export(self):
         super(LanguageModel, self).export()
 
-        # export oov.int and phones.txt from the lang folder
+        # export data from the lang folder
         shutil.copy(os.path.join(self.lang_dir, 'oov.int'), self.output_dir)
         shutil.copy(os.path.join(self.lang_dir, 'phones.txt'), self.output_dir)
-
-        # export the lang/local folder
-        shutil.move(os.path.join(self.lang_dir, 'local'), self.output_dir)
-        os.symlink(os.path.join(self.output_dir, 'local'),
-                   os.path.join(self.lang_dir, 'local'))
+        shutil.copy(os.path.join(self.lang_dir, 'words.txt'), self.output_dir)
+        shutil.copy(os.path.join(self.lang_dir, 'L.fst'), self.output_dir)
+        shutil.copy(os.path.join(self.lang_dir, 'L_disambig.fst'), self.output_dir)
+        shutil.copytree(
+            os.path.join(self.lang_dir, 'phones'),
+            os.path.join(self.output_dir, 'phones'))
 
         # G.arpa.gz is needed for acoustic modeling
         for g in ('G.arpa.gz', 'G.fst'):
