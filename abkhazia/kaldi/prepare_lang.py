@@ -50,10 +50,7 @@ def prepare_lang(
       to True or False depending on whether the language model
       produced is destined to be used with an acoustic model trained
       with or without word position dependent variants of the
-      phones. When set to True, the `corpus` must be at phones level,
-      ie we have corpus.is_phonemized() == True. If the corpus is at
-      word level, asking for position dependent phones raise an
-      RuntimeError.
+      phones.
 
     keep_tmp_dir (bool): default to False. If true, keep the
       directories 'recipe' and 'local' in `output_dir`, if false
@@ -68,19 +65,7 @@ def prepare_lang(
     The return code of the Kaldi prepare_lang script. 0 for success,
     any other for error.
 
-    Raise:
-    ------
-
-    RuntimeError if the corpus is at word level and
-    `position_dependent_phones` is True.
-
     """
-    if position_dependent_phones is True and not corpus.is_phonemized():
-        raise RuntimeError(
-            'position dependant phones required but '
-            'the corpus is at word level. Use corpus.phonemize() '
-            'to convert your corpus at phone level.')
-
     output_dir = os.path.abspath(output_dir)
     log.info('preparing lexicon in %s (L.fst)...', output_dir)
 
@@ -101,7 +86,7 @@ def prepare_lang(
     # (some slight customizations of the script are necessary to
     # decode with a phone loop language model when word position
     # dependent phone variants have been trained).
-    if position_dependent_phones is True:
+    if position_dependent_phones:
         log.debug('word position dependant setup for lang directory')
 
         script = os.path.join(a2k.share_dir, 'prepare_lang_wpdpl.sh')
