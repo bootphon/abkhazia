@@ -29,6 +29,7 @@ def _split_raw_utt(raw_utt):
                 '<EXT-.+?>|<EXt-.+?>|<EXT_.+?>|<LAUGH-.+?>|<LAUGH>|<ERROR.*?>')
     return [u.strip() for u in re.split(split_re, raw_utt)]
 
+
 _Word = collections.namedtuple('Word', 'word, time')
 
 

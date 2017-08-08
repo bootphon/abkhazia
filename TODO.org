@@ -43,7 +43,7 @@
   (for instance, specifically retrain silence models, or retrain on a
   bunch of new corpus)
 - [ ] questions vs data-driven option (is it for tree building ?)
-* phonetic_learning branch [1/2]
+* perceptual_tuning branch [1/2]
 ** DONE AM does not depend on LM [3/3]
 - [X] write a prepare_lang.sh standalone wrapper
 - [X] independant call to prepare_lang in AM classes

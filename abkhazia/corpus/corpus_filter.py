@@ -14,15 +14,11 @@
 # along with abkhazia. If not, see <http://www.gnu.org/licenses/>.
 """Provides the CorpusFilter class"""
 
-import ConfigParser
-import random
-import numpy as np
 import os
 
 from collections import defaultdict
-from operator import itemgetter
 from math import exp
-from abkhazia.utils import logger, config, open_utf8
+from abkhazia.utils import logger, open_utf8
 
 
 class CorpusFilter(object):
@@ -70,7 +66,7 @@ class CorpusFilter(object):
                        self.size, len(self.speakers))
 
     def create_filter(self, out_path, function,
-                      nb_speaker=None, 
+                      nb_speaker=None,
                       new_speakers=10, THCHS30=False):
         """Prepare the corpus for the cutting
            The speakers are sorted by their speech duration.
@@ -172,7 +168,7 @@ class CorpusFilter(object):
         # for each speaker, list utterances
         #for utt,spkr in self.utts:
         #    spk2utts[spkr].append(utt)
-        
+
         spk2utts_temp=defaultdict(list)
         for utt,spkr in self.utts:
             utt_start = self.corpus.segments[utt][1]
@@ -245,8 +241,8 @@ class CorpusFilter(object):
     def filter_THCHS30(self, names, function, limits):
         """split the THCHS30 corpus without having the same text for some speakers
 
-        
-        Return the subcorpus 
+
+        Return the subcorpus
         """
         time = 0
         utt_ids = []
@@ -254,8 +250,8 @@ class CorpusFilter(object):
         utt2dur = self.utt2dur
         not_kept_utts = defaultdict(list)
         corpus = self.corpus
-        
-        
+
+
         # create list of utterances we want to keep, utterances we don't want to keep
         for speaker in self.THCHS30_family:
             all_utts = spk2utts[speaker]
@@ -333,7 +329,7 @@ class CorpusFilter(object):
             elif len(spk_id)==3:
                 spk_id='0'+spk_id
             self.gender[spk_id]=sex
-            
+
     def write_family_set(self,family,out):
         out=os.path.join(os.path.dirname(out),'family')
         if not os.path.isdir(out):
@@ -343,5 +339,3 @@ class CorpusFilter(object):
         with open(out_path,'w') as outf:
             for spkr in family:
                 outf.write(u'{}\n'.format(spkr))
-
-

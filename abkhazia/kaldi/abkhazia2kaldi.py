@@ -157,7 +157,7 @@ class Abkhazia2Kaldi(object):
             for spk, utt in sorted(self.corpus.spk2utt().iteritems()):
                 out.write(u'{} {}\n'.format(spk, ' '.join(sorted(utt))))
 
-    def setup_segments(self,):
+    def setup_segments(self):
         """Create segments in data directory"""
         target = os.path.join(self._output_path(), 'segments')
         # write only if starts and stops are specified in segments.txt
