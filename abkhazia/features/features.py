@@ -1,4 +1,4 @@
-# Copyright 2016 Thomas Schatz, Xuan-Nga Cao, Mathieu Bernard
+# Copyright 2016, 2017 Thomas Schatz, Xuan-Nga Cao, Mathieu Bernard
 #
 # This file is part of abkhazia: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -58,8 +58,9 @@ class Features(abstract_recipe.AbstractRecipe):
 
     def __init__(self, corpus, output_dir,
                  type='mfcc', use_pitch=False, use_cmvn=False, delta_order=0,
-                 log=utils.logger.null_logger()):
-        super(Features, self).__init__(corpus, output_dir, log=log)
+                 delete_recipe=True, log=utils.logger.null_logger()):
+        super(Features, self).__init__(
+            corpus, output_dir, delete_recipe=delete_recipe, log=log)
 
         self.type = type
         self.use_pitch = use_pitch

@@ -60,7 +60,8 @@ class AbstractRecipe(utils.abkhazia_base.AbkhaziaBase):
     """
     name = NotImplemented
 
-    def __init__(self, corpus, output_dir, log=utils.logger.null_logger()):
+    def __init__(self, corpus, output_dir,
+                 delete_recipe=True, log=utils.logger.null_logger()):
         super(AbstractRecipe, self).__init__(log=log)
         self.njobs = utils.default_njobs()
         self.corpus = corpus
@@ -77,7 +78,7 @@ class AbstractRecipe(utils.abkhazia_base.AbkhaziaBase):
             os.makedirs(self.recipe_dir)
 
         # if True, delete the recipe_dir on instance destruction
-        self.delete_recipe = True
+        self.delete_recipe = delete_recipe
 
         # init the abkhazia2kaldi converter
         self.a2k = Abkhazia2Kaldi(

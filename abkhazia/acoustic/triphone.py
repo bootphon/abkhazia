@@ -86,10 +86,11 @@ class Triphone(AbstractAcousticModel):
             help='Target number of Gaussians at the end of training'),
     )}
 
-    def __init__(self, corpus, feats_dir, mono_dir,
-                 output_dir, lang_args, log=utils.logger.null_logger):
+    def __init__(self, corpus, feats_dir, mono_dir, output_dir, lang_args,
+                 delete_recipe=True, log=utils.logger.null_logger):
         super(Triphone, self).__init__(
-            corpus, feats_dir, output_dir, lang_args, log=log)
+            corpus, feats_dir, output_dir, lang_args,
+            delete_recipe=delete_recipe, log=log)
 
         self.mono_dir = os.path.abspath(mono_dir)
         utils.check_directory(

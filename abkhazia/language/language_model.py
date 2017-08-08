@@ -114,8 +114,10 @@ class LanguageModel(abstract_recipe.AbstractRecipe):
     def __init__(self, corpus, output_dir,
                  level='word', order=2, silence_probability=0.5,
                  position_dependent_phones=False,
+                 delete_recipe=True,
                  log=utils.logger.null_logger()):
-        super(LanguageModel, self).__init__(corpus, output_dir, log=log)
+        super(LanguageModel, self).__init__(
+            corpus, output_dir, delete_recipe=delete_recipe, log=log)
 
         # Here we could use a different silence_probability. Thomas
         # thinks however that position_dependent_phones has to be the

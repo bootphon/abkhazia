@@ -89,9 +89,9 @@ class AbstractAcousticModel(AbstractRecipe):
     options = NotImplemented
 
     def __init__(self, corpus, input_dir, output_dir, lang_args,
-                 log=utils.logger.null_logger):
+                 delete_recipe=True, log=utils.logger.null_logger):
         super(AbstractAcousticModel, self).__init__(
-            corpus, output_dir, log=log)
+            corpus, output_dir, delete_recipe=delete_recipe, log=log)
 
         self.input_dir = os.path.abspath(input_dir)
         self.data_dir = os.path.join(self.recipe_dir, 'data', 'acoustic')
@@ -104,7 +104,6 @@ class AbstractAcousticModel(AbstractRecipe):
 
         # check lang_args are OK
         l = self.lang_args
-        assert l['level'] in ('word', 'phone')
         assert l['silence_probability'] <= 1 and l['silence_probability'] > 0
         assert isinstance(l['position_dependent_phones'], bool)
         assert isinstance(l['keep_tmp_dirs'], bool)
@@ -134,7 +133,6 @@ class AbstractAcousticModel(AbstractRecipe):
         kaldi.prepare_lang(
             self.corpus,
             self.lang_dir,
-            level=l['level'],
             silence_probability=l['silence_probability'],
             position_dependent_phones=l['position_dependent_phones'],
             keep_tmp_dirs=l['keep_tmp_dirs'],

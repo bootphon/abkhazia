@@ -60,9 +60,10 @@ class Align(abstract_recipe.AbstractRecipe):
     _align_script = 'steps/align_fmllr_lats.sh'
     """The alignment recipe in Kaldi"""
 
-    def __init__(self, corpus, output_dir=None,
+    def __init__(self, corpus, output_dir=None, delete_recipe=True,
                  log=utils.logger.null_logger()):
-        super(Align, self).__init__(corpus, output_dir, log=log)
+        super(Align, self).__init__(
+            corpus, output_dir, delete_recipe=delete_recipe, log=log)
 
         # features, language and acoustic models directories
         self.feat_dir = None

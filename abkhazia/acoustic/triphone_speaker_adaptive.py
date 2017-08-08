@@ -96,10 +96,11 @@ class TriphoneSpeakerAdaptive(AbstractAcousticModel):
             help='Target number of Gaussians at the end of training'),
     )}
 
-    def __init__(self, corpus, feats_dir, tri_dir,
-                 output_dir, lang_args, log=utils.logger.null_logger):
+    def __init__(self, corpus, feats_dir, tri_dir, output_dir, lang_args,
+                 delete_recipe=True, log=utils.logger.null_logger):
         super(TriphoneSpeakerAdaptive, self).__init__(
-            corpus, feats_dir, output_dir, lang_args, log=log)
+            corpus, feats_dir, output_dir, lang_args,
+            delete_recipe=delete_recipe, log=log)
 
         self.tri_dir = os.path.abspath(tri_dir)
         utils.check_directory(

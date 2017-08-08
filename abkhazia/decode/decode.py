@@ -40,8 +40,10 @@ class Decode(abstract_recipe.AbstractRecipe):
     name = 'decode'
 
     def __init__(self, corpus, lm_dir, feats_dir, am_dir, output_dir,
-                 decode_type=None, log=utils.logger.null_logger()):
-        super(Decode, self).__init__(corpus, output_dir, log=log)
+                 decode_type=None, delete_recipe=True,
+                 log=utils.logger.null_logger()):
+        super(Decode, self).__init__(
+            corpus, output_dir, delete_recipe=delete_recipe, log=log)
         self.feat_dir = os.path.abspath(feats_dir)
         self.lm_dir = os.path.abspath(lm_dir)
         self.am_dir = os.path.abspath(am_dir)
