@@ -426,6 +426,10 @@ class LanguageModel(abstract_recipe.AbstractRecipe):
         shutil.copytree(
             os.path.join(self.lang_dir, 'phones'),
             os.path.join(self.output_dir, 'phones'))
+        shutil.copytree(
+            os.path.join(self.lang_dir, 'local'),
+            os.path.join(self.output_dir, 'local'))
+
 
         # G.arpa.gz is needed for acoustic modeling
         for g in ('G.arpa.gz', 'G.fst'):
