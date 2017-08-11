@@ -452,31 +452,31 @@ def step_3(am_type='nnet'):
     feat_dir = os.path.join(corpus_b_dir, 'features')
     decode_dir = os.path.join(corpus_b_dir, 'decode')
 
-    # # compute features for corpus B
-    # Features(
-    #     corpus,
-    #     feat_dir,
-    #     type='mfcc',
-    #     delta_order=0,
-    #     use_pitch=False,
-    #     use_cmvn=True,
-    #     delete_recipe=False,
-    #     log=log).compute()
+    # compute features for corpus B
+    Features(
+        corpus,
+        feat_dir,
+        type='mfcc',
+        delta_order=0,
+        use_pitch=False,
+        use_cmvn=True,
+        delete_recipe=False,
+        log=log).compute()
 
-    # # decode corpus B on AM/LM from corpus A
-    # decoder = Decode(
-    #     corpus,
-    #     lm_dir,
-    #     feat_dir,
-    #     am_dir,
-    #     decode_dir,
-    #     delete_recipe=False,
-    #     log=log)
-    # decoder.score_opts['skip-scoring'] = True
-    # decoder.compute()
+    # decode corpus B on AM/LM from corpus A
+    decoder = Decode(
+        corpus,
+        lm_dir,
+        feat_dir,
+        am_dir,
+        decode_dir,
+        delete_recipe=False,
+        log=log)
+    decoder.score_opts['skip-scoring'] = True
+    decoder.compute()
 
     # compute phone posteriograms from the decoded lattices
-    # lattice_to_phone_post(decode_dir, am_dir)
+    lattice_to_phone_post(decode_dir, am_dir)
     post_to_h5f(decode_dir, am_dir)
 
 
@@ -499,21 +499,21 @@ def main(am_type='trisa', subsampling=True, overwrite=False):
     """
     # setup the data directory
     log.info('output directory is %s', DATA_DIR)
-    # if overwrite and os.path.isdir(DATA_DIR):
-    #     log.info('erasing content in %s', DATA_DIR)
-    #     shutil.rmtree(DATA_DIR)
-    # os.makedirs(DATA_DIR)
+    if overwrite and os.path.isdir(DATA_DIR):
+        log.info('erasing content in %s', DATA_DIR)
+        shutil.rmtree(DATA_DIR)
+    os.makedirs(DATA_DIR)
 
-    # # prepare the 2 corpora A and B
-    # log.info('STEP 0: preparing corpora %s and %s', NAME_A, NAME_B)
-    # prepare(NAME_A, PREP_A, PATH_A, DATA_DIR, subsampling=subsampling)
-    # prepare(NAME_B, PREP_B, PATH_B, DATA_DIR, subsampling=subsampling)
+    # prepare the 2 corpora A and B
+    log.info('STEP 0: preparing corpora %s and %s', NAME_A, NAME_B)
+    prepare(NAME_A, PREP_A, PATH_A, DATA_DIR, subsampling=subsampling)
+    prepare(NAME_B, PREP_B, PATH_B, DATA_DIR, subsampling=subsampling)
 
-    # # compute word position dependant LM/AM on corpus A
-    # step_1(am_type=am_type)
+    # compute word position dependant LM/AM on corpus A
+    step_1(am_type=am_type)
 
-    # # decode and score corpus A on the AM computed in step 1
-    # step_2(am_type=am_type)
+    # decode and score corpus A on the AM computed in step 1
+    step_2(am_type=am_type)
 
     # decode corpus B on the AM and export phone posteriograms
     step_3(am_type=am_type)
