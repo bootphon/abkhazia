@@ -26,24 +26,32 @@ Step 0
 Step 1 (corpus A)
   - MFCC features
   - position dependant phones
-  - word bigram language model
-  - speaker adaptive triphone acoustic model
+  - compute a word bigram language model
+  - train an acoustic model, can be 'mono', 'tri', 'trisa' or 'nnet'
 
 Step 2 (corpus A)
-  - decode it on itself
-  - compute WER
+  - decode it on the AM computed in step 1
+  - score it and compute WER
 
 Step 3 (corpus B)
   - MFCC features
   - position dependant phones
   - decode on AM from step 1
-  - TODO output the phone posteriograms from the decoded lattices
+  - compute phone posteriograms from the decoded lattices
+  - fold the word position dependant phones in the posteriors
+  - export them to a h5features file
 
 """
 
 import os
+import re
 import shutil
 
+import h5features
+import numpy as np
+import abkhazia.utils as utils
+
+from abkhazia.kaldi import kaldi_path
 from abkhazia.utils.logger import get_log
 from abkhazia.corpus import Corpus
 from abkhazia.features import Features
@@ -154,6 +162,161 @@ def subsample(corpus, name, nspeakers=4, duration=3600):
              sum(utt2duration[u] for u in utts), nspeakers)
 
     return corpus.subcorpus(utts, name=name, validate=False, prune=True)
+
+
+def lattice_to_phone_post(decode_dir, am_dir, acoustic_scale=0.1, njobs=None):
+    """Compute phone level posteriograms from decoded lattices
+
+    Produces `decode_dir`/phones.post
+
+    :param str decode_dir: Absolute path to the decoding
+      directory. The function reads the file `decode_dir`/lat.*.gz. It
+      creates the files `decode_dir`/phones.post (with the computed
+      posteriors) and `decode_dir`/log/lattice-to-phone-post.*.log.
+
+    :param str am_dir: Absolute path to acoustic modelel directory
+      used for decoding. The function reads `am_dir`/final.mdl.
+
+    :param float acoustic_scale: Scaling factor for acoustic
+      likelihoods. Default to 0.1.
+
+    :param int njobs: Number of parallel subprocesses to run. If not
+      specified, default to abkhazia.utils.misc.default_njobs().
+
+    """
+    command = (
+        '{train_cmd} JOB=1:{njobs} {decode_dir}/log/lattice-to-phone-post.JOB.log '
+        'lattice-to-post --acoustic-scale={scale} '
+        '"ark:gunzip -c {decode_dir}/lat.*.gz|" ark:- | '
+        'post-to-phone-post {am_dir}/final.mdl '
+        'ark:- ark,t:{decode_dir}/phones.post'.format(
+            train_cmd=os.path.join(
+                'utils', utils.config.get('kaldi', 'train-cmd')),
+            njobs=njobs if njobs else utils.default_njobs(),
+            decode_dir=decode_dir,
+            am_dir=am_dir,
+            scale=acoustic_scale))
+
+    log.info('computing posteriors from the decoded lattices...')
+    log.debug('running command "%s"', command)
+    utils.jobs.run(
+        command,
+        stdout=log.debug,
+        env=kaldi_path(),
+        cwd=os.path.join(decode_dir, 'recipe'))
+
+
+def read_kaldi_phonemap(phones_file, word_position_dependant=True):
+    """Load a 'phones.txt' Kaldi file as a dict code -> phone"""
+    phonemap = {}
+    for line in utils.open_utf8(phones_file, 'r'):
+        phone, code = line.strip().split(' ')
+
+	# remove word position markers
+	if word_position_dependant:
+	    if phone[-2:] in ['_I', '_B', '_E', '_S']:
+		phone = phone[:-2]
+	phonemap[code] = phone
+
+    return phonemap
+
+
+def get_phone_order(phonemap):
+    """Output an easily reproducible phone order from a phonemap"""
+    # remove kaldi disambiguation symbols and <eps> from the phonemap,
+    # as those shouldn't be in the phone_order
+    for code, phone in phonemap.items():
+	if re.match(u'#[0-9]+$|<eps>$', phone):
+	    del phonemap[code]
+
+    # order the phones in an easily reproducible way, unique is needed
+    # since there can be several variants of each phone in the map
+    phone_order = list(np.unique(phonemap.values()))
+
+    phone_order.sort()  # to guarantee reproducible ordering
+    return phone_order
+
+
+def post_to_h5f(decode_dir, am_dir, word_position_dependant=True):
+    """Write Kaldi lattice posteriors to a h5features file
+
+    :param str decode_dir: Absolute path to the decoding directory.
+
+    :param str am_dir: Absolute path to the acoustic model directory.
+
+    :param bool word_position_dependant: Set to True if the acoustic
+      model have been trained on word position dependant versions of
+      the phones. Default is True.
+
+    """
+    log.info('converting posteriors to h5features file')
+
+    phones_file = os.path.join(am_dir, 'lang', 'phones.txt')
+    post_file = os.path.join(decode_dir, 'phones.post')
+    h5file = os.path.join(decode_dir, 'phones_post.h5f')
+    for f in (phones_file, post_file):
+        assert os.path.isfile(f)
+
+    phonemap = read_kaldi_phonemap(phones_file, word_position_dependant)
+
+    # get the order in which phones will be represented in the
+    # dimensions of the posteriorgram
+    phone_order = get_phone_order(phonemap)
+    dim = len(phone_order)
+
+    features = []
+    utt_ids = []
+    times = []
+    for line in utils.open_utf8(post_file, 'r'):
+        tokens = line.strip().split(' ')
+	utt_id, tokens = tokens[0], tokens[1:]
+	frames = []
+	inside = False
+	for token in tokens:
+	    if token == '[':
+		assert not(inside)
+		inside = True
+		frame = []
+	    elif token == ']':
+		assert inside
+		inside = False
+		frames.append(frame)
+	    else:
+		assert inside
+		frame.append(token)
+
+        utt_features = np.zeros(shape=(len(frames), dim), dtype=np.float64)
+	for f, frame in enumerate(frames):
+	    assert len(frame) % 2 == 0
+	    probas = [float(p) for p in frame[1::2]]
+	    phones = [phonemap[code] for code in frame[::2]]
+
+            # optimisation 1 would be mapping directly a given code to
+            # a given posterior dim
+	    for phone, proba in zip(phones, probas):
+		i = phone_order.index(phone)
+		# add to previous proba since different variants of a
+		# same phone will map to the same dimension i of the
+		# posteriorgram
+		utt_features[f, i] = utt_features[f, i] + proba
+
+        # normalize posteriorgrams to correct for rounding or thresholding errors
+	# by rescaling globally
+	total_proba = np.sum(utt_features, axis=1)
+	if np.max(np.abs(total_proba - 1)) >= 1e-5:  # ad hoc numerical tolerance...
+	    raise IOError(
+                'In utterance {0}, frame {1}: posteriorgram does not sum to '
+                'one, difference is {2}: '.format(
+                    utt_id, f, np.max(np.abs(total_proba - 1))))
+
+        utt_features = utt_features / np.tile(total_proba, (dim, 1)).T
+	features.append(utt_features)
+	utt_ids.append(utt_id)
+
+	# as in kaldi2abkhazia, this is ad hoc and has not been checked formally
+	times.append(0.0125 + 0.01 * np.arange(len(frames)))
+
+    h5features.write(h5file, 'features', utt_ids, times, features)
 
 
 def step_1(am_type='nnet'):
@@ -273,7 +436,7 @@ def step_2(am_type='nnet'):
 def step_3(am_type='nnet'):
     """Decode corpus B on AM/LM from corpus A"""
     log.info(
-        'STEP 3: decode wavs from %s on %s model trained on corpus %s',
+        'STEP 3: decode wavs from %s on %s model trained on %s',
         NAME_B, am_type, NAME_A)
 
     # load the input corpus
@@ -289,28 +452,32 @@ def step_3(am_type='nnet'):
     feat_dir = os.path.join(corpus_b_dir, 'features')
     decode_dir = os.path.join(corpus_b_dir, 'decode')
 
-    # compute features for corpus B
-    Features(
-        corpus,
-        feat_dir,
-        type='mfcc',
-        delta_order=0,
-        use_pitch=False,
-        use_cmvn=True,
-        delete_recipe=False,
-        log=log).compute()
+    # # compute features for corpus B
+    # Features(
+    #     corpus,
+    #     feat_dir,
+    #     type='mfcc',
+    #     delta_order=0,
+    #     use_pitch=False,
+    #     use_cmvn=True,
+    #     delete_recipe=False,
+    #     log=log).compute()
 
-    # decode corpus B on AM/LM from corpus A
-    decoder = Decode(
-        corpus,
-        lm_dir,
-        feat_dir,
-        am_dir,
-        decode_dir,
-        delete_recipe=False,
-        log=log)
-    decoder.score_opts['skip-scoring'] = True
-    decoder.compute()
+    # # decode corpus B on AM/LM from corpus A
+    # decoder = Decode(
+    #     corpus,
+    #     lm_dir,
+    #     feat_dir,
+    #     am_dir,
+    #     decode_dir,
+    #     delete_recipe=False,
+    #     log=log)
+    # decoder.score_opts['skip-scoring'] = True
+    # decoder.compute()
+
+    # compute phone posteriograms from the decoded lattices
+    # lattice_to_phone_post(decode_dir, am_dir)
+    post_to_h5f(decode_dir, am_dir)
 
 
 def main(am_type='trisa', subsampling=True, overwrite=False):
@@ -332,23 +499,23 @@ def main(am_type='trisa', subsampling=True, overwrite=False):
     """
     # setup the data directory
     log.info('output directory is %s', DATA_DIR)
-    if overwrite and os.path.isdir(DATA_DIR):
-        log.info('erasing content in %s', DATA_DIR)
-        shutil.rmtree(DATA_DIR)
-    os.makedirs(DATA_DIR)
+    # if overwrite and os.path.isdir(DATA_DIR):
+    #     log.info('erasing content in %s', DATA_DIR)
+    #     shutil.rmtree(DATA_DIR)
+    # os.makedirs(DATA_DIR)
 
-    # prepare the 2 corpora A and B
-    log.info('STEP 0: preparing corpora %s and %s', NAME_A, NAME_B)
-    prepare(NAME_A, PREP_A, PATH_A, DATA_DIR, subsampling=subsampling)
-    prepare(NAME_B, PREP_B, PATH_B, DATA_DIR, subsampling=subsampling)
+    # # prepare the 2 corpora A and B
+    # log.info('STEP 0: preparing corpora %s and %s', NAME_A, NAME_B)
+    # prepare(NAME_A, PREP_A, PATH_A, DATA_DIR, subsampling=subsampling)
+    # prepare(NAME_B, PREP_B, PATH_B, DATA_DIR, subsampling=subsampling)
 
-    # compute word position dependant LM/AM on corpus A
-    step_1(am_type=am_type)
+    # # compute word position dependant LM/AM on corpus A
+    # step_1(am_type=am_type)
 
-    # decode and score corpus A on the AM
-    step_2(am_type=am_type)
+    # # decode and score corpus A on the AM computed in step 1
+    # step_2(am_type=am_type)
 
-    # decode corpus B on the AM
+    # decode corpus B on the AM and export phone posteriograms
     step_3(am_type=am_type)
 
 
