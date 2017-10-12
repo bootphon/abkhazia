@@ -515,7 +515,7 @@ class JapanesePreparator(AbstractGlobalPhonePreparator):
         'Q+d': u'd:',
         'Q+z': u'z:',  # fricative or affricate
         'Q+z+y': u'ʑ:',  # fricative or affricate
-        'Q+F': u'ɸ:'
+        'Q+F': u'ɸ:',
         'Q+b': u'b:'
     }
 
