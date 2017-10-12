@@ -46,7 +46,10 @@ class AbstractGlobalPhonePreparator(AbstractPreparator):
         'Mandarin - http://catalog.elra.info/product_info.php?'
         'products_id=817&language=en',
         'Vietnamese - http://catalog.elra.info/product_info.php?'
-        'products_id=1144&language=en']
+        'products_id=1144&language=en',
+        'Japanese - http://catalog.elra.info/product_info.php?'
+        'products_id=823&language=en'
+        ]
 
     audio_format = 'shn'
 
@@ -67,7 +70,7 @@ class AbstractGlobalPhonePreparator(AbstractPreparator):
                 'Bad formatting for word or transcript: {0}'.format(expr))
         return expr[1:-1]
 
-    def __init__(self, input_dir, log=utils.logger.null_logger(), clusters=False):
+    def __init__(self, input_dir, log=utils.logger.null_logger()):
         super(AbstractGlobalPhonePreparator, self).__init__(input_dir, log=log)
 
         self.transcription_dir = os.path.join(
@@ -78,14 +81,11 @@ class AbstractGlobalPhonePreparator(AbstractPreparator):
             self.input_dir,
             'GlobalPhoneDict-{}'.format(self.language),
             '{}-GPDict.txt'.format(self.language))
+
         # init language specificities
         self.wavs = None
-        self.new_dictionary = self.bootphon_dictionary()
         self._erase_dict = self.correct_dictionary()
         self._erase_trs = self.correct_transcription()
-        # for japanese : 
-        self.clusters = clusters
-        self.kana_to_phone = self.parse_kana_to_phone()
 
     def correct_transcription(self):
         return False
@@ -106,57 +106,37 @@ class AbstractGlobalPhonePreparator(AbstractPreparator):
             pass
 
     def list_audio_files(self):
-        # for some languages, there are corrupted wavefiles that we
+        # for some languages, there are corrupted 
+        # or untranscribed wavefiles that we
         # need to exclude from preparation
         self.log.debug('%i audio files excluded', len(self.exclude_wavs))
+
         # src_dir is the 'adc' directory from the GlobalPhone
         # distribution of the language considered
         src_dir = os.path.join(
             self.input_dir, 'GlobalPhone-{0}/{0}/adc'.format(self.language))
-        exclude_wavs = self.list_missing_transcripts()
-        exclude_wavs = set(exclude_wavs + self.exclude_wavs)
+
         shns = [f for f in
                 utils.list_files_with_extension(
                     src_dir, '.adc.shn', abspath=True, realpath=True)
-                if (os.path.basename(f).replace('.adc.shn', '')
-                not in exclude_wavs and not f[2]=='2') ]
-        self.wavs = [os.path.basename(shn).replace('.adc.shn', '.wav')
+                if os.path.basename(f).replace('.adc.shn', '')
+                not in self.exclude_wavs]
+
+        wavs = [os.path.basename(shn).replace('.adc.shn', '.wav')
                      for shn in shns]
 
-        return zip(shns, self.wavs)
-
-    def list_missing_transcripts(self):
-        ''' Don't treat the wavs that don't have a corresponding
-        transcription'''
-        available_trs = []
-        src_dir = os.path.join(
-            self.input_dir, 'GlobalPhone-{0}/{0}/adc'.format(self.language))
-        for trs in utils.list_directory(self.transcription_dir, abspath=True):
-            spk_id = os.path.splitext(os.path.basename(trs))[0]
-            lines = utils.open_utf8(trs, 'r').readlines()
-            # add utterence id from even lines starting at line 2
-            ids = [spk_id + u'_' + re.sub(ur'\s+|:|;', u'', e)
-                   for e in lines[1::2]]
-            available_trs = available_trs + ids
-        available_trs = set(available_trs)
-
-        for f in utils.list_files_with_extension(
-                src_dir, '.adc.shn', abspath=True, realpath=True):
-            wav_name=os.path.basename(f).replace('.adc.shn','')
-            if wav_name not in available_trs:
-                self.exclude_wavs.append(wav_name)
-        return self.exclude_wavs
+        return zip(shns, wavs)
 
     def make_segment(self):
         segments = dict()
-        for wav in self.wavs:
+        for _, wav in self.list_audio_files():
             wav = os.path.splitext(os.path.basename(wav))[0]
             segments[wav] = (wav, None, None)
         return segments
 
     def make_speaker(self):
         spk2utt = dict()
-        for wav in self.wavs:
+        for _, wav in self.list_audio_files():
             wav = os.path.splitext(os.path.basename(wav))[0]
             spk2utt[wav] = wav[:5]
         return spk2utt
@@ -166,27 +146,24 @@ class AbstractGlobalPhonePreparator(AbstractPreparator):
         for trs in utils.list_directory(self.transcription_dir, abspath=True):
             spk_id = os.path.splitext(os.path.basename(trs))[0]
             lines = utils.open_utf8(trs, 'r').readlines()
-
+            
             # add utterence id from even lines starting at line 2
             ids = [spk_id + u'_' + re.sub(ur'\s+|:|;', u'', e)
                    for e in lines[1::2]]
-
             # delete linebreaks on odd lines starting at line 3
             # (this does not take into account fancy unicode
             # linebreaks), see
             # http://stackoverflow.com/questions/3219014
             transcriptions = [re.sub(ur'\r\n?|\n', u'', e)
                               for e in lines[2::2]]
-
             for i, trs in zip(ids, transcriptions):
                 text[i] = trs
-        
         return text
+        
 
     def make_lexicon(self):
         # parse dictionary lines
         words, transcripts = [], []
-        not_transc=[]
         for line in utils.open_utf8(self.dictionary, 'r').readlines():
             # suppress linebreaks (this does not take into account fancy
             # unicode linebreaks), see
@@ -200,31 +177,23 @@ class AbstractGlobalPhonePreparator(AbstractPreparator):
             words.append(word)
 
             # parse phonetic transcription
-            #try :
             trs = self.strip_accolades(u' '.join(line[1:])).split(u' ')
-            #except:
-            #    print "line: ",line," could not be parsed, skipping it"
-            #    continue
             transcript = []
-            if self.kana_to_phone:
-                (transcript,not_transcripted) = self.transcript_japanese(trs, self.clusters)
-                transcripts.append(u' '.join(transcript))
-                not_transc=not_transc+not_transcripted
-            else:
-                for phone in trs:
-                    if phone[0] == u'{':
-                        phn = phone[1:]
-                        assert phn != u'WB', trs
-                    elif phone[-1] == u'}':
-                        phn = phone[:-1]
-                        assert phn == u'WB', trs
-                    else:
-                        phn = phone
-                        assert phn != u'WB', trs
+            for phone in trs:
+                if phone[0] == u'{':
+                    phn = phone[1:]
+                    assert phn != u'WB', trs
+                elif phone[-1] == u'}':
+                    phn = phone[:-1]
+                    assert phn == u'WB', trs
+                else:
+                    phn = phone
+                    assert phn != u'WB', trs
 
-                    assert not(u'{' in phn), trs
-                    assert not(u'}' in phn), trs
-                    if phn != u'WB':
-                        transcript.append(phn)
-                transcripts.append(u' '.join(transcript))
+                assert not(u'{' in phn), trs
+                assert not(u'}' in phn), trs
+                if phn != u'WB':
+                    transcript.append(phn)
+            transcripts.append(u' '.join(transcript))
+
         return dict(zip(words, transcripts))
