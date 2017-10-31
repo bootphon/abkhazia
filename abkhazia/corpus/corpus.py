@@ -305,16 +305,17 @@ class Corpus(utils.abkhazia_base.AbkhaziaBase):
             corpus.validate()
         return corpus
 
-    def prune(self):
+    def prune(self, prune_lexicon=False):
         """Removes unregistered utterances from a corpus
 
         This method modifies the corpus in place and return None
 
         The pruning operation delete undesired data from utterances
         listed in self.utts(). It removes any segment, text, wav with
-        an unknown utterance id. It finally prunes the lexicon and
-        phones from the pruned text.
+        an unknown utterance id. 
 
+        If prune_lexicon is True, it also prunes the lexicon and
+        phoneset.
         """
         utts = set(self.utts())
 
@@ -326,18 +327,63 @@ class Corpus(utils.abkhazia_base.AbkhaziaBase):
         # prune wavs from pruned segments
         self.wavs = {utils.append_ext(w) for w in set(self.wav2utt().keys())}
 
-        # prune lexicon from pruned text
-        words = self.words(in_lexicon=False)
-        self.lexicon = {key: value for key, value in self.lexicon.items()
-                        if key in words}
-        # make sure <unk> is still here (needed by Kaldi programs)
-        self.lexicon['<unk>'] = 'SPN'
+        if prune_lexicon:
+            # prune lexicon from pruned text
+            words = self.words(in_lexicon=False)
+            self.lexicon = {key: value for key, value in self.lexicon.items()
+                            if key in words}
+            # make sure <unk> is still here (needed by Kaldi programs)
+            self.lexicon['<unk>'] = 'SPN'
 
-        # prune phones from pruned lexicon
-        phones = set(phone for phones in self.lexicon.values()
-                     for phone in phones.split())
-        self.phones = {key: value for key, value in self.phones.items()
-                       if key in phones}
+            # prune phones from pruned lexicon
+            phones = set(phone for phones in self.lexicon.values()
+                         for phone in phones.split())
+            self.phones = {key: value for key, value in self.phones.items()
+                           if key in phones}
+
+    def remove_phones(self, phones=None, silences=None):
+        """Returns a subcorpus with the specified phones and/or silences
+        removed
+        
+        phones : iterable | None, list of phones to remove from corpus
+
+        silences : iterable | None, list of silences to remove from corpus
+
+        The phones/silences are removed from the phoneset/list of silences,
+        the corpus is pruned from utterances containing any of
+        these phones/silences and any dictionary entry containing any of the
+        phones/silences is removed from the lexicon.
+
+        Useful to remove infrequent phones or certain types of noise from a corpus.
+
+        #TODO What about variants?
+        """
+        if phones is None:
+            phones = []
+        if silences is None:
+            silences = []
+        for phone in phones:
+            if not(phone in self.phones):
+                print('Phone to be removed {} not in phoneset!'.format(phone))
+        for silence in silences:
+            if not(silence in self.silences):
+                print('Silence to be removed {} not in silences!'.format(silence))
+        all_symbols = phones + silences
+        words = [word for word, w_phones in self.lexicon.items()
+                    if set.intersection(set(w_phones.split(' ')), all_symbols)]
+        print('Removing {} lexicon words with undesirable phones/silences'.format(len(words)))
+        utt_ids = [utt for utt, text in self.text.items()
+                    if set.intersection(set(text.split(' ')), words)]
+        print('Removing {} utterances with undesirable phones/silences'.format(len(utt_ids)))
+        kept_utts  = [utt_id for utt_id in self.utt2spk if not(utt_id in utt_ids)]
+        corpus = self.subcorpus(kept_utts, validate=False)
+        corpus.lexicon = {key: value for key, value in corpus.lexicon.items()
+                            if not(key in words)}
+        corpus.phones = {key: value for key, value in corpus.phones.items()
+                           if not(key in phones)}
+        corpus.silences = [value for value in corpus.silences if not(value in silences)]
+
+        return corpus
 
     def split(self, train_prop=None, test_prop=None,
               by_speakers=True, random_seed=None):

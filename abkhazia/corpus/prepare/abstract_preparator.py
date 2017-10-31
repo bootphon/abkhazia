@@ -121,7 +121,7 @@ class AbstractPreparator(object):
             size = len(c.utts())
             dur = c.utt2duration()
             c = c.subcorpus([u for u in c.utts() if dur[u] > 0.1+1e-8],
-                            prune=False, validate=False)
+                            prune=True, validate=False)
             self.log.debug(
                 'removed %s utterances shorter than 100ms',
                 size - len(c.utts()))
