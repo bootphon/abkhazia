@@ -508,11 +508,12 @@ class Corpus(utils.abkhazia_base.AbkhaziaBase):
 
         return(plt)
 
-    def merge_wavs(self, corpus_dir, output_dir):
+    def merge_wavs(self, output_dir, log=None, padding=0.):
         """ Merge all wav files from same speaker
         Returns a corpus with one wav file per speaker """
-
-        CorpusMergeWavs(self).merge_wavs(corpus_dir, output_dir)
+        if log is None:
+            log = self.log
+        CorpusMergeWavs(self, log=log).merge_wavs(output_dir, padding)
 
     def create_filter(self, out_path, function,
                       nb_speaker=None, new_speakers=10, THCHS30=False):
