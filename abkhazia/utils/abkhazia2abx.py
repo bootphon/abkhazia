@@ -108,10 +108,10 @@ def alignment2item(corpus, alignment_file, item_file,
 
 def parse_line(line, ali_with_phone_proba):
     if ali_with_phone_proba:
-        fields = lines[0].split()
+        fields = line.split()
         start, stop, phone = fields[1], fields[2], fields[4]
     else:
-        start, stop, phone = lines[0].split()[1:]
+        start, stop, phone = line.split()[1:]
     return start, stop, phone
 
 
