@@ -22,7 +22,8 @@ import joblib
 
 def alignment2item(corpus, alignment_file, item_file,
                    segment_extension='single_phone',
-                   exclude_phones=[], njobs=1, verbose=0):
+                   exclude_phones=[], njobs=1, verbose=0,
+                   ali_with_phone_proba=True):
     """Creates an item file suitable for most standard ABX tasks on speech corpora
 
     * The item file is computed from a corpus and an alignment
@@ -77,6 +78,9 @@ def alignment2item(corpus, alignment_file, item_file,
     verbose (int): degree of joblib verbosity, more than 10 reports
         all the parallel tasks
 
+    ali_with_phone_proba (bool): True if phone posterior probabilities
+        are specified in the alignment file
+
     Raise:
     ------
 
@@ -90,7 +94,8 @@ def alignment2item(corpus, alignment_file, item_file,
     items = joblib.Parallel(
         n_jobs=njobs, verbose=verbose, backend='threading')(
         joblib.delayed(_utt2item)
-        (utt_id, corpus, list(lines), segment_extension, exclude_phones)
+        (utt_id, corpus, list(lines), segment_extension, exclude_phones,
+         ali_with_phone_proba)
         for utt_id, lines in groupby(
                 utils.open_utf8(alignment_file, mode='r'),
                 lambda line: line.split()[0]))
@@ -101,7 +106,17 @@ def alignment2item(corpus, alignment_file, item_file,
         fout.write('\n'.join(item for item in chain(*items)) + '\n')
 
 
-def _utt2item(utt_id, corpus, lines, segment_extension, exclude_phones):
+def parse_line(line, ali_with_phone_proba):
+    if ali_with_phone_proba:
+        fields = lines[0].split()
+        start, stop, phone = fields[1], fields[2], fields[4]
+    else:
+        start, stop, phone = lines[0].split()[1:]
+    return start, stop, phone
+
+
+def _utt2item(utt_id, corpus, lines, segment_extension, exclude_phones,
+              ali_with_phone_proba):
     """Convert an utterance alignment to a list of items"""
     items = []
 
@@ -114,9 +129,12 @@ def _utt2item(utt_id, corpus, lines, segment_extension, exclude_phones):
 
     # use the first phone only in 'single_phone' case
     if segment_extension == 'single_phone':
-        start, stop, phone = lines[0].split()[1:]
+        start, stop, phone = parse_line(lines[0], ali_with_phone_proba)
         prev_phone = 'SIL'
-        next_phone = 'SIL' if len(lines) == 1 else lines[1].split()[3]
+        if len(lines) == 1:
+            next_phone = 'SIL'
+        else:
+            _, _, next_phone = parse_line(lines[1], ali_with_phone_proba)
 
         _append_item(items, corpus, utt_id, start, stop, phone,
                      'SIL', next_phone, speaker, exclude_phones)
@@ -124,9 +142,9 @@ def _utt2item(utt_id, corpus, lines, segment_extension, exclude_phones):
     # middle lines
     for prev_line, line, next_line in zip(
             lines[:-2], lines[1:-1], lines[2:]):
-        prev_start, prev_stop, prev_phone = prev_line.split()[1:]
-        start, stop, phone = line.split()[1:]
-        next_start, next_stop, next_phone = next_line.split()[1:]
+        prev_start, prev_stop, prev_phone = parse_line(prev_line, ali_with_phone_proba)
+        start, stop, phone = parse_line(line, ali_with_phone_proba)
+        next_start, next_stop, next_phone = parse_line(next_line, ali_with_phone_proba)
 
         # setup start and stop according to the segment
         # extension
@@ -140,11 +158,11 @@ def _utt2item(utt_id, corpus, lines, segment_extension, exclude_phones):
         _append_item(items, corpus, utt_id, start, stop, phone,
                      prev_phone, next_phone, speaker, exclude_phones)
 
-    # use the last line only in 'single_phone' case (dont process
+    # use the last line only in 'single_phone' case (and don't process
     # twice the same line as first and last line)
     if segment_extension == 'single_phone' and len(lines) > 1:
-        start, stop, phone = lines[-1].split()[1:]
-        prev_phone = lines[-2].split()[3]
+        start, stop, phone = parse_line(lines[-1], ali_with_phone_proba)
+        _, _, prev_phone = parse_line(lines[-2], ali_with_phone_proba)
 
         _append_item(items, corpus, utt_id, start, stop, phone,
                      prev_phone, 'SIL', speaker, exclude_phones)
