@@ -136,7 +136,7 @@ def _utt2item(utt_id, corpus, lines, segment_extension, exclude_phones,
         else:
             _, _, next_phone = parse_line(lines[1], ali_with_phone_proba)
 
-        _append_item(items, corpus, utt_id, start, stop, phone,
+        _append_item(items, utt_id, start, stop, phone,
                      'SIL', next_phone, speaker, exclude_phones)
 
     # middle lines
@@ -155,7 +155,7 @@ def _utt2item(utt_id, corpus, lines, segment_extension, exclude_phones,
             start = (prev_start + start)/2.
             stop = (stop + next_stop)/2.
 
-        _append_item(items, corpus, utt_id, start, stop, phone,
+        _append_item(items, utt_id, start, stop, phone,
                      prev_phone, next_phone, speaker, exclude_phones)
 
     # use the last line only in 'single_phone' case (and don't process
@@ -164,18 +164,19 @@ def _utt2item(utt_id, corpus, lines, segment_extension, exclude_phones,
         start, stop, phone = parse_line(lines[-1], ali_with_phone_proba)
         _, _, prev_phone = parse_line(lines[-2], ali_with_phone_proba)
 
-        _append_item(items, corpus, utt_id, start, stop, phone,
+        _append_item(items, utt_id, start, stop, phone,
                      prev_phone, 'SIL', speaker, exclude_phones)
 
     return items
 
 
-def _append_item(items, corpus, utt_id, start, stop, phone,
+def _append_item(items, utt_id, start, stop, phone,
                  prev_phone, next_phone, speaker, exclude_phones):
     """Append a new item to items if its phones are not excluded"""
     if exclude_phones is [] or all(
             p not in exclude_phones
             for p in (prev_phone, phone, next_phone)):
+        """ In new abkhazia alignments, time are already relative to utt
         # get the start time of the utterance in its wav
         _, utt_tstart, _ = corpus.segments[utt_id]
         if utt_tstart is None:
@@ -188,7 +189,7 @@ def _append_item(items, corpus, utt_id, start, stop, phone,
             'Negative time (relative to utterance): {}, {}'.format(
                 utt_id, start)
         stop = str(float(stop) - utt_tstart)
-
+        """
         # add the new item
         items.append(' '.join(
             [utt_id, start, stop, phone,
