@@ -51,11 +51,16 @@ def decode(decoder, graph_dir):
         target = os.path.join(decoder.recipe_dir, 'decode')
         if not os.path.isdir(target):
             os.makedirs(target)
-
-        decoder._run_command((
-            'steps/decode.sh --nj {njobs} --cmd "{cmd}" '
+        
+        if decoder.fmllr_dir is not None:
+            fmllr_dir = "--transform-dir " + decoder.fmllr_dir
+        else:
+            fmllr_dir = ""
+        print fmllr_dir 
+        print ('steps/decode.sh --nj {njobs} --cmd "{cmd}" '
             '--model {model} {decode_opts} {skip_scoring} '
-            '--scoring-opts "{score_opts}" {graph} {data} {decode}'.format(
+            '--scoring-opts "{score_opts}" {graph} {data}'
+            '{decode} {fmllr_dir}'.format(
                 njobs=decoder.njobs,
                 cmd=utils.config.get('kaldi', 'decode-cmd'),
                 # TODO .mdl or .alimdl ?
@@ -66,6 +71,22 @@ def decode(decoder, graph_dir):
                     decoder.score_opts, decoder.mkgraph_opts),
                 graph=graph_dir,
                 data=os.path.join(decoder.recipe_dir, 'data', decoder.name),
-                decode=target)))
+                decode=target, fmllr_dir=fmllr_dir))
+        decoder._run_command((
+            'steps/decode.sh --nj {njobs} --cmd "{cmd}" '
+            '--model {model} {decode_opts} {skip_scoring} '
+            '--scoring-opts "{score_opts}" {graph} {data}'
+            '{decode} {fmllr_dir}'.format(
+                njobs=decoder.njobs,
+                cmd=utils.config.get('kaldi', 'decode-cmd'),
+                # TODO .mdl or .alimdl ?
+                model=os.path.join(decoder.am_dir, 'final.mdl'),
+                decode_opts=decode_opts,
+                skip_scoring=_score.skip_scoring(decoder.score_opts),
+                score_opts=_score.format(
+                    decoder.score_opts, decoder.mkgraph_opts),
+                graph=graph_dir,
+                data=os.path.join(decoder.recipe_dir, 'data', decoder.name),
+                decode=target, fmllr_dir=fmllr_dir)))
 
         return target
