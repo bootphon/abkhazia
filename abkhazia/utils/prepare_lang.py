@@ -43,7 +43,7 @@ def prepare_lang(
       created if nonexisting.
 
     level ('word' or 'phone'): set to 'word' (the default) to prepare
-      the corpus at word level, or 'phon' to prepare it at phone
+      the corpus at word level, or 'phone' to prepare it at phone
       level. The prepared data will be used to train language and
       acoustic models at either word or phone level.
 
