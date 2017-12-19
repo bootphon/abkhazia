@@ -63,7 +63,7 @@ def test_split(corpus):
     assert '<unk>' in d.lexicon
     assert '<unk>' in e.lexicon
 
-    assert len(corpus.lexicon) > len(d.lexicon)
+    assert len(corpus.lexicon) >= len(d.lexicon)
     assert len(corpus.utts()) > len(e.utts())
     assert len(corpus.utts()) > len(d.utts())
     assert len(set.intersection(set(d.utts()), set(e.utts()))) == 0
