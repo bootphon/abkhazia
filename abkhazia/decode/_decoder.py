@@ -53,14 +53,14 @@ def decode(decoder, graph_dir):
             os.makedirs(target)
         
         if decoder.fmllr_dir is not None:
-            fmllr_dir = "--transform-dir " + decoder.fmllr_dir
+            fmllr_dir = " --transform-dir " + decoder.fmllr_dir
         else:
             fmllr_dir = ""
         print fmllr_dir 
         print ('steps/decode.sh --nj {njobs} --cmd "{cmd}" '
             '--model {model} {decode_opts} {skip_scoring} '
-            '--scoring-opts "{score_opts}" {graph} {data}'
-            '{decode} {fmllr_dir}'.format(
+            '--scoring-opts "{score_opts}" {graph} {data} '
+            ' {decode} {fmllr_dir}'.format(
                 njobs=decoder.njobs,
                 cmd=utils.config.get('kaldi', 'decode-cmd'),
                 # TODO .mdl or .alimdl ?
@@ -75,8 +75,9 @@ def decode(decoder, graph_dir):
         decoder._run_command((
             'steps/decode.sh --nj {njobs} --cmd "{cmd}" '
             '--model {model} {decode_opts} {skip_scoring} '
-            '--scoring-opts "{score_opts}" {graph} {data}'
-            '{decode} {fmllr_dir}'.format(
+            '{fmllr_dir}'
+            '--scoring-opts "{score_opts}" {graph} {data} '
+            ' {decode}'.format(
                 njobs=decoder.njobs,
                 cmd=utils.config.get('kaldi', 'decode-cmd'),
                 # TODO .mdl or .alimdl ?
