@@ -75,7 +75,7 @@ def decode(decoder, graph_dir):
         decoder._run_command((
             'steps/decode.sh --nj {njobs} --cmd "{cmd}" '
             '--model {model} {decode_opts} {skip_scoring} '
-            '{fmllr_dir}'
+            '{fmllr_dir} '
             '--scoring-opts "{score_opts}" {graph} {data} '
             ' {decode}'.format(
                 njobs=decoder.njobs,
