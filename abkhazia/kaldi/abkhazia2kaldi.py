@@ -161,9 +161,10 @@ class Abkhazia2Kaldi(object):
     def setup_segments(self,):
         """Create segments in data directory"""
         target = os.path.join(self._output_path(), 'segments')
-        # write only if starts and stops are specified in segments.txt
-        if self.corpus.has_several_utts_per_wav():
-            CorpusSaver.save_segments(self.corpus, target)
+
+        # even if there is only one utterance per wav, we add the
+        # tstart/tstop in the segment file
+        CorpusSaver.save_segments(self.corpus, target, force_timestamps=True)
 
     def setup_wav(self):
         """Create wav.scp in data directory"""
