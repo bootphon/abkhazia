@@ -17,7 +17,6 @@
 """Provides the Corpus class"""
 
 import os
-import matplotlib.pyplot as plt
 
 from abkhazia.corpus.corpus_saver import CorpusSaver
 from abkhazia.corpus.corpus_loader import CorpusLoader
@@ -312,7 +311,7 @@ class Corpus(utils.abkhazia_base.AbkhaziaBase):
 
         The pruning operation delete undesired data from utterances
         listed in self.utts(). It removes any segment, text, wav with
-        an unknown utterance id. 
+        an unknown utterance id.
 
         If prune_lexicon is True, it also prunes the lexicon and
         phoneset.
@@ -342,46 +341,62 @@ class Corpus(utils.abkhazia_base.AbkhaziaBase):
                            if key in phones}
 
     def remove_phones(self, phones=None, silences=None):
-        """Returns a subcorpus with the specified phones and/or silences
-        removed
-        
+        """Returns a subcorpus with the specified phones/silences removed
+
         phones : iterable | None, list of phones to remove from corpus
 
         silences : iterable | None, list of silences to remove from corpus
 
-        The phones/silences are removed from the phoneset/list of silences,
-        the corpus is pruned from utterances containing any of
-        these phones/silences and any dictionary entry containing any of the
-        phones/silences is removed from the lexicon.
+        The phones/silences are removed from the phoneset/list of
+        silences, the corpus is pruned from utterances containing any
+        of these phones/silences and any dictionary entry containing
+        any of the phones/silences is removed from the lexicon.
 
-        Useful to remove infrequent phones or certain types of noise from a corpus.
+        Useful to remove infrequent phones or certain types of noise
+        from a corpus.
 
-        #TODO What about variants?
+        TODO What about variants?
+
         """
         if phones is None:
             phones = []
         if silences is None:
             silences = []
         for phone in phones:
-            if not(phone in self.phones):
-                print('Phone to be removed {} not in phoneset!'.format(phone))
+            if phone not in self.phones:
+                self.log.info(
+                    'Phone to be removed %s not in phoneset!', phone)
         for silence in silences:
-            if not(silence in self.silences):
-                print('Silence to be removed {} not in silences!'.format(silence))
+            if silence not in self.silences:
+                self.log.info(
+                    'Silence to be removed %s not in silences!', silence)
+
         all_symbols = phones + silences
         words = [word for word, w_phones in self.lexicon.items()
-                    if set.intersection(set(w_phones.split(' ')), all_symbols)]
-        print('Removing {} lexicon words with undesirable phones/silences'.format(len(words)))
+                 if set.intersection(set(w_phones.split(' ')), all_symbols)]
+        self.log.info(
+            'Removing %s lexicon words with undesirable phones/silences',
+            len(words))
+
         utt_ids = [utt for utt, text in self.text.items()
-                    if set.intersection(set(text.split(' ')), words)]
-        print('Removing {} utterances with undesirable phones/silences'.format(len(utt_ids)))
-        kept_utts  = [utt_id for utt_id in self.utt2spk if not(utt_id in utt_ids)]
+                   if set.intersection(set(text.split(' ')), words)]
+        self.log.info(
+            'Removing %s utterances with undesirable phones/silences',
+            len(utt_ids))
+        kept_utts = [
+            utt_id for utt_id in self.utt2spk if not(utt_id in utt_ids)]
+
         corpus = self.subcorpus(kept_utts, validate=False)
-        corpus.lexicon = {key: value for key, value in corpus.lexicon.items()
-                            if not(key in words)}
-        corpus.phones = {key: value for key, value in corpus.phones.items()
-                           if not(key in phones)}
-        corpus.silences = [value for value in corpus.silences if not(value in silences)]
+        corpus.lexicon = {
+            key: value for key, value in corpus.lexicon.items()
+            if not(key in words)}
+
+        corpus.phones = {
+            key: value for key, value in corpus.phones.items()
+            if not(key in phones)}
+
+        corpus.silences = [
+            value for value in corpus.silences if not(value in silences)]
 
         return corpus
 
@@ -467,6 +482,12 @@ class Corpus(utils.abkhazia_base.AbkhaziaBase):
 
     def plot(self):
         """Plot the distribution of speech duration for each speaker"""
+        # last moment import because this causes errors as
+        # "QXcbConnection: Could not connect to display" when running
+        # on a session without graphical support (e.g. a ssh
+        # connection without X forward)
+        import matplotlib.pyplot as plt
+
         utt_ids, utt_speakers = zip(*self.utt2spk.iteritems())
         utt2dur = self.utt2duration()
         spkr2dur = dict()
@@ -518,14 +539,11 @@ class Corpus(utils.abkhazia_base.AbkhaziaBase):
     def create_filter(self, out_path, function,
                       nb_speaker=None, new_speakers=10, THCHS30=False):
         """Filter the speech duration distribution of the corpus"""
-
         return(CorpusFilter(self).create_filter(
             out_path, function, nb_speaker, new_speakers, THCHS30))
 
     def trim(self, corpus_dir, output_dir, function, not_kept_utts):
         """ Remove utterances from the corpus
             (using sox to trim the wav files)"""
-
         CorpusTrimmer(self).trim(
                 corpus_dir, output_dir, function, not_kept_utts)
-

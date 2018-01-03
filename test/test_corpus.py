@@ -130,3 +130,25 @@ def test_phonemize_corpus(corpus):
     assert c.is_valid()
     assert all([k == v for k, v in c.lexicon.items() if k != '<unk>'])
     assert len(c.lexicon) == len(c.phones) + 1  # <unk>
+
+
+def test_remove_phones(corpus):
+    def _aux(p, d):
+        for v in d.values():
+            if p in v:
+                return True
+        return False
+
+    # get a phone
+    p = corpus.phones.keys()[0]
+
+    # make sure the phone is here
+    assert p in corpus.phones
+    assert _aux(p, corpus.lexicon)
+
+    # remove phone from corpus
+    corpus = corpus.remove_phones(phones=[p])
+
+    # make sure the phone is not here
+    assert p not in corpus.phones
+    assert not _aux(p, corpus.lexicon)
