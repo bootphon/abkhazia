@@ -100,6 +100,14 @@ class AbkhaziaConfig(object):
         self.conf = ConfigParser.ConfigParser()
         self.conf.readfp(open(self.config_file, 'r'))
 
+        # remove any comments in the values (end of lines preceded by
+        # '#' or ';')
+        for section in self.conf.sections():
+            for name, value in self.conf.items(section):
+                for c in ('#', ';'):
+                    value = value.split(c)[0]
+                    self.conf.set(section, name, value)
+
 
 # by defining config at module level, we ensure the configuration file
 # is loaded once and only once, the first time this module is imported
