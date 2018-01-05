@@ -35,7 +35,8 @@ from abkhazia.corpus.prepare import (
     JapanesePreparator,
     WallStreetJournalPreparator, JournalistReadPreparator,
     JournalistSpontaneousPreparator, MainReadPreparator, SPSCSJPreparator,
-    BuckeyeManualPreparator)
+    BuckeyeManualPreparator,
+    KCSSPreparator)
 
 
 class AbstractFactory(object):
@@ -415,9 +416,9 @@ class GlobalPhoneFactory(AbstractFactory):
     @classmethod
     def init_preparator(cls, args):
         preps = []
-        for l in args.language:
-            prep = cls.preparators[l]
-            if l == 'japanese':
+        for lang in args.language:
+            prep = cls.preparators[lang]
+            if lang == 'japanese':
                 p = prep(args.input_dir, args.clusters)
             else:
                 p = prep(args.input_dir)
@@ -447,6 +448,30 @@ class SPSCSJFactory(AbstractFactory):
     preparator = SPSCSJPreparator
 
 
+class KCSSFactory(AbstractFactory):
+    preparator = KCSSPreparator
+
+    @classmethod
+    def add_parser(cls, subparsers):
+        parser = super(KCSSFactory, cls).add_parser(subparsers)
+
+        parser.add_argument(
+            '-l', '--level', choices=['pronunciation', 'orthographic'],
+            default='pronunciation',
+            help='prepare the corpus from data annotated at pronunciation '
+            'level (default) or orthographic level')
+
+        return parser
+
+    @classmethod
+    def init_preparator(cls, args):
+        return cls.preparator(
+            args.input_dir,
+            trs_level=args.level,
+            njobs=args.njobs,
+            log=utils.logger.get_log(verbose=args.verbose))
+
+
 class AbkhaziaPrepare(AbstractCommand):
     name = 'prepare'
     description = 'prepare a speech corpus for use with abkhazia'
@@ -462,7 +487,8 @@ class AbkhaziaPrepare(AbstractCommand):
         WolofFactory,
         XitsongaFactory,
         SPSCSJFactory,
-        BuckeyeManualFactory
+        BuckeyeManualFactory,
+        KCSSFactory
     )}
 
     @classmethod

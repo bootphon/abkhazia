@@ -25,14 +25,11 @@
 # fichiers et pas à tous.  Un exemple de problème:
 # s04m15m3.TextGrid. Un qui marche ok: s40f43f6.TextGrid
 
-# Aussi, je ne sais pas si ça va créer un problème dans la validation
-# d'abkhazia mais les fichiers générés par mon script sont en
-# utf-16-be (qui est l'encodage original des fichiers TextGrid).
-
 
 import codecs
 import os
 import progressbar
+import re
 
 import abkhazia.utils as utils
 from abkhazia.utils.textgrid import TextGrid
@@ -93,49 +90,100 @@ class KCSSPreparator(AbstractPreparator):
         'xi': u'ɨi'
     }
 
-    silences = [u"NSN"]  # SPN and SIL will be added automatically
+    # the following phones are specific to the ortographic level.
+    # TODO find an IPA equivalent.
+    ortho_phones = {
+        'lp': u'??1',
+        'nh': u'??2',
+        'ps': u'??3',
+        'nc': u'??4',
+        'lk': u'??5',
+        'lh': u'??6',
+        'lt': u'??7',
+        'lm': u'??8',
+        'ks': u'??9'
+    }
+
+    silences = ['NSN', 'SPN', 'SIL']
 
     variants = []
 
-    def __init__(self, input_dir, log=utils.logger.null_logger()):
+    def __init__(self, input_dir, trs_level='pronunciation',
+                 njobs=4, log=utils.logger.null_logger()):
         super(KCSSPreparator, self).__init__(input_dir, log=log)
 
-        self.textgrid = self._load_textgrid()
+        if trs_level not in ('pronunciation', 'orthographic'):
+            raise ValueError(
+                'transcription level must be pronunciation or orthographic, '
+                'it is: {}'.format(trs_level))
+
+        # add the orthographic specific phones if needed
+        if trs_level == 'orthographic':
+            self.phones.update(self.ortho_phones)
+
+        self.textgrid = self._load_textgrid(trs_level)
 
         self.log.info('extracting segments...')
         self.segment = {}
         for utt, grid in self.textgrid.items():
+            idx_len = len(str(len(grid['utt'])))
+
             # extract from TextGrid file the tier that corresponds to
             # the utterance transcription. Use tiers[6] if orthographic
             # utterance transcription (instead of tiers[3]).
-            for n, (tstart, tstop, _) in enumerate(grid.tiers[3].simple_transcript):
-                utt_id = '{}-sent{}'.format(utt, str(n))
-                self.segment[utt_id] = (utt, tstart, tstop)
+            for n, (tstart, tstop, _) in enumerate(grid['utt']):
+                idx = str(n+1)
+                utt_id = '{}-sent{}'.format(  # -sent001 instead of -sent1
+                    utt, '0' * (idx_len - len(idx)) + idx)
+                self.segment[utt_id] = (utt, float(tstart), float(tstop))
 
-    def _load_textgrid(self):
+        self.log.info('extracting transcriptions...')
+        bar = progressbar.ProgressBar(max_value=len(self.textgrid.keys()))
+        self.transcription = {}
+        for i, record in enumerate(self.textgrid.keys()):
+            t = self._make_transcription_single(record)
+            self.transcription.update(t)
+            bar.update(i+1)
+
+    def _load_textgrid(self, trs_level):
         """return the TextGrid files in a dict utt_id: textgrid data"""
+        # memory optimization: loads only tiers we need (3 and 2 for
+        # pronunciation, 6 and 5 for orthographic)
+        word_idx = 2
+        utt_idx = 3
+        if trs_level == 'orthographic':
+            self.log.info('preparing corpus at orthographic level')
+            word_idx += 3
+            utt_idx += 3
+        else:
+            self.log.info('preparing corpus at pronunciation level')
+
         # build the list of all textgrid files to be parsed
         _dir = os.path.join(self.input_dir, 'label')
-        _files = utils.list_files_with_extension(_dir, '.TextGrid', abspath=True)
+        _files = utils.list_files_with_extension(
+            _dir, '.TextGrid', abspath=True)
         _name = {f: os.path.splitext(os.path.basename(f))[0] for f in _files}
-        self.log.info('parsing %s TextGrid files...', len(_name))
+        self.log.info('loading %s TextGrid files...', len(_name))
 
         # auxiliary function for parsing a file. Register the files we
         # failed to parse
         _failed = []
+
         def _load(f):
             try:
                 return TextGrid(codecs.open(f, 'r', encoding='utf16').read())
             except IndexError:
                 _failed.append(f)
 
-        # parse the files one per one
+        # parse the textgrid files one per one
         bar = progressbar.ProgressBar(max_value=len(_files))
         textgrid = {}
         for i, f in enumerate(_files):
-            l = _load(f)
-            if l:
-                textgrid[_name[f]] = l
+            loaded = _load(f)
+            if loaded:
+                textgrid[_name[f]] = {
+                    'word': loaded.tiers[word_idx].simple_transcript,
+                    'utt': loaded.tiers[utt_idx].simple_transcript}
             bar.update(i+1)
 
         # report any failed parse
@@ -145,6 +193,42 @@ class KCSSPreparator(AbstractPreparator):
                 self.log.debug('failed to parse %s', f)
 
         return textgrid
+
+    def _make_transcription_single(self, record):
+        text = {}
+
+        # collect the utterance boundaries for that record, sorted
+        # by increasing tstarts: tuples (tstart, tstop, utt_id)
+        tutts = sorted(
+            [(v[1], v[2], k)
+             for k, v in self.segment.items()
+             if v[0] == record])
+
+        # get the word transcript for that record. Use tiers[5]
+        # for orthographic transcription, instead of pronunciation
+        word_transcript = [
+            (float(t[0]), float(t[1]), t[2])
+            for t in self.textgrid[record]['word']]
+        nwords = len(word_transcript)
+
+        # read the transcript word per word within each utterance
+        # boundaries
+        index = 0
+        for tstart, tstop, utt_id in tutts:
+            words = []
+            while index < nwords and word_transcript[index][0] < tstop:
+                # get the current word from transcription
+                word = word_transcript[index][2]
+
+                # clean it (words like <LAUGH-a b c> have spaces
+                # replaced by '_')
+                word = word.replace(' ', '_')
+
+                words.append(word)
+                index += 1
+            text[utt_id] = ' '.join(words).replace('-', '')
+
+        return text
 
     def list_audio_files(self):
         wav_dir = os.path.join(self.input_dir, 'sounds')
@@ -156,29 +240,38 @@ class KCSSPreparator(AbstractPreparator):
     def make_speaker(self):
         return {utt_id: utt_id[:3] for utt_id in self.segment.keys()}
 
-    def _load_utterances(transcript, tutts):
-        # sort by increasing tstart
-        idx = 0
-        for tstart, tstop in enumerate(sorted(tutts)):
-            assert transcript[idx][0] == tstart
-
-
     def make_transcription(self):
-        # first get the word level transcript for each textgrid file
-        word_transcript = {k: v.tiers[2].simple_transcript
-                           for k, v in self.textgrid.items()}
-
-        # then go from word level to utt level using the segment times
-        text = {}
-        for utt_id, (_, tstart, tstop) in self.segment.items():
-            utt_grid = utt_id.split('-sent')[0]
-            words = word_transcript[utt_grid]
+        return self.transcription
 
     def make_lexicon(self):
-        pass
+        words = set()
+        for utt in self.transcription.values():
+            for word in utt.split(' '):
+                words.add(word)
 
-    def make_alignement_phones(self):
-        pass
+        lexicon = {}
+        for word in words:
+            romanized = re.match("[a-zA-Z0-9]+", word)
+            if romanized:
+                lexicon[word] = ' '.join(re.findall('..?', word)).lower()
+            else:
+                # replace non-speech labels by SPN or NSN
+                if re.match('<NOISE.*|<LAUGH>', word):
+                    phones = 'NSN'
+                elif re.match('<IVER|<VOCNOISE.*|<LAUGH.+|'
+                              '<UNKNOWN.*|<PRIVATE.*', word):
+                    phones = 'SPN'
+                elif word == '<SIL>':
+                    phones = 'SIL'
+                else:
+                    phones = word
 
-    def make_alignement_words(self):
-        pass
+                lexicon[word] = phones
+
+        return lexicon
+
+    # def make_alignement_phones(self):
+    #     pass
+
+    # def make_alignement_words(self):
+    #     pass
