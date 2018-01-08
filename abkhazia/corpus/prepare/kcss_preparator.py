@@ -108,8 +108,10 @@ class KCSSPreparator(AbstractPreparator):
 
     variants = []
 
-    def __init__(self, input_dir, trs_level='pronunciation',
-                 njobs=4, log=utils.logger.null_logger()):
+    def __init__(self, input_dir,
+                 trs_level='pronunciation',
+                 extract_alignment=True,
+                 log=utils.logger.null_logger()):
         super(KCSSPreparator, self).__init__(input_dir, log=log)
 
         if trs_level not in ('pronunciation', 'orthographic'):
@@ -145,10 +147,14 @@ class KCSSPreparator(AbstractPreparator):
             self.transcription.update(t)
             bar.update(i+1)
 
+        if extract_alignment:
+            self.alignment_phones = self.make_alignment(type='phone')
+            self.alignment_words = self.make_alignment(type='word')
+
     def _load_textgrid(self, trs_level):
         """return the TextGrid files in a dict utt_id: textgrid data"""
-        # memory optimization: loads only tiers we need (3 and 2 for
-        # pronunciation, 6 and 5 for orthographic)
+        # memory optimization: loads only tiers we need (0, 3 and 2
+        # for pronunciation, 0, 6 and 5 for orthographic)
         word_idx = 2
         utt_idx = 3
         if trs_level == 'orthographic':
@@ -182,6 +188,7 @@ class KCSSPreparator(AbstractPreparator):
             loaded = _load(f)
             if loaded:
                 textgrid[_name[f]] = {
+                    'phone': loaded.tiers[0].simple_transcript,
                     'word': loaded.tiers[word_idx].simple_transcript,
                     'utt': loaded.tiers[utt_idx].simple_transcript}
             bar.update(i+1)
@@ -195,8 +202,6 @@ class KCSSPreparator(AbstractPreparator):
         return textgrid
 
     def _make_transcription_single(self, record):
-        text = {}
-
         # collect the utterance boundaries for that record, sorted
         # by increasing tstarts: tuples (tstart, tstop, utt_id)
         tutts = sorted(
@@ -204,8 +209,7 @@ class KCSSPreparator(AbstractPreparator):
              for k, v in self.segment.items()
              if v[0] == record])
 
-        # get the word transcript for that record. Use tiers[5]
-        # for orthographic transcription, instead of pronunciation
+        # get the word transcript for that record
         word_transcript = [
             (float(t[0]), float(t[1]), t[2])
             for t in self.textgrid[record]['word']]
@@ -214,6 +218,7 @@ class KCSSPreparator(AbstractPreparator):
         # read the transcript word per word within each utterance
         # boundaries
         index = 0
+        text = {}
         for tstart, tstop, utt_id in tutts:
             words = []
             while index < nwords and word_transcript[index][0] < tstop:
@@ -270,8 +275,45 @@ class KCSSPreparator(AbstractPreparator):
 
         return lexicon
 
-    # def make_alignement_phones(self):
-    #     pass
+    def make_alignment(self, type='phone'):
+        """Extract phones and words alignment from the TextGrid data"""
+        self.log.info('extracting %s alignment...', type)
+        bar = progressbar.ProgressBar(max_value=len(self.textgrid.keys()))
+        alignment = {}
+        for i, record in enumerate(self.textgrid.keys()):
+            t = self._make_alignment_single(record, type=type)
+            alignment.update(t)
+            bar.update(i+1)
 
-    # def make_alignement_words(self):
-    #     pass
+        return alignment
+
+    def _make_alignment_single(self, record, type='phone'):
+        # collect the utterance boundaries for that record, sorted
+        # by increasing tstarts: tuples (tstart, tstop, utt_id)
+        tutts = sorted(
+            [(v[1], v[2], k)
+             for k, v in self.segment.items()
+             if v[0] == record])
+
+        # get the phone transcript for that record
+        transcript = [
+            (float(t[0]), float(t[1]), t[2])
+            for t in self.textgrid[record][type]]
+        ntokens = len(transcript)
+
+        # read the transcript word per word within each utterance
+        # boundaries
+        index = 0
+        alignment = {}
+        for tstart, tstop, utt_id in tutts:
+            tokens = []
+            while index < ntokens and transcript[index][0] < tstop:
+                # get the current word from transcription
+                t = transcript[index]
+                if type == 'word':
+                    t = (t[0], t[1], t[2].replace(' ', '_').replace('-', ''))
+                tokens.append(t)
+                index += 1
+            alignment[utt_id] = tokens
+
+        return alignment

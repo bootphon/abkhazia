@@ -461,6 +461,10 @@ class KCSSFactory(AbstractFactory):
             help='prepare the corpus from data annotated at pronunciation '
             'level (default) or orthographic level')
 
+        parser.add_argument(
+            '--no-alignment', action='store_true',
+            help='Do not extract the time alignment from the orginal corpus')
+
         return parser
 
     @classmethod
@@ -468,8 +472,49 @@ class KCSSFactory(AbstractFactory):
         return cls.preparator(
             args.input_dir,
             trs_level=args.level,
-            njobs=args.njobs,
+            extract_alignment=not args.no_alignment,
             log=utils.logger.get_log(verbose=args.verbose))
+
+    @classmethod
+    def _run_preparator(cls, args, preparator, output_dir=None):
+        output_dir = ((
+            cls._output_dir(args) if args.output_dir is None
+            else os.path.abspath(os.path.join(args.output_dir, 'data')))
+                      if output_dir is None else output_dir)
+        preparator.log = utils.logger.get_log(
+            os.path.join(output_dir, 'data_preparation.log'), args.verbose)
+
+        # initialize corpus from raw with it's preparator
+        corpus = preparator.prepare(
+            os.path.join(output_dir, 'wavs'),
+            keep_short_utts=args.keep_short_utts)
+        corpus.log = utils.logger.get_log(
+            os.path.join(output_dir, 'data_validation.log'), args.verbose)
+
+        # raise if the corpus is not in correct abkhazia
+        # format. Redirect the log to the preparator logger
+        corpus.validate(njobs=args.njobs)
+
+        # save the corpus to the output directory
+        corpus.save(output_dir, no_wavs=True)
+
+        # save the alignment
+        if not args.no_alignment:
+            alignment_file = os.path.join(output_dir, 'alignment_phones.txt')
+            utils.open_utf8(alignment_file, 'w').write(
+                '\n'.join(
+                    '{} {}'.format(k, ' '.join(str(v) for v in vv))
+                    for k, v in sorted(preparator.alignment_phones.items())
+                    for vv in v)
+                + '\n')
+
+            alignment_file = os.path.join(output_dir, 'alignment_words.txt')
+            utils.open_utf8(alignment_file, 'w').write(
+                '\n'.join(
+                    '{} {}'.format(k, ' '.join(str(v) for v in vv))
+                    for k, v in sorted(preparator.alignment_words.items())
+                    for vv in v)
+                + '\n')
 
 
 class AbkhaziaPrepare(AbstractCommand):
