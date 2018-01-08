@@ -93,15 +93,18 @@ class KCSSPreparator(AbstractPreparator):
     # the following phones are specific to the ortographic level.
     # TODO find an IPA equivalent.
     ortho_phones = {
-        'lp': u'??1',
-        'nh': u'??2',
-        'ps': u'??3',
-        'nc': u'??4',
-        'lk': u'??5',
-        'lh': u'??6',
-        'lt': u'??7',
-        'lm': u'??8',
-        'ks': u'??9'
+        'lp': u'lp',
+        'nh': u'nh',
+        'ps': u'ps',
+        'nc': u'nʨ',
+        'lk': u'lk',
+        'lh': u'lh',
+        'lt': u'???', # I'm guessing this is 'lT' and the caps were lost?  
+        'lm': u'lm',
+        'ks': u'ks',
+        'ls': u'ls',
+        'lT': u'ltʰ',
+        'lP': u'lpʰ' # check that distinction between 'lp' and 'lP' was not inadvertently lost 
     }
 
     silences = ['NSN', 'SPN', 'SIL']
