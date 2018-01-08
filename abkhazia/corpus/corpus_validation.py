@@ -503,22 +503,20 @@ class CorpusValidation(object):
 
         if duplicate_transcripts:
             self.log.warning(
-                u"There are homophones in the pronunciation dictionary")
+                "There are homophones in the pronunciation dictionary")
 
             self.log.debug(
-                u'There are {} phone sequences that correspond to several '
-                u'words in the pronunciation dictionary'
-                .format(len(duplicate_transcripts)))
+                'There are %s phone sequences that correspond to several words'
+                ' in the pronunciation dictionary', len(duplicate_transcripts))
 
             self.log.debug(
-                'There are {} word types with homophones in the pronunciation '
-                'dictionary'.format(sum(duplicate_transcripts.values())))
+                'There are %s word types with homophones in the pronunciation '
+                'dictionary', sum(duplicate_transcripts.values()))
 
             self.log.debug(
                 "List of homophonic phone sequences in lexicon "
-                "with number of corresponding word types: {0}"
-                .format(resume_list(self._strcounts2unicode(
-                    duplicate_transcripts.most_common()))))
+                "with number of corresponding word types: %s",
+                resume_list(duplicate_transcripts.most_common()))
 
             # # Commented because it takes a lot of times for certain corpora
             # # Maybe put it as an option

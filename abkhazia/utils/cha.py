@@ -17,7 +17,7 @@
 """Provides some functions to work on cha files
 
 Cha format is used by some corpora abkhazia have preparators for. See
-http://childes.psy.cmu.edu/manuals/CHAT.pdf for detailed info on thaht
+http://childes.psy.cmu.edu/manuals/CHAT.pdf for detailed info on that
 format.
 
 """

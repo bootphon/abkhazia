@@ -33,7 +33,6 @@ two alignment recipes, the Align recipe seems to add more silences.
 import gzip
 import os
 import shutil
-import operator
 import time
 import numpy as np
 
@@ -178,7 +177,8 @@ class Align(abstract_recipe.AbstractRecipe):
         self._run_command(
             '{cmd} JOB=1:{njobs} {dir}/log/best_path.JOB.log '
             'lattice-best-path --acoustic-scale={scale} '
-            '"ark:gunzip -c {dir}/lat.JOB.gz|" "ark:|gzip -c >{dir}/tra.JOB.gz" '
+            '"ark:gunzip -c {dir}/lat.JOB.gz|" '
+            '"ark:|gzip -c >{dir}/tra.JOB.gz" '
             '"ark:|gzip -c >{dir}/best.JOB.gz"'.format(
                 cmd=os.path.join(
                     'utils', utils.config.get('kaldi', 'train-cmd')),
@@ -256,8 +256,10 @@ class Align(abstract_recipe.AbstractRecipe):
                 (l.replace('[', '').replace(']', '').split() for l in data)}
 
     @staticmethod
-    def _read_alignment(phonemap, ali, post,
-                        first_frame_center_time=.0125, frame_width=0.025, frame_spacing=0.01):
+    def _read_alignment(
+            phonemap, ali, post,
+            first_frame_center_time=.0125,
+            frame_width=0.025, frame_spacing=0.01):
         """Tokenize raw kaldi alignment output"""
         for utt_id, line in ali.iteritems():
             # TODO make this a parameter (with the 0.01 above), or
