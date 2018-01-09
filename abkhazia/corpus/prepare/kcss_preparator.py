@@ -1,6 +1,6 @@
 # coding: utf-8
 
-# Copyright 2018 Xuan-Nga Cao, Mathieu Bernard
+# Copyright 2018 Xuan-Nga Cao, Mathieu Bernard, Adriana Guevara Rukoz
 #
 # This file is part of abkhazia: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -17,19 +17,11 @@
 """Data preparation for the Korean Corpus of Spontaneous Speech"""
 
 
-# Le second est je pense un problème d'unicode car ce problème
-# n'arrive qu'avec certains fichiers et pas à tous. Pour la 1ère
-# uttérance, pour certains fichiers, il prend toutes les lignes du
-# fichier (qui comprend toutes les uttérances). Pour les autres
-# uttérances, je n'ai pas ce problème. Et ça n'arrive qu'à certains
-# fichiers et pas à tous.  Un exemple de problème:
-# s04m15m3.TextGrid. Un qui marche ok: s40f43f6.TextGrid
-
-
 import codecs
 import os
 import progressbar
 import re
+import string as str
 
 import abkhazia.utils as utils
 from abkhazia.utils.textgrid import TextGrid
@@ -51,6 +43,9 @@ class KCSSPreparator(AbstractPreparator):
     database consists of 40 hours of sponteaneous speech recorded from
     40 participants. Inspired by the Buckeye corpus.'''
 
+    # Note that both 'pronunciation' and 'orthographic' levels
+    # assume the mergers of {ㅔ and ㅐ}, {ㅖ and ㅒ}, and {ㅚ, ㅙ, ㅞ}
+    # This can be changed by modifying make_lexicon(self) and the phone list
     phones = {
         'p0': u'p',
         'ph': u'pʰ',
@@ -90,21 +85,27 @@ class KCSSPreparator(AbstractPreparator):
         'xi': u'ɨi'
     }
 
-    # the following phones are specific to the ortographic level.
-    # TODO find an IPA equivalent.
+    # The following phones are specific to the ortographic level.
+    # By default, they are considered as separate "phones"
+    # This dict can be modified to assign IPA based on the 
+    # (1) orthographic cluster or
+    # (2) resulting assimilation
+    # Please note that further modifications to this script are needed 
+    # in order to merge the assimilated clusters to the
+    # corresponding phonemes in the "phones" dictionary
+    # (e.g., 'ks' => 'k0')
     ortho_phones = {
-        'lp': u'lp',
-        'nh': u'nh',
-        'ps': u'ps',
-        'nc': u'nʨ',
-        'lk': u'lk',
-        'lh': u'lh',
-        'lt': u'???', # I'm guessing this is 'lT' and the caps were lost?  
-        'lm': u'lm',
-        'ks': u'ks',
-        'ls': u'ls',
-        'lT': u'ltʰ',
-        'lP': u'lpʰ' # check that distinction between 'lp' and 'lP' was not inadvertently lost 
+        'ks': u'ks', # (1) u'ks' (2) u'k'
+        'lh': u'lh', # (1) u'lh' (2) u'l'
+        'lk': u'lk', # (1) u'lk' (2) u'k'
+        'lm': u'lm', # (1) u'lm' (2) u'm'
+        'lp': u'lp', # (1) u'lp' (2) u'l'
+        'lP': u'lpʰ', # (1) u'lpʰ' (2) u'p'
+        'ls': u'ls', # (1) u'ls' (2) u'l'
+        'lT': u'ltʰ', # (1) u'ltʰ' (2) u'l'
+        'nc': u'nʨ', # (1) u'nʨ' (2) u'n'        
+        'nh': u'nh', # (1) u'nh' (2) u'n'
+        'ps': u'ps' # (1) u'ps' (2) u'p'
     }
 
     silences = ['NSN', 'SPN', 'SIL']
@@ -261,7 +262,9 @@ class KCSSPreparator(AbstractPreparator):
         for word in words:
             romanized = re.match("[a-zA-Z0-9]+", word)
             if romanized:
-                lexicon[word] = ' '.join(re.findall('..?', word)).lower()
+                map = str.maketrans('WEY', 'wey')
+                lexicon[word] = ' '.join(re.findall('..?', word)).translate(map)
+
             else:
                 # replace non-speech labels by SPN or NSN
                 if re.match('<NOISE.*|<LAUGH>', word):
