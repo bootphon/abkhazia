@@ -30,7 +30,7 @@ def default_njobs(nj_queue=20, local=False):
 
     """
     cmd = config.config.get('kaldi', 'train-cmd')
-    return (nj_queue if not local and 'queue' in cmd
+    return (nj_queue if not local and ('queue' in cmd or 'slurm' in cmd)
             else multiprocessing.cpu_count())
 
 
