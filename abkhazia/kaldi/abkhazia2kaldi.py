@@ -24,18 +24,18 @@ def setup_lexicon(corpus_path, recipe_path, prune_lexicon=False, train_name=None
 	dict_path = get_dict_path(recipe_path, name)
 	if prune_lexicon:
 		# get words appearing in train part
-		train_text = p.join(corpus_path, 'data', 'split', train_name, 'text.txt')
+		train_text = p.join(corpus_path, 'text.txt')
 		_, utt_words = io.read_text(train_text)
 		allowed_words = set([word for utt in utt_words for word in utt])
 		# add special OOV word <unk>
 		allowed_words.add(u'<unk>')
 		# remove other words from the lexicon
 		allowed_words = list(allowed_words)
-		io.copy_first_col_matches(p.join(corpus_path, 'data', 'lexicon.txt'),
+		io.copy_first_col_matches(p.join(corpus_path, 'lexicon.txt'),
 								  p.join(dict_path, 'lexicon.txt'),
 								  allowed_words)
 	else:
-		shutil.copy(p.join(corpus_path, 'data', 'lexicon.txt'),
+		shutil.copy(p.join(corpus_path, 'lexicon.txt'),
 					p.join(dict_path, 'lexicon.txt'))
 	
 
@@ -62,7 +62,7 @@ def setup_phone_lexicon(corpus_path, recipe_path, name):
 
 def setup_phones(corpus_path, recipe_path, name='dict'):
 	dict_path = get_dict_path(recipe_path, name)
-	with codecs.open(p.join(corpus_path, 'data', 'phones.txt'),
+	with codecs.open(p.join(corpus_path, 'phones.txt'),
 					 mode='r', encoding='UTF-8') as inp:
 		lines = inp.readlines()
 	with codecs.open(p.join(dict_path, 'nonsilence_phones.txt'),
@@ -74,7 +74,7 @@ def setup_phones(corpus_path, recipe_path, name='dict'):
 
 def setup_silences(corpus_path, recipe_path, name='dict'):
 	dict_path = get_dict_path(recipe_path, name)
-	shutil.copy(p.join(corpus_path, 'data', 'silences.txt'),
+	shutil.copy(p.join(corpus_path, 'silences.txt'),
 				p.join(dict_path, 'silence_phones.txt'))	
 	with codecs.open(p.join(dict_path, 'optional_silence.txt'),
 					 mode='w', encoding='UTF-8') as out:
@@ -83,15 +83,12 @@ def setup_silences(corpus_path, recipe_path, name='dict'):
 
 def setup_variants(corpus_path, recipe_path, name='dict'):
 	dict_path = get_dict_path(recipe_path, name)
-	shutil.copy(p.join(corpus_path, 'data', 'variants.txt'),
+	shutil.copy(p.join(corpus_path, 'variants.txt'),
 				p.join(dict_path, 'extra_questions.txt'))
 
 
-def get_data_path(corpus_path, recipe_path, in_split=None, out_split=None):
-	if in_split is None:
-		inp = p.join(corpus_path, 'data')
-	else:
-		inp = p.join(corpus_path, 'data', 'split', in_split)
+def get_data_path(corpus_path, recipe_path, out_split=None):
+	inp = corpus_path
 	assert p.isdir(inp), "Directory doesn't exist: {0}".format(inp)
 	if out_split is None:
 		out = p.join(recipe_path, 'data', 'main')
@@ -102,8 +99,8 @@ def get_data_path(corpus_path, recipe_path, in_split=None, out_split=None):
 	return inp, out
 
 
-def setup_text(corpus_path, recipe_path, in_split=None, out_split=None, desired_utts=None):
-	i_path, o_path = get_data_path(corpus_path, recipe_path, in_split, out_split)
+def setup_text(corpus_path, recipe_path, out_split=None, desired_utts=None):
+	i_path, o_path = get_data_path(corpus_path, recipe_path, out_split)
 	if desired_utts is None:
 		shutil.copy(p.join(i_path, 'text.txt'), p.join(o_path, 'text'))
 	else:
@@ -112,8 +109,8 @@ def setup_text(corpus_path, recipe_path, in_split=None, out_split=None, desired_
 							  	  desired_utts)
 
 
-def setup_phone_text(corpus_path, recipe_path, in_split=None, out_split=None, desired_utts=None):
-	i_path, o_path = get_data_path(corpus_path, recipe_path, in_split, out_split)
+def setup_phone_text(corpus_path, recipe_path, out_split=None, desired_utts=None):
+	i_path, o_path = get_data_path(corpus_path, recipe_path, out_split)
 	if desired_utts is None:
 		shutil.copy(p.join(i_path, 'text.txt'), p.join(o_path, 'text'))
 	else:
@@ -122,8 +119,8 @@ def setup_phone_text(corpus_path, recipe_path, in_split=None, out_split=None, de
 							  	  desired_utts)
 
 
-def setup_utt2spk(corpus_path, recipe_path, in_split=None, out_split=None, desired_utts=None):
-	i_path, o_path = get_data_path(corpus_path, recipe_path, in_split, out_split)
+def setup_utt2spk(corpus_path, recipe_path, out_split=None, desired_utts=None):
+	i_path, o_path = get_data_path(corpus_path, recipe_path, out_split)
 	if desired_utts is None:
 		shutil.copy(p.join(i_path, 'utt2spk.txt'), p.join(o_path, 'utt2spk'))
 	else:
@@ -132,8 +129,8 @@ def setup_utt2spk(corpus_path, recipe_path, in_split=None, out_split=None, desir
 							  	  desired_utts)
 
 
-def setup_segments(corpus_path, recipe_path, in_split=None, out_split=None, desired_utts=None):	
-	i_path, o_path = get_data_path(corpus_path, recipe_path, in_split, out_split)
+def setup_segments(corpus_path, recipe_path, out_split=None, desired_utts=None):	
+	i_path, o_path = get_data_path(corpus_path, recipe_path, out_split)
 	with codecs.open(p.join(i_path, 'segments.txt'),
 					 mode='r', encoding='UTF-8') as inp:
 		lines = inp.readlines()
@@ -151,8 +148,8 @@ def setup_segments(corpus_path, recipe_path, in_split=None, out_split=None, desi
 				out.write(u" ".join([utt_id, record_id] + elements[2:]) + u"\n")
 
 
-def setup_wav(corpus_path, recipe_path, in_split=None, out_split=None, desired_utts=None):
-	i_path, o_path = get_data_path(corpus_path, recipe_path, in_split, out_split)
+def setup_wav(corpus_path, recipe_path, out_split=None, desired_utts=None):
+	i_path, o_path = get_data_path(corpus_path, recipe_path, out_split)
 	# get list of wavs from segments.txt
 	with codecs.open(p.join(i_path, 'segments.txt'),
 					 mode='r', encoding='UTF-8') as inp:
@@ -178,7 +175,7 @@ def setup_wav_folder(corpus_path, recipe_path):
 	# using a symbolic link to avoid copying
 	# voluminous data
 	link_name = p.join(recipe_path, 'wavs')
-	target = p.join(corpus_path, 'data', 'wavs')
+	target = p.join(corpus_path, 'wavs')
 	if p.exists(link_name):
 		# could log this...
 		os.remove(link_name)
