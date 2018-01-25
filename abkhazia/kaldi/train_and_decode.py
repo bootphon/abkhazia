@@ -127,7 +127,27 @@ def create_kaldi_recipe(train_corpus, test_corpus, output_path,
 	a2k.setup_machine_specific_scripts(recipe_path)  # path.sh, cmd.sh
 	a2k.setup_main_scripts(recipe_path, 'train_and_decode.sh')  # score.sh, run.sh
 	a2k.setup_lm_scripts(recipe_path)
-	
+
+
+
+if __name__ == '__main__':
+    import argparse
+    parser = argparse.ArgumentParser()
+    parser.add_argument('train_corpus')
+    parser.add_argument('test_corpus')
+    parser.add_argument('output_path')
+    parser.add_argument('kaldi_root')                 
+    args = parser.parse_args()
+    assert path.isfile(args.train_corpus), ("No such file "
+                                         "{}".format(args.train_corpus))
+    assert path.isfile(args.test_corpus), ("No such file "
+                                             "{}".format(args.test_corpus))
+    assert path.isdir(args.kaldi_root), ("No such directory "
+                                         "{}".format(args.kaldi_root))
+    assert path.isdir(args.output_path), ("No such directory "
+                                             "{}".format(args.output_path))       
+    create_kaldi_recipe(args.train_corpus, args.test_corpus,
+    								    args.output_path, args.kaldi_root)
 
 """
 For future reference: creating a phone-loop G.txt:
@@ -176,3 +196,6 @@ local folder and used by the custom prepare_lang.sh.
 # Check in validate_corpus that adding _I, _B, _E or _S suffixes to
 # phones does not create conflicts, otherwise issue a warning to say that 
 # word_position_dependent models won't be usable.
+
+
+
