@@ -138,9 +138,9 @@ if __name__ == '__main__':
     parser.add_argument('output_path')
     parser.add_argument('kaldi_root')                 
     args = parser.parse_args()
-    assert path.isfile(args.train_corpus), ("No such file "
+    assert path.isdir(args.train_corpus), ("No such directory "
                                          "{}".format(args.train_corpus))
-    assert path.isfile(args.test_corpus), ("No such file "
+    assert path.isdir(args.test_corpus), ("No such directory "
                                              "{}".format(args.test_corpus))
     assert path.isdir(args.kaldi_root), ("No such directory "
                                          "{}".format(args.kaldi_root))
