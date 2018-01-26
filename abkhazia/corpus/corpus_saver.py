@@ -23,13 +23,8 @@ from abkhazia.utils import open_utf8, append_ext, wav
 class CorpusSaver(object):
     """Save a corpus to a directory"""
     @classmethod
-    def save_segments(corpus, path, force_timestamps=False):
-        """Save the corpus segments in `path`
-
-        If force_timestamps is True and segments are without
-        timestamps, create them with the value (0, wav_duration).
-
-        """
+    def save(cls, corpus, path, no_wavs=False, copy_wavs=True):
+        """Save the `corpus` to the directory `path`
 
         `path` is assumed to be a non existing directory.
 
@@ -88,13 +83,18 @@ class CorpusSaver(object):
                 out.write(u'{} {}\n'.format(k, v))
 
     @staticmethod
-    def save_segments(corpus, path):
-        """Save the corpus segments in `path`"""
+    def save_segments(corpus, path, force_timestamps=False):
+        """Save the corpus segments in `path`
+
+        If force_timestamps is True and segments are without
+        timestamps, create them with the value (0, wav_duration).
+
+        """
         with open_utf8(path, 'w') as out:
             for k, v in sorted(corpus.segments.iteritems()):
                 # make sure we have the '.wav' extension
                 v = (append_ext(v[0], '.wav'), v[1], v[2])
-                
+
                 if v[1] is None:
                     if force_timestamps is True:
                         # abs path to the wav file
@@ -105,7 +105,7 @@ class CorpusSaver(object):
 
                 else:  # we have timestamps
                     v = u'{} {} {}'.format(v[0], v[1], v[2])
-                    
+
                 out.write(u'{} {}\n'.format(k, v))
 
     @staticmethod
