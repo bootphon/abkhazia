@@ -21,7 +21,7 @@ import codecs
 import os
 import progressbar
 import re
-import string as str
+import string
 
 import abkhazia.utils as utils
 from abkhazia.utils.textgrid import TextGrid
@@ -262,7 +262,7 @@ class KCSSPreparator(AbstractPreparator):
         for word in words:
             romanized = re.match("[a-zA-Z0-9]+", word)
             if romanized:
-                map = str.maketrans('WEY', 'wey')
+                map = string.maketrans('WEY', 'wey')
                 lexicon[word] = ' '.join(re.findall('..?', word)).translate(map)
 
             else:
