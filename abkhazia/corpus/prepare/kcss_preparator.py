@@ -263,7 +263,7 @@ class KCSSPreparator(AbstractPreparator):
             romanized = re.match("[a-zA-Z0-9]+", word)
             if romanized:
                 map = string.maketrans('WEY', 'wey')
-                lexicon[word] = ' '.join(re.findall('..?', word)).translate(map)
+                lexicon[word] = ' '.join(re.findall('..?', word)).encode('utf-8').translate(map)
 
             else:
                 # replace non-speech labels by SPN or NSN
