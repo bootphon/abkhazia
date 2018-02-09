@@ -110,6 +110,8 @@ class KCSSPreparator(AbstractPreparator):
 
     variants = []
 
+    all_phones = phones.keys() + ortho_phones.keys() + silences + variants
+
     def __init__(self, input_dir,
                  trs_level='pronunciation',
                  extract_alignment=True,
@@ -148,6 +150,9 @@ class KCSSPreparator(AbstractPreparator):
             t = self._make_transcription_single(record)
             self.transcription.update(t)
             bar.update(i+1)
+
+        # we need the lexicon for phone alignment extraction
+        self.lexicon = self._make_lexicon()
 
         if extract_alignment:
             self.alignment_phones = self.make_alignment(type='phone')
@@ -251,6 +256,9 @@ class KCSSPreparator(AbstractPreparator):
         return self.transcription
 
     def make_lexicon(self):
+        return self.lexicon
+
+    def _make_lexicon(self):
         words = set()
         for utt in self.transcription.values():
             for word in utt.split(' '):
@@ -316,6 +324,15 @@ class KCSSPreparator(AbstractPreparator):
                 t = transcript[index]
                 if type == 'word':
                     t = (t[0], t[1], t[2].replace(' ', '_').replace('-', ''))
+                if type == 'phone':
+                    # make sure the transcript is a valid phone, else
+                    # find it's equivalment in lexicon (basically
+                    # converts <LAUGH-*>, <VOCNOISE>, <PRIVATE>, etc,
+                    # into SPN)
+                    if not t[2] in self.all_phones:
+                        p = 'SPN' if 'LAUGH' in t[2] else self.lexicon[t[2]]
+                        assert ' ' not in p
+                        t = (t[0], t[1], p)
                 tokens.append(t)
                 index += 1
             alignment[utt_id] = tokens
