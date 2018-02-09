@@ -85,27 +85,25 @@ class KCSSPreparator(AbstractPreparator):
         'xi': u'ɨi'
     }
 
-    # The following phones are specific to the ortographic level.
-    # By default, they are considered as separate "phones"
-    # This dict can be modified to assign IPA based on the 
-    # (1) orthographic cluster or
-    # (2) resulting assimilation
-    # Please note that further modifications to this script are needed 
-    # in order to merge the assimilated clusters to the
-    # corresponding phonemes in the "phones" dictionary
-    # (e.g., 'ks' => 'k0')
+    # The following phones are specific to the ortographic level.  By
+    # default, they are considered as separate "phones" This dict can
+    # be modified to assign IPA based on the (1) orthographic cluster
+    # or (2) resulting assimilation Please note that further
+    # modifications to this script are needed in order to merge the
+    # assimilated clusters to the corresponding phonemes in the
+    # "phones" dictionary (e.g., 'ks' => 'k0')
     ortho_phones = {
-        'ks': u'ks', # (1) u'ks' (2) u'k'
-        'lh': u'lh', # (1) u'lh' (2) u'l'
-        'lk': u'lk', # (1) u'lk' (2) u'k'
-        'lm': u'lm', # (1) u'lm' (2) u'm'
-        'lp': u'lp', # (1) u'lp' (2) u'l'
-        'lP': u'lpʰ', # (1) u'lpʰ' (2) u'p'
-        'ls': u'ls', # (1) u'ls' (2) u'l'
-        'lT': u'ltʰ', # (1) u'ltʰ' (2) u'l'
-        'nc': u'nʨ', # (1) u'nʨ' (2) u'n'        
-        'nh': u'nh', # (1) u'nh' (2) u'n'
-        'ps': u'ps' # (1) u'ps' (2) u'p'
+        'ks': u'ks',  # (1) u'ks' (2) u'k'
+        'lh': u'lh',  # (1) u'lh' (2) u'l'
+        'lk': u'lk',  # (1) u'lk' (2) u'k'
+        'lm': u'lm',  # (1) u'lm' (2) u'm'
+        'lp': u'lp',  # (1) u'lp' (2) u'l'
+        'lP': u'lpʰ',  # (1) u'lpʰ' (2) u'p'
+        'ls': u'ls',  # (1) u'ls' (2) u'l'
+        'lT': u'ltʰ',  # (1) u'ltʰ' (2) u'l'
+        'nc': u'nʨ',  # (1) u'nʨ' (2) u'n'
+        'nh': u'nh',  # (1) u'nh' (2) u'n'
+        'ps': u'ps'  # (1) u'ps' (2) u'p'
     }
 
     silences = ['NSN', 'SPN', 'SIL']
@@ -263,8 +261,8 @@ class KCSSPreparator(AbstractPreparator):
             romanized = re.match("[a-zA-Z0-9]+", word)
             if romanized:
                 map = string.maketrans('WEY', 'wey')
-                lexicon[word] = ' '.join(re.findall('..?', word)).encode('utf-8').translate(map)
-
+                lexicon[word] = ' '.join(re.findall('..?', word)).encode(
+                    'utf-8').translate(map)
             else:
                 # replace non-speech labels by SPN or NSN
                 if re.match('<NOISE.*|<LAUGH>', word):

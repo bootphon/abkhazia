@@ -277,12 +277,15 @@ class Align(abstract_recipe.AbstractRecipe):
             for i, pair in enumerate(pairs):
                 code, nframes = pair.split(' ')
                 nframes = int(nframes)
-                if i == nb_pairs-1:
+                if i == nb_pairs - 1:
                     # last phone
-                    stop = current_frame_center_time + frame_spacing*(nframes-1.) + frame_width/2.
+                    stop = (current_frame_center_time
+                            + frame_spacing * (nframes - 1.0)
+                            + frame_width / 2.0)
                     current_frame_center_time = None
                 else:
-                    stop = current_frame_center_time + frame_spacing*(nframes-0.5)
+                    stop = (current_frame_center_time
+                            + frame_spacing * (nframes - 0.5))
                     current_frame_center_time = stop + 0.5*frame_spacing
 
                 if post:
@@ -359,13 +362,12 @@ class Align(abstract_recipe.AbstractRecipe):
 
         words = []
 
-        t0=time.time()
-        #try:
-        utts = [(utt_id, utt_align) for utt_id, utt_align in self._read_utts(phones)]
+        t0 = time.time()
+        utts = [(utt_id, utt_align)
+                for utt_id, utt_align in self._read_utts(phones)]
 
         list_phones = defaultdict(list)
         word_pos = defaultdict(list)
-        utt_alignment = [aligned.split(' ')[-1] for aligned in utt_align]
 
         # create list of all the phones using the lexicon
         for word in text[utt_id]:
@@ -391,7 +393,7 @@ class Align(abstract_recipe.AbstractRecipe):
                     # from idx, we eat wlen phones (+ any silence phone)
                     begin = True
 
-                    while wlen > 0 and idx<len(utt_align):
+                    while wlen > 0 and idx < len(utt_align):
                         aligned = utt_align[idx]
                         if aligned.split()[-1] in self.corpus.silences:
                             words.append('{}'.format(aligned))
@@ -404,12 +406,12 @@ class Align(abstract_recipe.AbstractRecipe):
         except IndexError:
             Parallel(self.njobs)(
                 delayed(dtw)([aligned.split(' ')[-1]
-                                          for aligned in utt_align],
-                                          list_phones[utt_id],
-                                          word_pos[utt_id], utt_align)
-                                         for utt_id, utt_align in utts)
-            t1=time.time()
-            print "dtw took",t1-t0
+                              for aligned in utt_align],
+                             list_phones[utt_id],
+                             word_pos[utt_id], utt_align)
+                for utt_id, utt_align in utts)
+            t1 = time.time()
+            print('dtw took {}s'.format(t1-t0))
         return words
 
     def _export_words(self, int2phone, ali, post):
@@ -438,41 +440,42 @@ class Align(abstract_recipe.AbstractRecipe):
                 continue
 
         # init dtw matrix
-        dtw = np.zeros((len(alignment),len(list_phones)))
-        dtw[0,:] = np.inf
-        dtw[:,0] = np.inf
-        dtw[0,0] = 0
+        dtw = np.zeros((len(alignment), len(list_phones)))
+        dtw[0, :] = np.inf
+        dtw[:, 0] = np.inf
+        dtw[0, 0] = 0
 
         # compute dtw costs
-        for i in range(1,len(alignment)):
-            for j in range(1,len(list_phones)):
+        for i in range(1, len(alignment)):
+            for j in range(1, len(list_phones)):
                 cost = int(not alignment[i] == list_phones[j])
-                dtw[i,j] = cost + min([dtw[i-1,j], dtw[i,j-1], dtw[i-1, j-1]])
+                dtw[i, j] = cost + min(
+                    [dtw[i-1, j], dtw[i, j-1], dtw[i-1, j-1]])
         word_alignment.append(word_pos[-1])
 
         # go backward to get the best path
         i = len(alignment) - 1
         j = len(list_phones) - 1
         path = []
-        while (not i == 0 and not j == 0):
-            options = [dtw[i-1,j], dtw[i,j-1], dtw[i-1, j-1]]
+        while not i == 0 and not j == 0:
+            options = [dtw[i-1, j], dtw[i, j-1], dtw[i-1, j-1]]
             idx, val = min(enumerate(options), key=itemgetter(1))
             if idx == 0:
                 i = i-1
                 word_alignment.append(word_pos[j])
-                path.append((i,j,word_pos[j]))
+                path.append((i, j, word_pos[j]))
                 continue
             elif idx == 1:
                 word_alignment.pop()
                 word_alignment.append(word_pos[j-1])
                 j = j-1
-                path.append((i,j,word_pos[j]))
+                path.append((i, j, word_pos[j]))
                 continue
             elif idx == 2:
                 word_alignment.append(word_pos[j-1])
                 i = i-1
                 j = j-1
-                path.append((i,j,word_pos[j]))
+                path.append((i, j, word_pos[j]))
                 continue
 
         # return alignment with words
@@ -480,16 +483,16 @@ class Align(abstract_recipe.AbstractRecipe):
 
         prev_word = ''
         complete_alignment = []
-        for utt,word in zip(utt_align, word_alignment):
+        for utt, word in zip(utt_align, word_alignment):
             if word == prev_word:
                 prev_word = word
                 complete_alignment.append(utt)
                 continue
             else:
                 prev_word = word
-                complete_alignment.append(u'{} {}'.format(utt,word))
+                complete_alignment.append(u'{} {}'.format(utt, word))
 
-        #complete_alignment = ['{} {}'.format(utt,word)
+        # complete_alignment = ['{} {}'.format(utt,word)
         #        for utt, word in zip(utt_align,word_alignment)]
         return complete_alignment
 
