@@ -262,11 +262,7 @@ class Align(abstract_recipe.AbstractRecipe):
             frame_width=0.025, frame_spacing=0.01):
         """Tokenize raw kaldi alignment output"""
         for utt_id, line in ali.iteritems():
-            # TODO make this a parameter (with the 0.01 above), or
-            # read it from the features instance. This is the center
-            # time of the first window, as specified when computing
-            # the features.
-            start = first_frame_center_time - frame_width/2.
+            start = first_frame_center_time - frame_width / 2.0
             current_frame_center_time = first_frame_center_time
 
             if post:
@@ -286,7 +282,7 @@ class Align(abstract_recipe.AbstractRecipe):
                 else:
                     stop = (current_frame_center_time
                             + frame_spacing * (nframes - 0.5))
-                    current_frame_center_time = stop + 0.5*frame_spacing
+                    current_frame_center_time = stop + 0.5 * frame_spacing
 
                 if post:
                     mpost = sum(utt_post[:nframes]) / nframes
@@ -541,3 +537,24 @@ def utterances_posterior_scoring(alignment_file, score_fun=np.prod):
     for utt, alignment in Align._read_utts(alignment_file):
         posteriors = [float(line.split(' ')[3]) for line in alignment]
         yield utt, score_fun(posteriors)
+
+
+def merge_phones_words_alignments(ali_phones, ali_words):
+    """Merge two alignments at phone and word into a single one
+
+    Phone alignment is at format "utt_id, tstart, tstop, phone".
+
+    Word alignment is at format "utt_id, tstart, tstop, word".
+
+    Merged alignment is at format "utt_id, tstart, tstop, phone [word]",
+    where the word is specified only at the forst phone of that word.
+
+    """
+    for utt, phones in ali_phones.items():
+        words = ali_words[utt]
+        words_index = 0
+        for n, (t, u, p) in enumerate(phones):
+            if len(words) > words_index and words[words_index][0] == t:
+                ali_phones[utt][n] = (t, u, p, words[words_index][2])
+                words_index += 1
+    return ali_phones

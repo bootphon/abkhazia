@@ -26,6 +26,7 @@ import string
 import abkhazia.utils as utils
 from abkhazia.utils.textgrid import TextGrid
 from abkhazia.corpus.prepare import AbstractPreparator
+from abkhazia.align.align import merge_phones_words_alignments
 
 
 class KCSSPreparator(AbstractPreparator):
@@ -155,8 +156,11 @@ class KCSSPreparator(AbstractPreparator):
         self.lexicon = self._make_lexicon()
 
         if extract_alignment:
-            self.alignment_phones = self.make_alignment(type='phone')
-            self.alignment_words = self.make_alignment(type='word')
+            ali_phones = self.make_alignment(type='phone')
+            ali_words = self.make_alignment(type='word')
+            self.log.info('merging phone and word alignments...')
+            self.alignment = merge_phones_words_alignments(
+                ali_phones, ali_words)
 
     def _load_textgrid(self, trs_level):
         """return the TextGrid files in a dict utt_id: textgrid data"""
@@ -289,7 +293,7 @@ class KCSSPreparator(AbstractPreparator):
 
     def make_alignment(self, type='phone'):
         """Extract phones and words alignment from the TextGrid data"""
-        self.log.info('extracting %s alignment...', type)
+        self.log.info('extracting %s alignments...', type)
         bar = progressbar.ProgressBar(max_value=len(self.textgrid.keys()))
         alignment = {}
         for i, record in enumerate(self.textgrid.keys()):
