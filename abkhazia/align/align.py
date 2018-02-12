@@ -45,7 +45,6 @@ import abkhazia.abstract_recipe as abstract_recipe
 from abkhazia.utils.best_path_dtw import dtw
 
 from abkhazia.language import check_language_model, read_int2phone
-from abkhazia.acoustic import check_acoustic_model
 from abkhazia.features import Features
 
 
@@ -79,6 +78,9 @@ class Align(abstract_recipe.AbstractRecipe):
         self._check_with_posteriors()
         self._check_acoustic_scale()
 
+        # late import to avoid circular import (align imports acoustic
+        # for the convert_alignment_to_kaldi_format function)
+        from abkhazia.acoustic import check_acoustic_model
         check_acoustic_model(self.am_dir)
         check_language_model(self.lm_dir)
 
@@ -262,11 +264,7 @@ class Align(abstract_recipe.AbstractRecipe):
             frame_width=0.025, frame_spacing=0.01):
         """Tokenize raw kaldi alignment output"""
         for utt_id, line in ali.iteritems():
-            # TODO make this a parameter (with the 0.01 above), or
-            # read it from the features instance. This is the center
-            # time of the first window, as specified when computing
-            # the features.
-            start = first_frame_center_time - frame_width/2.
+            start = first_frame_center_time - frame_width / 2.0
             current_frame_center_time = first_frame_center_time
 
             if post:
@@ -277,13 +275,16 @@ class Align(abstract_recipe.AbstractRecipe):
             for i, pair in enumerate(pairs):
                 code, nframes = pair.split(' ')
                 nframes = int(nframes)
-                if i == nb_pairs-1:
+                if i == nb_pairs - 1:
                     # last phone
-                    stop = current_frame_center_time + frame_spacing*(nframes-1.) + frame_width/2.
+                    stop = (current_frame_center_time
+                            + frame_spacing * (nframes - 1.0)
+                            + frame_width / 2.0)
                     current_frame_center_time = None
                 else:
-                    stop = current_frame_center_time + frame_spacing*(nframes-0.5)
-                    current_frame_center_time = stop + 0.5*frame_spacing
+                    stop = (current_frame_center_time
+                            + frame_spacing * (nframes - 0.5))
+                    current_frame_center_time = stop + 0.5 * frame_spacing
 
                 if post:
                     mpost = sum(utt_post[:nframes]) / nframes
@@ -359,13 +360,12 @@ class Align(abstract_recipe.AbstractRecipe):
 
         words = []
 
-        t0=time.time()
-        #try:
-        utts = [(utt_id, utt_align) for utt_id, utt_align in self._read_utts(phones)]
+        t0 = time.time()
+        utts = [(utt_id, utt_align)
+                for utt_id, utt_align in self._read_utts(phones)]
 
         list_phones = defaultdict(list)
         word_pos = defaultdict(list)
-        utt_alignment = [aligned.split(' ')[-1] for aligned in utt_align]
 
         # create list of all the phones using the lexicon
         for word in text[utt_id]:
@@ -391,7 +391,7 @@ class Align(abstract_recipe.AbstractRecipe):
                     # from idx, we eat wlen phones (+ any silence phone)
                     begin = True
 
-                    while wlen > 0 and idx<len(utt_align):
+                    while wlen > 0 and idx < len(utt_align):
                         aligned = utt_align[idx]
                         if aligned.split()[-1] in self.corpus.silences:
                             words.append('{}'.format(aligned))
@@ -404,12 +404,12 @@ class Align(abstract_recipe.AbstractRecipe):
         except IndexError:
             Parallel(self.njobs)(
                 delayed(dtw)([aligned.split(' ')[-1]
-                                          for aligned in utt_align],
-                                          list_phones[utt_id],
-                                          word_pos[utt_id], utt_align)
-                                         for utt_id, utt_align in utts)
-            t1=time.time()
-            print "dtw took",t1-t0
+                              for aligned in utt_align],
+                             list_phones[utt_id],
+                             word_pos[utt_id], utt_align)
+                for utt_id, utt_align in utts)
+            t1 = time.time()
+            print('dtw took {}s'.format(t1-t0))
         return words
 
     def _export_words(self, int2phone, ali, post):
@@ -438,41 +438,42 @@ class Align(abstract_recipe.AbstractRecipe):
                 continue
 
         # init dtw matrix
-        dtw = np.zeros((len(alignment),len(list_phones)))
-        dtw[0,:] = np.inf
-        dtw[:,0] = np.inf
-        dtw[0,0] = 0
+        dtw = np.zeros((len(alignment), len(list_phones)))
+        dtw[0, :] = np.inf
+        dtw[:, 0] = np.inf
+        dtw[0, 0] = 0
 
         # compute dtw costs
-        for i in range(1,len(alignment)):
-            for j in range(1,len(list_phones)):
+        for i in range(1, len(alignment)):
+            for j in range(1, len(list_phones)):
                 cost = int(not alignment[i] == list_phones[j])
-                dtw[i,j] = cost + min([dtw[i-1,j], dtw[i,j-1], dtw[i-1, j-1]])
+                dtw[i, j] = cost + min(
+                    [dtw[i-1, j], dtw[i, j-1], dtw[i-1, j-1]])
         word_alignment.append(word_pos[-1])
 
         # go backward to get the best path
         i = len(alignment) - 1
         j = len(list_phones) - 1
         path = []
-        while (not i == 0 and not j == 0):
-            options = [dtw[i-1,j], dtw[i,j-1], dtw[i-1, j-1]]
+        while not i == 0 and not j == 0:
+            options = [dtw[i-1, j], dtw[i, j-1], dtw[i-1, j-1]]
             idx, val = min(enumerate(options), key=itemgetter(1))
             if idx == 0:
                 i = i-1
                 word_alignment.append(word_pos[j])
-                path.append((i,j,word_pos[j]))
+                path.append((i, j, word_pos[j]))
                 continue
             elif idx == 1:
                 word_alignment.pop()
                 word_alignment.append(word_pos[j-1])
                 j = j-1
-                path.append((i,j,word_pos[j]))
+                path.append((i, j, word_pos[j]))
                 continue
             elif idx == 2:
                 word_alignment.append(word_pos[j-1])
                 i = i-1
                 j = j-1
-                path.append((i,j,word_pos[j]))
+                path.append((i, j, word_pos[j]))
                 continue
 
         # return alignment with words
@@ -480,16 +481,16 @@ class Align(abstract_recipe.AbstractRecipe):
 
         prev_word = ''
         complete_alignment = []
-        for utt,word in zip(utt_align, word_alignment):
+        for utt, word in zip(utt_align, word_alignment):
             if word == prev_word:
                 prev_word = word
                 complete_alignment.append(utt)
                 continue
             else:
                 prev_word = word
-                complete_alignment.append(u'{} {}'.format(utt,word))
+                complete_alignment.append(u'{} {}'.format(utt, word))
 
-        #complete_alignment = ['{} {}'.format(utt,word)
+        # complete_alignment = ['{} {}'.format(utt,word)
         #        for utt, word in zip(utt_align,word_alignment)]
         return complete_alignment
 
@@ -538,3 +539,65 @@ def utterances_posterior_scoring(alignment_file, score_fun=np.prod):
     for utt, alignment in Align._read_utts(alignment_file):
         posteriors = [float(line.split(' ')[3]) for line in alignment]
         yield utt, score_fun(posteriors)
+
+
+def convert_alignment_to_kaldi_format(
+        input_ali_file, phonemap_file, frame_width=0.025, frame_spacing=0.01):
+    """Convert an alignment file from abkhazia format to kaldi format
+
+    Parameters
+    ----------
+    input_ali_file : file
+        The original alignment file in abkhazia format
+    phonemap_file : file
+        A file mapping phones to int code (generated by Kaldi's
+        prep_lang script)
+    frame_width, frame_spacing : float, optional
+        Depends on the features computed on the corpus used with the
+        alignments. Default values are for default MFCC features.
+
+    Return
+    ------
+    The converted alignment as a list of utterances
+
+    """
+    # load the phonemap file as a dict {phone: int}
+    phonemap = {}
+    for line in utils.open_utf8(phonemap_file, 'r'):
+        p, i = line.strip().split()
+        phonemap[p] = i
+
+    # for each utterance, a list of lists [tstart, tstop, phone]
+    alignment = {utt: [a.split(' ')[1:4] for a in ali]
+                 for utt, ali in Align._read_utts(input_ali_file)}
+
+    out = []
+    for utt, value in alignment.items():
+        out.append(
+            utt + ' ' + ' '.join(
+                (' '.join([phonemap[phone]] * int(round(
+                    (float(tstop) - float(tstart)) / frame_spacing)))
+                 for tstart, tstop, phone in value)))
+
+    return out
+
+
+def merge_phones_words_alignments(ali_phones, ali_words):
+    """Merge two alignments at phone and word into a single one
+
+    Phone alignment is at format "utt_id, tstart, tstop, phone".
+
+    Word alignment is at format "utt_id, tstart, tstop, word".
+
+    Merged alignment is at format "utt_id, tstart, tstop, phone [word]",
+    where the word is specified only at the forst phone of that word.
+
+    """
+    for utt, phones in ali_phones.items():
+        words = ali_words[utt]
+        words_index = 0
+        for n, (t, u, p) in enumerate(phones):
+            if len(words) > words_index and words[words_index][0] == t:
+                ali_phones[utt][n] = (t, u, p, words[words_index][2])
+                words_index += 1
+    return ali_phones

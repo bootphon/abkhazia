@@ -500,19 +500,11 @@ class KCSSFactory(AbstractFactory):
 
         # save the alignment
         if not args.no_alignment:
-            alignment_file = os.path.join(output_dir, 'alignment_phones.txt')
+            alignment_file = os.path.join(output_dir, 'alignment.txt')
             utils.open_utf8(alignment_file, 'w').write(
                 '\n'.join(
                     '{} {}'.format(k, ' '.join(str(v) for v in vv))
-                    for k, v in sorted(preparator.alignment_phones.items())
-                    for vv in v)
-                + '\n')
-
-            alignment_file = os.path.join(output_dir, 'alignment_words.txt')
-            utils.open_utf8(alignment_file, 'w').write(
-                '\n'.join(
-                    '{} {}'.format(k, ' '.join(str(v) for v in vv))
-                    for k, v in sorted(preparator.alignment_words.items())
+                    for k, v in sorted(preparator.alignment.items())
                     for vv in v)
                 + '\n')
 

@@ -26,6 +26,7 @@ import string
 import abkhazia.utils as utils
 from abkhazia.utils.textgrid import TextGrid
 from abkhazia.corpus.prepare import AbstractPreparator
+from abkhazia.align.align import merge_phones_words_alignments
 
 
 class KCSSPreparator(AbstractPreparator):
@@ -85,32 +86,32 @@ class KCSSPreparator(AbstractPreparator):
         'xi': u'ɨi'
     }
 
-    # The following phones are specific to the ortographic level.
-    # By default, they are considered as separate "phones"
-    # This dict can be modified to assign IPA based on the 
-    # (1) orthographic cluster or
-    # (2) resulting assimilation
-    # Please note that further modifications to this script are needed 
-    # in order to merge the assimilated clusters to the
-    # corresponding phonemes in the "phones" dictionary
-    # (e.g., 'ks' => 'k0')
+    # The following phones are specific to the ortographic level.  By
+    # default, they are considered as separate "phones" This dict can
+    # be modified to assign IPA based on the (1) orthographic cluster
+    # or (2) resulting assimilation Please note that further
+    # modifications to this script are needed in order to merge the
+    # assimilated clusters to the corresponding phonemes in the
+    # "phones" dictionary (e.g., 'ks' => 'k0')
     ortho_phones = {
-        'ks': u'ks', # (1) u'ks' (2) u'k'
-        'lh': u'lh', # (1) u'lh' (2) u'l'
-        'lk': u'lk', # (1) u'lk' (2) u'k'
-        'lm': u'lm', # (1) u'lm' (2) u'm'
-        'lp': u'lp', # (1) u'lp' (2) u'l'
-        'lP': u'lpʰ', # (1) u'lpʰ' (2) u'p'
-        'ls': u'ls', # (1) u'ls' (2) u'l'
-        'lT': u'ltʰ', # (1) u'ltʰ' (2) u'l'
-        'nc': u'nʨ', # (1) u'nʨ' (2) u'n'        
-        'nh': u'nh', # (1) u'nh' (2) u'n'
-        'ps': u'ps' # (1) u'ps' (2) u'p'
+        'ks': u'ks',  # (1) u'ks' (2) u'k'
+        'lh': u'lh',  # (1) u'lh' (2) u'l'
+        'lk': u'lk',  # (1) u'lk' (2) u'k'
+        'lm': u'lm',  # (1) u'lm' (2) u'm'
+        'lp': u'lp',  # (1) u'lp' (2) u'l'
+        'lP': u'lpʰ',  # (1) u'lpʰ' (2) u'p'
+        'ls': u'ls',  # (1) u'ls' (2) u'l'
+        'lT': u'ltʰ',  # (1) u'ltʰ' (2) u'l'
+        'nc': u'nʨ',  # (1) u'nʨ' (2) u'n'
+        'nh': u'nh',  # (1) u'nh' (2) u'n'
+        'ps': u'ps'  # (1) u'ps' (2) u'p'
     }
 
     silences = ['NSN', 'SPN', 'SIL']
 
     variants = []
+
+    all_phones = phones.keys() + ortho_phones.keys() + silences + variants
 
     def __init__(self, input_dir,
                  trs_level='pronunciation',
@@ -151,9 +152,15 @@ class KCSSPreparator(AbstractPreparator):
             self.transcription.update(t)
             bar.update(i+1)
 
+        # we need the lexicon for phone alignment extraction
+        self.lexicon = self._make_lexicon()
+
         if extract_alignment:
-            self.alignment_phones = self.make_alignment(type='phone')
-            self.alignment_words = self.make_alignment(type='word')
+            ali_phones = self.make_alignment(type='phone')
+            ali_words = self.make_alignment(type='word')
+            self.log.info('merging phone and word alignments...')
+            self.alignment = merge_phones_words_alignments(
+                ali_phones, ali_words)
 
     def _load_textgrid(self, trs_level):
         """return the TextGrid files in a dict utt_id: textgrid data"""
@@ -253,6 +260,9 @@ class KCSSPreparator(AbstractPreparator):
         return self.transcription
 
     def make_lexicon(self):
+        return self.lexicon
+
+    def _make_lexicon(self):
         words = set()
         for utt in self.transcription.values():
             for word in utt.split(' '):
@@ -263,8 +273,8 @@ class KCSSPreparator(AbstractPreparator):
             romanized = re.match("[a-zA-Z0-9]+", word)
             if romanized:
                 map = string.maketrans('WEY', 'wey')
-                lexicon[word] = ' '.join(re.findall('..?', word)).encode('utf-8').translate(map)
-
+                lexicon[word] = ' '.join(re.findall('..?', word)).encode(
+                    'utf-8').translate(map)
             else:
                 # replace non-speech labels by SPN or NSN
                 if re.match('<NOISE.*|<LAUGH>', word):
@@ -283,7 +293,7 @@ class KCSSPreparator(AbstractPreparator):
 
     def make_alignment(self, type='phone'):
         """Extract phones and words alignment from the TextGrid data"""
-        self.log.info('extracting %s alignment...', type)
+        self.log.info('extracting %s alignments...', type)
         bar = progressbar.ProgressBar(max_value=len(self.textgrid.keys()))
         alignment = {}
         for i, record in enumerate(self.textgrid.keys()):
@@ -318,6 +328,15 @@ class KCSSPreparator(AbstractPreparator):
                 t = transcript[index]
                 if type == 'word':
                     t = (t[0], t[1], t[2].replace(' ', '_').replace('-', ''))
+                if type == 'phone':
+                    # make sure the transcript is a valid phone, else
+                    # find it's equivalment in lexicon (basically
+                    # converts <LAUGH-*>, <VOCNOISE>, <PRIVATE>, etc,
+                    # into SPN)
+                    if not t[2] in self.all_phones:
+                        p = 'SPN' if 'LAUGH' in t[2] else self.lexicon[t[2]]
+                        assert ' ' not in p
+                        t = (t[0], t[1], p)
                 tokens.append(t)
                 index += 1
             alignment[utt_id] = tokens

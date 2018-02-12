@@ -52,7 +52,7 @@ Access to the list of available options
 
 """
 
-from abkhazia.acoustic.monophone import Monophone
+from abkhazia.acoustic.monophone import Monophone, MonophoneFromAlignment
 from abkhazia.acoustic.triphone import Triphone
 from abkhazia.acoustic.triphone_speaker_adaptive import (
     TriphoneSpeakerAdaptive)
