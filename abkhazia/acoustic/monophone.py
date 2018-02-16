@@ -1,4 +1,4 @@
-# Copyright 2016 Thomas Schatz, Xuan-Nga Cao, Mathieu Bernard
+# Copyright 2016-2018 Thomas Schatz, Xuan-Nga Cao, Mathieu Bernard
 #
 # This file is part of abkhazia: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -142,7 +142,9 @@ class MonophoneFromAlignment(Monophone):
 
         ali = convert_alignment_to_kaldi_format(
             self.alignment_file,
-            os.path.join(self.output_dir, 'lang', 'phones.txt'))
+            os.path.join(self.output_dir, 'lang'),
+            self.lang_args['position_dependent_phones'],
+            log=self.log)
 
         # split the data for njobs processing, this normally done in
         # the run() step but we need here to split the alignment
@@ -165,11 +167,10 @@ class MonophoneFromAlignment(Monophone):
         split_ali = {}
         for job in range(1, self.njobs + 1):
             split_ali[job] = []
-        for line in ali:
-            utt = line.split(' ')[0]
+        for utt, line in ali.iteritems():
             try:
                 job = split_utt[utt]
-                split_ali[job].append(line.strip())
+                split_ali[job].append(utt + ' ' + line.strip())
             except KeyError:
                 pass  # the utterance is not in the data splits, ignore it
 
