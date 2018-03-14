@@ -13,14 +13,27 @@ import numpy as np
 import codecs
 import os
 import re
-import abkhazia.kaldi.kaldi2abkhazia as k2a
 import os.path as p
+
+
+def read_kaldi_phonemap(phones_file, word_position_dependent=True):
+	with codecs.open(phones_file, mode='r', encoding='UTF-8') as inp:
+		lines = inp.readlines()
+	phonemap = {}
+	for line in lines:
+		phone, code = line.strip().split(u" ")
+		# remove word position markers
+		if word_position_dependent:
+			if phone[-2:] in ["_I", "_B", "_E", "_S"]:
+				phone = phone[:-2]
+		phonemap[code] = phone
+	return phonemap
 
 
 def get_phone_order(phonemap):
 	"""
 	Output an easily reproducible phone order from a phonemap
-	obtained by reading a phones.txt file with k2a.read_kaldi_phonemap
+	obtained by reading a phones.txt file with read_kaldi_phonemap
 	"""
 	# remove kaldi disambiguation symbols and <eps> from the phonemap,
 	# as those shouldn't be in the phone_order
@@ -55,7 +68,7 @@ def transcription2features(phones_file, tra_file, out_file, word_position_depend
 	sequence of consecutive feature vectors with their durations and for the first
 	and last their degree of overlap with the required time segment.
 	"""
-	phonemap = k2a.read_kaldi_phonemap(phones_file, word_position_dependent)
+	phonemap = read_kaldi_phonemap(phones_file, word_position_dependent)
 	# get order used to encode the phones as integer in the features files
 	phone_order = get_phone_order(phonemap)
 	utt_ids = []
@@ -65,7 +78,7 @@ def transcription2features(phones_file, tra_file, out_file, word_position_depend
 	utt_times = []
 	utt_features = []
 	i = 1
-	for utt_id, start, stop, phone in k2a.read_kaldi_alignment(phonemap, tra_file):
+	for utt_id, start, stop, phone in read_kaldi_alignment(phonemap, tra_file):
 		print i
 		i = i+1
 		if current_utt is None:
@@ -98,7 +111,7 @@ def lattice2features(phones_file, post_file, out_file, word_position_dependent=T
 	this loads everything into memory, but it would be easy to write
 	an incremental version if this poses a problem
 	"""
-	phonemap = k2a.read_kaldi_phonemap(phones_file, word_position_dependent)
+	phonemap = read_kaldi_phonemap(phones_file, word_position_dependent)
 	# get order in which phones will be represented in the dimensions of the posteriorgram
 	phone_order = get_phone_order(phonemap)
 	d = len(phone_order)  # posteriorgram dimension
