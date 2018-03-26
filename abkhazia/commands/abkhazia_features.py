@@ -50,10 +50,14 @@ class _FeatBase(AbstractKaldiCommand):
             help="""if set write features in a h5features file
             named '<output_dir>/feats.h5f'""")
 
+        # from http://kaldi-asr.org/doc/structkaldi_1_1ProcessPitchOptions.html
         parser.add_argument(
             '--pitch', action='store_true',
-            help="""if specified, compute pitch estimation,
-            default is %(default)s""")
+            help="""when specified compute pitch estimation.
+            Appends 3 dimensions at the end of the features: the
+            warped NCCF (probability of voicing-like, in [-1, 1]), the
+            log-pitch with POV-weighted mean subtraction over 1.5
+            second window, and the time derivative of log-pitch.""")
 
         parser.add_argument(
             '--cmvn', action='store_true',
