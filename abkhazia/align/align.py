@@ -139,6 +139,10 @@ class Align(abstract_recipe.AbstractRecipe):
                 'alignment posteriors flag is not a bool, forcing to False')
             self.with_posteriors = False
 
+        if self.level == 'words' and self.with_posteriors:
+            raise NotImplementedError(
+                'cannot compute words alignment with posteriors')
+
     def _check_acoustic_scale(self):
         """Raise IOError if acoustic_scale not a float"""
         if not isinstance(self.acoustic_scale, float):
@@ -573,7 +577,7 @@ def convert_to_word_position_dependent(alignment):
         for word in yield_on_words(utt_phones):
             lex = [p[2] for p in word]
             if len(lex) == 1:
-                lex = [lex[0]+ '_S']  # single phone word
+                lex = [lex[0] + '_S']  # single phone word
             else:
                 lex = (
                     [lex[0] + '_B'] +  # first phone in word
