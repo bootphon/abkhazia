@@ -74,7 +74,7 @@ sox_failure="sox not found on your system, please install it (see http://sox.sou
 # check shorten is installed
 shorten=`which shorten`
 shorten_failure="shorten not found on your system, please install it from
-http://etree.org/shnutils/shorten/dist/src/shorten-3.6.1.tar.gz"
+http://shnutils.freeshell.org/shorten/dist/src/shorten-3.6.1.tar.gz"
 [ ! -z $shorten ] && echo "Found shorten as $shorten" || failure "$shorten_failure"
 
 
