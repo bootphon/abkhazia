@@ -24,6 +24,51 @@ Install dependencies
 Before deploying Abkahzia on your system, you need to install the
 following dependencies: Kaldi, sox, shorten and festival.
 
+C++ compilers
+-------------
+
+You need to have both ``gcc`` and ``clang`` installed. On
+Debian/Ubuntu just have a::
+
+  sudo apt-get install gcc clang
+
+
+Flac, sox and festival
+----------------------
+
+* Abkhazia relies on `flac <https://xiph.org/flac>`_ and `sox
+  <http://sox.sourceforge.net>`_ for audio conversion from various file
+  formats to wav.
+
+  They should be in repositories of every standard Unix distribution,
+  for exemple in Debian/Ubuntu::
+
+    sudo apt-get install flac sox
+
+* Abkhazia also needs `festival
+  <http://www.cstr.ed.ac.uk/projects/festival>`_ to phonemize the
+  transcriptions of the Childes Brent corpus. Visit `this link
+  <http://www.festvox.org/docs/manual-2.4.0/festival_6.html#Installation>`_
+  for installation guidelines, or on Ubuntu/Debian use::
+
+    sudo apt-get install festival
+
+
+Shorten
+-------
+
+`shorten <http://etree.org/shnutils/shorten>`_ is used for wav
+conversion from the original *shn* audio files, it must be installed
+manually. Follow these steps to download, compile and install it::
+
+    wget http://shnutils.freeshell.org/shorten/dist/src/shorten-3.6.1.tar.gz
+    tar xzf shorten-3.6.1.tar.gz
+    cd shorten-3.6.1
+    ./configure
+    make
+    sudo make install
+
+
 Kaldi
 -----
 
@@ -69,41 +114,6 @@ Kaldi
             cd ./tools
             ./extras/install_irstlm.sh
             ./extras/install_srilm.sh
-
-Flac, sox and festival
-----------------------
-
-* Abkhazia relies on `flac <https://xiph.org/flac>`_ and `sox
-  <http://sox.sourceforge.net>`_ for audio conversion from various file
-  formats to wav.
-
-  They should be in repositories of every standard Unix distribution,
-  for exemple in Debian/Ubuntu::
-
-    sudo apt-get install flac sox
-
-* Abkhazia also needs `festival
-  <http://www.cstr.ed.ac.uk/projects/festival>`_ to phonemize the
-  transcriptions of the Childes Brent corpus. Visit `this link
-  <http://www.festvox.org/docs/manual-2.4.0/festival_6.html#Installation>`_
-  for installation guidelines, or on Ubuntu/Debian use::
-
-    sudo apt-get install festival
-
-
-Shorten
--------
-
-`shorten <http://etree.org/shnutils/shorten>`_ is used for wav
-conversion from the original *shn* audio files, it must be installed
-manually. Follow these steps to download, compile and install it::
-
-    wget http://etree.org/shnutils/shorten/dist/src/shorten-3.6.1.tar.gz
-    tar xzf shorten-3.6.1.tar.gz
-    cd shorten-3.6.1
-    ./configure
-    make
-    sudo make install
 
 
 Install Abkhazia

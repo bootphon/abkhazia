@@ -55,7 +55,7 @@ kaldi=$(realpath $kaldi/src)
 # From $kaldi/tools/extras/check_dependencies.sh. Debian systems
 # generally link /bin/sh to dash, which doesn't work with some scripts
 # as it doesn't expand x.{1,2}.y to x.1.y x.2.y
-[ $(realpath /bin/sh) == "dash" ] && \
+[ $(realpath /bin/sh) == "/bin/dash" ] && \
     failure  "failed because /bin/sh is linked to dash, and currently \
          some of the scripts will not run properly. We recommend to run: \
          sudo ln -s -f bash /bin/sh"
@@ -64,16 +64,25 @@ kaldi=$(realpath $kaldi/src)
 cd $kaldi/tools
 ./extras/check_dependencies.sh || failure "failed to check kaldi dependencies"
 make -j $ncores || failure "failed to build kaldi tools"
+./extras/install_openblas.sh  | failure "failed to install openblas"
 
 # compile kaldi src
 cd $kaldi/src
-./configure --shared || failure "failed to configure kaldi"
+./configure --openblas-root=../tools/OpenBLAS/install \
+    || failure "failed to configure kaldi"
 # compile with optimizations and without debug symbols.
 sed -i "s/\-g # -O0 -DKALDI_PARANOID.*$/-O3 -DNDEBUG/" kaldi.mk
+# use clang instead of gcc
+sed -i "s/ -rdynamic//g" kaldi.mk
+sed -i "s/g++/clang++/" kaldi.mk
 make depend -j $ncores || failure "failed to setup kaldi dependencies"
 make -j $ncores || failure "failed to build kaldi"
 
 # compile irstlm
+cd $kaldi/tools/extras
+rm -f install_irstlm.sh
+wget https://raw.githubusercontent.com/kaldi-asr/kaldi/master/tools/extras/install_irstlm.sh
+wget https://raw.githubusercontent.com/kaldi-asr/kaldi/master/tools/extras/irstlm.patch
 cd $kaldi/tools
 ./extras/install_irstlm.sh || failure "failed to install IRSTLM"
 
