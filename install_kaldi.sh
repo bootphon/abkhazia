@@ -64,7 +64,7 @@ kaldi=$(realpath $kaldi/src)
 cd $kaldi/tools
 ./extras/check_dependencies.sh || failure "failed to check kaldi dependencies"
 make -j $ncores || failure "failed to build kaldi tools"
-./extras/install_openblas.sh  | failure "failed to install openblas"
+./extras/install_openblas.sh || failure "failed to install openblas"
 
 # compile kaldi src
 cd $kaldi/src
