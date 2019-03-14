@@ -262,7 +262,7 @@ def _ark_to_dict_binary(arkfile):
 
             # data
             size = nrows * ncols * 4
-            data = np.fromstring(
+            data = np.frombuffer(
                 fin.read(size), dtype=np.float32).reshape((nrows, ncols))
             res[fname] = data
     return res
