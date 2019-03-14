@@ -92,5 +92,9 @@ wget https://raw.githubusercontent.com/kaldi-asr/kaldi/master/tools/extras/irstl
 cd $kaldi/tools
 ./extras/install_irstlm.sh || failure "failed to install IRSTLM"
 
+# compile srilm
+wget https://github.com/denizyuret/nlpcourse/raw/master/download/srilm-1.7.0.tgz -O srilm.tgz
+./extras/install_srilm.sh || failure "failed to install SRILM"
+
 # forward the path to Kaldi to the configure script
 export KALDI_PATH=$kaldi
