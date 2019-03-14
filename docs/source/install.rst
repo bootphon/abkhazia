@@ -18,6 +18,25 @@ Installation and configuration
    has not been tested.
 
 
+Use in docker
+=============
+
+The most simple way of deploy abkhazia is to use it under a docker
+container. Once you have docker installed on your machine, build the
+container with::
+
+  docker build -t abkhazia .
+
+Then you can run it for instance with::
+
+  docker run -it --rm abkhazia bash
+
+The need to mount your corpus data inside the container (using the
+`-v` option of `docker run` and modify the abkhazia configuration (see
+:ref:`abkhazia_conf`). Read the docker documentation `here
+<https://docs.docker.com>`_.
+
+
 Install dependencies
 ====================
 
@@ -152,6 +171,8 @@ Install Abkhazia
 
   Then open the file ``./docs/html/index.html`` with your favorite browser.
 
+
+.. _abkhazia_conf:
 
 Configuration files
 ===================

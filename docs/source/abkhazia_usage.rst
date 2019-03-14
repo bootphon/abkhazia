@@ -19,6 +19,13 @@ Commands
 For more details on a specific command, type ``abkhazia <command>
 --help``.
 
+
+validate: [corpus]
+------------------
+
+Check if a corpus stored on disk is in a valid format and ready to be
+used by abkhazia.
+
 prepare: [raw] -> [corpus]
 --------------------------
 
@@ -37,14 +44,20 @@ language: [corpus] -> [lm]
 Generate a language model from a prepared corpus. Write the directory
 ``<corpus>/language``.
 
-train: [corpus], [lm] -> [model]
+features: [corpus] -> [features]
 --------------------------------
 
-Train a standard speaker-adapted triphone HMM-GMM model from a
-prepared corpus. Write the directory ``<corpus>/model``.
+Compute speech features on the given corpus. Write the directory
+``<corpus>/features``.
 
-align: [model], [lm] -> [result]
---------------------------------
+acoustic: [corpus], [features] -> [model]
+-----------------------------------------
+
+Train an acoustic model from a prepared corpus and its features. Write
+the directory ``<corpus>/model``.
+
+align: [corpus], [model], [lm] -> [result]
+------------------------------------------
 
 Generate a forced-alignment from acoustic and language models. Write
 the directory ``<corpus>/align``.
