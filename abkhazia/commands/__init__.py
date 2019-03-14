@@ -33,3 +33,4 @@ from abkhazia.commands.abkhazia_plot import AbkhaziaPlot
 from abkhazia.commands.abkhazia_features import AbkhaziaFeatures
 from abkhazia.commands.abkhazia_merge_wavs import AbkhaziaMergeWavs
 from abkhazia.commands.abkhazia_filter import AbkhaziaFilter
+from abkhazia.commands.abkhazia_validate import AbkhaziaValidate

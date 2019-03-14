@@ -30,6 +30,7 @@ import argparse
 import abkhazia.utils as utils
 from abkhazia import __version__
 from abkhazia.commands import (
+    AbkhaziaValidate,
     AbkhaziaPrepare,
     AbkhaziaFeatures,
     AbkhaziaSplit,
@@ -46,6 +47,7 @@ class Abkhazia(object):
     """Parse the input arguments and call the requested subcommand"""
     # the possible subcommand classes
     _command_classes = [
+        AbkhaziaValidate,
         AbkhaziaPrepare,
         AbkhaziaSplit,
         AbkhaziaMergeWavs,
