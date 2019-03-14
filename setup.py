@@ -16,11 +16,12 @@
 """Setup script for the abkhazia package"""
 
 import os
+import abkhazia
 from setuptools import setup, find_packages
 
 GITHUB_BOOTPHON = 'https://github.com/bootphon/'
 SETUP_DIR = os.path.dirname(os.path.abspath(__file__))
-VERSION = '0.3'
+VERSION = abkhazia.__version__
 
 # On Reads The Docs we don't install any package
 ON_RTD = os.environ.get('READTHEDOCS', None) == 'True'

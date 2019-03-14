@@ -28,7 +28,7 @@ import argcomplete
 import argparse
 
 import abkhazia.utils as utils
-
+from abkhazia import __version__
 from abkhazia.commands import (
     AbkhaziaPrepare,
     AbkhaziaFeatures,
@@ -40,9 +40,6 @@ from abkhazia.commands import (
     AbkhaziaAcoustic,
     AbkhaziaDecode,
     AbkhaziaAlign)
-
-# TODO get that from setup.py
-__version__ = '0.3'
 
 
 class Abkhazia(object):
@@ -185,7 +182,7 @@ class CatchExceptions(object):
 # can be usefull to don't catch any exception, so the full error
 # traceback error is printed. To do so, just comment the following
 # line
-#@CatchExceptions
+@CatchExceptions
 def main():
     """abkhazia main entry point in command line"""
     Abkhazia()
