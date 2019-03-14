@@ -87,6 +87,7 @@ make -j $ncores || failure "failed to build kaldi"
 cd $kaldi/tools/extras
 rm -f install_irstlm.sh
 wget https://raw.githubusercontent.com/kaldi-asr/kaldi/master/tools/extras/install_irstlm.sh
+chmod +x install_irstlm.sh
 wget https://raw.githubusercontent.com/kaldi-asr/kaldi/master/tools/extras/irstlm.patch
 cd $kaldi/tools
 ./extras/install_irstlm.sh || failure "failed to install IRSTLM"
