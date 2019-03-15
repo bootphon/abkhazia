@@ -1,7 +1,7 @@
 FROM ubuntu:16.04
 
 # install sotware dependencies
-RUN apt-get update && apt-get install -y \
+RUN apt-get update && apt-get install --no-install-recommends -y \
         automake \
         autoconf \
         bzip2 \
@@ -10,6 +10,7 @@ RUN apt-get update && apt-get install -y \
         festival \
         flac \
         g++ \
+        gawk \
         gcc \
         gfortran \
         git \
@@ -17,6 +18,7 @@ RUN apt-get update && apt-get install -y \
         libatlas3-base \
         libtool \
         make \
+        patch \
         perl \
         python \
         python-h5py \
@@ -30,54 +32,42 @@ RUN apt-get update && apt-get install -y \
         python-sphinx \
         sox \
         subversion \
-        vim \
         wget \
-        zlib1g-dev
-RUN ln -s -f bash /bin/sh
+        zlib1g-dev && \
+        rm -rf /var/lib/apt/lists/*
 
 # install shorten
-WORKDIR /shorten
-RUN wget http://shnutils.freeshell.org/shorten/dist/src/shorten-3.6.1.tar.gz
-RUN tar xzf shorten-3.6.1.tar.gz
-WORKDIR /shorten/shorten-3.6.1
-RUN ./configure
-RUN make
-RUN make install
-WORKDIR /
-RUN rm -rf /shorten
+RUN wget http://shnutils.freeshell.org/shorten/dist/src/shorten-3.6.1.tar.gz && \
+        tar xzf shorten-3.6.1.tar.gz && \
+        cd shorten-3.6.1 && \
+        ./configure && \
+        make && \
+        make install && \
+        cd - && \
+        rm -rf shorten*
 
-# clone abkhazia sources
+# install Kaldi, IRSTLM and SRILM
+WORKDIR /kaldi
+RUN git clone --branch abkhazia --single-branch https://github.com/bootphon/kaldi.git . && \
+        ln -s -f bash /bin/sh && \
+        cd /kaldi/tools && \
+        ./extras/check_dependencies.sh && \
+        make -j4 && \
+        ./extras/install_openblas.sh && \
+        cd /kaldi/src && \
+        ./configure --shared --openblas-root=../tools/OpenBLAS/install && \
+        sed -i "s/\-g # -O0 -DKALDI_PARANOID.*$/-O3 -DNDEBUG/" kaldi.mk && \
+        make depend -j4 && \
+        make -j4 && \
+        cd /kaldi/tools && \
+        ./extras/install_irstlm.sh && \
+        wget https://github.com/denizyuret/nlpcourse/raw/master/download/srilm-1.7.0.tgz -O srilm.tgz && \
+        ./extras/install_srilm.sh && \
+        rm -f *.tgz *.tar.gz *.tar.bz2
+
+# clone, install and test abkhazia
 WORKDIR /abkhazia
-RUN git clone https://github.com/bootphon/abkhazia.git .
-
-# install Kaldi
-WORKDIR /abkhazia/kaldi
-RUN git clone --branch abkhazia --single-branch https://github.com/bootphon/kaldi.git .
-WORKDIR /abkhazia/kaldi/tools
-RUN ./extras/check_dependencies.sh
-RUN make -j4
-RUN ./extras/install_openblas.sh
-WORKDIR /abkhazia/kaldi/src
-RUN ./configure --shared --openblas-root=../tools/OpenBLAS/install
-RUN sed -i "s/\-g # -O0 -DKALDI_PARANOID.*$/-O3 -DNDEBUG/" kaldi.mk
-RUN make depend -j4
-RUN make -j4
-
-# install IRSTLM
-WORKDIR /abkhazia/kaldi/tools
-RUN apt-get install -y gawk
-RUN ./extras/install_irstlm.sh
-
-# install SRILM
-WORKDIR /abkhazia/kaldi/tools
-RUN wget https://github.com/denizyuret/nlpcourse/raw/master/download/srilm-1.7.0.tgz -O srilm.tgz
-RUN ./extras/install_srilm.sh
-
-# cleanup to reduce container size
-RUN rm -f *.tgz *.tar.gz *.tar.bz2
-
-# install and test abkhazia
-WORKDIR /abkhazia
-RUN KALDI_PATH=./kaldi ./configure
-RUN python setup.py build
-RUN python setup.py install
+RUN git clone https://github.com/bootphon/abkhazia.git . && \
+        KALDI_PATH=/kaldi ./configure && \
+        python setup.py build && \
+        python setup.py install
