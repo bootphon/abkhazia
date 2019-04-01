@@ -155,7 +155,8 @@ Here is an example file with three utterances::
 
 
 If you don't have this information, or wish to hide this information to kaldi but still
-conform to this dataset format, you should set each utterance to its own unique speaker ID, e.g::
+conform to this dataset format, you should set each utterance to its own unique speaker ID
+ (as explained [here](http://kaldi-asr.org/doc/data_prep.html), e.g::
 
   sentence001 sp001
   sentence002 sp002
