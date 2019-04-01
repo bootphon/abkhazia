@@ -154,6 +154,15 @@ Here is an example file with three utterances::
   sp109-sentence003 sp109
 
 
+If you don't have this information, or wish to hide this information to kaldi but still
+conform to this dataset format, you should set each utterance to its own unique speaker ID, e.g::
+
+  sentence001 sp001
+  sentence002 sp002
+  sentence003 sp003
+  sentence004 sp004
+  ....
+
 4. Transcription
 ----------------
 
