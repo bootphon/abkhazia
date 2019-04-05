@@ -12,7 +12,7 @@ Here's what you need to have before being able to follow this tutorial:
 - A set of audio files encoded in 16000kz WAV 16bit PCM on which to run the alignment
 - On these audio files, a set of segments corresponding to utterances. For each utterance, you'll
   need to have a phonemic transcription (an easy way to get these is by
-  using [Phonemizer](https://github.com/bootphon/phonemizer) )
+  using `Phonemizer <https://github.com/bootphon/phonemizer>`_ )
 
 It's also recommended (yet optional) to have some kind of reference file where you can identify
 the speaker of each of your phonemized utterance.

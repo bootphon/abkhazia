@@ -58,7 +58,7 @@ command, for exemple::
 
 Note that many corpora do not form a homogeneous whole, but are
 constituted from several homogenous subparts. For example in the core
-subset of the [CSJ](http://www.ninjal.ac.jp/english/products/csj/)
+subset of the `CSJ <(http://www.ninjal.ac.jp/english/products/csj/>`_
 corpus, spontaneous presentations from academics (files whos names
 starts with an 'A'), spontaneous presentations from laymen ('S'
 files), readings ('R' files) and dialogs ('D' files) form homogeneous
@@ -156,7 +156,7 @@ Here is an example file with three utterances::
 
 If you don't have this information, or wish to hide this information to kaldi but still
 conform to this dataset format, you should set each utterance to its own unique speaker ID
- (as explained [here](http://kaldi-asr.org/doc/data_prep.html)), e.g::
+ (as explained `here <http://kaldi-asr.org/doc/data_prep.html>`_), e.g::
 
   sentence001 sp001
   sentence002 sp002
