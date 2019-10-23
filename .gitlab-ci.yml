@@ -1,0 +1,43 @@
+before_script:
+  # load the requested modules on oberon
+  - module load anaconda/3 espeak/1.49.2 festival/2.4
+
+abkhazia-build:
+  stage: build
+  script:
+    # create a Python virtual environment dedicated to the test (if not existing)
+    - conda create --name abkhazia-ci python=3 2> /dev/null || true
+    - conda activate abkhazia-ci
+
+    # install abkhazia
+    - KALDI_PATH=/shared/apps/abkhazia/kaldi .configure
+    - pip install coverage pytest
+    - python setup.py build
+    - python setup.py install
+
+abkhazia-test:
+  stage: test
+  script:
+    - conda activate abkhazia-ci
+    - pytest -v test
+
+abkhazia-deploy:
+  stage: deploy
+  script:
+    - conda activate abkhazia
+    - cd /shared/apps/abkhazia
+    - git pull origin master
+    - python setup.py build
+    - python setup.py install
+
+# documentation is available on https://coml.lscp.ens.fr/abkhazia
+documentation:
+  stage: deploy
+  only:
+    refs:
+      - master
+    script:
+      - module load texlive/2018
+      - conda activate abkhazia-ci
+      - sphinx-build docs/source docs/build
+      - scp -r docs/build/* coml.lscp.ens.fr:/var/www/html/abkhazia
