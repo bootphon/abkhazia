@@ -74,7 +74,7 @@ def prepare_corpus(utts, tmpdir):
     # first search buckeye in the environment variable, the in the data
     # directory from the configuration file
     if 'ABKHAZIA_BUCKEYE' in os.environ:
-        corpus = corpus.load(os.environ['ABKHAZIA_BUCKEYE'])
+        corpus = Corpus.load(os.environ['ABKHAZIA_BUCKEYE'])
     elif os.path.isdir(buckeye):
         corpus = Corpus.load(buckeye)
     else:  # prepare the whole buckeye corpus
