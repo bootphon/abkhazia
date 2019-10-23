@@ -19,7 +19,7 @@ abkhazia-test:
   stage: test
   script:
     - conda activate abkhazia-ci
-    - ABKHAZIA_BUCKEYE=/scratch1/data/derived_data/BUCKEYE_abkhazia pytest -v test
+    - ABKHAZIA_BUCKEYE=/scratch2/mbernard/data/abkhazia/buckeye/data pytest -v test
 
 abkhazia-deploy:
   stage: deploy
