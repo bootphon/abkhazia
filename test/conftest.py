@@ -35,7 +35,7 @@ def assert_no_expr_in_log(flog, expr='error'):
                      if re.search(expr, line.lower())]
 
     if matched_lines:
-        print matched_lines
+        print(matched_lines)
         assert len(matched_lines) == 0
 
 

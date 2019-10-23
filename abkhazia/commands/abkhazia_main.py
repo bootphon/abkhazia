@@ -83,7 +83,7 @@ class Abkhazia(object):
                     raise IOError(
                         'configuration file not found {}'.format(value))
 
-                print 'loading configuration from {}'.format(value)
+                print('loading configuration from {}'.format(value))
                 utils.config.read(value)
 
         # add a configuration argument

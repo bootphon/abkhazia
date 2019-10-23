@@ -46,7 +46,7 @@ Access to the list of available options
 .. python
 
    am_tri = Triphone(corpus, lm_dir, am_mono_dir, am_tri_dir)
-   for name, entry in am_mono.options.iteritems():
+   for name, entry in am_mono.options.items():
        print name, entry.value, entry.help, entry.default, entry.type
 
 

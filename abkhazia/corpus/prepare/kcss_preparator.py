@@ -111,7 +111,8 @@ class KCSSPreparator(AbstractPreparator):
 
     variants = []
 
-    all_phones = phones.keys() + ortho_phones.keys() + silences + variants
+    all_phones = (
+        list(phones.keys()) + list(ortho_phones.keys()) + silences + variants)
 
     def __init__(self, input_dir,
                  trs_level='pronunciation',

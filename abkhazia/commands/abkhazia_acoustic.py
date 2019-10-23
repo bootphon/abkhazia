@@ -139,7 +139,7 @@ class _AmBase(AbstractKaldiCommand):
             recipe.delete_recipe = False
 
         # setup the model options parsed from command line
-        for k, v in vars(args).iteritems():
+        for k, v in vars(args).items():
             try:
                 recipe.set_option(k.replace('_', '-'), v)
             except KeyError:

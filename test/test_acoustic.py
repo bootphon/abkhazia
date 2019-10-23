@@ -77,4 +77,4 @@ def test_monophone_cmvn_bad(corpus, tmpdir, lang_args):
     am = acoustic.Monophone(corpus, features_dir, output_dir, lang_args)
     with pytest.raises(IOError) as err:
         am.check_parameters()
-    assert 'cmvn' in str(err)
+    assert 'cmvn' in str(err.value)

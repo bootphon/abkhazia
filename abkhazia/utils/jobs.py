@@ -59,6 +59,7 @@ def run(command, stdin=None, stdout=sys.stdout.write,
         with pipe:
             # NOTE: workaround read-ahead bug
             for line in iter(pipe.readline, b''):
+                line = line.decode()
                 consume(line)
             consume('\n')
 

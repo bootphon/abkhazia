@@ -86,7 +86,7 @@ class Abkhazia2Kaldi(object):
         """
         # TODO we have already that somewhere in validator (or in
         # features?)
-        return [utt for utt, dur in corpus.utt2duration().iteritems()
+        return [utt for utt, dur in corpus.utt2duration().items()
                 if dur >= min_duration]
 
     def setup_lexicon(self):
@@ -105,8 +105,7 @@ class Abkhazia2Kaldi(object):
         for origin in (
                 os.path.join(local_path, 'silence_phones.txt'),
                 os.path.join(local_path, 'nonsilence_phones.txt')):
-            phones += [line.strip()
-                       for line in open_utf8(origin, 'r').xreadlines()]
+            phones += [line.strip() for line in open_utf8(origin, 'r')]
 
         # create 'phone' lexicon
         with open_utf8(target, 'w') as out:
@@ -123,7 +122,7 @@ class Abkhazia2Kaldi(object):
         """Create data/local/self.name/nonsilence_phones.txt"""
         target = os.path.join(self._local_path(), 'nonsilence_phones.txt')
         with open_utf8(target, 'w') as out:
-            for symbol in self.corpus.phones.iterkeys():
+            for symbol in self.corpus.phones.keys():
                 out.write(u"{0}\n".format(symbol))
 
     def setup_silences(self):
@@ -155,7 +154,7 @@ class Abkhazia2Kaldi(object):
         # create spk2utt
         target = os.path.join(self._output_path(), 'spk2utt')
         with open_utf8(target, 'w') as out:
-            for spk, utt in sorted(self.corpus.spk2utt().iteritems()):
+            for spk, utt in sorted(self.corpus.spk2utt().items()):
                 out.write(u'{} {}\n'.format(spk, ' '.join(sorted(utt))))
 
     def setup_segments(self,):
@@ -169,7 +168,7 @@ class Abkhazia2Kaldi(object):
     def setup_wav(self):
         """Create wav.scp in data directory"""
         target = os.path.join(self._output_path(), 'wav.scp')
-        wavs = set(w for w, _, _ in self.corpus.segments.itervalues())
+        wavs = set(w for w, _, _ in self.corpus.segments.values())
         with open_utf8(target, 'w') as out:
             for wav in sorted(wavs):
                 wav_path = os.path.join(self.corpus.wav_folder, wav)

@@ -22,7 +22,7 @@ num-threads, skip_scoring, max_fmllr_jobs
 import os
 import abkhazia.utils as utils
 import abkhazia.kaldi as kaldi
-import _score
+from abkhazia.decode import _score
 
 
 def options():
@@ -55,12 +55,12 @@ def decode(decoder, graph_dir):
     # generate option string for decoding
     decode_opts = ' '.join(
         '--{} {}'.format(n, str(o))
-        for n, o in decoder.decode_opts.iteritems())
+        for n, o in decoder.decode_opts.items())
 
     # generate option string for scoring
     score_opts = ' '.join(
         '--{} {}'.format(n, str(o))
-        for n, o in decoder.score_opts.iteritems())
+        for n, o in decoder.score_opts.items())
 
     # add the reverse flag if enabled in the mkgraph options
     if decoder.mkgraph_opts['reverse'].value:

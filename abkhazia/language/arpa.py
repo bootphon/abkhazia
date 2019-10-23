@@ -101,7 +101,7 @@ class ARPALanguageModel(object):
 
     def prune_vocabulary(self, words):
         """Remove any ngram entry containing a word not in `words`"""
-        for ngram in self.ngrams.itervalues():
+        for ngram in self.ngrams.values():
             for entry in ngram.keys():
                 if not all(word in words for word in entry):
                     del ngram[entry]

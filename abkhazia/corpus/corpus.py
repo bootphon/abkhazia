@@ -170,11 +170,11 @@ class Corpus(utils.abkhazia_base.AbkhaziaBase):
 
     def utts(self):
         """Return the list of utterance ids stored in the corpus"""
-        return self.utt2spk.keys()
+        return list(self.utt2spk.keys())
 
     def spks(self):
         """Return the list of speaker ids stored in the corpus"""
-        return self.spk2utt().keys()
+        return list(self.spk2utt().keys())
 
     def spk2utt(self):
         """Return a dict of speakers mapped to an utterances list
@@ -185,10 +185,10 @@ class Corpus(utils.abkhazia_base.AbkhaziaBase):
 
         """
         # init an empty list for all speakers
-        spk2utt = {spk: [] for spk in set(self.utt2spk.itervalues())}
+        spk2utt = {spk: [] for spk in set(self.utt2spk.values())}
 
         # populate lists with utterance ids
-        for utt, spk in self.utt2spk.iteritems():
+        for utt, spk in self.utt2spk.items():
             spk2utt[spk].append(utt)
         return spk2utt
 
@@ -206,7 +206,7 @@ class Corpus(utils.abkhazia_base.AbkhaziaBase):
             return None if t is None else float(t)
 
         # populate lists with utterance ids and timestamps
-        for utt, (wav, tstart, tend) in self.segments.iteritems():
+        for utt, (wav, tstart, tend) in self.segments.items():
             wav2utt[wav].append((utt, _float(tstart), _float(tend)))
         return wav2utt
 
@@ -217,7 +217,7 @@ class Corpus(utils.abkhazia_base.AbkhaziaBase):
 
         """
         utt2dur = dict()
-        for utt, (wav, start, stop) in self.segments.iteritems():
+        for utt, (wav, start, stop) in self.segments.items():
             start = 0 if start is None else start
             wav_path = os.path.join(self.wav_folder, wav)
             stop = utils.wav.duration(wav_path) if stop is None else stop
@@ -234,7 +234,7 @@ class Corpus(utils.abkhazia_base.AbkhaziaBase):
         Raise IOError if `format` is not 'seconds' or 'datetime'
 
         """
-        total = sum(self.utt2duration().itervalues())
+        total = sum(self.utt2duration().values())
         if format == 'seconds':
             return total
         elif format == 'datetime':
@@ -253,12 +253,12 @@ class Corpus(utils.abkhazia_base.AbkhaziaBase):
 
         """
         return set(
-            word for utt in self.text.itervalues() for word in utt.split()
+            word for utt in self.text.values() for word in utt.split()
             if (word in self.lexicon if in_lexicon else True))
 
     def has_several_utts_per_wav(self):
         """Return True if there is several utterances in at least one wav"""
-        for _, start, stop in self.segments.itervalues():
+        for _, start, stop in self.segments.values():
             if start is not None or stop is not None:
                 return True
         return False
@@ -469,7 +469,7 @@ class Corpus(utils.abkhazia_base.AbkhaziaBase):
 
         """
         phonemized = dict()
-        for utt_id, text in self.text.iteritems():
+        for utt_id, text in self.text.items():
             phones = []
             for word in text.split():
                 try:
@@ -488,7 +488,7 @@ class Corpus(utils.abkhazia_base.AbkhaziaBase):
         # connection without X forward)
         import matplotlib.pyplot as plt
 
-        utt_ids, utt_speakers = zip(*self.utt2spk.iteritems())
+        utt_ids, utt_speakers = zip(*self.utt2spk.items())
         utt2dur = self.utt2duration()
         spkr2dur = dict()
 
@@ -497,7 +497,7 @@ class Corpus(utils.abkhazia_base.AbkhaziaBase):
                 [utt2dur[utt_id] for utt_id in self.utt2spk
                  if self.utt2spk[utt_id] == spkr])
 
-        sorted_speaker = sorted(spkr2dur.iteritems(), key=lambda(k, v): (v, k))
+        sorted_speaker = sorted(spkr2dur.items(), key=lambda k, v: (v, k))
         sorted_speaker.reverse()
 
         # Set plot parameters

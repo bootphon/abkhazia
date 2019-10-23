@@ -14,15 +14,11 @@
 # along with abkhazia. If not, see <http://www.gnu.org/licenses/>.
 """Provides the CorpusFilter class"""
 
-import ConfigParser
-import random
-import numpy as np
 import os
 
 from collections import defaultdict
-from operator import itemgetter
 from math import exp
-from abkhazia.utils import logger, config, open_utf8
+from abkhazia.utils import logger, open_utf8
 
 
 class CorpusFilter(object):
@@ -59,7 +55,7 @@ class CorpusFilter(object):
         self.corpus = corpus
 
         # read utt2spk from the input corpus
-        utt_ids, utt_speakers = zip(*self.corpus.utt2spk.iteritems())
+        utt_ids, utt_speakers = zip(*self.corpus.utt2spk.items())
         self.utts = zip(utt_ids, utt_speakers)
         self.size = len(utt_ids)
         self.speakers = set(utt_speakers)
@@ -70,7 +66,7 @@ class CorpusFilter(object):
                        self.size, len(self.speakers))
 
     def create_filter(self, out_path, function,
-                      nb_speaker=None, 
+                      nb_speaker=None,
                       new_speakers=10, THCHS30=False):
         """Prepare the corpus for the cutting
            The speakers are sorted by their speech duration.
@@ -92,8 +88,8 @@ class CorpusFilter(object):
             spkr2dur[spkr] = sum([utt2dur[utt_id]
                                   for utt_id in utt2spk
                                   if utt2spk[utt_id] == spkr])
-        sorted_speaker = sorted(spkr2dur.iteritems(),
-                                key=lambda(k, v): (v, k))
+        sorted_speaker = sorted(spkr2dur.items(),
+                                key=lambda k, v: (v, k))
         sorted_speaker.reverse()
 
         # For the LibriSpeech corpus, read SPEAKER.TXT to find the genders :
@@ -172,14 +168,14 @@ class CorpusFilter(object):
         # for each speaker, list utterances
         #for utt,spkr in self.utts:
         #    spk2utts[spkr].append(utt)
-        
-        spk2utts_temp=defaultdict(list)
-        for utt,spkr in self.utts:
+
+        spk2utts_temp = defaultdict(list)
+        for utt, spkr in self.utts:
             utt_start = self.corpus.segments[utt][1]
             spk2utts_temp[spkr].append([utt, utt_start])
         for spkr in self.speakers:
             spk2utts_temp[spkr] = sorted(spk2utts_temp[spkr], key=lambda x: x[1])
-            spk2utts[spkr] = [utt for utt,utt_start in spk2utts_temp[spkr]]
+            spk2utts[spkr] = [utt for utt, utt_start in spk2utts_temp[spkr]]
 
         # create lists of utterances we want to keep,
         # utterances we don't want to keep
@@ -232,21 +228,22 @@ class CorpusFilter(object):
                 if utt not in kept_utt_set:
 
                     offset = offset + utt2dur[utt]
-                    not_kept_utts[speaker].append((utt, self.corpus.segments[utt]))
+                    not_kept_utts[speaker].append(
+                        (utt, self.corpus.segments[utt]))
                 else:
-                    self.corpus.segments[utt] = (wav_id, utt_tbegin - offset,
-                                        utt_tend - offset)
+                    self.corpus.segments[utt] = (
+                        wav_id, utt_tbegin - offset, utt_tend - offset)
 
         return(self.corpus.subcorpus(
-                   utt_ids, prune=True,
-                   name=function,validate=True),
-                   not_kept_utts)
+            utt_ids, prune=True,
+            name=function, validate=True),
+               not_kept_utts)
 
     def filter_THCHS30(self, names, function, limits):
         """split the THCHS30 corpus without having the same text for some speakers
 
-        
-        Return the subcorpus 
+
+        Return the subcorpus
         """
         time = 0
         utt_ids = []
@@ -254,9 +251,10 @@ class CorpusFilter(object):
         utt2dur = self.utt2dur
         not_kept_utts = defaultdict(list)
         corpus = self.corpus
-        
-        
-        # create list of utterances we want to keep, utterances we don't want to keep
+
+
+        # create list of utterances we want to keep, utterances we don't want
+        # to keep
         for speaker in self.THCHS30_family:
             all_utts = spk2utts[speaker]
             kept_utts = [utt for utt in all_utts
@@ -280,24 +278,25 @@ class CorpusFilter(object):
                              utt.split('_')[1]) <= limit_out2]
             utt_ids = utt_ids + kept_utts
 
-        # here we build the list of utts we remove, and we adjust the boundaries of
-        # the other utterancess, in order to have correct timestamps
+        # here we build the list of utts we remove, and we adjust the
+        # boundaries of the other utterancess, in order to have correct
+        # timestamps
         for speaker in names:
-            offset=0
+            offset = 0
             for utt in spk2utts[speaker]:
-                #for each wav, we compute the cumsum of the lengths of the utts we remove
-                # in order to have correct timestamps for the other utts in the files
-
+                # for each wav, we compute the cumsum of the lengths of the
+                # utts we remove in order to have correct timestamps for the
+                # other utts in the files
                 wav_id, utt_tbegin, utt_tend = corpus.segments[utt]
                 corpus.segments[utt] = (wav_id,
                                         utt_tbegin - offset,
                                         utt_tend - offset)
 
                 if utt_tbegin - offset < 0 or utt_tend - offset < 0:
-                    print utt_tbegin
-                    print offset
-                    print utt_tend
-                    print offset
+                    print(utt_tbegin)
+                    print(offset)
+                    print(utt_tend)
+                    print(offset)
                     self.log.info(
                             '''WARN : offset is greater'''
                             ''' than utterance boundaries''')
@@ -307,41 +306,39 @@ class CorpusFilter(object):
 
         return(self.corpus.subcorpus(
                     utt_ids, prune=True, name=function, validate=True),
-                not_kept_utts);
+               not_kept_utts)
 
-    def librispeech_gender(self,path):
+    def librispeech_gender(self, path):
         """ construct the dict(speaker_id,gender) for librispeech """
-        path=os.path.abspath(path)
+        path = os.path.abspath(path)
         try:
-            speaker_dict=open_utf8(path,'r')
+            speaker_dict = open_utf8(path, 'r')
         except IOError:
             self.log.info("Error: File not found at {}".format(path))
             return False
         for line in speaker_dict:
-            if line[0]==";":
+            if line[0] == ";":
                 continue
-            spk_id,sex,subset,dur,name = line.split(" | ")
+            spk_id, sex, subset, dur, name = line.split(" | ")
             subset.strip()
             sex.strip()
             spk_id.strip()
 
-            #if subset is not "train-clean-360 ":
+            # if subset is not "train-clean-360 ":
             #    print subset
             #    continue
-            if len(spk_id)==2:
-                spk_id='00'+spk_id
-            elif len(spk_id)==3:
-                spk_id='0'+spk_id
-            self.gender[spk_id]=sex
-            
-    def write_family_set(self,family,out):
-        out=os.path.join(os.path.dirname(out),'family')
+            if len(spk_id) == 2:
+                spk_id = '00' + spk_id
+            elif len(spk_id) == 3:
+                spk_id = '0' + spk_id
+            self.gender[spk_id] = sex
+
+    def write_family_set(self, family, out):
+        out = os.path.join(os.path.dirname(out), 'family')
         if not os.path.isdir(out):
             os.makedirs(out)
-        out_path=os.path.join(out,'family.txt')
+        out_path = os.path.join(out, 'family.txt')
 
-        with open(out_path,'w') as outf:
+        with open(out_path, 'w') as outf:
             for spkr in family:
                 outf.write(u'{}\n'.format(spkr))
-
-

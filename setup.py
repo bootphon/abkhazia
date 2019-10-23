@@ -32,9 +32,9 @@ REQUIREMENTS = [] if ON_RTD else [
     'argcomplete',
     'pytest',
     'Sphinx',
-    'h5features>=1.3.2',
-    'phonemizer>=0.2',
-    'matplotlib<3.0'
+    'h5features',
+    'phonemizer',
+    'matplotlib'
 ]
 
 setup(
@@ -46,7 +46,7 @@ setup(
 
     # install dependancies from bootphon github
     dependency_links=[GITHUB_BOOTPHON + package for package in (
-        'phonemizer/archive/v0.2.tar.gz#egg=phonemizer-0.2',
+        'phonemizer/archive/v2.0.tar.gz#egg=phonemizer-2.0',
         'h5features/archive/v1.3.2.tar.gz#egg=h5features-1.3.2')],
 
     # install python dependencies from PyPI

@@ -256,7 +256,7 @@ class Align(abstract_recipe.AbstractRecipe):
         for _file in sorted(
                 [os.path.join(path, f) for f in os.listdir(path)
                  if f.startswith(start)]):
-            data += gzip.open(_file, 'r').readlines()
+            data += [l.decode() for l in gzip.open(_file, 'r')]
 
         return {line[0]: ' '.join(line[1:]) for line in
                 (l.replace('[', '').replace(']', '').split() for l in data)}
@@ -267,7 +267,7 @@ class Align(abstract_recipe.AbstractRecipe):
             first_frame_center_time=.0125,
             frame_width=0.025, frame_spacing=0.01):
         """Tokenize raw kaldi alignment output"""
-        for utt_id, line in ali.iteritems():
+        for utt_id, line in ali.items():
             start = first_frame_center_time - frame_width / 2.0
             current_frame_center_time = first_frame_center_time
 
@@ -356,11 +356,11 @@ class Align(abstract_recipe.AbstractRecipe):
 
         # text[utt_id] = list of words
         text = {k: v.strip().split()
-                for k, v in self.corpus.text.iteritems()}
+                for k, v in self.corpus.text.items()}
 
         # lexicon[word] = list of phones
         lexicon = {k: v.strip().split()
-                   for k, v in self.corpus.lexicon.iteritems()}
+                   for k, v in self.corpus.lexicon.items()}
 
         words = []
 
@@ -372,12 +372,13 @@ class Align(abstract_recipe.AbstractRecipe):
         word_pos = defaultdict(list)
 
         # create list of all the phones using the lexicon
-        for word in text[utt_id]:
-            try:
-                list_phones[utt_id] += lexicon[word]
-                word_pos[utt_id] += [word] * len(lexicon[word])
-            except KeyError:
-                continue
+        for utt_id in self.corpus.utts():
+            for word in text[utt_id]:
+                try:
+                    list_phones[utt_id] += lexicon[word]
+                    word_pos[utt_id] += [word] * len(lexicon[word])
+                except KeyError:
+                    continue
 
         try:
             for utt_id, utt_align in self._read_utts(phones):
@@ -426,7 +427,7 @@ class Align(abstract_recipe.AbstractRecipe):
         """ Get the word level alignment from the phone level
             alignment and the lexicon """
         lexicon = {k: v.strip().split()
-                   for k, v in self.corpus.lexicon.iteritems()}
+                   for k, v in self.corpus.lexicon.items()}
 
         list_phones = []
         word_pos = []
@@ -571,7 +572,7 @@ def convert_to_word_position_dependent(alignment):
     """Add the position dependent suffixes to phones in `alignment`"""
     wpd_alignment = {}
 
-    for utt, utt_phones in alignment.iteritems():
+    for utt, utt_phones in alignment.items():
         utt_phones_wpd = []
         # iterate by words
         for word in yield_on_words(utt_phones):

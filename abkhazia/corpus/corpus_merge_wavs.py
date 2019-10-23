@@ -32,7 +32,7 @@ from abkhazia.utils import logger
 
 
 #FIXME: this won't work for corpora with several speakers per wavefile
-#FIXME modifying original corpus in place could lead to undesirable 
+#FIXME modifying original corpus in place could lead to undesirable
 # side-effects. Better to use a copy
 class CorpusMergeWavs(object):
     """A class for merging the wavs files together for each speaker,
@@ -57,7 +57,7 @@ class CorpusMergeWavs(object):
         self.log = log
         self.corpus = corpus
         # read utt2spk from the input corpus
-        utt_ids, utt_speakers = zip(*self.corpus.utt2spk.iteritems())
+        utt_ids, utt_speakers = zip(*self.corpus.utt2spk.items())
         self.utts = zip(utt_ids, utt_speakers)
         self.size = len(utt_ids)
         self.speakers = set(utt_speakers)
@@ -82,7 +82,7 @@ class CorpusMergeWavs(object):
         #   total duration
         #   list of wavs
         #   list of wav durs
-        #   list of utts  
+        #   list of utts
         self.spk_data = {'total_dur': {}, 'wavs': {}, 'wav_durs': {}, 'utts': {}}
         for spkr in self.speakers:
             spk_utts = [utt_id for utt_id, utt_speaker in self.utts
@@ -97,7 +97,7 @@ class CorpusMergeWavs(object):
             # we want unique values in the list of wavs:
             wavs = sorted(list(set(wavs)))
             self.spk_data['wavs'][spkr] = wavs
-            self.spk_data['wav_durs'][spkr] = []         
+            self.spk_data['wav_durs'][spkr] = []
             for wav in wavs:
                 wav_path = os.path.join(self.corpus.wav_folder, wav)
                 duration = self.get_wav_duration(wav_path)
@@ -109,9 +109,9 @@ class CorpusMergeWavs(object):
         Merge wav files to have 1 wav per speaker
         and modify accordingly segments to have correct
         timestamps for each utterance
-        
+
         output_dir : path to 'data' folder where resulting corpus is saved
-        
+
         padding : duration of silence inserted between merged wave files
                   (in seconds)
         """
@@ -123,7 +123,7 @@ class CorpusMergeWavs(object):
         if not os.path.isdir(wav_output_dir):
             os.makedirs(wav_output_dir)
 
-        # get some corpus info per speaker 
+        # get some corpus info per speaker
         self.get_per_spk_data()
 
         # generate new segment file
@@ -134,7 +134,7 @@ class CorpusMergeWavs(object):
             # offset for each wav of given speaker
             wav_durs = [e+padding for e in self.spk_data['wav_durs'][spkr]]
             cumdurs = list(np.cumsum(wav_durs))
-            expected_duration[spk_wav_id] = cumdurs[-1] - padding 
+            expected_duration[spk_wav_id] = cumdurs[-1] - padding
             offsets = {e : f for e, f in zip(self.spk_data['wavs'][spkr], [0]+cumdurs[:-1])}
             for utt in self.spk_data['utts'][spkr]:
                 utt_wav = self.segments[utt][0]
@@ -199,6 +199,6 @@ class CorpusMergeWavs(object):
 
         # validate the corpus
         self.corpus.validate()
-        
+
         # save corpus
         self.corpus.save(output_dir, no_wavs=True)  # wavs are already there

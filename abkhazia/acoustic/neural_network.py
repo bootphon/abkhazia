@@ -174,7 +174,7 @@ class NeuralNetwork(AbstractAcousticModel):
         # that need further preprocessing/formatting (see above)
         nnet_opts = ' '.join(
             '--{} {}'.format(k, v.value)
-            for k, v in self.options.iteritems()
+            for k, v in self.options.items()
             if k not in self._njobs_options and k not in self._egs_options)
 
         # convert the max_high_io_jobs option to what kaldi expect...
@@ -193,7 +193,7 @@ class NeuralNetwork(AbstractAcousticModel):
 
         egs_opts = '--egs-opts "{}"'.format(
             ' '.join('--{} {}'.format(k, v.value)
-                     for k, v in self.options.iteritems()
+                     for k, v in self.options.items()
                      if k in self._egs_options))
 
         # feeding the --cmd option

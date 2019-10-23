@@ -286,7 +286,7 @@ class BuckeyePreparator(AbstractPreparator):
 
         # retain only the words present in the text
         corpus_words = set(w for u in self.text.values() for w in u.split())
-        return {k: v for k, v in lexicon.iteritems() if k in corpus_words}
+        return {k: v for k, v in lexicon.items() if k in corpus_words}
 
 
 # TODO The following code is dedicated to manual alignments. It should

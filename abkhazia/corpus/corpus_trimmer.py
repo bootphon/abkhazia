@@ -44,7 +44,7 @@ class CorpusTrimmer(object):
         self.log = log
         self.corpus = corpus
 
-        utt_ids, utt_speakers = zip(*self.corpus.utt2spk.iteritems())
+        utt_ids, utt_speakers = zip(*self.corpus.utt2spk.items())
         self.utts = zip(utt_ids, utt_speakers)
         self.speakers = set(utt_speakers)
 
@@ -60,7 +60,7 @@ class CorpusTrimmer(object):
             raise OSError('sox is not installed on your system')
 
         spk2utts = defaultdict(list)
-        for utt,spkr in self.utts:
+        for utt, spkr in self.utts:
             spk2utts[spkr].append(utt)
 
         # get input and output wav paths
@@ -77,20 +77,19 @@ class CorpusTrimmer(object):
 
         # remove utterances from the wavs using sox
         for speaker in self.speakers:
-            print speaker
+            print(speaker)
             utt_to_remove = not_kept_utts[speaker]
-            
+
             # if speaker doesn't have utt to remove, copy file
             if utt_to_remove == []:
                 wavs_to_copy = set([self.corpus.segments[utt][0] for
-                                utt in spk2utts[speaker]])
+                                    utt in spk2utts[speaker]])
                 for wav in wavs_to_copy:
                     wav_name = '.'.join([wav, 'wav'])
                     wav_input_path = '/'.join([wav_dir, wav_name])
                     wav_output_path = '/'.join([output_wav_dir, wav_name])
 
-                    shutil.copyfile(wav_input_path,wav_output_path)
-               
+                    shutil.copyfile(wav_input_path, wav_output_path)
 
             # don't trim utterances for wave file that won't be kept at all
             wav_ids = [os.path.splitext(w)[0] for w in self.corpus.wavs]
@@ -109,14 +108,14 @@ class CorpusTrimmer(object):
             for wav in wavs_start_dict:
                 # start removing utterances at the end
                 # and finish at the begining : removing an utterance at the
-                # end doesn't affect the other utterances timestamps ! 
+                # end doesn't affect the other utterances timestamps !
                 wavs_starts_temp = sorted(wavs_start_dict[wav], reverse=True)
                 wavs_stop_temp = sorted(wavs_stop_dict[wav], reverse=True)
 
                 wav_name = '.'.join([wav, 'wav'])
                 wav_input_path = '/'.join([wav_dir, wav_name])
                 wav_output_path = '/'.join([output_wav_dir, wav_name])
-                
+
                 # Create string of timestamps to remove to pass as
                 # arguments to sox
                 timestamps = ''

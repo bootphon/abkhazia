@@ -62,7 +62,7 @@ def test_h5f_twice(tmpdir, data):
     ark = os.path.join(str(tmpdir), 'ark')
     ark2 = os.path.join(str(tmpdir), 'ark2')
     io.dict_to_ark(ark, data)
-    io.dict_to_ark(ark2, {k+'_2': v for k, v in data.iteritems()})
+    io.dict_to_ark(ark2, {k+'_2': v for k, v in data.items()})
 
     # convert it to h5features file
     h5file = os.path.join(str(tmpdir), 'h5f')
@@ -70,7 +70,6 @@ def test_h5f_twice(tmpdir, data):
 
     # get back data from h5f
     data2 = h5f.Reader(h5file, 'test').read()
-    print data2.items()
     assert data2.items() == ['test', 'test2', 'test2_2', 'test_2']
     assert data2.dict_labels()['test'].shape[0] == data['test'].shape[0]
     assert data['test'].shape == data2.dict_features()['test'].shape

@@ -267,13 +267,16 @@ class VietnamesePreparator(AbstractGlobalPhonePreparator):
     # generate dict associating phones with ipa and tonal variants
     variants = []
     phones = consonants
-    for vowel, ipa in vowels.iteritems():
+    for vowel, ipa in vowels.items():
         for tone, ipa_t in tones:
             tonal = vowel + tone
             assert tonal not in phones
             phones[tonal] = ipa + ipa_t
 
-        variants.append([vowel + tone for tone, _ in tones])
+        variant = [vowel] * len(tones)
+        for i in range(len(tones)):
+            variant[i] += tones[i][0]
+        variants.append(variant)
 
     def correct_dictionary(self):
         """Correct problems with the GlobalPhone Mandarin dictionary
@@ -310,8 +313,8 @@ class VietnamesePreparator(AbstractGlobalPhonePreparator):
                         # transcriptions
                         line = line.replace(u'{{t}', u'{t')
 
-                        line = re.sub(ur'\{(\w*) T(\d)\}', u'\\1_\\2', line)
-                        line = re.sub(ur'\{(\w*) T(\d) WB\}',
+                        line = re.sub(r'\{(\w*) T(\d)\}', u'\\1_\\2', line)
+                        line = re.sub(r'\{(\w*) T(\d) WB\}',
                                       u'{\\1_\\2 WB}', line)
                         out.write(line)
 

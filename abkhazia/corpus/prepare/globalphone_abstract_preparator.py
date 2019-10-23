@@ -106,7 +106,7 @@ class AbstractGlobalPhonePreparator(AbstractPreparator):
             pass
 
     def list_audio_files(self):
-        # for some languages, there are corrupted 
+        # for some languages, there are corrupted
         # or untranscribed wavefiles that we
         # need to exclude from preparation
         self.log.debug('%i audio files excluded', len(self.exclude_wavs))
@@ -122,8 +122,8 @@ class AbstractGlobalPhonePreparator(AbstractPreparator):
                 if os.path.basename(f).replace('.adc.shn', '')
                 not in self.exclude_wavs]
 
-        wavs = [os.path.basename(shn).replace('.adc.shn', '.wav')
-                     for shn in shns]
+        wavs = [
+            os.path.basename(shn).replace('.adc.shn', '.wav') for shn in shns]
 
         return zip(shns, wavs)
 
@@ -146,20 +146,19 @@ class AbstractGlobalPhonePreparator(AbstractPreparator):
         for trs in utils.list_directory(self.transcription_dir, abspath=True):
             spk_id = os.path.splitext(os.path.basename(trs))[0]
             lines = utils.open_utf8(trs, 'r').readlines()
-            
+
             # add utterence id from even lines starting at line 2
-            ids = [spk_id + u'_' + re.sub(ur'\s+|:|;', u'', e)
+            ids = [spk_id + u'_' + re.sub(r'\s+|:|;', u'', e)
                    for e in lines[1::2]]
             # delete linebreaks on odd lines starting at line 3
             # (this does not take into account fancy unicode
             # linebreaks), see
             # http://stackoverflow.com/questions/3219014
-            transcriptions = [re.sub(ur'\r\n?|\n', u'', e)
+            transcriptions = [re.sub(r'\r\n?|\n', u'', e)
                               for e in lines[2::2]]
             for i, trs in zip(ids, transcriptions):
                 text[i] = trs
         return text
-        
 
     def make_lexicon(self):
         # parse dictionary lines

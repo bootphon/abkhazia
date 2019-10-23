@@ -158,7 +158,7 @@ class AbstractFactory(object):
             else args.output_dir, 'data')
 
         if args.force and os.path.exists(output_dir):
-            print 'removing {}'.format(output_dir)
+            print('removing {}'.format(output_dir))
             shutil.rmtree(output_dir)
 
         return output_dir
@@ -536,7 +536,7 @@ class AbkhaziaPrepare(AbstractCommand):
             # key length is len('librispeech ') == 11
             key + ' '*(11 - len(key)),
             value.preparator.description)
-                for key, value in sorted(cls.supported_corpora.iteritems())]
+                for key, value in sorted(cls.supported_corpora.items())]
 
     @classmethod
     def add_parser(cls, subparsers):
@@ -555,7 +555,7 @@ class AbkhaziaPrepare(AbstractCommand):
             metavar='<corpus>', dest='corpus',
             help=textwrap.dedent('supported corpora are:\n' +
                                  '\n'.join(cls.describe_corpora())))
-        for corpus in cls.supported_corpora.itervalues():
+        for corpus in cls.supported_corpora.values():
             corpus.add_parser(subparsers)
 
     @classmethod

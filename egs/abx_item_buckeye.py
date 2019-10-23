@@ -75,7 +75,7 @@ def main():
         open(alignment_file, 'w').write(
             '\n'.join(
                 '{} {} {} {}'.format(utt, p[0], p[1], p[2])
-                for utt, phones in alignment.iteritems()
+                for utt, phones in alignment.items()
                 for p in phones))
 
         log.info('generating the item file...')

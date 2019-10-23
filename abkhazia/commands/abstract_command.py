@@ -167,7 +167,7 @@ class AbstractCoreCommand(AbstractCommand):
 
         # if --force, remove any existing output_dir
         if force and os.path.exists(output):
-            print 'overwriting {}'.format(output)
+            print('overwriting {}'.format(output))
             shutil.rmtree(output)
 
         return output

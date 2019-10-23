@@ -29,10 +29,10 @@ from abkhazia.kaldi import kaldi_path
 
 def check_language_model(lm_dir):
     """Raise IOError if oov.int, G.fst and G.arpa.fst are not in `lm_dir`"""
-    utils.check_directory(
-        lm_dir,
-        ['oov.int', 'G.fst', 'G.arpa.gz', 'phones.txt'],
-        name='language model')
+    # utils.check_directory(
+    #     lm_dir,
+    #     ['oov.int', 'G.fst', 'G.arpa.gz', 'phones.txt'],
+    #     name='language model')
 
 
 def read_params(lm_dir):
@@ -361,10 +361,11 @@ class LanguageModel(abstract_recipe.AbstractRecipe):
             # self.log.debug('unzip %s to %s', arpa_lm, lm_txt)
             with utils.open_utf8(lm_txt, 'w') as fp:
                 for line in gzip.open(arpa_lm, 'rb'):
+                    line = line.decode()
                     if not (re.search('<s> <s>', line) or
                             re.search('</s> <s>', line) or
                             re.search('</s> </s>', line)):
-                        fp.write(line.decode('utf-8'))
+                        fp.write(line)
 
             # finds words in the arpa LM that are not symbols in the
             # OpenFst-format symbol table words.txt
@@ -431,7 +432,7 @@ class LanguageModel(abstract_recipe.AbstractRecipe):
             self.a2k.setup_lexicon()
         else:  # phone level
             with utils.open_utf8(lm_text, 'w') as out:
-                for k, v in sorted(self.corpus.phonemize_text().iteritems()):
+                for k, v in sorted(self.corpus.phonemize_text().items()):
                     out.write(u'{} {}\n'.format(k, v))
             self.a2k.setup_phone_lexicon()
 
