@@ -23,6 +23,9 @@ abkhazia-test:
 
 abkhazia-deploy:
   stage: deploy
+  only:
+    refs:
+      - master
   script:
     - conda activate abkhazia
     - cd /shared/apps/abkhazia
@@ -39,5 +42,6 @@ documentation:
   script:
     - module load texlive/2018
     - conda activate abkhazia-ci
+    - pip install sphinx_rtd_theme
     - sphinx-build docs/source docs/build
     - scp -r docs/build/* coml.lscp.ens.fr:/var/www/html/abkhazia
