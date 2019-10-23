@@ -36,8 +36,8 @@ documentation:
   only:
     refs:
       - master
-    script:
-      - module load texlive/2018
-      - conda activate abkhazia-ci
-      - sphinx-build docs/source docs/build
-      - scp -r docs/build/* coml.lscp.ens.fr:/var/www/html/abkhazia
+  script:
+    - module load texlive/2018
+    - conda activate abkhazia-ci
+    - sphinx-build docs/source docs/build
+    - scp -r docs/build/* coml.lscp.ens.fr:/var/www/html/abkhazia
