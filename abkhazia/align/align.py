@@ -296,7 +296,11 @@ class Align(abstract_recipe.AbstractRecipe):
                     yield (utt_id, str(start), str(stop),
                            str(mpost), phonemap[code])
                 else:
-                    yield (utt_id, str(start), str(stop), phonemap[code])
+                    yield (
+                        utt_id,
+                        '{:.4f}'.format(start),
+                        '{:.4f}'.format(stop),
+                        phonemap[code])
 
                 start = stop
 
