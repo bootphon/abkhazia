@@ -1,6 +1,6 @@
 before_script:
   # load the requested modules on oberon
-  - module load anaconda/3 espeak/1.49.2 festival/2.4
+  - module load anaconda/3 espeak/1.49.2 festival/2.4 shorten/3.6.1
 
 abkhazia-build:
   stage: build
@@ -10,7 +10,7 @@ abkhazia-build:
     - conda activate abkhazia-ci
 
     # install abkhazia
-    - KALDI_PATH=/shared/apps/abkhazia/kaldi .configure
+    - KALDI_PATH=/shared/apps/abkhazia/kaldi ./configure
     - pip install coverage pytest
     - python setup.py build
     - python setup.py install
@@ -19,7 +19,7 @@ abkhazia-test:
   stage: test
   script:
     - conda activate abkhazia-ci
-    - pytest -v test
+    - ABKHAZIA_BUCKEYE=/scratch1/data/derived_data/BUCKEYE_abkhazia pytest -v test
 
 abkhazia-deploy:
   stage: deploy
