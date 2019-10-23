@@ -1,5 +1,7 @@
 # Abkhazia
 
+**Abkhazia is no more compatible with python2, please use python3 instead**
+
 **Online documentation can be found [here](https://abkhazia.readthedocs.io/en/latest/)**
 
 The Abkhazia project makes it easy to obtain simple baselines for
