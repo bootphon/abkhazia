@@ -42,7 +42,6 @@ from operator import itemgetter
 
 import abkhazia.utils as utils
 import abkhazia.abstract_recipe as abstract_recipe
-from abkhazia.utils.best_path_dtw import dtw
 
 from abkhazia.language import check_language_model, read_int2phone
 from abkhazia.features import Features
@@ -121,8 +120,7 @@ class Align(abstract_recipe.AbstractRecipe):
         # write it to the target file
         target = os.path.join(self.output_dir, 'alignment.txt')
         with utils.open_utf8(target, 'w') as out:
-            for line in aligned:
-                out.write(line.strip() + '\n')
+            out.write('\n'.join(line.strip() for line in aligned) + '\n')
 
         super(Align, self).export()
 
@@ -331,177 +329,76 @@ class Align(abstract_recipe.AbstractRecipe):
     def _read_words(cls, path):
         """Yield words alignement from a 'phone and words' alignment file"""
         word = None
-        utt_id = None
         start = 0
         stop = 0
-        for line in cls._read_splited(path):
-            if len(line) == 5:  # new word
-                if word is not None:
-                    yield ' '.join([utt_id, start, stop, word])
-                word = line[4]
-                utt_id = line[0]
-                start = line[1]
-                stop = line[2]
-            else:  # word continues
-                stop = line[2]
+        for utt_id, alignment in cls._read_utts(path):
+            for line in cls._read_splited(alignment):
+                if len(line) == 5:  # new word
+                    if word is not None:
+                        yield ' '.join([utt_id, start, stop, word])
+                    word = line[4]
+                    # utt_id = line[0]
+                    start = line[1]
+                    stop = line[2]
+                else:  # word continues
+                    stop = line[2]
 
-        if word is not None:
-            yield ' '.join([utt_id, start, stop, word])
+            if word is not None:
+                yield ' '.join([utt_id, start, stop, word])
+                word = None
 
     def _export_phones(self, int2phone, ali, post):
         """Export alignment at phone level"""
         return [' '.join(seq) for seq
                 in self._read_alignment(int2phone, ali, post)]
 
-    def _export_phones_and_words(self, int2phone, ali, post):
+    def _export_phones_and_words(self, int2phones, ali, post):
         """Export alignment at both phone and word levels"""
-        # phone level alignment
-        phones = self._export_phones(int2phone, ali, post)
+        phones_alignment = self._export_phones(int2phones, ali, post)
 
-        # text[utt_id] = list of words
-        text = {k: v.strip().split()
-                for k, v in self.corpus.text.items()}
+        # align the words on the phones, utterance by utterance
+        alignment = []
+        for utt_id, utt_align in self._read_utts(phones_alignment):
+            alignment += self._align_utterance(utt_id, utt_align)
+        return alignment
 
-        # lexicon[word] = list of phones
-        lexicon = {k: v.strip().split()
-                   for k, v in self.corpus.lexicon.items()}
+    def _align_utterance(self, utt_id, utt_align):
+        # the words we have to align in the utterance
+        words = self.corpus.text[utt_id].strip().split()
 
-        words = []
-
-        t0 = time.time()
-        utts = [(utt_id, utt_align)
-                for utt_id, utt_align in self._read_utts(phones)]
-
-        list_phones = defaultdict(list)
-        word_pos = defaultdict(list)
-
-        # create list of all the phones using the lexicon
-        for utt_id in self.corpus.utts():
-            for word in text[utt_id]:
-                try:
-                    list_phones[utt_id] += lexicon[word]
-                    word_pos[utt_id] += [word] * len(lexicon[word])
-                except KeyError:
-                    continue
-
+        # align the utterance word by word
+        index = 0
         try:
-            for utt_id, utt_align in self._read_utts(phones):
-                idx = 0
-                # for each word in transcription, parse it's aligned
-                # phones and add the word after the first phone belonging
-                # to that word.
-                for word in text[utt_id]:
-                    try:
-                        wlen = len(lexicon[word])
-                    except KeyError:  # the word isn't in lexicon
-                        self.log.warning(
-                            'ignoring out of lexicon word: %s', word)
-
-                    # from idx, we eat wlen phones (+ any silence phone)
-                    begin = True
-
-                    while wlen > 0 and idx < len(utt_align):
-                        aligned = utt_align[idx]
-                        if aligned.split()[-1] in self.corpus.silences:
-                            words.append('{}'.format(aligned))
-                        else:
-                            words.append('{} {}'.format(
-                                aligned, word if begin else ''))
-                            wlen -= 1
-                            begin = False
-                        idx += 1
+            for word in words:
+                utt_align, index = self._align_word(word, utt_align, index)
         except IndexError:
-            Parallel(self.njobs)(
-                delayed(dtw)([aligned.split(' ')[-1]
-                              for aligned in utt_align],
-                             list_phones[utt_id],
-                             word_pos[utt_id], utt_align)
-                for utt_id, utt_align in utts)
-            t1 = time.time()
-            print('dtw took {}s'.format(t1-t0))
-        return words
+            self.log.warning(
+                f'failed to align words from phones on utterance {utt_id}')
+
+        return utt_align
+
+    def _align_word(self, word, alignment, index):
+        # the word cut in phones
+        phones = self.corpus.lexicon[word].strip().split()
+
+        for n, phone in enumerate(phones):
+            index = self._align_phone(phone, alignment, index)
+            if n == 0:
+                alignment[index] += f' {word}'
+        return alignment, index
+
+    def _align_phone(self, phone, alignment, index):
+        current_phone = alignment[index].strip().split()[-1]
+
+        while phone != current_phone:
+            index += 1
+            current_phone = alignment[index].strip().split()[-1]
+        return index
 
     def _export_words(self, int2phone, ali, post):
         """Export alignment at word level only"""
         return [w for w in self._read_words(
             self._export_phones_and_words(int2phone, ali, post))]
-
-    @staticmethod
-    def phone_word_dtw(self, utt_align, text):
-        """ Get the word level alignment from the phone level
-            alignment and the lexicon """
-        lexicon = {k: v.strip().split()
-                   for k, v in self.corpus.lexicon.items()}
-
-        list_phones = []
-        word_pos = []
-        word_alignment = []
-        alignment = [aligned.split(' ')[-1] for aligned in utt_align]
-
-        # create list of all the phones using the lexicon
-        for word in text:
-            try:
-                list_phones += lexicon[word]
-                word_pos += [word] * len(lexicon[word])
-            except KeyError:
-                continue
-
-        # init dtw matrix
-        dtw = np.zeros((len(alignment), len(list_phones)))
-        dtw[0, :] = np.inf
-        dtw[:, 0] = np.inf
-        dtw[0, 0] = 0
-
-        # compute dtw costs
-        for i in range(1, len(alignment)):
-            for j in range(1, len(list_phones)):
-                cost = int(not alignment[i] == list_phones[j])
-                dtw[i, j] = cost + min(
-                    [dtw[i-1, j], dtw[i, j-1], dtw[i-1, j-1]])
-        word_alignment.append(word_pos[-1])
-
-        # go backward to get the best path
-        i = len(alignment) - 1
-        j = len(list_phones) - 1
-        path = []
-        while not i == 0 and not j == 0:
-            options = [dtw[i-1, j], dtw[i, j-1], dtw[i-1, j-1]]
-            idx, val = min(enumerate(options), key=itemgetter(1))
-            if idx == 0:
-                i = i-1
-                word_alignment.append(word_pos[j])
-                path.append((i, j, word_pos[j]))
-                continue
-            elif idx == 1:
-                word_alignment.pop()
-                word_alignment.append(word_pos[j-1])
-                j = j-1
-                path.append((i, j, word_pos[j]))
-                continue
-            elif idx == 2:
-                word_alignment.append(word_pos[j-1])
-                i = i-1
-                j = j-1
-                path.append((i, j, word_pos[j]))
-                continue
-
-        # return alignment with words
-        word_alignment.reverse()
-
-        prev_word = ''
-        complete_alignment = []
-        for utt, word in zip(utt_align, word_alignment):
-            if word == prev_word:
-                prev_word = word
-                complete_alignment.append(utt)
-                continue
-            else:
-                prev_word = word
-                complete_alignment.append(u'{} {}'.format(utt, word))
-
-        # complete_alignment = ['{} {}'.format(utt,word)
-        #        for utt, word in zip(utt_align,word_alignment)]
-        return complete_alignment
 
 
 class AlignNoLattice(Align):
