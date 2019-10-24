@@ -1,8 +1,10 @@
 # Abkhazia
 
-**Abkhazia is no more compatible with python2, please use python3 instead**
+**Abkhazia is no more compatible with python2, please use python3 instead. The
+last version comaptible with python2 is
+[abkhazia-0.3.1](https://github.com/bootphon/abkhazia/releases/tag/v0.3.1)**
 
-**Online documentation can be found [here](https://abkhazia.readthedocs.io/en/latest/)**
+### Online documentation can be found [here](https://coml.lscp.ens.fr/abkhazia)**
 
 The Abkhazia project makes it easy to obtain simple baselines for
 supervised ASR (using [Kaldi](http://kaldi-asr.org)) and ABX tasks
@@ -13,7 +15,8 @@ or cognitive science research.
 
 ## Licence
 
-**Copyright 2015-2018 by Mathieu Bernard, Thomas Schatz, Xuan-Nga Cao, Roland Thiollière, Emmanuel Dupoux**
+**Copyright 2015-2019 by Mathieu Bernard, Thomas Schatz, Xuan-Nga Cao, Roland
+Thiollière, Emmanuel Dupoux**
 
 This program is free software: you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by
