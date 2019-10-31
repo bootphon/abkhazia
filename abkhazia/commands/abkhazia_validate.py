@@ -83,11 +83,11 @@ class AbkhaziaValidate(AbstractCommand):
         corpus_dir = cls._parse_corpus_dir(args.corpus)
 
         log = utils.logger.get_log(verbose=True)
-        corpus = Corpus.load(corpus_dir, validate=False, log=log)
-
-        if corpus.is_valid():
+        try:
+            Corpus.load(corpus_dir, validate=True, log=log)
             log.info('corpus is valid')
             sys.exit(0)
-        else:
+        except IOError as err:
+            log.error(f'ERROR: {err}')
             log.error('corpus is NOT valid')
             sys.exit(1)
