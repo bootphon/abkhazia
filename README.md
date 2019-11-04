@@ -4,7 +4,7 @@
 last version comaptible with python2 is
 [abkhazia-0.3.1](https://github.com/bootphon/abkhazia/releases/tag/v0.3.1)**
 
-### Online documentation can be found [here](https://coml.lscp.ens.fr/abkhazia)**
+### Online documentation can be found [here](https://coml.lscp.ens.fr/docs/abkhazia)**
 
 The Abkhazia project makes it easy to obtain simple baselines for
 supervised ASR (using [Kaldi](http://kaldi-asr.org)) and ABX tasks
