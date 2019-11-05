@@ -29,10 +29,10 @@ from abkhazia.kaldi import kaldi_path
 
 def check_language_model(lm_dir):
     """Raise IOError if oov.int, G.fst and G.arpa.fst are not in `lm_dir`"""
-    # utils.check_directory(
-    #     lm_dir,
-    #     ['oov.int', 'G.fst', 'G.arpa.gz', 'phones.txt'],
-    #     name='language model')
+    utils.check_directory(
+        lm_dir,
+        ['oov.int', 'G.fst', 'G.arpa.gz', 'phones.txt'],
+        name='language model')
 
 
 def read_params(lm_dir):
@@ -146,7 +146,7 @@ class LanguageModel(abstract_recipe.AbstractRecipe):
     def _check_order(self):
         if not isinstance(self.order, int) or self.order < 1:
             raise RuntimeError(
-                'language model order must be interger > 0, it is {}'
+                'language model order must be an integer > 0, it is {}'
                 .format(self.order))
 
     def _check_silence_probability(self):
