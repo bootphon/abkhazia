@@ -166,7 +166,8 @@ class CatchExceptions(object):
         try:
             self.function()
 
-        except (IOError, OSError, RuntimeError, AssertionError) as err:
+        except (IOError, OSError, RuntimeError,
+                AssertionError, ValueError) as err:
             self._exit('fatal error: {}'.format(err))
 
         except subprocess.CalledProcessError as err:

@@ -166,9 +166,15 @@ class AbstractCoreCommand(AbstractCommand):
             os.path.join(corpus, name) if output is None else output)
 
         # if --force, remove any existing output_dir
-        if force and os.path.exists(output):
-            print('overwriting {}'.format(output))
-            shutil.rmtree(output)
+        if os.path.exists(output):
+            if force:
+                print('overwriting {}'.format(output))
+                shutil.rmtree(output)
+            # no --force but the directory already exists, exit with error
+            else:
+                raise ValueError(
+                    f'output directory already exists, use the '
+                    f'"--force" option to overwrite it: {output}')
 
         return output
 
