@@ -291,8 +291,12 @@ class Align(abstract_recipe.AbstractRecipe):
                 if post:
                     mpost = sum(utt_post[:nframes]) / nframes
                     utt_post = utt_post[nframes:]
-                    yield (utt_id, str(start), str(stop),
-                           str(mpost), phonemap[code])
+                    yield (
+                        utt_id,
+                        '{:.4f}'.format(start),
+                        '{:.4f}'.format(stop),
+                        '{:.4f}'.format(mpost),
+                        phonemap[code])
                 else:
                     yield (
                         utt_id,
