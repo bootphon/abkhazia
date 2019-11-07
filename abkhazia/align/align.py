@@ -375,7 +375,7 @@ class Align(abstract_recipe.AbstractRecipe):
         try:
             for word in words:
                 utt_align, index = self._align_word(word, utt_align, index)
-        except IndexError:
+        except (IndexError, KeyError):
             self.log.warning(
                 f'failed to align words from phones on utterance {utt_id}')
 
@@ -383,7 +383,11 @@ class Align(abstract_recipe.AbstractRecipe):
 
     def _align_word(self, word, alignment, index):
         # the word cut in phones
-        phones = self.corpus.lexicon[word].strip().split()
+        try:
+            phones = self.corpus.lexicon[word].strip().split()
+        except KeyError as err:
+            self.log.error(f'out-of-vocabulary word: {word}')
+            raise err
 
         for n, phone in enumerate(phones):
             index = self._align_phone(phone, alignment, index)
