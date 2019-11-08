@@ -73,7 +73,6 @@ class _AmBase(AbstractKaldiCommand):
             "default is '%(default)s'",
             metavar='<phone|word>', choices=['phone', 'word'])
 
-
         dir_group.add_argument(
             '-f', '--features', metavar='<feats-dir>', default=None,
             help='')
@@ -125,8 +124,15 @@ class _AmBase(AbstractKaldiCommand):
 
             recipe = cls.am_class(
                 corpus, feats, input_dir, output_dir, lang_args, log=log)
-        else:
-            recipe = cls.am_class(corpus, feats, output_dir, lang_args, log=log)
+        else:  # special case of monophone models
+            if args.alignment:
+                cls.am_class = acoustic.MonophoneFromAlignment
+                recipe = cls.am_class(
+                    corpus, feats, output_dir, lang_args,
+                    args.alignment, log=log)
+            else:
+                recipe = cls.am_class(
+                    corpus, feats, output_dir, lang_args, log=log)
 
         recipe.njobs = args.njobs
         if args.recipe:
@@ -137,6 +143,8 @@ class _AmBase(AbstractKaldiCommand):
             try:
                 recipe.set_option(k.replace('_', '-'), v)
             except KeyError:
+                pass
+            except AttributeError:
                 pass
 
         # finally train the acoustic model
@@ -159,6 +167,15 @@ class _AmMono(_AmBase):
         The trained model is wrote in a directory specified by the
         <output-dir> option. It can then feed the "abkhazia align",
         "abkhazia decode" or "abkhazia acoustic triphone" commands.'''
+
+    @classmethod
+    def add_parser(cls, subparsers):
+        parser = super(_AmMono, cls).add_parser(subparsers)
+        parser.add_argument(
+            '-a', '--alignment', metavar='<file>', default=None,
+            help='Provide a phone alignment (by default it is estimated '
+            'during training iterations), when this option is in use, the '
+            'option --realign-iterations is ignored')
 
 
 class _AmTri(_AmBase):

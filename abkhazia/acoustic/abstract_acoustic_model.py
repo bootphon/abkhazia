@@ -104,11 +104,12 @@ class AbstractAcousticModel(AbstractRecipe):
         super(AbstractAcousticModel, self).check_parameters()
 
         # check lang_args are OK
-        l = self.lang_args
-        assert l['level'] in ('word', 'phone')
-        assert l['silence_probability'] <= 1 and l['silence_probability'] > 0
-        assert isinstance(l['position_dependent_phones'], bool)
-        assert isinstance(l['keep_tmp_dirs'], bool)
+        lang = self.lang_args
+        assert lang['level'] in ('word', 'phone')
+        assert (lang['silence_probability'] <= 1
+                and lang['silence_probability'] > 0)
+        assert isinstance(lang['position_dependent_phones'], bool)
+        assert isinstance(lang['keep_tmp_dirs'], bool)
 
         # write the meta.txt file
         self.meta.source += '\n'.join((
@@ -131,14 +132,14 @@ class AbstractAcousticModel(AbstractRecipe):
         Features.export_features(self.input_dir, self.data_dir)
 
         # create lang directory with L.fst
-        l = self.lang_args
+        lang = self.lang_args
         prepare_lang.prepare_lang(
             self.corpus,
             self.lang_dir,
-            level=l['level'],
-            silence_probability=l['silence_probability'],
-            position_dependent_phones=l['position_dependent_phones'],
-            keep_tmp_dirs=l['keep_tmp_dirs'],
+            level=lang['level'],
+            silence_probability=lang['silence_probability'],
+            position_dependent_phones=lang['position_dependent_phones'],
+            keep_tmp_dirs=lang['keep_tmp_dirs'],
             log=self.log)
 
     def export(self):

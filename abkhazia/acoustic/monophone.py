@@ -1,4 +1,4 @@
-# Copyright 2016 Thomas Schatz, Xuan-Nga Cao, Mathieu Bernard
+# Copyright 2016-2018 Thomas Schatz, Xuan-Nga Cao, Mathieu Bernard
 #
 # This file is part of abkhazia: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -14,12 +14,14 @@
 # along with abkhazia. If not, see <http://www.gnu.org/licenses/>.
 """Training monophone acoustic models"""
 
+import gzip
 import os
 
 import abkhazia.utils as utils
 import abkhazia.features as features
 from abkhazia.acoustic.abstract_acoustic_model import (
     AbstractAcousticModel)
+from abkhazia.align.align import convert_alignment_to_kaldi_format
 import abkhazia.kaldi as kaldi
 
 
@@ -111,3 +113,72 @@ class Monophone(AbstractAcousticModel):
                 lang=self.lang_dir,
                 target=target))
         self._run_am_command(command, target, message)
+
+
+class MonophoneFromAlignment(Monophone):
+    """Train a monophone model from a corpus with an existing alignment
+
+    This recipe bypass the alignment iterations in the original recipe
+
+    """
+    def __init__(self, corpus, feats_dir, output_dir, lang_args,
+                 alignment_file, log=utils.logger.null_logger()):
+        super(MonophoneFromAlignment, self).__init__(
+            corpus, feats_dir, output_dir, lang_args, log=log)
+
+        self.alignment_file = alignment_file
+        self.options['realign-iterations'] = 0
+
+    def create(self):
+        super(MonophoneFromAlignment, self).create()
+
+        # convert alignment to Kaldi format. TODO be carefull here, we
+        # use the default values for features, if using non-default
+        # values for features frame width and spacing, this will not
+        # work!
+        self.log.info(
+            'using existing alignment: {}, conversion to Kaldi format...'
+            .format(self.alignment_file))
+
+        ali = convert_alignment_to_kaldi_format(
+            self.alignment_file,
+            os.path.join(self.output_dir, 'lang'),
+            self.lang_args['position_dependent_phones'],
+            log=self.log)
+
+        # split the data for njobs processing, this normally done in
+        # the run() step but we need here to split the alignment
+        # before calling the train_mono.sh script
+        self._run_command(
+            './utils/split_data.sh data/acoustic {}'.format(self.njobs))
+
+        # build a dict utt -> split to split the alignement following
+        # the data split distribution
+        split_utt = {}
+        for job in range(1, self.njobs + 1):
+            utt2spk = os.path.join(
+                self.recipe_dir, 'data', 'acoustic',
+                'split{}'.format(self.njobs), '{}'.format(job), 'utt2spk')
+            for line in open(utt2spk, 'r'):
+                split_utt[line.split(' ')[0]] = job
+
+        # split the alignment
+        self.log.info('spliting alignment...')
+        split_ali = {}
+        for job in range(1, self.njobs + 1):
+            split_ali[job] = []
+        for utt, line in ali.iteritems():
+            try:
+                job = split_utt[utt]
+                split_ali[job].append(utt + ' ' + line.strip())
+            except KeyError:
+                pass  # the utterance is not in the data splits, ignore it
+
+        # put the files as recipe/exp/mono/ali.JOB.gz
+        exp_dir = os.path.join(self.recipe_dir, 'exp', 'mono')
+        if not os.path.exists(exp_dir):
+            os.makedirs(exp_dir)
+        for job in range(1, self.njobs + 1):
+            ali_file = os.path.join(exp_dir, 'ali.{}.gz'.format(job))
+            self.log.info('writing {}'.format(ali_file))
+            gzip.open(ali_file, 'w').write('\n'.join(split_ali[job]) + '\n')

@@ -16,11 +16,12 @@
 """Setup script for the abkhazia package"""
 
 import os
+import abkhazia
 from setuptools import setup, find_packages
 
 GITHUB_BOOTPHON = 'https://github.com/bootphon/'
 SETUP_DIR = os.path.dirname(os.path.abspath(__file__))
-VERSION = '0.3'
+VERSION = abkhazia.__version__
 
 # On Reads The Docs we don't install any package
 ON_RTD = os.environ.get('READTHEDOCS', None) == 'True'
@@ -31,9 +32,9 @@ REQUIREMENTS = [] if ON_RTD else [
     'argcomplete',
     'pytest',
     'Sphinx',
-    'h5features>=1.2',
+    'h5features>=1.3.2',
     'phonemizer>=0.2',
-    'matplotlib'
+    'matplotlib<3.0'
 ]
 
 setup(
@@ -46,7 +47,7 @@ setup(
     # install dependancies from bootphon github
     dependency_links=[GITHUB_BOOTPHON + package for package in (
         'phonemizer/archive/v0.2.tar.gz#egg=phonemizer-0.2',
-        'h5features/archive/v1.2.tar.gz#egg=h5features-1.2')],
+        'h5features/archive/v1.3.2.tar.gz#egg=h5features-1.3.2')],
 
     # install python dependencies from PyPI
     install_requires=REQUIREMENTS,

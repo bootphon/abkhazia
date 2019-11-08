@@ -42,10 +42,13 @@ def kaldi_path():
         os.path.join(kaldiroot, 'tools', 'srilm', 'bin', platform),
         os.path.join(kaldiroot, 'tools', 'sctk', 'bin')])
 
-    try:
-        env['PATH'] = ':'.join([env['PATH'], kaldibin, fstbin, lmbin])
-    except KeyError:  # PATH isn't in the environment, should not occur
+    if 'PATH' not in env:
+        # PATH isn't in the environment, should not occur
         env['PATH'] = ':'.join([kaldibin, fstbin, lmbin])
+    else:
+        path = ':'.join([kaldibin, fstbin, lmbin])
+        if path not in env['PATH']:
+            env['PATH'] += ':' + path
 
     env['IRSTLM'] = os.path.join(kaldiroot, 'tools', 'irstlm')
 
@@ -53,9 +56,11 @@ def kaldi_path():
     fstlib = os.path.join(kaldiroot, 'tools', 'openfst', 'lib')
     libfstscript = os.path.join(fstlib, 'libfstscript.so.1')
     assert os.path.exists(libfstscript)
-    try:
-        env['LD_LIBRARY_PATH'] = ':'.join([env['LD_LIBRARY_PATH'], fstlib])
-    except KeyError:
+
+    if 'LD_LIBRARY_PATH' not in env:
         env['LD_LIBRARY_PATH'] = fstlib
+    else:
+        if fstlib not in env['LD_LIBRARY_PATH']:
+            env['LD_LIBRARY_PATH'] += ':' + fstlib
 
     return env

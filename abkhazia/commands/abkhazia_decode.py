@@ -62,7 +62,11 @@ class _DecodeBase(AbstractKaldiCommand):
             '-f', '--features', metavar='<feat-dir>', default=None,
             help='''the features directory. If not specified, use
             <feat-dir>=<corpus>/features.''')
-
+        dir_group.add_argument(
+            '--fmllr_dir', metavar='<fmllr-dir>',
+            default=None,
+            help='''the fmllr transform directory. Use if fmllr transform is'''
+            '''already computed''')
         # TODO if nnet decoding, add transform-dir in dir_group
 
         graph_group = parser.add_argument_group('graph making parameters')
@@ -89,10 +93,11 @@ class _DecodeBase(AbstractKaldiCommand):
         feat = cls._parse_aux_dir(corpus_dir, args.features, 'features')
         lang = cls._parse_aux_dir(corpus_dir, args.language_model, 'language')
         acou = cls._parse_aux_dir(corpus_dir, args.acoustic_model, 'acoustic')
+        fmllr = args.fmllr_dir
 
         # instanciate the kaldi recipe
         recipe = decode.Decode(
-            corpus, lang, feat, acou, output_dir,
+            corpus, lang, feat, acou, output_dir, fmllr_dir=fmllr,
             decode_type=cls.name, log=log)
         recipe.njobs = args.njobs
         recipe.delete_recipe = False if args.recipe else True

@@ -18,11 +18,75 @@ Installation and configuration
    has not been tested.
 
 
+Use in docker
+=============
+
+The most simple way of deploy abkhazia is to use it under a docker
+container. Once you have docker installed on your machine, build the
+container with::
+
+  docker build -t abkhazia .
+
+Then you can run it for instance with::
+
+  docker run -it --rm abkhazia bash
+
+The need to mount your corpus data inside the container (using the
+`-v` option of `docker run` and modify the abkhazia configuration (see
+:ref:`abkhazia_conf`). Read the docker documentation `here
+<https://docs.docker.com>`_.
+
+
 Install dependencies
 ====================
 
 Before deploying Abkahzia on your system, you need to install the
 following dependencies: Kaldi, sox, shorten and festival.
+
+C++ compilers
+-------------
+
+You need to have both ``gcc`` and ``clang-3.9`` installed. On
+Debian/Ubuntu just have a::
+
+  sudo apt-get install gcc gfortran clang-3.9
+
+
+Flac, sox and festival
+----------------------
+
+* Abkhazia relies on `flac <https://xiph.org/flac>`_ and `sox
+  <http://sox.sourceforge.net>`_ for audio conversion from various file
+  formats to wav.
+
+  They should be in repositories of every standard Unix distribution,
+  for exemple in Debian/Ubuntu::
+
+    sudo apt-get install flac sox
+
+* Abkhazia also needs `festival
+  <http://www.cstr.ed.ac.uk/projects/festival>`_ to phonemize the
+  transcriptions of the Childes Brent corpus. Visit `this link
+  <http://www.festvox.org/docs/manual-2.4.0/festival_6.html#Installation>`_
+  for installation guidelines, or on Ubuntu/Debian use::
+
+    sudo apt-get install festival
+
+
+Shorten
+-------
+
+`shorten <http://etree.org/shnutils/shorten>`_ is used for wav
+conversion from the original *shn* audio files, it must be installed
+manually. Follow these steps to download, compile and install it::
+
+    wget http://shnutils.freeshell.org/shorten/dist/src/shorten-3.6.1.tar.gz
+    tar xzf shorten-3.6.1.tar.gz
+    cd shorten-3.6.1
+    ./configure
+    make
+    sudo make install
+
 
 Kaldi
 -----
@@ -70,41 +134,6 @@ Kaldi
             ./extras/install_irstlm.sh
             ./extras/install_srilm.sh
 
-Flac, sox and festival
-----------------------
-
-* Abkhazia relies on `flac <https://xiph.org/flac>`_ and `sox
-  <http://sox.sourceforge.net>`_ for audio conversion from various file
-  formats to wav.
-
-  They should be in repositories of every standard Unix distribution,
-  for exemple in Debian/Ubuntu::
-
-    sudo apt-get install flac sox
-
-* Abkhazia also needs `festival
-  <http://www.cstr.ed.ac.uk/projects/festival>`_ to phonemize the
-  transcriptions of the Childes Brent corpus. Visit `this link
-  <http://www.festvox.org/docs/manual-2.4.0/festival_6.html#Installation>`_
-  for installation guidelines, or on Ubuntu/Debian use::
-
-    sudo apt-get install festival
-
-
-Shorten
--------
-
-`shorten <http://etree.org/shnutils/shorten>`_ is used for wav
-conversion from the original *shn* audio files, it must be installed
-manually. Follow these steps to download, compile and install it::
-
-    wget http://etree.org/shnutils/shorten/dist/src/shorten-3.6.1.tar.gz
-    tar xzf shorten-3.6.1.tar.gz
-    cd shorten-3.6.1
-    ./configure
-    make
-    sudo make install
-
 
 Install Abkhazia
 ================
@@ -142,6 +171,8 @@ Install Abkhazia
 
   Then open the file ``./docs/html/index.html`` with your favorite browser.
 
+
+.. _abkhazia_conf:
 
 Configuration files
 ===================

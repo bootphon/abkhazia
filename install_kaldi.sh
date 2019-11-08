@@ -55,27 +55,51 @@ kaldi=$(realpath $kaldi/src)
 # From $kaldi/tools/extras/check_dependencies.sh. Debian systems
 # generally link /bin/sh to dash, which doesn't work with some scripts
 # as it doesn't expand x.{1,2}.y to x.1.y x.2.y
-[ $(realpath /bin/sh) == "dash" ] && \
+[[ $(realpath /bin/sh) == *"dash"* ]] && \
     failure  "failed because /bin/sh is linked to dash, and currently \
          some of the scripts will not run properly. We recommend to run: \
          sudo ln -s -f bash /bin/sh"
 
+# make sure gfortran and clang++-3.9 are installed
+[ -z $(which gfortran) ] && failure "error: gfortran not installed, please install it"
+[ -z $(which clang++-3.9) ] && failure "error: clang++-3.9 not installed, please install it"
+[ -z $(which gawk) ] && failure "error: gawk not installed, please install it"
+
 # compile kaldi tools
 cd $kaldi/tools
 ./extras/check_dependencies.sh || failure "failed to check kaldi dependencies"
+# use clang instead of gcc, and openfst-1.4.1 instead of 1.3.4
+sed -i "s/CXX = g++/# CXX = g++/" Makefile
+sed -i "s/# CXX = clang++/CXX = clang++-3.9/" Makefile
+sed -i "s/OPENFST_VERSION = 1.3.4/# OPENFST_VERSION = 1.3.4/" Makefile
+sed -i "s/# OPENFST_VERSION = 1.4.1/OPENFST_VERSION = 1.4.1/" Makefile
 make -j $ncores || failure "failed to build kaldi tools"
+./extras/install_openblas.sh || failure "failed to install openblas"
 
 # compile kaldi src
 cd $kaldi/src
-./configure --shared || failure "failed to configure kaldi"
+./configure --openblas-root=../tools/OpenBLAS/install \
+    || failure "failed to configure kaldi"
 # compile with optimizations and without debug symbols.
 sed -i "s/\-g # -O0 -DKALDI_PARANOID.*$/-O3 -DNDEBUG/" kaldi.mk
+# use clang instead of gcc
+sed -i "s/ -rdynamic//g" kaldi.mk
+sed -i "s/g++/clang++-3.9/" kaldi.mk
 make depend -j $ncores || failure "failed to setup kaldi dependencies"
 make -j $ncores || failure "failed to build kaldi"
 
 # compile irstlm
+cd $kaldi/tools/extras
+rm -f install_irstlm.sh
+wget https://raw.githubusercontent.com/kaldi-asr/kaldi/master/tools/extras/install_irstlm.sh
+chmod +x install_irstlm.sh
+wget https://raw.githubusercontent.com/kaldi-asr/kaldi/master/tools/extras/irstlm.patch
 cd $kaldi/tools
 ./extras/install_irstlm.sh || failure "failed to install IRSTLM"
+
+# compile srilm
+wget https://github.com/denizyuret/nlpcourse/raw/master/download/srilm-1.7.0.tgz -O srilm.tgz
+./extras/install_srilm.sh || failure "failed to install SRILM"
 
 # forward the path to Kaldi to the configure script
 export KALDI_PATH=$kaldi

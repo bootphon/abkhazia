@@ -44,6 +44,7 @@ available. List the list of corpora supported in abkhazia with
 
    install
    abkhazia_format
+   abkhazia_force_align
    abkhazia_usage
    abkhazia_api
    license
