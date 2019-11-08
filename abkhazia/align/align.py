@@ -33,12 +33,7 @@ two alignment recipes, the Align recipe seems to add more silences.
 import gzip
 import os
 import shutil
-import time
 import numpy as np
-
-from collections import defaultdict
-from joblib import Parallel, delayed
-from operator import itemgetter
 
 import abkhazia.utils as utils
 import abkhazia.abstract_recipe as abstract_recipe
@@ -375,9 +370,14 @@ class Align(abstract_recipe.AbstractRecipe):
         try:
             for word in words:
                 utt_align, index = self._align_word(word, utt_align, index)
-        except (IndexError, KeyError):
+        except IndexError:
             self.log.warning(
-                f'failed to align words from phones on utterance {utt_id}')
+                f'failed to align words from phones on utterance {utt_id}: '
+                f'phones dont match word')
+        except KeyError as err:
+            self.log.warning(
+                f'failed to align words from phones on utterance {utt_id}: '
+                f'{str(err)}')
 
         return utt_align
 
@@ -385,9 +385,8 @@ class Align(abstract_recipe.AbstractRecipe):
         # the word cut in phones
         try:
             phones = self.corpus.lexicon[word].strip().split()
-        except KeyError as err:
-            self.log.error(f'out-of-vocabulary word: {word}')
-            raise err
+        except KeyError:
+            raise KeyError(f'out-of-vocabulary word: {word}')
 
         for n, phone in enumerate(phones):
             index = self._align_phone(phone, alignment, index)
@@ -395,7 +394,8 @@ class Align(abstract_recipe.AbstractRecipe):
                 alignment[index] += f' {word}'
         return alignment, index
 
-    def _align_phone(self, phone, alignment, index):
+    @staticmethod
+    def _align_phone(phone, alignment, index):
         current_phone = alignment[index].strip().split()[-1]
 
         while phone != current_phone:
