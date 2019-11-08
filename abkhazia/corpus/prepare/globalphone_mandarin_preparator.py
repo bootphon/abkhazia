@@ -298,7 +298,7 @@ class MandarinPreparator(AbstractGlobalPhonePreparator):
 
         # correct content
         correct_lines = []
-        for line in open_utf8(self.dictionary, 'r').xreadlines():
+        for line in open_utf8(self.dictionary, 'r').readlines():
             if all([not(u'{'+word+u'}' in line) for word in words_to_drop]):
                 line = line.replace(u'{lai2zhe3bu2ju4 }', u'{lai2zhe3bu2ju4}')
                 correct_lines.append(line)

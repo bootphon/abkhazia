@@ -175,7 +175,7 @@ class CSJPreparator(AbstractPreparator):
 
     variants = []
 
-    def __init__(self, input_dir,  log=utils.logger.null_logger(),
+    def __init__(self, input_dir, log=utils.logger.null_logger(),
                  copy_wavs=False, clusters=False, treat_core=False):
         super(CSJPreparator, self).__init__(input_dir, log)
         self.copy_wavs = copy_wavs
@@ -209,8 +209,8 @@ class CSJPreparator(AbstractPreparator):
 
         if treat_core:
             self.data_files = self.data_core_files
-        for data in progressbar.ProgressBar()(self.data_files):
-            print("xml :", data)
+        for xml_num, data in enumerate(self.data_files, start=1):
+            print(f'xml {xml_num}/{len(self.data_files)}: ', data)
             if treat_core:
                 utts = self.parse_core_xml(
                         os.path.join(xml_dir, data + '.xml'))
@@ -245,7 +245,7 @@ class CSJPreparator(AbstractPreparator):
                 if line == '':
                     continue
                 phones = line.split('\t')
-                katakana = phones[0].decode('utf8')
+                katakana = phones[0]
                 bootphon = phones[3]
                 if bootphon == '':
                     bootphon == "H"
