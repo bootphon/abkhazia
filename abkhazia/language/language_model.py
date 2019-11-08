@@ -16,10 +16,10 @@
 
 import gzip
 import os
-import pkg_resources
 import re
 import shutil
 import tempfile
+import pkg_resources
 
 import abkhazia.utils as utils
 import abkhazia.abstract_recipe as abstract_recipe
