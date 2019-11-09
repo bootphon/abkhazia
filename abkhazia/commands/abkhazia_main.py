@@ -185,7 +185,7 @@ class CatchExceptions(object):
 # can be usefull to don't catch any exception, so the full error
 # traceback error is printed. To do so, just comment the following
 # line
-@CatchExceptions
+#@CatchExceptions
 def main():
     """abkhazia main entry point in command line"""
     Abkhazia()

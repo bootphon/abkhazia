@@ -15,6 +15,7 @@
 """Provides the LanguageModel class"""
 
 import gzip
+import math
 import os
 import re
 import shutil
@@ -474,3 +475,51 @@ class LanguageModel(abstract_recipe.AbstractRecipe):
         # write a little file with LM parameters
         with open(os.path.join(self.output_dir, 'params.txt'), 'w') as param:
             param.write('{} {}\n'.format(self.level, self.order))
+
+
+class FlatLanguageModel(LanguageModel):
+    """A flat LM is a unigram of equiprobable tokens"""
+    def __init__(self, corpus, output_dir,
+                 level='word', silence_probability=0.5,
+                 position_dependent_phones=True,
+                 log=utils.logger.null_logger()):
+        super(FlatLanguageModel, self).__init__(
+            corpus,
+            output_dir,
+            level=level, silence_probability=silence_probability,
+            position_dependent_phones=position_dependent_phones,
+            log=log)
+        self.order = 0
+
+    def _check_order(self):
+        if self.order != 0:
+            raise RuntimeError(
+                f'language model order must be 0, it is {self.order}')
+
+    def run(self):
+        self._prepare_lang()
+
+        # get the LM tokens (words or phones composoing the corpus)
+        if self.level == 'word':
+            tokens = self.corpus.words(in_lexicon=False)
+        else:  # level is phone
+            tokens = set(self.corpus.phones.keys())
+
+        # add ARPA specific symbols
+        tokens.add('<s>')
+        tokens.add('</s>')
+        tokens.add('<unk>')
+
+        # the log10(prob) of a token
+        prob = math.log10(1 / len(tokens))
+
+        # build the equiprobable LM
+        ngram = {1: {(t, ): (prob, None) for t in sorted(tokens)}}
+
+        # save it as a compressed text ARPA format
+        g_arpa = os.path.join(self.a2k._local_path(), 'G.arpa.gz')
+        ARPALanguageModel(ngram).save(g_arpa, compress=True)
+
+        # compile it to binary FST format
+        g_fst = os.path.join(self.a2k._local_path(), 'G.fst')
+        self._format_lm(g_arpa, g_fst)

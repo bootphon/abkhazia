@@ -23,8 +23,11 @@ https://github.com/sfischer13/python-arpa.
 
 """
 
+import gzip
 import os
 import re
+import shutil
+import tempfile
 import abkhazia.utils as utils
 
 
@@ -71,12 +74,22 @@ class ARPALanguageModel(object):
                         'unable to parse ARPA file line: {}'.format(line))
         return cls(data)
 
-    def save(self, path):
+    def save(self, path, compress=False):
         """Save a language model to `path` in the ARPA format
 
-        Do not write empty ngrams to the `path`
+        Do not write empty ngrams to the `path`. If `compress` is True, save to
+        a gzipped file.
 
         """
+        if not compress:
+            self._save_text(path)
+        else:
+            with tempfile.NamedTemporaryFile() as tmp:
+                self._save_text(tmp.name)
+                with gzip.open(path, 'wb') as f_out:
+                    shutil.copyfileobj(tmp, f_out)
+
+    def _save_text(self, path):
         with utils.open_utf8(path, 'w') as fp:
             # write header
             fp.write('\n\\data\\\n')
