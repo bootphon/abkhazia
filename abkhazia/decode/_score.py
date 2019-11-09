@@ -47,7 +47,7 @@ def format(score_opts, mkgraph_opts):
     # generate option string for scoring
     opts = ' '.join('--{} {}'.format(
         'beam' if n == 'pruning-beam' else n, str(o))
-                    for n, o in score_opts.iteritems()
+                    for n, o in score_opts.items()
                     if n != 'skip-scoring')
 
     # add the reverse flag if enabled in the mkgraph options

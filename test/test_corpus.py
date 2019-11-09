@@ -43,12 +43,12 @@ def test_empty():
 
 
 def test_subcorpus(corpus):
-    d = corpus.subcorpus(corpus.utts()[:5])
+    d = corpus.subcorpus(list(corpus.utts())[:5])
     assert '<unk>' in d.lexicon
     assert len(d.utts()) == 5
     assert d.is_valid()
 
-    e = corpus.subcorpus(corpus.utts()[:5], prune=False)
+    e = corpus.subcorpus(list(corpus.utts())[:5], prune=False)
     assert len(e.utts()) == 5
     assert e.is_valid()
 
@@ -59,7 +59,7 @@ def test_subcorpus(corpus):
 
 
 def test_split(corpus):
-    d, e = corpus.split(0.5)
+    d, e = corpus.split(train_prop=0.5)
     assert '<unk>' in d.lexicon
     assert '<unk>' in e.lexicon
 
@@ -73,11 +73,15 @@ def test_split(corpus):
 
 
 def test_split_tiny_train(corpus):
-    train, testing = corpus.split(train_prop=0.25, by_speakers=False)
+    with pytest.raises(IOError) as err:
+        train, testing = corpus.split(train_prop=0.25, by_speakers=False)
+    assert 'corpus is empty' in str(err.value)
+
+    train, testing = corpus.split(train_prop=0.4, by_speakers=False)
     assert len(train.utts()) <= len(testing.utts())
     assert len(train.spks()) == len(testing.spks())
 
-    train, testing = corpus.split(train_prop=0.25, by_speakers=True)
+    train, testing = corpus.split(train_prop=0.4, by_speakers=True)
     assert len(train.utts()) < len(testing.utts())
     assert len(train.spks()) < len(testing.spks())
 
@@ -102,15 +106,21 @@ def test_split_and_save(corpus, copy_wavs, tmpdir):
 
 @pytest.mark.parametrize('by_speaker', [True, False])
 def test_split_less_than_1(corpus, by_speaker):
-    d, e = corpus.split(0.25, 0.5, by_speaker)
+    d, e = corpus.split(0.4, 0.5, by_speaker)
 
     assert len(d.utts()) + len(e.utts()) <= len(corpus.utts())
     assert len(d.utts()) > 0
     assert len(e.utts()) > 0
 
     # very low proportion -> the resulting corpus is empty
-    with pytest.raises(IOError):
+    if by_speaker is False:
+        with pytest.raises(IOError) as err:
+            train, testing = corpus.split(0.25, 0.5, by_speaker)
+        assert 'corpus is empty' in str(err.value)
+
+    with pytest.raises(IOError) as err:
         d, _ = corpus.split(1e-30)
+    assert 'corpus is empty' in str(err.value)
 
 
 def test_spk2utt():
@@ -140,7 +150,7 @@ def test_remove_phones(corpus):
         return False
 
     # get a phone
-    p = corpus.phones.keys()[0]
+    p = list(corpus.phones.keys())[0]
 
     # make sure the phone is here
     assert p in corpus.phones

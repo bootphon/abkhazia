@@ -17,6 +17,13 @@ Installation and configuration
    install it on a Windows system as well (through CygWin), but this
    has not been tested.
 
+.. note::
+
+   Abkhazia is for **python3** only, if you really want to use python2 please
+   use
+   [abkhazia-0.3.1](https://github.com/bootphon/abkhazia/releases/tag/v0.3.1),
+   the last python2 compatible version.
+
 
 Use in docker
 =============

@@ -17,7 +17,7 @@
 import collections
 import os
 
-from abkhazia.utils import duplicates, logger, wav, default_njobs, append_ext
+from abkhazia.utils import duplicates, logger, wav, default_njobs
 
 
 def resume_list(l, n=10):
@@ -81,7 +81,7 @@ class CorpusValidation(object):
 
         """
         self.log.info('validating corpus')
-        if len(self.corpus.utts()) == 0:
+        if not self.corpus.utts():
             raise IOError('corpus is empty')
 
         if meta is None:
@@ -128,7 +128,7 @@ class CorpusValidation(object):
 
         # get meta information on the wavs
         meta = wav.scan(wavs, njobs=self.njobs)
-        meta = {os.path.basename(k): v for k, v in meta.iteritems()}
+        meta = {os.path.basename(k): v for k, v in meta.items()}
 
         missing_meta = set.difference(self.corpus.wavs, meta.keys())
         if missing_meta:
@@ -261,7 +261,7 @@ class CorpusValidation(object):
                     "not consistent, see details in log")
 
         # speaker ids must have a fixed length
-        default_len = len(speakers[0])
+        default_len = len(list(speakers)[0])
         if not all([len(s) == default_len for s in speakers]):
             self.log.debug(
                 "Speaker-ids length observed in utt2spk with associated "
@@ -415,11 +415,11 @@ class CorpusValidation(object):
     def validate_lexicon(self, inventory):
         self.log.debug("checking lexicon")
 
-        dict_words = self.corpus.lexicon.keys()
+        dict_words = list(self.corpus.lexicon.keys())
         transcriptions = [t.split() for t in self.corpus.lexicon.values()]
 
         # checks all words have a non empty transcription
-        empties = {k: v for k, v in self.corpus.lexicon.iteritems()
+        empties = {k: v for k, v in self.corpus.lexicon.items()
                    if v.strip() == ''}
         if empties:
             raise IOError(
@@ -450,7 +450,7 @@ class CorpusValidation(object):
         # TODO should we log a warning for all words containing silence phones?
 
         # unused words
-        used_words = [word for utt in self.corpus.text.itervalues()
+        used_words = [word for utt in self.corpus.text.values()
                       for word in utt.split()]
         dict_words_set = set(dict_words)
         used_word_types = set(used_words)
@@ -584,7 +584,7 @@ class CorpusValidation(object):
 
         short_utts = []
         warning = False
-        for _wav, utts in self.corpus.wav2utt().iteritems():
+        for _wav, utts in self.corpus.wav2utt().items():
             duration = meta[_wav].duration
 
             # check all utterances are within wav boundaries
@@ -658,4 +658,4 @@ class CorpusValidation(object):
     def _strcounts2unicode(strcounts):
         """Return a str representing strcounts"""
         return u", ".join(
-            [u"'" + s + u"': " + unicode(c) for s, c in strcounts])
+            ["'" + s + "': " + str(c) for s, c in strcounts])

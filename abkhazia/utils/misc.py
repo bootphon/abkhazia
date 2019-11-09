@@ -19,7 +19,7 @@ import collections
 import multiprocessing
 import re
 
-import config  # this is abkhazia.utils.config
+import abkhazia.utils.config as config
 
 
 def default_njobs(nj_queue=20, local=False):

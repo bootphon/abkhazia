@@ -272,14 +272,18 @@ class MandarinPreparator(AbstractGlobalPhonePreparator):
     # generate dict associating phones with ipa and tonal variants
     variants = []
     phones = consonants
-    for vowel, ipa in vowels.iteritems():
+    for vowel, ipa in vowels.items():
         l_tones = tones[:-1] if vowel in four_tones_vowels else tones
+
         for tone, ipa_t in l_tones:
             tonal = vowel + tone
             assert tonal not in phones
             phones[tonal] = ipa + ipa_t
 
-        variants.append([vowel + tone for tone, _ in l_tones])
+        variant = [vowel] * len(l_tones)
+        for i in range(len(variant)):
+            variant[i] += l_tones[i][0]
+        variants.append(variant)
 
     def correct_dictionary(self):
         """Correct problems with the GlobalPhone Mandarin dictionary
@@ -294,7 +298,7 @@ class MandarinPreparator(AbstractGlobalPhonePreparator):
 
         # correct content
         correct_lines = []
-        for line in open_utf8(self.dictionary, 'r').xreadlines():
+        for line in open_utf8(self.dictionary, 'r').readlines():
             if all([not(u'{'+word+u'}' in line) for word in words_to_drop]):
                 line = line.replace(u'{lai2zhe3bu2ju4 }', u'{lai2zhe3bu2ju4}')
                 correct_lines.append(line)

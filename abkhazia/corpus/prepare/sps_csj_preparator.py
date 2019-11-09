@@ -22,7 +22,6 @@ Both core and non-core files are processed.
 
 
 import os
-import sys
 from collections import namedtuple
 import progressbar
 
@@ -33,11 +32,6 @@ except ImportError:
 
 import abkhazia.utils as utils
 from abkhazia.corpus.prepare import AbstractPreparator
-from abkhazia.utils import open_utf8
-
-reload(sys)
-
-sys.setdefaultencoding('utf8')
 
 
 Utt = namedtuple('Utt', 'words start end channel')
@@ -62,7 +56,7 @@ class SPSCSJPreparator(AbstractPreparator):
     # segment inventory based on
     # https://docs.google.com/spreadsheets/d/1a4ZWvuKfe2wMd_sVOid3KLY7PqKQkPe1uYNa_7zC5Gw/edit?pli=1#gid=0
     # with C+glide considered as two separate phonemes
-    
+
     vowels = {
         'a': u'ä',
         'e': u'e',
@@ -96,7 +90,7 @@ class SPSCSJPreparator(AbstractPreparator):
         'Q+s+y': u'ɕ:',
         'z': u'z',  # fricative or affricate
         #'Q+z': u'z:',  # fricative or affricate
-        'z+y': u'ʑ',  # fricative or affricate 
+        'z+y': u'ʑ',  # fricative or affricate
         #'Q+z+y': u'ʑ:',  # fricative or affricate
         'F': u'ɸ',
         #'Q+F': u'ɸ:',
@@ -181,7 +175,6 @@ class SPSCSJPreparator(AbstractPreparator):
 
     variants = []
 
-
     def __init__(self, input_dir,  log=utils.logger.null_logger(),
                  copy_wavs=False):
         super(SPSCSJPreparator, self).__init__(input_dir, log)
@@ -208,7 +201,7 @@ class SPSCSJPreparator(AbstractPreparator):
             # k+y g+y n+y h+y b+y p+y m+y r+y t+y d+y
             # (i.e we consider the glide y as a separate phoneme)
             utts = break_glides_clusters(utts)
-            # removing very infrequent phones 
+            # removing very infrequent phones
             utts, nb_removed = remove_infrequent_phones(utts)
             self.log.info('Removed {} utts with infrequent phones'.format(nb_removed))
             N_parsed = N_parsed - nb_removed
@@ -222,7 +215,6 @@ class SPSCSJPreparator(AbstractPreparator):
         proportion = 100.*N_parsed/float(N)
         self.log.info('{:.2f}% of {} utts successfully parsed'.format(proportion, N))
         print('{:.2f}% of {} utts successfully parsed'.format(proportion, N))
-
 
     def parse_xml(self, xml_file):
         """Parse raw transcript"""
@@ -239,7 +231,7 @@ class SPSCSJPreparator(AbstractPreparator):
         # using kanji for 'male'
         gender = 'M' if talk.attrib["SpeakerSex"] == u"男" else 'F'
         spk_id = gender + speaker
-        
+
         # Utterance level
         nb_utts = 0;
         nb_parsed_utts = 0;
@@ -259,7 +251,6 @@ class SPSCSJPreparator(AbstractPreparator):
         #print('{:.2f} percent of {} utts successfully parsed'.format(proportion,
         #                                                            nb_utts))
         return utts, nb_parsed_utts, nb_utts
-
 
     def parse_ipu(self, ipu, ipu_id):
         # Word level - Long Words Units (LUW) are taken as 'words'
@@ -283,7 +274,7 @@ class SPSCSJPreparator(AbstractPreparator):
                 luw_kanas = luw_kanas + kanas
             ipu_kanas.append(luw_kanas)
         if parse_successful:
-            #print(ipu_kanas)
+            # print(ipu_kanas)
             ipu_kanas = u"#WB#".join(ipu_kanas)  # word boundary tag
             # appropriately deal with potential CSJ tags
             ipu_kanas = untagCSJphoneticTranscript(ipu_kanas)
@@ -296,16 +287,15 @@ class SPSCSJPreparator(AbstractPreparator):
             if words is None:
                 parse_successful = False
             elif not(all([len(w) for w in words])):
-                #print("Empty LUW in IPU {}".format(ipu_id))
-                parse_successful = False 
+                # print("Empty LUW in IPU {}".format(ipu_id))
+                parse_successful = False
         if not(parse_successful):
-            #print("Ignoring IPU {}".format(ipu_id))
+            # print("Ignoring IPU {}".format(ipu_id))
             pass
         else:
-            #print(words)
+            # print(words)
             pass
         return words, parse_successful
-
 
     def lexicalize(self, utts):
         lexicon = {}
@@ -317,19 +307,21 @@ class SPSCSJPreparator(AbstractPreparator):
             words = []
             for phones in utt.words:
                 assert len(phones) > 0
-                assert phones != ['H']                
+                assert phones != ['H']
                 word = u"-".join(phones)
                 if word not in lexicon:
                     lexicon[word] = phones
                 words.append(word)
-                new_utts[utt_id] = {'words': words, 'start': start, 'end': stop}
-        return new_utts, lexicon
+                new_utts[utt_id] = {
+                    'words': words,
+                    'start': start,
+                    'end': stop}
 
+        return new_utts, lexicon
 
     def list_audio_files(self):
         return [os.path.join(self.input_dir, 'Waveforms', data + '.wav')
                 for data in self.data_files]
-
 
     def make_segment(self):
         segments = dict()
@@ -340,13 +332,11 @@ class SPSCSJPreparator(AbstractPreparator):
             segments[utt_id] = (wavefile, float(start), float(stop))
         return segments
 
-
     def make_speaker(self):
         utt2spk = dict()
         for utt_id in self.all_utts:
             utt2spk[utt_id] = utt_id.split("_")[0]
         return utt2spk
-
 
     def make_transcription(self):
         text = dict()
@@ -355,15 +345,13 @@ class SPSCSJPreparator(AbstractPreparator):
             text[utt_id] = words
         return text
 
-
     def make_lexicon(self):
-        return {k: ' '.join(v) for k, v in self.lexicon.iteritems()}
+        return {k: ' '.join(v) for k, v in self.lexicon.items()}
 
 
-
-#########################################################
-############### Dealing with CSJ tags ###################
-#########################################################
+# ########################################################
+# ############## Dealing with CSJ tags ###################
+# ########################################################
 
 def untagCSJphoneticTranscript(kanas):
     """
@@ -379,7 +367,7 @@ def untagCSJphoneticTranscript(kanas):
     # about tag scope for those tags.
     tags = [u"(L", u"(笑", u"(泣", u"(咳", u"<笑>", u"<咳>", u"<息>",
             u"<P",
-            u"(?", u"(O", u"(R", u"<VN>", u"<FV>"] 
+            u"(?", u"(O", u"(R", u"<VN>", u"<FV>"]
     for tag in tags:
         if tag in kanas:
             #print(tag)
@@ -441,12 +429,12 @@ def parse_toplevel_tags(kanas):
         tokens.append(kanas[last_i+1:])
     return tokens
 
-    
+
 def process_toplevel_tag(kanas, changed):
     # range tags without semicolon
     tags = [u"F", u"D", u"D2", u"M"]
     tag = startswithtag(kanas, tags)
-    if not(tag is None):         
+    if not(tag is None):
         kanas = kanas[len(tag)+2:-1]
         changed = True
     # range tags with semicolon
@@ -491,7 +479,7 @@ def leftofsemicolon(kanas, tags, changed):
         else:
             kanas = kanas[len(tag)+2:semicolon_ind]
             changed = True
-    return kanas, changed    
+    return kanas, changed
 
 
 #########################################################
@@ -503,22 +491,22 @@ def kana2phones(kanas):
     Convert CSJ kanas into phonemes following the
     phonemic foldings described in:
       https://docs.google.com/spreadsheets/d/1a4ZWvuKfe2wMd_sVOid3KLY7PqKQkPe1uYNa_7zC5Gw/edit?pli=1#gid=0
-    Input: 
+    Input:
         a unicode string of kanas from the CSJ "PhoneticTranscription"
             annotation tier containing all LUW unit for an IPU concatenated
             with u"#WB#"
     Output: None if the parsing failed or a list of lists [LUW1, LUW2, ...]
-            where LUWi is the list of phonemes for the i-th LUW 
+            where LUWi is the list of phonemes for the i-th LUW
     """
     H = u"ー"
 
     vowel_hiragana = {u"あ" : ["a"], u"い" : ["i"], u"う" : ["u"], u"え" : ["e"], u"お" : ["o"]}
-  
+
     small_kana = {u"ァ" : ["a"], u"ィ" : ["i"], u"ゥ" : ["u"], u"ェ" : ["e"], u"ォ" : ["o"],
                   u"ャ" : ["y a"], u"ュ" :  ["y u"], u"ョ" : ["y o"]}
 
     big_kana = {
-        u"ア" : ["a"], 
+        u"ア" : ["a"],
         u"イ" : ["i"],
         u"ウ" : ["u"],
         u"エ" : ["e"],
@@ -634,7 +622,7 @@ def kana2phones(kanas):
         u"リャ" : ["r+y", "a"],
         u"リュ" : ["r+y", "u"],
         u"リョ" : ["r+y", "o"],
-        u"ティ" : ["t", "i"], 
+        u"ティ" : ["t", "i"],
         u"テュ" : ["t+y", "u"],
         u"ウォ" : ["u", "o"],
         u"ツァ" : ["c", "u", "a"],
@@ -644,7 +632,7 @@ def kana2phones(kanas):
         u"トゥ" : ["t", "o", "u"],
         u"ドゥ" : ["d", "o", "u"],
         u"フォ" : ["F", "u", "o"],
-        u"ディ" : ["d", "e", "i"], 
+        u"ディ" : ["d", "e", "i"],
         u"ジェ" : ["z+y", "e"],
         u"フェ" : ["F", "u", "e"],
         u"フィ" : ["F", "u", "i"],
@@ -663,7 +651,7 @@ def kana2phones(kanas):
 
     parse_successful = True
 
-    # First: check that input is a sequence of legal kanas 
+    # First: check that input is a sequence of legal kanas
     legal_kanas = list(vowel_hiragana.keys()) + \
                   list(small_kana.keys()) + \
                   list(big_kana.keys()) + \
@@ -692,8 +680,8 @@ def kana2phones(kanas):
     # Third: some post-processing to get to Bootphon format for Japanese
     # phonetic transcriptions
     if parse_successful:
-        phonemes, parse_successful = mergeHQluw(phonemes)  
-    #previous_LUW_last_phone = None    
+        phonemes, parse_successful = mergeHQluw(phonemes)
+    #previous_LUW_last_phone = None
     old_phonemes = phonemes
     phonemes = []
     for luw_phonemes in old_phonemes:
@@ -712,7 +700,7 @@ def kana2phones(kanas):
         else:
             phonemes.append(new_luw_phonemes)
             #previous_LUW_last_phone = new_luw_phonemes[-1]
-    
+
     # return result
     if not(parse_successful):
         phonemes = None
@@ -722,7 +710,7 @@ def kana2phones(kanas):
 
 def mergeHQluw(phonemes):
     """
-    We don't want words finishing with Q or starting with H 
+    We don't want words finishing with Q or starting with H
     because we are using a phoneset where these phones do no occur
     in isolation.
     Our solution is just to merge the two LUWs over which the geminate or
@@ -773,7 +761,7 @@ def parse_luw(kanas, big_kana, small_kana, H, big_kana_plus_small_kana,
             phonemes = phonemes + phoneme_seq
             kanas = kanas[2:]
         elif len(kanas) >=2 and kanas[0] in vowel_hiragana and kanas[1] == H:
-            # 5. vowel hiragana + H 
+            # 5. vowel hiragana + H
             phoneme_seq = vowel_hiragana[kanas[0]]
             phoneme_seq = phoneme_seq[:-1] + [phoneme_seq[-1]+"+H"]
             phonemes = phonemes + phoneme_seq
@@ -789,10 +777,10 @@ def postprocessQ(phonemes):
     """
     Q is attached to following non-nasal obstruents, if any,
     if none parsing fails.
-    
+
     This is done only within LUW for now.
-     
-    Input and output: a list of phonemes for the LUW 
+
+    Input and output: a list of phonemes for the LUW
     """
     parse_successful=True
     obstruents = ["d", "d+y", "t", "t+y", "c", "c+y", "s", "s+y",
@@ -801,7 +789,7 @@ def postprocessQ(phonemes):
     if len(phonemes) > 1:
         old_phonemes = phonemes
         phonemes = []
-        previous_phone = old_phonemes[0]    
+        previous_phone = old_phonemes[0]
         for old_phoneme in old_phonemes[1:]:
             phoneme = old_phoneme
             if previous_phone == 'Q':
@@ -822,7 +810,7 @@ def postprocessQ(phonemes):
     else:
         if phonemes[0] == 'Q':
             #print("Illegal geminate pattern: {}".format(phonemes))
-            parse_successful = False           
+            parse_successful = False
     return phonemes, parse_successful
 
 
@@ -897,14 +885,14 @@ def break_glides_clusters(utts):
     clusters = ['k+y', 'g+y', 'n+y', 'h+y', 'b+y',
                 'p+y', 'm+y', 'r+y', 't+y', 'd+y',
                 'Q+k+y', 'Q+g+y', 'Q+h+y', 'Q+b+y',
-                'Q+p+y', 'Q+t+y', 'Q+d+y']    
+                'Q+p+y', 'Q+t+y', 'Q+d+y']
     for utt_id in utts:
         utt = utts[utt_id]
         luws = utt.words
         new_luws = [[
                      e for phone in luw_phones
                             for e in break_cluster(phone, clusters)
-                    ] for luw_phones in luws] 
+                    ] for luw_phones in luws]
         utts[utt_id] = Utt(new_luws, utt.start, utt.end, utt.channel)
     return utts
 

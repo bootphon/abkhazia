@@ -35,8 +35,8 @@ def test_features(pitch, ftype, corpus, tmpdir):
     log = utils.logger.get_log(flog)
 
     # keep only 3 utterances for testing speed
-    subcorpus = corpus.subcorpus(corpus.utts()[0:3])
-    assert len(subcorpus.utts()) == 3
+    subcorpus = corpus.subcorpus(list(corpus.utts())[0:3])
+    assert len(list(subcorpus.utts())) == 3
 
     # mfcc with few channels
     nbc = 3

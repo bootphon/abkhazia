@@ -79,7 +79,7 @@ class CorpusSaver(object):
     @staticmethod
     def save_lexicon(corpus, path):
         with open_utf8(path, 'w') as out:
-            for k, v in sorted(corpus.lexicon.iteritems()):
+            for k, v in sorted(corpus.lexicon.items()):
                 out.write(u'{} {}\n'.format(k, v))
 
     @staticmethod
@@ -91,7 +91,7 @@ class CorpusSaver(object):
 
         """
         with open_utf8(path, 'w') as out:
-            for k, v in sorted(corpus.segments.iteritems()):
+            for k, v in sorted(corpus.segments.items()):
                 # make sure we have the '.wav' extension
                 v = (append_ext(v[0], '.wav'), v[1], v[2])
 
@@ -111,13 +111,13 @@ class CorpusSaver(object):
     @staticmethod
     def save_text(corpus, path):
         with open_utf8(path, 'w') as out:
-            for k, v in sorted(corpus.text.iteritems()):
+            for k, v in sorted(corpus.text.items()):
                 out.write(u'{} {}\n'.format(k, v))
 
     @staticmethod
     def save_phones(corpus, path):
         with open_utf8(path, 'w') as out:
-            for k, v in sorted(corpus.phones.iteritems()):
+            for k, v in sorted(corpus.phones.items()):
                 out.write(u'{} {}\n'.format(k, v))
 
     @staticmethod
@@ -129,7 +129,7 @@ class CorpusSaver(object):
     @staticmethod
     def save_utt2spk(corpus, path):
         with open_utf8(path, 'w') as out:
-            for utt, spk in sorted(corpus.utt2spk.iteritems()):
+            for utt, spk in sorted(corpus.utt2spk.items()):
                 out.write(u'{} {}\n'.format(utt, spk))
 
     @staticmethod

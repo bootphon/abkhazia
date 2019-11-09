@@ -70,7 +70,7 @@ cd $kaldi/tools
 ./extras/check_dependencies.sh || failure "failed to check kaldi dependencies"
 # use clang instead of gcc, and openfst-1.4.1 instead of 1.3.4
 sed -i "s/CXX = g++/# CXX = g++/" Makefile
-sed -i "s/# CXX = clang++/CXX = clang++-3.9/" Makefile
+sed -i "s/# CXX = clang++/CXX = clang++/" Makefile
 sed -i "s/OPENFST_VERSION = 1.3.4/# OPENFST_VERSION = 1.3.4/" Makefile
 sed -i "s/# OPENFST_VERSION = 1.4.1/OPENFST_VERSION = 1.4.1/" Makefile
 make -j $ncores || failure "failed to build kaldi tools"
@@ -84,7 +84,7 @@ cd $kaldi/src
 sed -i "s/\-g # -O0 -DKALDI_PARANOID.*$/-O3 -DNDEBUG/" kaldi.mk
 # use clang instead of gcc
 sed -i "s/ -rdynamic//g" kaldi.mk
-sed -i "s/g++/clang++-3.9/" kaldi.mk
+sed -i "s/g++/clang++/" kaldi.mk
 make depend -j $ncores || failure "failed to setup kaldi dependencies"
 make -j $ncores || failure "failed to build kaldi"
 

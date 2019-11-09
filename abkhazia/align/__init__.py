@@ -13,4 +13,4 @@
 # You should have received a copy of the GNU General Public License
 # along with abkhazia. If not, see <http://www.gnu.org/licenses/>.
 
-from align import Align
+from abkhazia.align.align import Align

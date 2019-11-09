@@ -22,7 +22,7 @@ online_ivector_dir
 import os
 import abkhazia.utils as utils
 import abkhazia.kaldi as kaldi
-import _score
+from abkhazia.decode import _score
 
 
 def options():
@@ -56,7 +56,7 @@ def decode(decoder, graph_dir):
 
     # generate option string for decoding
     decode_opts = ' '.join('--{} {}'.format(n, str(o))
-                           for n, o in decoder.decode_opts.iteritems()
+                           for n, o in decoder.decode_opts.items()
                            if n != 'transform-dir')
     _k = decoder.decode_opts['transform-dir'].value
     if _k != '':

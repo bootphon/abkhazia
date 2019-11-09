@@ -22,7 +22,7 @@ transform_dir
 import os
 import abkhazia.utils as utils
 import abkhazia.kaldi as kaldi
-import _score
+from abkhazia.decode import _score
 
 
 def options():
@@ -42,52 +42,53 @@ def options():
 
 
 def decode(decoder, graph_dir):
-        decoder.log.info('decoding and computing WER')
+    decoder.log.info('decoding and computing WER')
 
-        # generate option string for decoding
-        decode_opts = ' '.join('--{} {}'.format(n, str(o))
-                               for n, o in decoder.decode_opts.iteritems())
+    # generate option string for decoding
+    decode_opts = ' '.join(
+        '--{} {}'.format(n, str(o))
+        for n, o in decoder.decode_opts.items())
 
-        target = os.path.join(decoder.recipe_dir, 'decode')
-        if not os.path.isdir(target):
-            os.makedirs(target)
-        
-        if decoder.fmllr_dir is not None:
-            fmllr_dir = " --transform-dir " + decoder.fmllr_dir
-        else:
-            fmllr_dir = ""
-        print fmllr_dir 
-        print ('steps/decode.sh --nj {njobs} --cmd "{cmd}" '
-            '--model {model} {decode_opts} {skip_scoring} '
-            '--scoring-opts "{score_opts}" {graph} {data} '
-            ' {decode} {fmllr_dir}'.format(
-                njobs=decoder.njobs,
-                cmd=utils.config.get('kaldi', 'decode-cmd'),
-                # TODO .mdl or .alimdl ?
-                model=os.path.join(decoder.am_dir, 'final.mdl'),
-                decode_opts=decode_opts,
-                skip_scoring=_score.skip_scoring(decoder.score_opts),
-                score_opts=_score.format(
-                    decoder.score_opts, decoder.mkgraph_opts),
-                graph=graph_dir,
-                data=os.path.join(decoder.recipe_dir, 'data', decoder.name),
-                decode=target, fmllr_dir=fmllr_dir))
-        decoder._run_command((
-            'steps/decode.sh --nj {njobs} --cmd "{cmd}" '
-            '--model {model} {decode_opts} {skip_scoring} '
-            '{fmllr_dir} '
-            '--scoring-opts "{score_opts}" {graph} {data} '
-            ' {decode}'.format(
-                njobs=decoder.njobs,
-                cmd=utils.config.get('kaldi', 'decode-cmd'),
-                # TODO .mdl or .alimdl ?
-                model=os.path.join(decoder.am_dir, 'final.mdl'),
-                decode_opts=decode_opts,
-                skip_scoring=_score.skip_scoring(decoder.score_opts),
-                score_opts=_score.format(
-                    decoder.score_opts, decoder.mkgraph_opts),
-                graph=graph_dir,
-                data=os.path.join(decoder.recipe_dir, 'data', decoder.name),
-                decode=target, fmllr_dir=fmllr_dir)))
+    target = os.path.join(decoder.recipe_dir, 'decode')
+    if not os.path.isdir(target):
+        os.makedirs(target)
 
-        return target
+    if decoder.fmllr_dir is not None:
+        fmllr_dir = " --transform-dir " + decoder.fmllr_dir
+    else:
+        fmllr_dir = ""
+    print(fmllr_dir)
+    print('steps/decode.sh --nj {njobs} --cmd "{cmd}" '
+          '--model {model} {decode_opts} {skip_scoring} '
+          '--scoring-opts "{score_opts}" {graph} {data} '
+          ' {decode} {fmllr_dir}'.format(
+              njobs=decoder.njobs,
+              cmd=utils.config.get('kaldi', 'decode-cmd'),
+              # TODO .mdl or .alimdl ?
+              model=os.path.join(decoder.am_dir, 'final.mdl'),
+              decode_opts=decode_opts,
+              skip_scoring=_score.skip_scoring(decoder.score_opts),
+              score_opts=_score.format(
+                  decoder.score_opts, decoder.mkgraph_opts),
+              graph=graph_dir,
+              data=os.path.join(decoder.recipe_dir, 'data', decoder.name),
+              decode=target, fmllr_dir=fmllr_dir))
+    decoder._run_command((
+        'steps/decode.sh --nj {njobs} --cmd "{cmd}" '
+        '--model {model} {decode_opts} {skip_scoring} '
+        '{fmllr_dir} '
+        '--scoring-opts "{score_opts}" {graph} {data} '
+        ' {decode}'.format(
+            njobs=decoder.njobs,
+            cmd=utils.config.get('kaldi', 'decode-cmd'),
+            # TODO .mdl or .alimdl ?
+            model=os.path.join(decoder.am_dir, 'final.mdl'),
+            decode_opts=decode_opts,
+            skip_scoring=_score.skip_scoring(decoder.score_opts),
+            score_opts=_score.format(
+                decoder.score_opts, decoder.mkgraph_opts),
+            graph=graph_dir,
+            data=os.path.join(decoder.recipe_dir, 'data', decoder.name),
+            decode=target, fmllr_dir=fmllr_dir)))
+
+    return target
