@@ -44,11 +44,6 @@ setup(
     zip_safe=False,
     scripts=[],
 
-    # install dependancies from bootphon github
-    dependency_links=[
-        GITHUB_BOOTPHON +
-        'h5features/archive/v1.3.2.tar.gz#egg=h5features-1.3.2'],
-
     # install python dependencies from PyPI
     install_requires=REQUIREMENTS,
 
