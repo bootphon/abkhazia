@@ -323,8 +323,10 @@ class CorpusValidation(object):
         # with articulatory features databases of IPA or just basic
         # IPA correctness
         self.log.debug('checking phones')
-        phones = self.corpus.phones.keys()
-        ipas = self.corpus.phones.values()
+        phones = list(self.corpus.phones.keys())
+        ipas = list(self.corpus.phones.values())
+
+        self._check_empty_entry(phones)
 
         if len(phones) == 0:
             raise IOError('The phones inventory is empty')
@@ -369,6 +371,8 @@ class CorpusValidation(object):
         self.log.debug('checking silences')
         sils = self.corpus.silences
 
+        self._check_empty_entry(sils)
+
         _duplicates = duplicates(sils)
         if _duplicates:
             raise IOError(
@@ -395,6 +399,8 @@ class CorpusValidation(object):
         self.log.debug('checking variants')
         variants = self.corpus.variants
 
+        self._check_empty_entry(variants)
+
         all_symbols = [symbol for group in variants for symbol in group]
         unknown_symbols = [symbol for symbol in all_symbols
                            if symbol not in phones and symbol not in sils]
@@ -411,6 +417,13 @@ class CorpusValidation(object):
                     "in variants: {}".format(_duplicates))
 
         return set.union(set(phones), set(sils))
+
+    @staticmethod
+    def _check_empty_entry(entries):
+        """Raise IOError if any element of the list `entries` is empty"""
+        for n, entry in enumerate(entries, start=1):
+            if not entry.strip():
+                raise IOError(f'line {n} is empty')
 
     def validate_lexicon(self, inventory):
         self.log.debug("checking lexicon")
