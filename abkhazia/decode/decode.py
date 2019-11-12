@@ -59,8 +59,8 @@ class Decode(abstract_recipe.AbstractRecipe):
             'nnet': 'nnet'}[self.am_type]
         if decode_type and self._decoder_type != decode_type:
             raise IOError(
-                '''cannot setup decoder, acoustic model
-                and decoder type are not compatible''')
+                'Cannot setup decoder, acoustic model '
+                'and decoder type are not compatible')
         self._decoder = decoders[self._decoder_type]
 
         self.mkgraph_opts = _mkgraph.options()

@@ -66,7 +66,7 @@ def decode(decoder, graph_dir):
     if not os.path.isdir(target):
         os.makedirs(target)
 
-    # link requesteed files to decoder.recipe_dir. final.mdl is
+    # link requested files to decoder.recipe_dir. final.mdl is
     # mandatory (raise if not found), others are optional and Kaldi
     # will work without
     for linked in ('final.mdl', 'cmvn_opts', 'final.mat',
@@ -75,7 +75,7 @@ def decode(decoder, graph_dir):
         if os.path.exists(src):
             os.symlink(src, os.path.join(decoder.recipe_dir, linked))
         elif linked == 'final.mdl':
-            raise IOError('model file not found {}'.format(src))
+            raise IOError('acoustic model file not found: {}'.format(src))
         else:
             decoder.log.info('optional file not here %s', src)
 

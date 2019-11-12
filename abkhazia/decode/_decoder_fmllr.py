@@ -66,43 +66,30 @@ def decode(decoder, graph_dir):
     if decoder.mkgraph_opts['reverse'].value:
         score_opts += ' --reverse true'
 
-    # decode_fmllr.sh must be run from a subdirectory of the input
-    # acoustic model directory (here decoder.am_dir). So we do: create
-    # a subdir in am_dir as a symlink to the target recipe_dir, run
-    # the script in it, and finally delete the symlink. Moreover the
-    # script make a speaker independant decoding so we use the tweak
-    # again for si.
-    #
-    # TODO This is an error to assume write permission in
-    # decoder.am_dir!! Instead we must copy (link) the required files
-    # to decoder.recipe_dir (as in _decoder_nnet)
-    try:
-        target_sa = os.path.join(decoder.recipe_dir, 'decode')
-        if not os.path.isdir(target_sa):
-            os.makedirs(target_sa)
-        tempdir_sa = os.path.join(decoder.am_dir, 'decode_fmllr')
-        os.symlink(target_sa, tempdir_sa)
+    target = os.path.join(decoder.recipe_dir, 'decode')
+    if not os.path.isdir(target):
+        os.makedirs(target)
 
-        target_si = os.path.join(decoder.recipe_dir, 'decode.si')
-        if not os.path.isdir(target_si):
-            os.makedirs(target_si)
-        tempdir_si = os.path.join(decoder.am_dir, 'decode_fmllr.si')
-        os.symlink(target_si, tempdir_si)
+    # link requested files to decoder.recipe_dir. final.mat is optional (here
+    # only if features type is LDA)
+    for linked in ('final.mdl', 'final.alimdl', 'tree', 'final.mat'):
+        src = os.path.join(decoder.am_dir, linked)
+        if os.path.exists(src):
+            os.symlink(src, os.path.join(decoder.recipe_dir, linked))
+        elif linked == 'final.mat':
+            pass
+        else:
+            raise IOError('acoustic model file not found: {}'.format(src))
 
-        decoder._run_command((
-            'steps/decode_fmllr.sh --nj {njobs} --cmd "{cmd}" '
-            '{decode_opts} {skip_scoring} --scoring-opts "{score_opts}" '
-            '{graph} {data} {decode}'.format(
-                njobs=decoder.njobs,
-                cmd=utils.config.get('kaldi', 'decode-cmd'),
-                decode_opts=decode_opts,
-                skip_scoring=_score.skip_scoring(decoder.score_opts),
-                score_opts=_score.format(
-                    decoder.score_opts, decoder.mkgraph_opts),
-                graph=graph_dir,
-                data=os.path.join(decoder.recipe_dir, 'data', decoder.name),
-                decode=tempdir_sa)))
-    finally:
-        # remove the two symlinks we created in input am_dir
-        utils.remove(tempdir_si)
-        utils.remove(tempdir_sa)
+    decoder._run_command((
+        'steps/decode_fmllr.sh --nj {njobs} --cmd "{cmd}" '
+        '{decode_opts} {skip_scoring} --scoring-opts "{score_opts}" '
+        '{graph} {data} {decode}'.format(
+            njobs=decoder.njobs,
+            cmd=utils.config.get('kaldi', 'decode-cmd'),
+            decode_opts=decode_opts,
+            skip_scoring=_score.skip_scoring(decoder.score_opts),
+            score_opts=_score.format(decoder.score_opts, decoder.mkgraph_opts),
+            graph=graph_dir,
+            data=os.path.join(decoder.recipe_dir, 'data', decoder.name),
+            decode=target)))

@@ -81,7 +81,6 @@ Those messages are actually logged in debug level, should be smater to be warnon
 2016-10-12 16:33:58,373 - DEBUG - WARNING (apply-cmvn:Write():util/kaldi-holder-inl.h:54) Exception caught writing Table object: ERROR (apply-cmvn:Write():kaldi-matrix.cc:1229) Failed to write matrix to stream
 ** TODO Have completion setup during installation (or configuration?)
 ** TODO Have a test_commands module for testing command line interface
-** TODO Remove the wiki page on github, as we have now a readthedoc site
 * New specifications (0.4)
 #+begin_src python
   corpus = BuckeyeCorpusPreparator('./buckeye').prepare()
