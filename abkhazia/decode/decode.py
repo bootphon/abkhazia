@@ -23,11 +23,11 @@ import abkhazia.features as features
 import abkhazia.acoustic as acoustic
 import abkhazia.utils as utils
 
-import _mkgraph
-import _decoder
-import _decoder_fmllr
-import _decoder_nnet
-import _score
+from abkhazia.decode import _mkgraph
+from abkhazia.decode import _decoder
+from abkhazia.decode import _decoder_fmllr
+from abkhazia.decode import _decoder_nnet
+from abkhazia.decode import _score
 
 
 decoders = {
@@ -47,8 +47,9 @@ class Decode(abstract_recipe.AbstractRecipe):
         self.lm_dir = os.path.abspath(lm_dir)
         self.am_dir = os.path.abspath(am_dir)
         # if fmllr are already computed and given in input:
-        self.fmllr_dir = os.path.abspath(fmllr_dir) if fmllr_dir is not None\
-                         else None
+        self.fmllr_dir = (
+            os.path.abspath(fmllr_dir) if fmllr_dir is not None
+            else None)
 
         self.am_type = acoustic.model_type(am_dir)
         self._decoder_type = {
@@ -61,7 +62,6 @@ class Decode(abstract_recipe.AbstractRecipe):
                 '''cannot setup decoder, acoustic model
                 and decoder type are not compatible''')
         self._decoder = decoders[self._decoder_type]
-        
 
         self.mkgraph_opts = _mkgraph.options()
         self.decode_opts = self._decoder.options()

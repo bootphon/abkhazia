@@ -32,36 +32,38 @@ class AbkhaziaFilter(AbstractCoreCommand):
         parser, _ = super(AbkhaziaFilter, cls).add_parser(subparsers)
 
         group = parser.add_argument_group('filter arguments')
-    
+
         group.add_argument(
             '-f', '--function', type=str, metavar='<filter>',
             help='''Specifies the filtering function used on the speech distribution.
             Options are : power-law, step, exponential...''')
 
         group.add_argument(
-            '-n','--nb_speaker',default=None,type=int,metavar='<distribution>',
+            '-n', '--nb_speaker', default=None, type=int,
+            metavar='<distribution>',
             help='''An integer >1, represents the number of speaker we will keep
-                to plot the distribution (if no number specified, we keep all of
-                them)''')
-           
+            to plot the distribution (if no number specified, we keep all of
+            them)''')
+
         group.add_argument(
-            '-ns','--new_speakers',type=int,help=''' and integer >1, represents 
+            '-ns', '--new_speakers', type=int,
+            help=''' and integer >1, represents
             the number of speakers to include in the "family" part''')
-        
+
         group.add_argument(
-            '--plot',action="store_true",
+            '--plot', action="store_true",
             help='''If plot==True, a plot of the speech duration distribution and
             of the filtering function will be displayed''')
-        
+
         group.add_argument(
-            '--trim',action="store_true",
-            help='''if trim==True, the unwanted utterances will be removed from the 
+            '--trim', action="store_true",
+            help='''if trim==True, the unwanted utterances will be removed from the
             wav_files, and the segments updated accordingly. If trim==False,
             the segments file, text file, and utt2spk file will be updated,
             but the wav will still contain the unwanted utterances.''')
         group.add_argument(
-            '--THCHS30', action='store_true', 
-            help='''Set to true if treating the THCHS30 corpus, to avoid 
+            '--THCHS30', action='store_true',
+            help='''Set to true if treating the THCHS30 corpus, to avoid
             repetition of text between speakers.''')
 
         return parser
@@ -75,18 +77,18 @@ class AbkhaziaFilter(AbstractCoreCommand):
         corpus = Corpus.load(corpus_dir, validate=args.validate, log=log)
 
         # retrieve the test proportion
-        (subcorpus,not_kept_utterances)=corpus.create_filter(
-                output_dir, 
+        (subcorpus, not_kept_utterances) = corpus.create_filter(
+                output_dir,
                 function=args.function,
                 nb_speaker=args.nb_speaker,
                 new_speakers=args.new_speakers,
                 THCHS30=args.THCHS30)
-        
-        if args.plot: 
+
+        if args.plot:
             subcorpus.plot()
 
         if args.trim:
-            print "trimming utterances"
+            print("trimming utterances")
             subcorpus.save(
                     os.path.join(
                         output_dir, args.function, 'data'),
@@ -94,4 +96,3 @@ class AbkhaziaFilter(AbstractCoreCommand):
             subcorpus.trim(
                     corpus_dir, output_dir,
                     args.function, not_kept_utterances)
-        

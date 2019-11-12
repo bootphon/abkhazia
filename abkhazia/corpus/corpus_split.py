@@ -14,7 +14,7 @@
 # along with abkhazia. If not, see <http://www.gnu.org/licenses/>.
 """Provides the CorpusSplit class"""
 
-import ConfigParser
+import configparser
 import random
 from abkhazia.utils import logger, config
 
@@ -59,8 +59,8 @@ class CorpusSplit(object):
         random.seed(random_seed)
 
         # read utt2spk from the input corpus
-        utt_ids, utt_speakers = zip(*self.corpus.utt2spk.iteritems())
-        self.utts = zip(utt_ids, utt_speakers)
+        utt_ids, utt_speakers = zip(*self.corpus.utt2spk.items())
+        self.utts = list(zip(utt_ids, utt_speakers))
         self.size = len(utt_ids)
         self.speakers = set(utt_speakers)
         self.log.debug('loaded %i utterances from %i speakers',
@@ -74,7 +74,7 @@ class CorpusSplit(object):
         try:
             return float(config.get(
                 'split', 'default-test-proportion'))
-        except ConfigParser.NoOptionError:
+        except configparser.NoOptionError:
             return 0.5
 
     def split(self, train_prop=None, test_prop=None):

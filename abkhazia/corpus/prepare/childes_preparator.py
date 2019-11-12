@@ -210,7 +210,7 @@ class ChildesPreparator(AbstractPreparator):
         """
         self.log.info('parsing %s cha files...', len(chas))
         utts = {}
-        for cha, wav in chas.iteritems():
+        for cha, wav in chas.items():
             # duration of the wav in millisecond
             duration = utils.wav.duration(wav)
 
@@ -247,20 +247,20 @@ class ChildesPreparator(AbstractPreparator):
 
     def make_segment(self):
         segments = dict()
-        for k, v in self.utts.iteritems():
+        for k, v in self.utts.items():
             segments[k] = (os.path.splitext(os.path.basename(v.wav))[0],
                            float(v.tbegin), float(v.tend))
         return segments
 
     def make_speaker(self):
         utt2spk = dict()
-        for key in self.utts.iterkeys():
+        for key in self.utts.keys():
             utt2spk[key] = re.sub('-(.*)-(.*)', '', key)
         return utt2spk
 
     def make_transcription(self):
         text = dict()
-        for k, v in self.utts.iteritems():
+        for k, v in self.utts.items():
             # separate collocations into words for the phonemizer:
             # thank_you", delete the letter tag of childes: a@l
             # means letter a
@@ -273,7 +273,7 @@ class ChildesPreparator(AbstractPreparator):
         # delete the letter tag of childes: a@l means letter a, split
         # the utterances words.
         words = sorted(set(
-            word for utt in self.utts.itervalues() for word in
+            word for utt in self.utts.values() for word in
             re.sub('@[a-z]', '', utt.text.replace('_', ' ')).split(' ')
             if word != ''))
 

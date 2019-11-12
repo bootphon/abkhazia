@@ -159,7 +159,7 @@ class AICPreparator(AbstractPreparatorWithCMU):
         # count word frequencies in text TODO optimize, use
         # collections.Counter
         dict_word = {}
-        for k, v in self.text.iteritems():
+        for k, v in self.text.items():
             matched = re.match(r"([fm0-9]+)_([ps])_(.*?)", k)
             if matched:
                 for word in v.upper().split():
@@ -173,7 +173,7 @@ class AICPreparator(AbstractPreparatorWithCMU):
         lex = dict()
         oov = dict()
         cmu = self._load_cmu()
-        for word, freq in dict_word.iteritems():
+        for word, freq in dict_word.items():
             try:
                 lex[word] = cmu[word]
             except KeyError:
@@ -184,13 +184,13 @@ class AICPreparator(AbstractPreparatorWithCMU):
         """Create the lexicon file, convert from CMU to AC symbols"""
         lexicon = dict()
 
-        for k, v in lex.iteritems():
+        for k, v in lex.items():
             word = k.lower()
             phn_trs = self._cmu2aic(v)
             lexicon[word] = phn_trs
 
         # for the sounds
-        for k, v in oov.iteritems():
+        for k, v in oov.items():
             # discard the OOV with freq 1 because they are the
             # typos. They will remain OOVs
             if v > 1:

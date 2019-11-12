@@ -21,28 +21,68 @@ from abkhazia import utils
 from .conftest import assert_no_expr_in_log
 
 
-expected_ali = [
-    "s0102a-sent16 0.5875 0.9175 so",
-    "s0102a-sent16 0.9175 2.5875 i",
-    "s0102a-sent16 2.5875 0.1775 think",
-    "s0101b-sent24 0.1775 0.4975 i've",
-    "s0101b-sent24 0.4975 0.5575 heard",
-    "s0101b-sent24 0.5575 0.6875 some",
-    "s0101b-sent24 0.6875 0.9675 of",
-    "s0101b-sent24 0.9675 1.2675 them",
-    "s0101b-sent24 1.2675 1.4875 talk",
-    "s0101b-sent24 1.4875 1.8875 about",
-    "s0101b-sent24 1.8875 0.1875 it",
-    "s0102b-sent19 0.1875 0.2175 <VOCNOISE>",
-    "s0102b-sent19 0.2175 0.9575 that",
-    "s0101b-sent23 0.9575 0.3675 personally",
-    "s0102a-sent17 0.3675 3.0275 that's",
-    "s0102a-sent17 3.0275 3.1975 what",
-    "s0102a-sent17 3.1975 3.2275 i",
-    "s0102a-sent17 3.2275 3.3875 <SIL>",
-    "s0102a-sent17 3.3875 3.5075 <NOISE>",
-    "s0102a-sent17 3.5075 4.4075 recall",
-    "s0102a-sent17 4.4075 6.1975 missing"]
+expected_ali = {
+    'words': [
+        "s0102a-sent17 0.3675 3.0275 that's",
+        "s0102a-sent17 3.0275 3.1975 what",
+        "s0102a-sent17 3.1975 3.2275 i",
+        "s0102a-sent17 3.2275 3.3875 <SIL>",
+        "s0102a-sent17 3.3875 3.5075 <NOISE>",
+        "s0102a-sent17 3.5075 4.4075 recall",
+        "s0102a-sent17 4.4075 6.1975 missing",
+        "s0102a-sent17 6.1975 6.3275 <SIL>",
+        "s0102a-sent17 6.3275 6.6550 <IVER>"],
+    'phones': [
+        's0102a-sent17 0.0000 0.3675 SIL',
+        "s0102a-sent17 0.3675 0.5675 dh",
+        "s0102a-sent17 0.5675 0.7675 ae",
+        "s0102a-sent17 0.7675 0.7975 t",
+        "s0102a-sent17 0.7975 1.9275 s",
+        "s0102a-sent17 1.9275 3.0275 SIL",
+        "s0102a-sent17 3.0275 3.0575 w",
+        "s0102a-sent17 3.0575 3.0875 ah",
+        "s0102a-sent17 3.0875 3.1975 t",
+        "s0102a-sent17 3.1975 3.2275 ah",
+        "s0102a-sent17 3.2275 3.3875 SIL",
+        "s0102a-sent17 3.3875 3.5075 NSN",
+        "s0102a-sent17 3.5075 3.7175 r",
+        "s0102a-sent17 3.7175 3.8475 iy",
+        "s0102a-sent17 3.8475 4.2075 k",
+        "s0102a-sent17 4.2075 4.3575 ao",
+        "s0102a-sent17 4.3575 4.4075 l",
+        "s0102a-sent17 4.4075 4.4375 m",
+        "s0102a-sent17 4.4375 4.4875 ih",
+        "s0102a-sent17 4.4875 5.1975 s",
+        "s0102a-sent17 5.1975 6.1675 iy",
+        "s0102a-sent17 6.1675 6.1975 n",
+        "s0102a-sent17 6.1975 6.3275 SIL",
+        "s0102a-sent17 6.3275 6.6550 NSN"],
+    'both': [
+        's0102a-sent17 0.0000 0.3675 SIL',
+        "s0102a-sent17 0.3675 0.5675 dh that's",
+        "s0102a-sent17 0.5675 0.7675 ae",
+        "s0102a-sent17 0.7675 0.7975 t",
+        "s0102a-sent17 0.7975 1.9275 s",
+        "s0102a-sent17 1.9275 3.0275 SIL",
+        "s0102a-sent17 3.0275 3.0575 w what",
+        "s0102a-sent17 3.0575 3.0875 ah",
+        "s0102a-sent17 3.0875 3.1975 t",
+        "s0102a-sent17 3.1975 3.2275 ah i",
+        "s0102a-sent17 3.2275 3.3875 SIL <SIL>",
+        "s0102a-sent17 3.3875 3.5075 NSN <NOISE>",
+        "s0102a-sent17 3.5075 3.7175 r recall",
+        "s0102a-sent17 3.7175 3.8475 iy",
+        "s0102a-sent17 3.8475 4.2075 k",
+        "s0102a-sent17 4.2075 4.3575 ao",
+        "s0102a-sent17 4.3575 4.4075 l",
+        "s0102a-sent17 4.4075 4.4375 m missing",
+        "s0102a-sent17 4.4375 4.4875 ih",
+        "s0102a-sent17 4.4875 5.1975 s",
+        "s0102a-sent17 5.1975 6.1675 iy",
+        "s0102a-sent17 6.1675 6.1975 n",
+        "s0102a-sent17 6.1975 6.3275 SIL <SIL>",
+        "s0102a-sent17 6.3275 6.6550 NSN <IVER>"]}
+
 
 params = [(l, p) for l in ('phones', 'words', 'both') for p in (True, False)]
 
@@ -72,7 +112,7 @@ def test_align(
         ali_file = os.path.join(output_dir, 'alignment.txt')
         assert os.path.isfile(ali_file)
 
-        # # TODO fix that bug, the following assert must pass!
-        # if level == 'words' and not post:
-        #     res = [l.strip() for l in utils.open_utf8(ali_file, 'r')]
-        #     assert res == expected_ali
+        if not post:
+            res = [l.strip() for l in utils.open_utf8(ali_file, 'r')
+                   if l.startswith('s0102a-sent17')]
+            assert res == expected_ali[level]

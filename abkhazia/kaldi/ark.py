@@ -97,8 +97,9 @@ def ark_to_h5f(ark_files, h5_file, h5_group='features',
     """
     ark_files = list(ark_files)
 
-    assert h5_group not in h5py.File(h5_file), \
-        'group {} already exists in {}'.format(h5_group, h5_file)
+    if os.path.isfile(h5_file):
+        assert h5_group not in h5py.File(h5_file, 'r'), \
+            'group {} already exists in {}'.format(h5_group, h5_file)
 
     log.debug('converting %s ark file%s to h5features in %s/%s',
               len(ark_files),
@@ -220,7 +221,7 @@ def _ark_to_data(arkfile, sample_frequency=100, tstart=0.0125):
     times = [np.arange(val.shape[0], dtype=float) / sample_frequency + tstart
              for val in d.values()]
 
-    return h5f.Data(d.keys(), times, d.values())
+    return h5f.Data(list(d.keys()), times, list(d.values()))
 
 
 def _is_binary(arkfile):
@@ -233,14 +234,14 @@ def _is_binary(arkfile):
 
 def _ark_to_dict_binary(arkfile):
     res = {}
-    with open(arkfile) as fin:
+    with open(arkfile, 'rb') as fin:
         while True:
             # TODO break if empty buffer here
-            fname = ''
+            fname = b''
             c = fin.read(1)
-            if c == '':  # EOF (EOFError not raised by read(empty))
+            if c == b'':  # EOF (EOFError not raised by read(empty))
                 break
-            while c != ' ':
+            while c != b' ':
                 fname += c
                 c = fin.read(1)
 
@@ -264,7 +265,7 @@ def _ark_to_dict_binary(arkfile):
             size = nrows * ncols * 4
             data = np.frombuffer(
                 fin.read(size), dtype=np.float32).reshape((nrows, ncols))
-            res[fname] = data
+            res[fname.decode()] = data
     return res
 
 
@@ -295,7 +296,7 @@ def _str2np(data):
     npdata = np.zeros((len(data), len(data[0].split())))
     for i, line in enumerate(data):
         try:
-            npdata[i, :] = map(float, line.split())
+            npdata[i, :] = [float(f) for f in line.split()]
         except ValueError:
             raise ValueError(
                 'error converting str to float in:', line.strip())
@@ -325,7 +326,7 @@ def _yield_utt(arkfile):
 def _dict_to_txt_ark(arkfile, data, sort=True):
     """Save `data` as a Kaldi ark `arkfile`"""
     with open(arkfile, 'w') as fark:
-        for utt in sorted(data.iterkeys()) if sort else data.iterkeys():
+        for utt in sorted(data.keys()) if sort else data.keys():
             fark.write(utt + '  [\n')
             for vec in data[utt][:-1]:
                 fark.write('  ' + ' '.join(str(v) for v in vec) + ' \n')

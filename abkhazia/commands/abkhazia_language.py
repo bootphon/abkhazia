@@ -19,7 +19,7 @@ import os
 
 import abkhazia.utils as utils
 from abkhazia.commands.abstract_command import AbstractKaldiCommand
-from abkhazia.language import LanguageModel
+from abkhazia.language import LanguageModel, FlatLanguageModel
 from abkhazia.corpus import Corpus
 
 
@@ -50,7 +50,7 @@ class AbkhaziaLanguage(AbstractKaldiCommand):
 
         group.add_argument(
             '-n', '--model-order', type=int, metavar='<int>', default=2,
-            help='n in n-gram, must be a positive integer, '
+            help='n in n-gram, must be a positive integer or 0, if 0 computes a flat LM, '
             'default is %(default)s')
 
         group.add_argument(
@@ -67,11 +67,25 @@ class AbkhaziaLanguage(AbstractKaldiCommand):
 
         corpus = Corpus.load(corpus_dir, validate=args.validate, log=log)
 
-        # instanciate the lm recipe and compute
-        recipe = LanguageModel(
-            corpus, output_dir, log=log,
-            order=args.model_order, level=args.model_level,
-            position_dependent_phones=args.word_position_dependent,
-            silence_probability=args.silence_probability)
+        if args.model_order == 0:
+            # we want a flat LM
+            recipe = FlatLanguageModel(
+                corpus,
+                output_dir,
+                log=log,
+                level=args.model_level,
+                position_dependent_phones=args.word_position_dependent,
+                silence_probability=args.silence_probability)
+        else:
+            # order >= 1, classical ngram
+            recipe = LanguageModel(
+                corpus,
+                output_dir,
+                log=log,
+                order=args.model_order,
+                level=args.model_level,
+                position_dependent_phones=args.word_position_dependent,
+                silence_probability=args.silence_probability)
+
         recipe.delete_recipe = False if args.recipe else True
         recipe.compute()

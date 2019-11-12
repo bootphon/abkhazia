@@ -38,7 +38,7 @@ Exemple:
 
 """
 
-import ConfigParser
+import configparser
 import os
 import pkg_resources as pkg
 
@@ -97,7 +97,7 @@ class AbkhaziaConfig(object):
             config_file = self.default_config_file()
         self.config_file = os.path.abspath(config_file)
 
-        self.conf = ConfigParser.ConfigParser()
+        self.conf = configparser.ConfigParser()
         self.conf.readfp(open(self.config_file, 'r'))
 
         # remove any comments in the values (end of lines preceded by

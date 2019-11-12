@@ -83,7 +83,7 @@ class Abkhazia(object):
                     raise IOError(
                         'configuration file not found {}'.format(value))
 
-                print 'loading configuration from {}'.format(value)
+                print('loading configuration from {}'.format(value))
                 utils.config.read(value)
 
         # add a configuration argument
@@ -166,7 +166,8 @@ class CatchExceptions(object):
         try:
             self.function()
 
-        except (IOError, OSError, RuntimeError, AssertionError) as err:
+        except (IOError, OSError, RuntimeError,
+                AssertionError, ValueError) as err:
             self._exit('fatal error: {}'.format(err))
 
         except subprocess.CalledProcessError as err:
@@ -184,7 +185,7 @@ class CatchExceptions(object):
 # can be usefull to don't catch any exception, so the full error
 # traceback error is printed. To do so, just comment the following
 # line
-@CatchExceptions
+#@CatchExceptions
 def main():
     """abkhazia main entry point in command line"""
     Abkhazia()

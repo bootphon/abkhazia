@@ -14,7 +14,7 @@
 # along with abkhazia. If not, see <http://www.gnu.org/licenses/>.
 """Provides a base class for corpus preparation in the abkhazia format"""
 
-import ConfigParser
+import configparser
 import os
 import pkg_resources
 
@@ -67,7 +67,7 @@ class AbstractPreparator(object):
             name = cls.name.split('-')[0] + '-directory'
             res = utils.config.get('corpus', name)
             return None if res == '' else res
-        except ConfigParser.NoOptionError:
+        except configparser.NoOptionError:
             return None
 
     # TODO njobs as parameter

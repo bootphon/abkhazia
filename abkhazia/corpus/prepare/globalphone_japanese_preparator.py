@@ -26,11 +26,7 @@
     present abkhazia.
 """
 
-import tempfile
-import os
-
 import abkhazia.utils as utils
-from abkhazia.utils import open_utf8
 from abkhazia.corpus.prepare.globalphone_abstract_preparator import (
     AbstractGlobalPhonePreparator)
 
@@ -40,7 +36,7 @@ class JapanesePreparator(AbstractGlobalPhonePreparator):
     language = 'Japanese'
 
     name = '-'.join([AbstractGlobalPhonePreparator.name, language]).lower()
-    
+
     transcription_key = 'rmn'
 
     exclude_wavs = ['JA001_13', 'JA001_15', 'JA001_16', 'JA001_20', 'JA001_26',
@@ -466,7 +462,7 @@ class JapanesePreparator(AbstractGlobalPhonePreparator):
                     'JA228_6', 'JA228_7', 'JA228_9']
 
     # https://docs.google.com/spreadsheets/d/1a4ZWvuKfe2wMd_sVOid3KLY7PqKQkPe1uYNa_7zC5Gw/edit?pli=1#gid=0
-    # with C+glide considered as two separate phonemes    
+    # with C+glide considered as two separate phonemes
 
     vowels = {
         'a': u'ä',
@@ -498,7 +494,7 @@ class JapanesePreparator(AbstractGlobalPhonePreparator):
         's+y': u'ɕ',
         'Q+s+y': u'ɕ:',
         'z': u'z',  # fricative or affricate
-        'z+y': u'ʑ',  # fricative or affricate 
+        'z+y': u'ʑ',  # fricative or affricate
         'F': u'ɸ',
         'h': u'h',
         'g': u'g',
@@ -578,4 +574,3 @@ class JapanesePreparator(AbstractGlobalPhonePreparator):
     silences = []
 
     variants = []
-

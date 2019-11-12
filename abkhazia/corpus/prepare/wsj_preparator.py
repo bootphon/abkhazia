@@ -467,7 +467,7 @@ class WallStreetJournalPreparator(AbstractPreparatorWithCMU):
                 # skip alternative pronunciations, the first one
                 # (with no parenthesized number at the end) is
                 # supposed to be the most common and is retained
-                if not re.match(ur'(.*)\([0-9]+\)$', word):
+                if not re.match(r'(.*)\([0-9]+\)$', word):
                     # ignore stress variants of phones
                     lexicon[word] = re.sub(u'[0-9]+', u'', phones).strip()
 

@@ -83,7 +83,7 @@ class XitsongaPreparator(AbstractPreparator):
         'S': u'ʃ',
         'k_h': u'kʰ',
         'pj_>': u'pj\'',
-        'tS_>': ur'ts\ʼ',
+        'tS_>': u'ts\ʼ',
         'tS_h': u'tsʰ',
         'b': u'b',
         'z': u'z',

@@ -167,7 +167,7 @@ class MonophoneFromAlignment(Monophone):
         split_ali = {}
         for job in range(1, self.njobs + 1):
             split_ali[job] = []
-        for utt, line in ali.iteritems():
+        for utt, line in ali.items():
             try:
                 job = split_utt[utt]
                 split_ali[job].append(utt + ' ' + line.strip())

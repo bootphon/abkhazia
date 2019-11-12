@@ -14,4 +14,4 @@
 # along with abkhazia. If not, see <http://www.gnu.org/licenses/>.
 
 from abkhazia.language.language_model import (
-    LanguageModel, check_language_model, read_int2phone)
+    LanguageModel, FlatLanguageModel, check_language_model, read_int2phone)

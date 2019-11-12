@@ -28,7 +28,7 @@ import subprocess
 import wave
 
 import joblib
-import config  # this is abkhazia.utils.config
+import abkhazia.utils.config as config
 
 
 def wav2wav(wav_in, wav_out, copy=True):

@@ -17,7 +17,7 @@
 import collections
 import os
 
-from abkhazia.utils import duplicates, logger, wav, default_njobs, append_ext
+from abkhazia.utils import duplicates, logger, wav, default_njobs
 
 
 def resume_list(l, n=10):
@@ -81,7 +81,7 @@ class CorpusValidation(object):
 
         """
         self.log.info('validating corpus')
-        if len(self.corpus.utts()) == 0:
+        if not self.corpus.utts():
             raise IOError('corpus is empty')
 
         if meta is None:
@@ -128,7 +128,7 @@ class CorpusValidation(object):
 
         # get meta information on the wavs
         meta = wav.scan(wavs, njobs=self.njobs)
-        meta = {os.path.basename(k): v for k, v in meta.iteritems()}
+        meta = {os.path.basename(k): v for k, v in meta.items()}
 
         missing_meta = set.difference(self.corpus.wavs, meta.keys())
         if missing_meta:
@@ -261,7 +261,7 @@ class CorpusValidation(object):
                     "not consistent, see details in log")
 
         # speaker ids must have a fixed length
-        default_len = len(speakers[0])
+        default_len = len(list(speakers)[0])
         if not all([len(s) == default_len for s in speakers]):
             self.log.debug(
                 "Speaker-ids length observed in utt2spk with associated "
@@ -323,8 +323,10 @@ class CorpusValidation(object):
         # with articulatory features databases of IPA or just basic
         # IPA correctness
         self.log.debug('checking phones')
-        phones = self.corpus.phones.keys()
-        ipas = self.corpus.phones.values()
+        phones = list(self.corpus.phones.keys())
+        ipas = list(self.corpus.phones.values())
+
+        self._check_empty_entry(phones)
 
         if len(phones) == 0:
             raise IOError('The phones inventory is empty')
@@ -369,6 +371,8 @@ class CorpusValidation(object):
         self.log.debug('checking silences')
         sils = self.corpus.silences
 
+        self._check_empty_entry(sils)
+
         _duplicates = duplicates(sils)
         if _duplicates:
             raise IOError(
@@ -395,6 +399,8 @@ class CorpusValidation(object):
         self.log.debug('checking variants')
         variants = self.corpus.variants
 
+        self._check_empty_entry(variants)
+
         all_symbols = [symbol for group in variants for symbol in group]
         unknown_symbols = [symbol for symbol in all_symbols
                            if symbol not in phones and symbol not in sils]
@@ -412,14 +418,21 @@ class CorpusValidation(object):
 
         return set.union(set(phones), set(sils))
 
+    @staticmethod
+    def _check_empty_entry(entries):
+        """Raise IOError if any element of the list `entries` is empty"""
+        for n, entry in enumerate(entries, start=1):
+            if not entry.strip():
+                raise IOError(f'line {n} is empty')
+
     def validate_lexicon(self, inventory):
         self.log.debug("checking lexicon")
 
-        dict_words = self.corpus.lexicon.keys()
+        dict_words = list(self.corpus.lexicon.keys())
         transcriptions = [t.split() for t in self.corpus.lexicon.values()]
 
         # checks all words have a non empty transcription
-        empties = {k: v for k, v in self.corpus.lexicon.iteritems()
+        empties = {k: v for k, v in self.corpus.lexicon.items()
                    if v.strip() == ''}
         if empties:
             raise IOError(
@@ -450,7 +463,7 @@ class CorpusValidation(object):
         # TODO should we log a warning for all words containing silence phones?
 
         # unused words
-        used_words = [word for utt in self.corpus.text.itervalues()
+        used_words = [word for utt in self.corpus.text.values()
                       for word in utt.split()]
         dict_words_set = set(dict_words)
         used_word_types = set(used_words)
@@ -584,7 +597,7 @@ class CorpusValidation(object):
 
         short_utts = []
         warning = False
-        for _wav, utts in self.corpus.wav2utt().iteritems():
+        for _wav, utts in self.corpus.wav2utt().items():
             duration = meta[_wav].duration
 
             # check all utterances are within wav boundaries
@@ -658,4 +671,4 @@ class CorpusValidation(object):
     def _strcounts2unicode(strcounts):
         """Return a str representing strcounts"""
         return u", ".join(
-            [u"'" + s + u"': " + unicode(c) for s, c in strcounts])
+            ["'" + s + "': " + str(c) for s, c in strcounts])

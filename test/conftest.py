@@ -35,7 +35,7 @@ def assert_no_expr_in_log(flog, expr='error'):
                      if re.search(expr, line.lower())]
 
     if matched_lines:
-        print matched_lines
+        print(matched_lines)
         assert len(matched_lines) == 0
 
 
@@ -70,9 +70,13 @@ def prepare_corpus(utts, tmpdir):
     buckeye = os.path.join(
         utils.config.get('abkhazia', 'data-directory'),
         'buckeye', 'data')
-    if os.path.isdir(buckeye):
-        corpus = Corpus.load(buckeye)
 
+    # first search buckeye in the environment variable, the in the data
+    # directory from the configuration file
+    if 'ABKHAZIA_BUCKEYE' in os.environ:
+        corpus = Corpus.load(os.environ['ABKHAZIA_BUCKEYE'])
+    elif os.path.isdir(buckeye):
+        corpus = Corpus.load(buckeye)
     else:  # prepare the whole buckeye corpus
         buckeye = utils.config.get('corpus', 'buckeye-directory')
         corpus = BuckeyePreparator(buckeye).prepare(tmpdir)

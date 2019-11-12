@@ -99,7 +99,7 @@ def get_options(executable):
         helpmsg = subprocess.Popen(
             shlex.split(executable + ' --help'),
             stderr=subprocess.PIPE,
-            env=kaldi_path()).communicate()[1]
+            env=kaldi_path()).communicate()[1].decode()
     except OSError:
         raise RuntimeError('No such executable "{}"'.format(executable))
 
@@ -167,7 +167,7 @@ def add_options(parser, options,
 
         return ''.join((helpmsg, default))
 
-    opt_iter = ((name, entry) for name, entry in sorted(options.iteritems())
+    opt_iter = ((name, entry) for name, entry in sorted(options.items())
                 if name not in ignore)
     for name, entry in opt_iter:
         _type = _str2type(entry.type)
