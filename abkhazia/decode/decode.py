@@ -112,6 +112,10 @@ class Decode(abstract_recipe.AbstractRecipe):
         # build the full decoding graph
         graph_dir = _mkgraph.mkgraph(self)
 
+        # fixing data dir (exclude utterances with no features, usually the
+        # utterances shorter than 100ms)
+        self._fix_data_dir()
+
         # decode the corpus according to input am type
         self._decoder.decode(self, graph_dir)
 
@@ -135,3 +139,8 @@ class Decode(abstract_recipe.AbstractRecipe):
             os.path.join(self.output_dir, 'graph'))
 
         super(Decode, self).export()
+
+    def _fix_data_dir(self):
+        """Runs utils/fix_data_dir.sh"""
+        self._run_command('utils/fix_data_dir.sh {}'.format(
+            os.path.join(self.recipe_dir, 'data', self.name)))
