@@ -62,7 +62,7 @@ kaldi=$(realpath $kaldi/src)
 
 # make sure gfortran and clang++-3.9 are installed
 [ -z $(which gfortran) ] && failure "error: gfortran not installed, please install it"
-[ -z $(which clang++-3.9) ] && failure "error: clang++-3.9 not installed, please install it"
+[ -z $(which clang++) ] && failure "error: clang++ not installed, please install it"
 [ -z $(which gawk) ] && failure "error: gawk not installed, please install it"
 
 # compile kaldi tools
@@ -78,7 +78,7 @@ make -j $ncores || failure "failed to build kaldi tools"
 
 # compile kaldi src
 cd $kaldi/src
-./configure --openblas-root=../tools/OpenBLAS/install \
+./configure --use-cuda=no --openblas-root=../tools/OpenBLAS/install \
     || failure "failed to configure kaldi"
 # compile with optimizations and without debug symbols.
 sed -i "s/\-g # -O0 -DKALDI_PARANOID.*$/-O3 -DNDEBUG/" kaldi.mk
