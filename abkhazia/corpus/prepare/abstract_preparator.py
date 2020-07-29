@@ -103,12 +103,13 @@ class AbstractPreparator(object):
         self.log.info('converting %s to abkhazia', self.name)
         self.log.debug('reading from %s', self.input_dir)
 
-        # populate the corpus, ensure the wav-ids in segment have a
-        # '.wav' extension
+        # populate the corpus, ensure the wav-ids in segment have a '.wav'
+        # extension. Some preparators (at least LibriSpeech) require the wavs
+        # list to compute the segments.
         c = self.corpus
+        c.wav_folder = self.make_wavs(wavs_dir)
         c.segments = {k: (utils.append_ext(v[0], '.wav'), v[1], v[2])
                       for k, v in self.make_segment().items()}
-        c.wav_folder = self.make_wavs(wavs_dir)
         c.wavs = {w for w, _, _ in c.segments.values()}
         c.lexicon = self.make_lexicon()
         c.text = self.make_transcription()

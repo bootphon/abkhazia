@@ -44,4 +44,4 @@ documentation:
     - conda activate abkhazia-ci
     - pip install sphinx_rtd_theme
     - sphinx-build docs/source docs/build
-    - scp -r docs/build/* coml.lscp.ens.fr:/var/www/html/docs/abkhazia
+    - scp -r docs/build/* syntheticlearner.net:/var/www/docs.syntheticlearner.net/abkhazia
