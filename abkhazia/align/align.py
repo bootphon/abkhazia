@@ -31,6 +31,7 @@ two alignment recipes, the Align recipe seems to add more silences.
 """
 
 import gzip
+import ipdb
 import os
 import shutil
 import numpy as np
@@ -324,14 +325,15 @@ class Align(abstract_recipe.AbstractRecipe):
                 alignment.append(' '.join(line))
         yield utt_id, alignment
 
-    @classmethod
-    def _read_words(cls, path):
+    def _read_words(self, path):
         """Yield words alignement from a 'phone and words' alignment file"""
         word = None
         start = 0
         stop = 0
-        for utt_id, alignment in cls._read_utts(path):
-            for line in cls._read_splited(alignment):
+        for utt_id, alignment in self._read_utts(path):
+
+            for line in self._read_splited(alignment):
+                phone = line[3]
                 if len(line) == 5:  # new word
                     if word is not None:
                         yield ' '.join([utt_id, start, stop, word])
@@ -339,6 +341,9 @@ class Align(abstract_recipe.AbstractRecipe):
                     # utt_id = line[0]
                     start = line[1]
                     stop = line[2]
+                elif (phone in self.corpus.silences): 
+                    # Don't count SIL as part of the word
+                    continue
                 else:  # word continues
                     stop = line[2]
 
