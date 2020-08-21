@@ -370,17 +370,18 @@ class Align(abstract_recipe.AbstractRecipe):
 
         # align the utterance word by word
         index = 0
-        try:
-            for word in words:
+        for word in words:
+            try:
                 utt_align, index = self._align_word(word, utt_align, index)
-        except IndexError:
-            self.log.warning(
-                f'failed to align words from phones on utterance {utt_id}: '
-                f'phones dont match word')
-        except KeyError as err:
-            self.log.warning(
-                f'failed to align words from phones on utterance {utt_id}: '
-                f'{str(err)}')
+            except IndexError:
+                self.log.warning(
+                    f'failed to align words from phones on utterance {utt_id}: '
+                    f'phones dont match word')
+            except KeyError as err:
+                self.log.warning(
+                    f'failed to align words from phones on utterance {utt_id}: '
+                    f'{str(err)}')
+
 
         return utt_align
 
