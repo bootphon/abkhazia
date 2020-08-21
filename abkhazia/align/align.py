@@ -31,7 +31,6 @@ two alignment recipes, the Align recipe seems to add more silences.
 """
 
 import gzip
-import ipdb
 import os
 import shutil
 import numpy as np
@@ -331,7 +330,6 @@ class Align(abstract_recipe.AbstractRecipe):
         start = 0
         stop = 0
         for utt_id, alignment in self._read_utts(path):
-
             for line in self._read_splited(alignment):
                 phone = line[3]
                 if len(line) == 5:  # new word
