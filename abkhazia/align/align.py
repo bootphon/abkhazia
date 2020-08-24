@@ -396,6 +396,11 @@ class Align(abstract_recipe.AbstractRecipe):
             index = self._align_phone(phone, alignment, index)
             if n == 0:
                 alignment[index] += f' {word}'
+
+        # go to next phone, in case next word starts with same
+        # phone
+        index += 1
+
         return alignment, index
 
     @staticmethod
