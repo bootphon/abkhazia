@@ -53,10 +53,10 @@ following dependencies: Kaldi, sox, shorten and festival.
 C++ compilers
 -------------
 
-You need to have both ``gcc`` and ``clang-3.9`` installed. On
+You need to have both ``gcc`` and ``clang`` installed. On
 Debian/Ubuntu just have a::
 
-  sudo apt-get install gcc gfortran clang-3.9
+  sudo apt-get install gcc gfortran clang
 
 
 Flac, sox and festival

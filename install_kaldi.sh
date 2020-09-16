@@ -60,7 +60,7 @@ kaldi=$(realpath $kaldi/src)
          some of the scripts will not run properly. We recommend to run: \
          sudo ln -s -f bash /bin/sh"
 
-# make sure gfortran and clang++-3.9 are installed
+# make sure gfortran and clang++ are installed
 [ -z $(which gfortran) ] && failure "error: gfortran not installed, please install it"
 [ -z $(which clang++) ] && failure "error: clang++ not installed, please install it"
 [ -z $(which gawk) ] && failure "error: gawk not installed, please install it"

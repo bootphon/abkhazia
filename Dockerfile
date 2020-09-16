@@ -5,7 +5,7 @@ ENV TZ=America/New_York \
     LANG=C.UTF-8 \
     LC_ALL=C.UTF-8
 
-# install sotware dependencies
+# install software dependencies
 RUN apt-get update && apt-get install --no-install-recommends -y -qq \
   automake \
   autoconf \
