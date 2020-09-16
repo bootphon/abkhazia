@@ -3,7 +3,8 @@ FROM ubuntu:20.04
 ENV TZ=America/New_York \
     DEBIAN_FRONTEND=noninteractive \
     LANG=C.UTF-8 \
-    LC_ALL=C.UTF-8
+    LC_ALL=C.UTF-8 \
+    NCORES=4
 
 # install software dependencies
 RUN apt-get update && apt-get install --no-install-recommends -y -qq \
@@ -45,8 +46,7 @@ RUN wget http://shnutils.freeshell.org/shorten/dist/src/shorten-3.6.1.tar.gz && 
 
 # install kaldi
 WORKDIR /kaldi
-RUN export ncores=4 && \
-  ln -s /usr/bin/python2.7 /usr/bin/python && \
+RUN ln -s /usr/bin/python2.7 /usr/bin/python && \
   ln -s -f bash /bin/sh && \
   git clone --branch abkhazia --single-branch https://github.com/bootphon/kaldi.git . && \
   # compile kaldi tools
@@ -56,16 +56,16 @@ RUN export ncores=4 && \
   sed -i "s/# CXX = clang++/CXX = clang++/" Makefile && \
   sed -i "s/OPENFST_VERSION = 1.3.4/# OPENFST_VERSION = 1.3.4/" Makefile && \
   sed -i "s/# OPENFST_VERSION = 1.4.1/OPENFST_VERSION = 1.4.1/" Makefile && \
-  make -j $ncores && \
+  make -j $NCORES && \
   ./extras/install_openblas.sh && \
   # compile kaldi src
   cd /kaldi/src && \
-  ./configure --openblas-root=../tools/OpenBLAS/install && \
+  ./configure --openblas-root=/kaldi/tools/OpenBLAS/install && \
   sed -i "s/\-g # -O0 -DKALDI_PARANOID.*$/-O3 -DNDEBUG/" kaldi.mk && \
   sed -i "s/ -rdynamic//g" kaldi.mk && \
   sed -i "s/g++/clang++/" kaldi.mk && \
-  make depend -j $ncores && \
-  make -j $ncores && \
+  make depend -j $NCORES && \
+  make -j $NCORES && \
   # compile irstlm
   cd /kaldi/tools/extras && \
   rm -f install_irstlm.sh && \
@@ -75,6 +75,7 @@ RUN export ncores=4 && \
   cd /kaldi/tools && \
   ./extras/install_irstlm.sh && \
   # compile srilm
+  cd /kaldi/tools && \
   wget https://github.com/denizyuret/nlpcourse/raw/master/download/srilm-1.7.0.tgz -O srilm.tgz && \
   ./extras/install_srilm.sh
 
