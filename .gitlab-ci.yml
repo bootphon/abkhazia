@@ -33,7 +33,7 @@ abkhazia-deploy:
     - python setup.py build
     - python setup.py install
 
-# documentation is available on https://coml.lscp.ens.fr/docs/abkhazia
+# documentation is available on https://docs.cognitive-ml.fr/abkhazia
 documentation:
   stage: deploy
   only:
@@ -44,4 +44,4 @@ documentation:
     - conda activate abkhazia-ci
     - pip install sphinx_rtd_theme
     - sphinx-build docs/source docs/build
-    - scp -r docs/build/* syntheticlearner.net:/var/www/docs.syntheticlearner.net/abkhazia
+    - scp -r docs/build/* cognitive-ml.fr:/var/www/docs.cognitive-ml.fr/abkhazia
