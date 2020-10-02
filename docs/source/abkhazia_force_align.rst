@@ -21,8 +21,8 @@ Corpus format
 =============
 
 The corpus format is the same as the one specified in :ref:`abkhazia_format`, two
- corpus files having a bit more specific format, namely ``text.txt`` and ``lexicon.txt``.
- Here, ``text.txt`` is composed of your phonemic transcription of each utterance::
+corpus files having a bit more specific format, namely ``text.txt`` and ``lexicon.txt``.
+Here, ``text.txt`` is composed of your phonemic transcription of each utterance::
 
   <utterance-id> <pho1> <pho2> ... <phoN>
 
