@@ -192,9 +192,9 @@ def dict_to_ark(arkfile, data, format='text'):
     RuntimeError if format is not 'text' or 'binary'
 
     """
-    if format is 'text':
+    if format == 'text':
         _dict_to_txt_ark(arkfile, data)
-    elif format is 'binary':
+    elif format == 'binary':
         with tempfile.NamedTemporaryFile(
                 dir=utils.config.get('abkhazia', 'tmp-directory')) as tmp:
             _dict_to_txt_ark(tmp.name, data)

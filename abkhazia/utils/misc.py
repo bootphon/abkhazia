@@ -19,7 +19,7 @@ import collections
 import multiprocessing
 import re
 
-import abkhazia.utils.config as config
+from .config import config
 
 
 def default_njobs(nj_queue=20, local=False):
@@ -29,7 +29,7 @@ def default_njobs(nj_queue=20, local=False):
     features computation in the kaldi WSJ recipe.
 
     """
-    cmd = config.config.get('kaldi', 'train-cmd')
+    cmd = config.get('kaldi', 'train-cmd')
     return (nj_queue if not local and 'queue' in cmd
             else multiprocessing.cpu_count())
 

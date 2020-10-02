@@ -324,14 +324,14 @@ class Align(abstract_recipe.AbstractRecipe):
                 alignment.append(' '.join(line))
         yield utt_id, alignment
 
-    @classmethod
-    def _read_words(cls, path):
+    def _read_words(self, path):
         """Yield words alignement from a 'phone and words' alignment file"""
         word = None
         start = 0
         stop = 0
-        for utt_id, alignment in cls._read_utts(path):
-            for line in cls._read_splited(alignment):
+        for utt_id, alignment in self._read_utts(path):
+            for line in self._read_splited(alignment):
+                phone = line[3]
                 if len(line) == 5:  # new word
                     if word is not None:
                         yield ' '.join([utt_id, start, stop, word])
@@ -339,6 +339,9 @@ class Align(abstract_recipe.AbstractRecipe):
                     # utt_id = line[0]
                     start = line[1]
                     stop = line[2]
+                elif (phone in self.corpus.silences): 
+                    # Don't count SIL as part of the word
+                    continue
                 else:  # word continues
                     stop = line[2]
 
@@ -367,17 +370,18 @@ class Align(abstract_recipe.AbstractRecipe):
 
         # align the utterance word by word
         index = 0
-        try:
-            for word in words:
+        for word in words:
+            try:
                 utt_align, index = self._align_word(word, utt_align, index)
-        except IndexError:
-            self.log.warning(
-                f'failed to align words from phones on utterance {utt_id}: '
-                f'phones dont match word')
-        except KeyError as err:
-            self.log.warning(
-                f'failed to align words from phones on utterance {utt_id}: '
-                f'{str(err)}')
+            except IndexError:
+                self.log.warning(
+                    f'failed to align words from phones on utterance {utt_id}: '
+                    f'phones dont match word')
+            except KeyError as err:
+                self.log.warning(
+                    f'failed to align words from phones on utterance {utt_id}: '
+                    f'{str(err)}')
+
 
         return utt_align
 
@@ -392,6 +396,11 @@ class Align(abstract_recipe.AbstractRecipe):
             index = self._align_phone(phone, alignment, index)
             if n == 0:
                 alignment[index] += f' {word}'
+
+        # go to next phone, in case next word starts with same
+        # phone
+        index += 1
+
         return alignment, index
 
     @staticmethod

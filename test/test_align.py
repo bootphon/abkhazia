@@ -23,7 +23,7 @@ from .conftest import assert_no_expr_in_log
 
 expected_ali = {
     'words': [
-        "s0102a-sent17 0.3675 3.0275 that's",
+        "s0102a-sent17 0.3675 1.9275 that's",
         "s0102a-sent17 3.0275 3.1975 what",
         "s0102a-sent17 3.1975 3.2275 i",
         "s0102a-sent17 3.2275 3.3875 <SIL>",

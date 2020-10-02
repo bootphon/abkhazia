@@ -1,6 +1,6 @@
 # Abkhazia
 
-### See Online documentation https://coml.lscp.ens.fr/docs/abkhazia
+### See Online documentation https://docs.cognitive-ml.fr/abkhazia
 
 The Abkhazia project makes it easy to obtain simple baselines for
 supervised ASR (using [Kaldi](http://kaldi-asr.org)) and ABX tasks

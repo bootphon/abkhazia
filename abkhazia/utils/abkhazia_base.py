@@ -18,8 +18,8 @@ Defines a logger and a metadata handler.
 
 """
 
-from abkhazia.utils.meta import Meta
-from abkhazia.utils.logger import null_logger
+from .meta import Meta
+from .logger import null_logger
 
 
 class AbkhaziaBase(object):

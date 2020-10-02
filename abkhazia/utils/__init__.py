@@ -19,8 +19,8 @@ from .path import *
 from .misc import *
 from .config import config, AbkhaziaConfig
 
-import abkhazia.utils.abkhazia_base as abkhazia_base
-import abkhazia.utils.logger as logger
-import abkhazia.utils.wav as wav
-import abkhazia.utils.jobs as jobs
-import abkhazia.utils.cha as cha
+from . import abkhazia_base
+from . import logger
+from . import wav
+from . import jobs
+from . import cha

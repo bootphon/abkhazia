@@ -87,7 +87,7 @@ class Triphone(AbstractAcousticModel):
     )}
 
     def __init__(self, corpus, feats_dir, mono_dir,
-                 output_dir, lang_args, log=utils.logger.null_logger):
+                 output_dir, lang_args, log=utils.logger.null_logger()):
         super(Triphone, self).__init__(
             corpus, feats_dir, output_dir, lang_args, log=log)
 
