@@ -17,15 +17,16 @@
 """Provides the Corpus class"""
 
 import os
+from typing import Set, Dict, Tuple, List, Union, Optional, Any
 
-from abkhazia.corpus.corpus_saver import CorpusSaver
-from abkhazia.corpus.corpus_loader import CorpusLoader
-from abkhazia.corpus.corpus_validation import CorpusValidation
-from abkhazia.corpus.corpus_split import CorpusSplit
-from abkhazia.corpus.corpus_merge_wavs import CorpusMergeWavs
-from abkhazia.corpus.corpus_filter import CorpusFilter
-from abkhazia.corpus.corpus_trimmer import CorpusTrimmer
 import abkhazia.utils as utils
+from abkhazia.corpus.corpus_filter import CorpusFilter
+from abkhazia.corpus.corpus_loader import CorpusLoader
+from abkhazia.corpus.corpus_merge_wavs import CorpusMergeWavs
+from abkhazia.corpus.corpus_saver import CorpusSaver
+from abkhazia.corpus.corpus_split import CorpusSplit
+from abkhazia.corpus.corpus_trimmer import CorpusTrimmer
+from abkhazia.corpus.corpus_validation import CorpusValidation
 
 
 class Corpus(utils.abkhazia_base.AbkhaziaBase):
@@ -115,15 +116,15 @@ class Corpus(utils.abkhazia_base.AbkhaziaBase):
         """Initialize an empty corpus"""
         super(Corpus, self).__init__(log=log)
 
-        self.wav_folder = ''
-        self.wavs = set()
-        self.lexicon = dict()
-        self.segments = dict()
-        self.text = dict()
-        self.phones = dict()
-        self.utt2spk = dict()
-        self.silences = []
-        self.variants = []
+        self.wav_folder: str = ''
+        self.wavs: Set[str] = set()
+        self.lexicon: Dict[str, str] = dict()
+        self.segments: Dict[str, Tuple[str, float, float]] = dict()
+        self.text: Dict[str, str] = dict()
+        self.phones: Dict[str, str] = dict()
+        self.utt2spk: Dict[str, str] = dict()
+        self.silences: List[str] = []
+        self.variants: List[str] = []
 
     def save(self, path, no_wavs=False, copy_wavs=True, force=False):
         """Save the corpus to the directory `path`
@@ -151,7 +152,7 @@ class Corpus(utils.abkhazia_base.AbkhaziaBase):
 
         CorpusSaver.save(self, path, no_wavs=no_wavs, copy_wavs=copy_wavs)
 
-    def validate(self, njobs=utils.default_njobs()):
+    def validate(self, njobs: int = utils.default_njobs()):
         """Validate speech corpus data
 
         Raise IOError on the first encoutered error, relies on the
@@ -160,7 +161,7 @@ class Corpus(utils.abkhazia_base.AbkhaziaBase):
         """
         CorpusValidation(self, njobs=njobs, log=self.log).validate()
 
-    def is_valid(self, njobs=utils.default_njobs()):
+    def is_valid(self, njobs: int = utils.default_njobs()):
         """Return True if the corpus is in a valid state"""
         try:
             self.validate(njobs=njobs)
@@ -176,7 +177,7 @@ class Corpus(utils.abkhazia_base.AbkhaziaBase):
         """Return the list of speaker ids stored in the corpus"""
         return list(self.spk2utt().keys())
 
-    def spk2utt(self):
+    def spk2utt(self) -> Dict[str, List[str]]:
         """Return a dict of speakers mapped to an utterances list
 
         Built from self.utt2spk. This method is a Python
@@ -192,7 +193,7 @@ class Corpus(utils.abkhazia_base.AbkhaziaBase):
             spk2utt[spk].append(utt)
         return spk2utt
 
-    def wav2utt(self):
+    def wav2utt(self) -> Dict[str, List[Tuple[str, float, float]]]:
         """Return a dict of wav-ids mapped to utterances/timestamps they contain
 
         The values of the returned dict are tuples (utt-id, tstart,
@@ -210,7 +211,7 @@ class Corpus(utils.abkhazia_base.AbkhaziaBase):
             wav2utt[wav].append((utt, _float(tstart), _float(tend)))
         return wav2utt
 
-    def utt2duration(self):
+    def utt2duration(self) -> Dict[str, float]:
         """Return a dict of utterances ids mapped to their duration
 
         Durations are floats expressed in second, read from wav files
@@ -224,7 +225,7 @@ class Corpus(utils.abkhazia_base.AbkhaziaBase):
             utt2dur[utt] = stop - start
         return utt2dur
 
-    def duration(self, format='seconds'):
+    def duration(self, format: str = 'seconds') -> Union[str, float]:
         """Return the total duration of the corpus
 
         If `format` is 'second', returns the corpus duration in
@@ -244,7 +245,7 @@ class Corpus(utils.abkhazia_base.AbkhaziaBase):
         else:
             raise IOError('Unknow format for corpus duration (%s)', format)
 
-    def words(self, in_lexicon=True):
+    def words(self, in_lexicon=True) -> Set[str]:
         """Return a set of words composing the corpus
 
         The listed words are present in both text and lexicon (if
@@ -256,14 +257,15 @@ class Corpus(utils.abkhazia_base.AbkhaziaBase):
             word for utt in self.text.values() for word in utt.split()
             if (word in self.lexicon if in_lexicon else True))
 
-    def has_several_utts_per_wav(self):
+    def has_several_utts_per_wav(self) -> bool:
         """Return True if there is several utterances in at least one wav"""
         for _, start, stop in self.segments.values():
             if start is not None or stop is not None:
                 return True
         return False
 
-    def subcorpus(self, utt_ids, prune=True, name=None, validate=True):
+    def subcorpus(self, utt_ids, prune=True, name=None, validate=True) \
+            -> 'Corpus':
         """Return a subcorpus made of utterances in `utt_ids`
 
         The returned corpus is validated (except if `validate` is
@@ -384,24 +386,27 @@ class Corpus(utils.abkhazia_base.AbkhaziaBase):
             'Removing %s utterances with undesirable phones/silences',
             len(utt_ids))
         kept_utts = [
-            utt_id for utt_id in self.utt2spk if not(utt_id in utt_ids)]
+            utt_id for utt_id in self.utt2spk if not (utt_id in utt_ids)]
 
         corpus = self.subcorpus(kept_utts, validate=False)
         corpus.lexicon = {
             key: value for key, value in corpus.lexicon.items()
-            if not(key in words)}
+            if not (key in words)}
 
         corpus.phones = {
             key: value for key, value in corpus.phones.items()
-            if not(key in phones)}
+            if not (key in phones)}
 
         corpus.silences = [
-            value for value in corpus.silences if not(value in silences)]
+            value for value in corpus.silences if not (value in silences)]
 
         return corpus
 
-    def split(self, train_prop=None, test_prop=None,
-              by_speakers=True, random_seed=None):
+    def split(self,
+              train_prop: Optional[float] = None,
+              test_prop: Optional[float] = None,
+              by_speakers: bool=True,
+              random_seed: Optional[Any] = None):
         """Split a corpus in train and testing subcorpora
 
         Return a pair (train, testing) of Corpus instances, validated
@@ -517,17 +522,17 @@ class Corpus(utils.abkhazia_base.AbkhaziaBase):
         # barlist = plt.bar(
         #     x_axis, times, width=0.7,
         #     align="center", label="speech time", color="blue")
-        self.log.info('Speech duration for corpus : %i minutes', sum(times)/60)
+        self.log.info('Speech duration for corpus : %i minutes', sum(times) / 60)
 
         for j, txt in enumerate(times_in_minutes):
             # add legends and annotation to plot
-            plt.annotate(txt, (x_axis[j], times[j]+3), rotation=45)
+            plt.annotate(txt, (x_axis[j], times[j] + 3), rotation=45)
             plt.legend()
             plt.xticks(x_axis, names, rotation=45)
             plt.xlabel('speaker')
             plt.ylabel('duration (in minutes)', rotation=90)
 
-        return(plt)
+        return (plt)
 
     def merge_wavs(self, output_dir, log=None, padding=0.):
         """ Merge all wav files from same speaker
@@ -539,11 +544,11 @@ class Corpus(utils.abkhazia_base.AbkhaziaBase):
     def create_filter(self, out_path, function,
                       nb_speaker=None, new_speakers=10, THCHS30=False):
         """Filter the speech duration distribution of the corpus"""
-        return(CorpusFilter(self).create_filter(
+        return (CorpusFilter(self).create_filter(
             out_path, function, nb_speaker, new_speakers, THCHS30))
 
     def trim(self, corpus_dir, output_dir, function, not_kept_utts):
         """ Remove utterances from the corpus
             (using sox to trim the wav files)"""
         CorpusTrimmer(self).trim(
-                corpus_dir, output_dir, function, not_kept_utts)
+            corpus_dir, output_dir, function, not_kept_utts)

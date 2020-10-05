@@ -31,6 +31,7 @@ import argparse
 import os
 import shutil
 import textwrap
+from argparse import ArgumentParser
 
 import abkhazia.utils as utils
 
@@ -206,7 +207,7 @@ class AbstractKaldiCommand(AbstractCoreCommand):
 
     """
     @classmethod
-    def add_parser(cls, subparsers, name=None):
+    def add_parser(cls, subparsers: ArgumentParser, name=None):
         if name is None:
             name = cls.name
 

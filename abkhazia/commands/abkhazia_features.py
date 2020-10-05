@@ -16,6 +16,7 @@
 
 import argparse
 import os
+from argparse import ArgumentParser
 
 import abkhazia.features as features
 import abkhazia.utils as utils
@@ -40,7 +41,7 @@ class _FeatBase(AbstractKaldiCommand):
     parsed_options = []
 
     @classmethod
-    def add_parser(cls, subparsers):
+    def add_parser(cls, subparsers: ArgumentParser):
         # inherit a basic parser with basic options
         parser, dir_parser = super(_FeatBase, cls).add_parser(
             subparsers, name=cls.feat_name)
@@ -50,25 +51,7 @@ class _FeatBase(AbstractKaldiCommand):
             help="""if set write features in a h5features file
             named '<output_dir>/feats.h5f'""")
 
-        # from http://kaldi-asr.org/doc/structkaldi_1_1ProcessPitchOptions.html
-        parser.add_argument(
-            '--pitch', action='store_true',
-            help="""when specified compute pitch estimation.
-            Appends 3 dimensions at the end of the features: the
-            warped NCCF (probability of voicing-like, in [-1, 1]), the
-            log-pitch with POV-weighted mean subtraction over 1.5
-            second window, and the time derivative of log-pitch.""")
-
-        parser.add_argument(
-            '--cmvn', action='store_true',
-            help="""if specified, compute CMVN statistics,
-            default is %(default)s""")
-
-        parser.add_argument(
-            '--delta-order', metavar='<int>', type=int, default=0,
-            help="""compute deltas on raw features, up to the specified order. If
-            delta-order is set to 0, deltas are not computed. Default
-            is %(default)s.""")
+        cls.add_features_options(parser)
 
         cls.add_kaldi_options(
             parser.add_argument_group(
@@ -77,7 +60,29 @@ class _FeatBase(AbstractKaldiCommand):
         return parser
 
     @classmethod
-    def add_kaldi_options(cls, parser):
+    def add_features_options(cls, parser: ArgumentParser):
+        # from http://kaldi-asr.org/doc/structkaldi_1_1ProcessPitchOptions.html
+        parser.add_argument(
+            '--pitch', action='store_true',
+            help="""when specified compute pitch estimation.
+                    Appends 3 dimensions at the end of the features: the
+                    warped NCCF (probability of voicing-like, in [-1, 1]), the
+                    log-pitch with POV-weighted mean subtraction over 1.5
+                    second window, and the time derivative of log-pitch.""")
+
+        parser.add_argument(
+            '--cmvn', action='store_true',
+            help="""if specified, compute CMVN statistics,
+                    default is %(default)s""")
+
+        parser.add_argument(
+            '--delta-order', metavar='<int>', type=int, default=0,
+            help="""compute deltas on raw features, up to the specified order. If
+                    delta-order is set to 0, deltas are not computed. Default
+                    is %(default)s.""")
+
+    @classmethod
+    def add_kaldi_options(cls, parser: ArgumentParser):
         """Add the optional parameters from the kaldi feature extractor"""
 
         def action(name):

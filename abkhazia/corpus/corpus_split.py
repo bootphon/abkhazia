@@ -16,7 +16,12 @@
 
 import configparser
 import random
+from typing import Tuple, TYPE_CHECKING, Optional, List
+
 from abkhazia.utils import logger, config
+
+if TYPE_CHECKING:
+    from .corpus import Corpus
 
 
 class CorpusSplit(object):
@@ -47,6 +52,7 @@ class CorpusSplit(object):
 
 
     """
+
     def __init__(self, corpus, log=logger.null_logger(),
                  random_seed=None, prune=True):
         self.log = log
@@ -77,7 +83,9 @@ class CorpusSplit(object):
         except configparser.NoOptionError:
             return 0.5
 
-    def split(self, train_prop=None, test_prop=None):
+    def split(self,
+              train_prop: Optional[float] = None,
+              test_prop: Optional[float] = None) -> Tuple[Corpus, Corpus]:
         """Split the corpus by utterances regardless of the speakers
 
         Both generated subsets get speech from all the speakers with a
@@ -123,7 +131,10 @@ class CorpusSplit(object):
         return (self.corpus.subcorpus(train_utt_ids, prune=self.prune),
                 self.corpus.subcorpus(test_utt_ids, prune=self.prune))
 
-    def split_by_speakers(self, train_prop=None, test_prop=None):
+    def split_by_speakers(self,
+                          train_prop: Optional[float] = None,
+                          test_prop: Optional[float] = None) \
+            -> Tuple[Corpus, Corpus]:
         """Split the corpus by speakers
 
         Generated train and test subsets get speech from different
@@ -149,7 +160,10 @@ class CorpusSplit(object):
             speakers[:n_train],
             speakers[n_train:n_train + n_test])
 
-    def split_from_speakers_list(self, train_speakers, test_speakers):
+    def split_from_speakers_list(self,
+                                 train_speakers: List[str],
+                                 test_speakers: List[str]) \
+            -> Tuple[Corpus, Corpus]:
         """Split the corpus from a list of speakers in the train set
 
         Speakers in the list go in train set, test speakers go in
@@ -191,7 +205,9 @@ class CorpusSplit(object):
         return (self.corpus.subcorpus(train_utt_ids, prune=self.prune),
                 self.corpus.subcorpus(test_utt_ids, prune=self.prune))
 
-    def _proportions(self, train_prop, test_prop):
+    def _proportions(self,
+                     train_prop: Optional[float],
+                     test_prop: Optional[float]) -> Tuple[float, float]:
         """Return 'regularized' proportions of test and train data
 
         Return the tuple (test_prop, train_prop), ensures they are in
