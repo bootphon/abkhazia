@@ -1,0 +1,9 @@
+numpy
+progressbar2
+joblib
+argcomplete
+pytest
+Sphinx
+h5features
+phonemizer
+matplotlib

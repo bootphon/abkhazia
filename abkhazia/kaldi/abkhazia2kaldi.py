@@ -22,7 +22,7 @@ from abkhazia.utils import config, logger, open_utf8
 from abkhazia.corpus.corpus_saver import CorpusSaver
 
 
-class Abkhazia2Kaldi(object):
+class Abkhazia2Kaldi:
     '''Instanciate a kaldi recipe from an abkhazia corpus
 
     corpus : An abkhazia corpus

@@ -300,7 +300,7 @@ class BuckeyePreparator(AbstractPreparator):
 # words/phones levels alignments in Buckeye, about 1/3 of utterances
 # are concerned.
 
-class GetAlignment(object):
+class GetAlignment:
     """Extract Buckeye manual phone alignments at utterance level"""
     def __init__(self, buckeye_dir):
         self.alignment = {}

@@ -243,7 +243,7 @@ class _AmDnn(_AmBase):
         recipe implementation '''
 
 
-class AbkhaziaAcoustic(object):
+class AbkhaziaAcoustic:
     name = 'acoustic'
     description = 'train acoustic models from corpus, features and LM'
 

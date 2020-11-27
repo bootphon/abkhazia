@@ -16,6 +16,7 @@
 
 import argparse
 import os
+from argparse import _SubParsersAction
 
 import abkhazia.utils as utils
 from abkhazia.commands.abstract_command import AbstractKaldiCommand
@@ -28,7 +29,7 @@ class AbkhaziaLanguage(AbstractKaldiCommand):
     description = 'compute a n-gram language model on a corpus'
 
     @classmethod
-    def add_parser(cls, subparsers):
+    def add_parser(cls, subparsers: _SubParsersAction):
         parser, _ = super(AbkhaziaLanguage, cls).add_parser(subparsers)
         parser.formatter_class = argparse.RawDescriptionHelpFormatter
 

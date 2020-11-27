@@ -33,13 +33,14 @@ two alignment recipes, the Align recipe seems to add more silences.
 import gzip
 import os
 import shutil
+from typing import Dict, Iterable, Union, List
+
 import numpy as np
 
-import abkhazia.utils as utils
 import abkhazia.abstract_recipe as abstract_recipe
-
-from abkhazia.language import check_language_model, read_int2phone
+import abkhazia.utils as utils
 from abkhazia.features import Features
+from abkhazia.language import check_language_model, read_int2phone
 
 
 # TODO check alignment: which utt have been transcribed, have silence
@@ -237,7 +238,7 @@ class Align(abstract_recipe.AbstractRecipe):
                 self.acoustic_scale,
                 os.path.join(self._target_dir(), 'final.mdl')))
 
-    def _read_result_utts(self, start):
+    def _read_result_utts(self, start) -> Dict[str, str]:
         """Read kaldi output files as utt_ids indexed dict
 
         read from _target_dir/start.*.gz, return a dict[utt-id] ->
@@ -302,7 +303,7 @@ class Align(abstract_recipe.AbstractRecipe):
                 start = stop
 
     @staticmethod
-    def _read_splited(path):
+    def _read_splited(path: Union[List[str], str]) -> Iterable[str]:
         """Read lines from a file, each line being striped and split"""
         lines = path if isinstance(path, list) else utils.open_utf8(path, 'r')
         return (l.strip().split() for l in lines)
@@ -339,7 +340,7 @@ class Align(abstract_recipe.AbstractRecipe):
                     # utt_id = line[0]
                     start = line[1]
                     stop = line[2]
-                elif (phone in self.corpus.silences): 
+                elif (phone in self.corpus.silences):
                     # Don't count SIL as part of the word
                     continue
                 else:  # word continues
@@ -381,7 +382,6 @@ class Align(abstract_recipe.AbstractRecipe):
                 self.log.warning(
                     f'failed to align words from phones on utterance {utt_id}: '
                     f'{str(err)}')
-
 
         return utt_align
 
@@ -499,9 +499,9 @@ def convert_to_word_position_dependent(alignment):
                 lex = [lex[0] + '_S']  # single phone word
             else:
                 lex = (
-                    [lex[0] + '_B'] +  # first phone in word
-                    [l + '_I' for l in lex[1:-1]] +  # intermediate phones
-                    [lex[-1] + '_E'])  # last phone
+                        [lex[0] + '_B'] +  # first phone in word
+                        [l + '_I' for l in lex[1:-1]] +  # intermediate phones
+                        [lex[-1] + '_E'])  # last phone
 
             word_wpd = []
             for i, p in enumerate(word):
@@ -584,7 +584,7 @@ def convert_alignment_to_kaldi_format(
         except KeyError:
             raise ValueError(
                 'phone {} not found in phonemap {}'
-                .format(phone, phonemap_file))
+                    .format(phone, phonemap_file))
 
         return ' '.join(p) * frame_duration(tstart, tstop)
 

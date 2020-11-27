@@ -16,7 +16,7 @@
 
 import argparse
 import os
-from argparse import ArgumentParser
+from argparse import ArgumentParser, _SubParsersAction
 
 import abkhazia.features as features
 import abkhazia.utils as utils
@@ -41,7 +41,7 @@ class _FeatBase(AbstractKaldiCommand):
     parsed_options = []
 
     @classmethod
-    def add_parser(cls, subparsers: ArgumentParser):
+    def add_parser(cls, subparsers: _SubParsersAction) -> ArgumentParser:
         # inherit a basic parser with basic options
         parser, dir_parser = super(_FeatBase, cls).add_parser(
             subparsers, name=cls.feat_name)
@@ -147,14 +147,14 @@ class _FeatPlp(_FeatBase):
     kaldi_bin = 'compute-plp-feats'
 
 
-class AbkhaziaFeatures(object):
+class AbkhaziaFeatures:
     name = 'features'
     description = 'compute speech features from a corpus'
 
     _commands = [_FeatMfcc, _FeatFbank, _FeatPlp]
 
     @classmethod
-    def add_parser(cls, subparsers):
+    def add_parser(cls, subparsers: _SubParsersAction) -> ArgumentParser:
         """Return a parser for the 'abkhazia features' command
 
         Add a subparser and help message for 'mfcc', 'fbank' and 'plp'

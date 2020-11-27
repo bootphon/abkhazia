@@ -25,17 +25,11 @@ VERSION = abkhazia.__version__
 
 # On Reads The Docs we don't install any package
 ON_RTD = os.environ.get('READTHEDOCS', None) == 'True'
-REQUIREMENTS = [] if ON_RTD else [
-    'numpy',
-    'progressbar2',
-    'joblib',
-    'argcomplete',
-    'pytest',
-    'Sphinx',
-    'h5features',
-    'phonemizer',
-    'matplotlib'
-]
+if ON_RTD:
+    REQUIREMENTS = []
+else:
+    with open(os.path.join(SETUP_DIR, "requirements.txt")) as reqs:
+        REQUIREMENTS = reqs.read().split("\n")
 
 setup(
     name='abkhazia',

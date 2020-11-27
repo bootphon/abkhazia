@@ -28,7 +28,7 @@ from collections import defaultdict
 from abkhazia.utils import open_utf8, logger
 
 
-class CorpusTrimmer(object):
+class CorpusTrimmer:
     """Removes utterances from a corpus"""
 
     def __init__(self, corpus, log=logger.null_logger()):

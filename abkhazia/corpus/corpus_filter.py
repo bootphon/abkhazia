@@ -21,7 +21,7 @@ from math import exp
 from abkhazia.utils import logger, open_utf8
 
 
-class CorpusFilter(object):
+class CorpusFilter:
     """A class for Filtering the distribution of speech duration
     over an Abkhazia corpus.
 

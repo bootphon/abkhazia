@@ -22,7 +22,7 @@ import abkhazia.utils as utils
 import abkhazia.corpus
 
 
-class AbstractPreparator(object):
+class AbstractPreparator:
     """This class is a common wrapper to all the corpus preparators
 
     The AbstractPreparator class provides the basic functionalities

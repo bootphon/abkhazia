@@ -20,7 +20,7 @@ import shutil
 from abkhazia.utils import open_utf8, append_ext, wav
 
 
-class CorpusSaver(object):
+class CorpusSaver:
     """Save a corpus to a directory"""
     @classmethod
     def save(cls, corpus, path, no_wavs=False, copy_wavs=True):

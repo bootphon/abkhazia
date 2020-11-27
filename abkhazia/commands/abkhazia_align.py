@@ -16,6 +16,7 @@
 
 import argparse
 import os
+from argparse import _SubParsersAction, ArgumentParser
 
 from abkhazia.commands.abstract_command import AbstractKaldiCommand
 from abkhazia.corpus import Corpus
@@ -35,7 +36,7 @@ class AbkhaziaAlign(AbstractKaldiCommand):
                 'Alignments are phone or word based and are given in seconds.')
 
     @classmethod
-    def add_parser(cls, subparsers):
+    def add_parser(cls, subparsers: _SubParsersAction) -> ArgumentParser:
         """Return a parser for the align command"""
         # get basic parser init from AbstractCommand
         parser, dir_group = super(AbkhaziaAlign, cls).add_parser(subparsers)

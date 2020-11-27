@@ -28,7 +28,7 @@ def resume_list(l, n=10):
         ' ... and {} more.'.format(len(l) - n))
 
 
-class CorpusValidation(object):
+class CorpusValidation:
     """Check and correct a speech corpus
 
     corpus (Corpus): the abkhazia corpus to validate.

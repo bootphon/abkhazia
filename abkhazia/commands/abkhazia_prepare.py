@@ -39,7 +39,7 @@ from abkhazia.corpus.prepare import (
     KCSSPreparator)
 
 
-class AbstractFactory(object):
+class AbstractFactory:
     """The Factory class runs a corpus preparator from command-line arguments
 
     A Factory class is dedicated to a single corpus preparator. It

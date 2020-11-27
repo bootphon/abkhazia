@@ -131,7 +131,7 @@ class _DecodeDnn(_DecodeBase):
     _long_description = ''''''
 
 
-class AbkhaziaDecode(object):
+class AbkhaziaDecode:
     name = 'decode'
     description = 'decode a corpus (with features) on a trained acoustic model'
 

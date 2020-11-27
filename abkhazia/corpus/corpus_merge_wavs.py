@@ -34,7 +34,7 @@ from abkhazia.utils import logger
 #FIXME: this won't work for corpora with several speakers per wavefile
 #FIXME modifying original corpus in place could lead to undesirable
 # side-effects. Better to use a copy
-class CorpusMergeWavs(object):
+class CorpusMergeWavs:
     """A class for merging the wavs files together for each speaker,
     at the end of this class, one .wav file = one speaker. This
     class also adjusts segments.txt to match the new wavs.

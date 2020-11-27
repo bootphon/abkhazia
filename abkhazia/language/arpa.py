@@ -31,7 +31,7 @@ import tempfile
 import abkhazia.utils as utils
 
 
-class ARPALanguageModel(object):
+class ARPALanguageModel:
     def __init__(self, ngrams):
         """Build a LM from raw data
 

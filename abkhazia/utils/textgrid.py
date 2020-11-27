@@ -113,7 +113,7 @@ OLDOOTEXTFILE = re.compile(r"""(?x)
 # TextGrid Class
 #################################################################
 
-class TextGrid(object):
+class TextGrid:
     """
     Class to manipulate the TextGrid format used by Praat.
     Separates each tier within this file into its own Tier
@@ -291,7 +291,7 @@ class TextGrid(object):
 # Tier Class
 #################################################################
 
-class Tier(object):
+class Tier:
     """
     A container for each tier.
     """

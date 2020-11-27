@@ -22,7 +22,7 @@ from .meta import Meta
 from .logger import null_logger
 
 
-class AbkhaziaBase(object):
+class AbkhaziaBase:
     def __init__(self, log=null_logger()):
         self.log = log
         self.meta = Meta()

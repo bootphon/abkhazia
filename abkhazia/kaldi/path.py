@@ -55,7 +55,8 @@ def kaldi_path():
     # was a bug -> error while loading shared libraries: libfstscript.so.1
     fstlib = os.path.join(kaldiroot, 'tools', 'openfst', 'lib')
     libfstscript = os.path.join(fstlib, 'libfstscript.so.1')
-    assert os.path.exists(libfstscript)
+    assert os.path.exists(libfstscript), f"libfstscript.so.1 file " \
+                                         f"not found in {fstlib}"
 
     if 'LD_LIBRARY_PATH' not in env:
         env['LD_LIBRARY_PATH'] = fstlib

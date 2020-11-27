@@ -18,7 +18,7 @@ import os
 import abkhazia.utils as utils
 
 
-class CorpusLoader(object):
+class CorpusLoader:
     """Load an abkhazia corpus from a directory
 
     This class provides static methods for accessing corpus data in a

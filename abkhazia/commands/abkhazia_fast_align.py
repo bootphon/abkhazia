@@ -16,17 +16,21 @@
 
 import argparse
 import os
+from argparse import _SubParsersAction, ArgumentParser
 
-from abkhazia.commands.abstract_command import AbstractKaldiCommand
-from abkhazia.corpus import Corpus
 import abkhazia.align as align
 import abkhazia.utils as utils
+from abkhazia.align.align import AlignNoLattice
+from abkhazia.commands.abstract_command import AbstractKaldiCommand
+from abkhazia.corpus import Corpus
+from abkhazia.features import Features
+from abkhazia.language import LanguageModel
 
 
-class AbkhaziaAlign(AbstractKaldiCommand):
+class AbkhaziaFastAlign(AbstractKaldiCommand):
     '''This class implements the 'abkhazia align' command'''
     name = 'fast-align'
-    description = 'forced alignment from scratch'
+    description = 'all-in-one forced-alignment command'
 
     @staticmethod
     def long_description():
@@ -35,26 +39,26 @@ class AbkhaziaAlign(AbstractKaldiCommand):
                 'triphones.')
 
     @classmethod
-    def add_parser(cls, subparsers):
+    def add_parser(cls, subparsers: _SubParsersAction) -> ArgumentParser:
         """Return a parser for the align command"""
         # get basic parser init from AbstractCommand
-        parser, dir_group = super(AbkhaziaAlign, cls).add_parser(subparsers)
+        parser, dir_group = super(AbkhaziaFastAlign, cls).add_parser(subparsers)
         parser.formatter_class = argparse.RawDescriptionHelpFormatter
         parser.description = cls.long_description()
-
-        out_group = parser.add_mutually_exclusive_group('acoustic model parameters')
-        out_group.add_argument(
-            '--use-triphone', action="store_true", metavar='<boolean>',
-            help='Use triphone acoustic model')
-        out_group.add_argument(
-            '--use-speaker-adapted', action="store_true", metavar='<boolean>',
-            help='Use speaker-adapted acoustic model')
 
         out_group = parser.add_argument_group('alignment parameters')
         out_group.add_argument(
             '--acoustic-scale', default=0.1, type=float, metavar='<float>',
             help='scaling factor for acoustic likelihoods, '
-            'default is %(default)s')
+                 'default is %(default)s')
+
+        out_group = parser.add_mutually_exclusive_group()
+        out_group.add_argument(
+            '--use-triphone', action="store_true",
+            help='Use triphone acoustic model')
+        out_group.add_argument(
+            '--use-speaker-adapted', action="store_true",
+            help='Use speaker-adapted acoustic model')
 
         out_group = out_group.add_mutually_exclusive_group()
         out_group.add_argument(
@@ -75,7 +79,38 @@ class AbkhaziaAlign(AbstractKaldiCommand):
             '--words-only', action='store_true',
             help='do not write phones in the final alignment file, only words')
 
+        dir_group.add_argument(
+            '-l', '--language-model', metavar='<lm-dir>', default=None,
+            help='''the language model recipe directory, data is read from
+                <lm-dir>/language. If not specified, will try looking for
+                use <lm-dir>=<corpus>. 
+                If no language model is present, will compute it from scratch.''')
+
+        dir_group.add_argument(
+            '-f', '--features', metavar='<feat-dir>', default=None,
+            help='''the features directory, data is read from
+            <feat-dir>/features/mfcc. If not specified, use
+            <feat-dir>=<corpus>.
+            If no features are present, will compute them from scratch.''')
+
+        dir_group.add_argument(
+            '-a', '--acoustic-model', metavar='<am-dir>', default=None,
+            help='''the acoustic model recipe directory, data is read from
+            <am-dir>/acoustic. If not specified, use <am-dir>=<corpus>.
+            If no accoustic model is present, will compute it from scratch.
+            ''')
+
         return parser
+
+    @classmethod
+    def compute_accoustic(cls, args, corpus_dir):
+        # get back the acoustic model directory
+        acoustic = (os.path.join(os.path.dirname(corpus_dir), 'acoustic')
+                    if args.acoustic_model is None
+                    else os.path.abspath(args.acoustic_model))
+
+        # TODO: test for existence, launch recipe if nothing exists
+        # compute intermediary acoustic model if needed
 
     @classmethod
     def run(cls, args):
@@ -90,15 +125,28 @@ class AbkhaziaAlign(AbstractKaldiCommand):
                 if args.language_model is None
                 else os.path.abspath(args.language_model))
 
-        # get back the acoustic model directory
-        acoustic = (os.path.join(os.path.dirname(corpus_dir), 'acoustic')
-                    if args.acoustic_model is None
-                    else os.path.abspath(args.acoustic_model))
+        if not os.path.isdir(lang):
+            recipe = LanguageModel(corpus, lang,
+                                   order=3,
+                                   level="word")
+
+            recipe.delete_recipe = False if args.recipe else True
+            recipe.compute()
 
         # get back the features directory
         feat = (os.path.join(os.path.dirname(corpus_dir), 'features')
                 if args.features is None
                 else os.path.abspath(args.features))
+
+        if not os.path.isdir(feat):
+            recipe = Features(corpus,
+                              feat,
+                              type="mfcc",
+                              use_cmvn=True)
+            recipe.use_cmvn = True
+            recipe.njobs = args.njobs
+            recipe.delete_recipe = False if args.recipe else True
+            recipe.compute()
 
         # parse the alignment level
         if args.words_only:
@@ -114,7 +162,7 @@ class AbkhaziaAlign(AbstractKaldiCommand):
                 'not implemented')
 
         # instanciate the kaldi recipe creator
-        recipe = (align.AlignNoLattice if args.no_lattice
+        recipe = (AlignNoLattice if args.no_lattice
                   else align.Align)(corpus, output_dir, log=log)
         recipe.njobs = args.njobs
         recipe.level = level

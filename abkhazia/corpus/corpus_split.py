@@ -24,7 +24,7 @@ if TYPE_CHECKING:
     from .corpus import Corpus
 
 
-class CorpusSplit(object):
+class CorpusSplit:
     """A class for spliting an abkhazia corpus into train and test subsets
 
     corpus : The abkhazia corpus to split. The corpus is assumed
@@ -85,7 +85,7 @@ class CorpusSplit(object):
 
     def split(self,
               train_prop: Optional[float] = None,
-              test_prop: Optional[float] = None) -> Tuple[Corpus, Corpus]:
+              test_prop: Optional[float] = None) -> Tuple['Corpus', 'Corpus']:
         """Split the corpus by utterances regardless of the speakers
 
         Both generated subsets get speech from all the speakers with a
@@ -134,7 +134,7 @@ class CorpusSplit(object):
     def split_by_speakers(self,
                           train_prop: Optional[float] = None,
                           test_prop: Optional[float] = None) \
-            -> Tuple[Corpus, Corpus]:
+            -> Tuple['Corpus', 'Corpus']:
         """Split the corpus by speakers
 
         Generated train and test subsets get speech from different
@@ -163,7 +163,7 @@ class CorpusSplit(object):
     def split_from_speakers_list(self,
                                  train_speakers: List[str],
                                  test_speakers: List[str]) \
-            -> Tuple[Corpus, Corpus]:
+            -> Tuple['Corpus', 'Corpus']:
         """Split the corpus from a list of speakers in the train set
 
         Speakers in the list go in train set, test speakers go in

@@ -19,13 +19,14 @@
 # along with abkhazia. If not, see <http://www.gnu.org/licenses/>.
 """The abkhazia entry point from command line"""
 
+import argparse
 import os
 import subprocess
 import sys
 import textwrap
-import pkg_resources
+
 import argcomplete
-import argparse
+import pkg_resources
 
 import abkhazia.utils as utils
 from abkhazia import __version__
@@ -40,10 +41,11 @@ from abkhazia.commands import (
     AbkhaziaLanguage,
     AbkhaziaAcoustic,
     AbkhaziaDecode,
-    AbkhaziaAlign)
+    AbkhaziaAlign,
+    AbkhaziaFastAlign)
 
 
-class Abkhazia(object):
+class Abkhazia:
     """Parse the input arguments and call the requested subcommand"""
     # the possible subcommand classes
     _command_classes = [
@@ -53,11 +55,12 @@ class Abkhazia(object):
         AbkhaziaMergeWavs,
         AbkhaziaPlot,
         AbkhaziaFilter,
-        AbkhaziaFeatures,
+        #AbkhaziaFeatures,
         AbkhaziaLanguage,
         AbkhaziaAcoustic,
         AbkhaziaAlign,
-        AbkhaziaDecode
+        AbkhaziaFastAlign,
+        AbkhaziaDecode,
     ]
 
     # a string describing abkhazia and its subcommands
@@ -106,15 +109,15 @@ class Abkhazia(object):
         parser.add_argument(
             '-c', '--config', metavar='<config-file>', default=None,
             help='overload default abkhazia configuration with parameters\n'
-            'defined in <config-file>, default configuration is read from\n{}'
-            .format(utils.AbkhaziaConfig.default_config_file()))
+                 'defined in <config-file>, default configuration is read from\n{}'
+                .format(utils.AbkhaziaConfig.default_config_file()))
 
         # add a version description argument
         parser.add_argument(
             '--version', action='version',
-            version='%(prog)s ' + __version__ + '\n'*2 +
-            'Copyright 2016 Thomas Schatz, Xuan-Nga Cao, Mathieu Bernard\n' +
-            'Licence GPLv3+'
+            version='%(prog)s ' + __version__ + '\n' * 2 +
+                    'Copyright 2016 Thomas Schatz, Xuan-Nga Cao, Mathieu Bernard\n' +
+                    'Licence GPLv3+'
         )
 
         # register the subcommands parsers, and list their names and
@@ -122,9 +125,9 @@ class Abkhazia(object):
         subparsers = parser.add_subparsers(
             metavar='<command>',
             help='possible commands are:\n' +
-            '\n'.join((' {} - {}'
-                       .format(c.name + ' '*(8-len(c.name)), c.description)
-                       for c in self._command_classes)))
+                 '\n'.join((' {} - {}'
+                           .format(c.name + ' ' * (8 - len(c.name)), c.description)
+                            for c in self._command_classes)))
 
         for command in self._command_classes:
             command.add_parser(subparsers)
@@ -148,13 +151,14 @@ class Abkhazia(object):
         args.command(args)
 
 
-class CatchExceptions(object):
+class CatchExceptions:
     """A decorator wrapping 'function' in a try/except block
 
     When an exception occurs, display a user friendly message before
     exiting with error code 1.
 
     """
+
     def __init__(self, function):
         self.function = function
 

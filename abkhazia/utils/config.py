@@ -43,7 +43,7 @@ import os
 import pkg_resources as pkg
 
 
-class AbkhaziaConfig(object):
+class AbkhaziaConfig:
     """Hold the abkhazia configuration as a ConfigParser instance
 
     Attributes:

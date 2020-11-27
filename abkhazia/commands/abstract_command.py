@@ -31,12 +31,13 @@ import argparse
 import os
 import shutil
 import textwrap
-from argparse import ArgumentParser
+from argparse import ArgumentParser, _SubParsersAction, _ArgumentGroup
+from typing import Tuple, Optional
 
 import abkhazia.utils as utils
 
 
-class AbstractCommand(object):
+class AbstractCommand:
     """The base class of all abkhazia commands"""
     name = NotImplemented
     """The command name, as called from command-line"""
@@ -45,7 +46,7 @@ class AbstractCommand(object):
     """A command description"""
 
     @classmethod
-    def add_parser(cls, subparsers, name=None):
+    def add_parser(cls, subparsers: _SubParsersAction, name=None):
         """Add the command's parser to the `subparsers`
 
         This method implements only minimal parsing and should be
@@ -77,7 +78,7 @@ class AbstractCommand(object):
         parser.add_argument(
             '--log', default=None, metavar='<file>',
             help='file to write log messages, default is {} '
-            'in the output directory'.format(name + '.log'))
+                 'in the output directory'.format(name + '.log'))
 
         return parser
 
@@ -98,8 +99,10 @@ class AbstractCoreCommand(AbstractCommand):
     add_parser() method.
 
     """
+
     @classmethod
-    def add_parser(cls, subparsers, name=None):
+    def add_parser(cls, subparsers: ArgumentParser, name: Optional[str] = None) \
+            -> Tuple[ArgumentParser, _ArgumentGroup]:
         if name is None:
             name = cls.name
 
@@ -111,7 +114,7 @@ class AbstractCoreCommand(AbstractCommand):
         parser.add_argument(
             '--force', action='store_true',
             help='if specified, overwrite the output directory. '
-            'If not specified but the directory exists, exit with error')
+                 'If not specified but the directory exists, exit with error')
 
         # add a --validate option
         parser.add_argument(
@@ -127,19 +130,19 @@ class AbstractCoreCommand(AbstractCommand):
             abkhazia corpus is read from <corpus>/data. Must be an
             existing directory, can be relative to the abkhazia data
             directory ({0})"""
-            .format(utils.config.get('abkhazia', 'data-directory')))
+                .format(utils.config.get('abkhazia', 'data-directory')))
 
         # add a --output-dir option
         dir_group.add_argument(
             '-o', '--output-dir', default=None, metavar='<output-dir>',
             help='output directory, the output data is wrote to '
-            '<output-dir>/{}, if not specified use <output-dir>=<corpus>.'
-            .format(name))
+                 '<output-dir>/{}, if not specified use <output-dir>=<corpus>.'
+                .format(name))
 
         return parser, dir_group
 
     @staticmethod
-    def _parse_corpus_dir(corpus):
+    def _parse_corpus_dir(corpus: str):
         """Parse the corpus input directory as specified in help message
 
         If `corpus` doesn't start with './' , '../', '~/' or '/', the
@@ -157,7 +160,8 @@ class AbstractCoreCommand(AbstractCommand):
         return os.path.abspath(corpus)
 
     @classmethod
-    def _parse_output_dir(cls, output, corpus, name=None, force=False):
+    def _parse_output_dir(cls, output: str, corpus: str, name: str = None,
+                          force: bool = False) -> str:
         """Parse the output directory as specified in help message"""
         if name is None:
             name = cls.name
@@ -180,7 +184,7 @@ class AbstractCoreCommand(AbstractCommand):
         return output
 
     @classmethod
-    def _parse_io_dirs(cls, args, name=None):
+    def _parse_io_dirs(cls, args, name=None) -> Tuple[str, str]:
         """Return (corpus_dir, output_dir) parsed form `args`"""
         if name is None:
             name = cls.name
@@ -206,8 +210,10 @@ class AbstractKaldiCommand(AbstractCoreCommand):
     directory and a --njobs option for parallel processing
 
     """
+
     @classmethod
-    def add_parser(cls, subparsers: ArgumentParser, name=None):
+    def add_parser(cls, subparsers: ArgumentParser, name: Optional[str] = None) \
+            -> Tuple[ArgumentParser, _ArgumentGroup]:
         if name is None:
             name = cls.name
 

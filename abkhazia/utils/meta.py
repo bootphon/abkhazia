@@ -19,7 +19,7 @@ import getpass
 import socket
 
 
-class Meta(object):
+class Meta:
     """Store meta information about an object
 
     Attach and manage metadata to an abkhazia object, such as creation

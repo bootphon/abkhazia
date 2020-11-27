@@ -22,7 +22,7 @@ from abkhazia.utils import bool2str
 from abkhazia.kaldi.path import kaldi_path
 
 
-class OptionEntry(object):
+class OptionEntry:
     """Entry read from / send to a Kaldi executable"""
     def __init__(self, help='', type=None, default=None, value=None):
         self.help = help

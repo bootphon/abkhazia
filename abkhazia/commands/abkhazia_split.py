@@ -15,6 +15,7 @@
 """Implementation of the 'abkazia split' command"""
 
 import os
+from argparse import _SubParsersAction, ArgumentParser
 
 from abkhazia.commands.abstract_command import AbstractCoreCommand
 from abkhazia.corpus import Corpus
@@ -29,7 +30,7 @@ class AbkhaziaSplit(AbstractCoreCommand):
     default_test_proportion = 0.5
 
     @classmethod
-    def add_parser(cls, subparsers):
+    def add_parser(cls, subparsers: _SubParsersAction) -> ArgumentParser:
         # get basic parser init from AbstractCommand
         parser, _ = super(AbkhaziaSplit, cls).add_parser(subparsers)
 
