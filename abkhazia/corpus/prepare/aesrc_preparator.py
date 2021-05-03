@@ -35,11 +35,26 @@ class AESRCPreparator(AbstractPreparatorWithCMU):
     description = 'AESRC Corpus'
 
     long_description = '''
-    AESRC is a corpus of approximately 1000 hours of 16kHz read
-    English speech, prepared by Vassil Panayotov with the assistance
-    of Daniel Povey. The data is derived from read audiobooks from the
-    LibriVox project, and has been carefully segmented and
-    aligned.'''
+    AESRC is a corpus of Voice data with format 16kHz , 16bit , Uncompressed wav , Mono
+        - Recording environment: relatively quiet indoor, no echo;
+        - Recording content: general corpus; some languages include interactive, household, vehicle and digital
+        - personnel: 526 People; come from ten different countries; each country has its own proportion of men and women 50% , 50% ;
+        - Equipment: Apple mobile phone, Android mobile phone;
+        - language: English
+        - Application scenarios: speech recognition; voiceprint recognition
+   
+            • 300 Hours Koreans speak English and collect voice data on mobile phones
+            • 500 Hours Russians speak English voice data
+            • 200 Hours of Canadians Speaking English, Mobile Phone Collecting Voice Data
+            • 800 Hours of American English mobile phone to collect voice data
+            • 200 Hours of Portuguese speaking English voice data
+            • 500 Hours of Japanese speaking English mobile phone to collect voice data
+            • 183 Hours Spaniards Speak English Mobile Phones Collect Voice Data
+            • 1,012 Hours of Indian English mobile phone to collect voice data
+            • 831 Hours of British English mobile phone collection of voice data
+            • 509 Chinese people speak English and collect voice data on mobile phones
+                
+    '''
 
     url = ['corpus - http://www.openslr.org/12',
            'dictionary - http://www.openslr.org/11']
