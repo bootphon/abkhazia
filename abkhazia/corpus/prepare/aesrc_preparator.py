@@ -30,6 +30,7 @@ from abkhazia.corpus.prepare import AbstractPreparatorWithCMU
 
 import os
 import scipy.io.wavfile
+
 data = []
 rate = []
 r_dir='/home/deepthought/Music/genres/'
@@ -61,9 +62,8 @@ class AESRCPreparator(AbstractPreparatorWithCMU):
                 
     '''
 
-    url = ['corpus - http://www.openslr.org/12',
-           'dictionary - http://www.openslr.org/11']
-    audio_format = 'wave'
+    url = 
+    audio_format = 'wav'
 
     phones = {
         'IY': u'iː',
@@ -111,67 +111,72 @@ class AESRCPreparator(AbstractPreparatorWithCMU):
 
     variants = []  # could use lexical stress variants...
 
-    def __init__(self, input_dir, log=utils.logger.null_logger(),
-                 cmu_dict=None, selection=None, AESRC_dict=None):
+    def __init__(self, input_dir,output_dir, log=utils.logger.null_logger(),
+                 ):
         super(AESRCPreparator, self).__init__(input_dir, log=log)
+         self.copy_wavs = copy_wavs
 
-        # guess AESRC dictionary if not specified, look for it
-        # in the AESRC root directory
-        if AESRC_dict is None:
-            AESRC_dict = os.path.join(
-                input_dir, 'AESRC-lexicon.txt')
+        # list all the wav file in the corpus
+        self.wav_files = []
+        for dirpath, dirs, files in os.walk(self.input_dir):
+            for f in files:
+                m_file = re.match("^(.*)\.wav$", f)
+                if m_file:
+                    self.wav_files.append(os.path.join(dirpath, f))
 
-        # init path to AESRC dictionary
-        if not os.path.isfile(AESRC_dict):
-            raise IOError(
-                'AESRCh dictionary does not exist: {}'
-                .format(AESRC_dict))
-        self.AESRC_dict = AESRC_dict
-
-        # update name, input and output directories if a subpart
-        # selection is specified
-        if selection is not None:
-            self.name += '-' + selection
-            self.input_dir = os.path.join(input_dir, selection)
+       
+       
 #wavs:subfolder containing the speech recordings in wav, either as files or symbolic links
-    '''
-    On each_folder
 
-    For each folder on each folder
-    
-    
-    '''
 
-    def list_audio_files(self):
-        for root, sub, files in os.walk(input_dir): #r_dir
+#each accent
+    def list_files_one_accent(self, input_dir,output_dir):
+        print ("input_dir"+ input_dir)
+        wavs = [] 
+
+        for folder, sub_folders, files in os.walk(input_dir): #r_dir
+            print("folder "+folder)
             files = sorted(files)
             for f in files:
-                s_rate, x  =  scipy.io.wavfile.read(os.path.join(root, f))  # <---
-                rate.append(s_rate)
-                data.append(x)
-
-
-            self._wavs = wavs
-        return zip(wavs)
+                if f.endswith('wav'):
+                    print (" wavs file  "+ f)
+                    path_f=folder+'/'+f
+                
+                    shutil.copy(path_f,output_dir)
+            return zip(wavs)#!!
+#all the accent folder
+    def list_audio_files(self,input_path):#input_path = data
+        for folder in os.walk(input_path):
+            if folder.endswith('English\speech\Data'):
+                print("folder is :"+ folder)
+                list_files_one_accent(self,folder,folder+'/wavs')
+#All accent
+    def list_files_all_accent(self,input_path):#input_path = data
+        for folder in os.walk(input_path):
+            if folder.endswith('English\speech\Data'):
+                print("folder is :"+ folder)
+                list_files_accent(self,folder,input_path+'/wavs')
 
 #segments.txt:list of utterances with a description of their location in the wavefiles
     def make_segment(self):
         segments = dict()
-        for wav_file in self._wavs:
-            utt_id = os.path.basename(wav_file).replace('.wav', '')
+        for wav_file in self._wavs:#wavs path
+            utt_id = os.path.basename(wav_file).replace('.wav', '')#
             segments[utt_id] = (utt_id, None, None)
         return segments
+
 #utt2spk.txt: list containing the speaker associated to each utterance
     def make_speaker(self):
         utt2spk = dict()
         for wav in self._wavs:
             bname = os.path.basename(wav)
             utt_id = bname.replace('.wav', '')
-            speaker_id = bname.split("-")[0]
+            speaker_id = bname.split("S")[0]#séparer par S(G10208S5450)
             utt2spk[utt_id] = speaker_id
         return utt2spk
-#text.txt: transcription of each utterance in word units
-   
+
+
+#text.txt: transcription of each utterance in word units  
     def make_transcription(self):
         text = dict()
         wav_list = [os.path.basename(w).replace('.wav', '')
@@ -197,6 +202,7 @@ class AESRCPreparator(AbstractPreparatorWithCMU):
             self.log.debug('some utterances have no associated wav: {}'
                            .format(corrupted_wavs))
         return text
+
 #lexicon.txt: phonetic dictionary using that inventory
     def make_lexicon(self):
         # To generate the lexicon, we will use the cmu dict and the
@@ -234,5 +240,45 @@ class AESRCPreparator(AbstractPreparatorWithCMU):
         return cmu_combined
 
 #phones.txt: phone inventory mapped to IPA
+    def make_phones(self):
+        print("")
 #silences.txt: list of silence symbols
 
+def validate_phone_alignment(corpus, alignment, log=utils.logger.get_log()):
+    """Return True if the phone alignment is coherent with the corpus
+
+    Return False on any other case, send a log message for all
+    suspicious alignments.
+
+    """
+    error_utts = set()
+    # check all utterances one by one
+    for utt in corpus.utts():
+        # corpus side
+        _, utt_tstart, utt_tstop = corpus.segments[utt]
+
+        # alignment side
+        ali_tstart = alignment[utt][0][0]
+        ali_tstop = alignment[utt][-1][1]
+
+        # validation
+        if utt_tstart != ali_tstart:
+            error_utts.add(utt)
+            log.warn(
+                '%s tstart error in corpus and alignment (%s != %s)',
+                utt, utt_tstart, ali_tstart)
+
+        if utt_tstop != ali_tstop:
+            error_utts.add(utt)
+            log.warn(
+                '%s : tstop error in corpus and alignment: %s != %s',
+                utt, utt_tstop, ali_tstop)
+
+    if error_utts:
+        log.error(
+            'timestamps are not valid for %s/%s utterances',
+            len(error_utts), len(corpus.utts()))
+        return False
+
+    log.info('alignment is valid for all utterances')
+    return True
