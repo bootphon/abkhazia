@@ -26,16 +26,16 @@ import os
 import re
 
 import abkhazia.utils as utils
-from abkhazia.corpus.prepare import AbstractPreparatorWithCMU
+from abkhazia.corpus.prepare import AbstractPreparator
 
 import os
 import scipy.io.wavfile
 
 data = []
 rate = []
-r_dir='/home/deepthought/Music/genres/'
+input_dir ='/home/mkhentout/Bureau/Dataset/Datatang-English/data/American English Speech Data'
 
-class AESRCPreparator(AbstractPreparatorWithCMU):
+class AESRCPreparator(AbstractPreparator):
     """Convert the AESRC corpus to the abkhazia format"""
     name = 'AESRC'
     description = 'AESRC Corpus'
@@ -62,7 +62,7 @@ class AESRCPreparator(AbstractPreparatorWithCMU):
                 
     '''
 
-    url = 
+    url = ''
     audio_format = 'wav'
 
     phones = {
@@ -107,15 +107,16 @@ class AESRCPreparator(AbstractPreparatorWithCMU):
         'HH': u'h',
     }
 
-    silences = [u"NSN"]  # SPN and SIL will be added automatically
+    silences = [u"NSN"]  # ? SPN and SIL will be added automatically
 
     variants = []  # could use lexical stress variants...
 
-    def __init__(self, input_dir,output_dir, log=utils.logger.null_logger(),
+    def __init__(self, input_dir,log=utils.logger.null_logger(), copy_wavs=False
                  ):
         super(AESRCPreparator, self).__init__(input_dir, log=log)
-         self.copy_wavs = copy_wavs
+        self.copy_wavs = copy_wavs
 
+        print("1")
         # list all the wav file in the corpus
         self.wav_files = []
         for dirpath, dirs, files in os.walk(self.input_dir):
@@ -125,160 +126,76 @@ class AESRCPreparator(AbstractPreparatorWithCMU):
                     self.wav_files.append(os.path.join(dirpath, f))
 
        
-       
 #wavs:subfolder containing the speech recordings in wav, either as files or symbolic links
 
-
-#each accent
-    def list_files_one_accent(self, input_dir,output_dir):
-        print ("input_dir"+ input_dir)
-        wavs = [] 
-
-        for folder, sub_folders, files in os.walk(input_dir): #r_dir
-            print("folder "+folder)
-            files = sorted(files)
-            for f in files:
-                if f.endswith('wav'):
-                    print (" wavs file  "+ f)
-                    path_f=folder+'/'+f
-                
-                    shutil.copy(path_f,output_dir)
-            return zip(wavs)#!!
-#all the accent folder
-    def list_audio_files(self,input_path):#input_path = data
-        for folder in os.walk(input_path):
-            if folder.endswith('English\speech\Data'):
-                print("folder is :"+ folder)
-                list_files_one_accent(self,folder,folder+'/wavs')
-#All accent
-    def list_files_all_accent(self,input_path):#input_path = data
-        for folder in os.walk(input_path):
-            if folder.endswith('English\speech\Data'):
-                print("folder is :"+ folder)
-                list_files_accent(self,folder,input_path+'/wavs')
+    def make_wavs(self):
+        print("2")
+        return self.wav_files
 
 #segments.txt:list of utterances with a description of their location in the wavefiles
     def make_segment(self):
         segments = dict()
-        for wav_file in self._wavs:#wavs path
-            utt_id = os.path.basename(wav_file).replace('.wav', '')#
-            segments[utt_id] = (utt_id, None, None)
+        for wav_file in self.wav_files:#wavs path
+            utt_id = os.path.splitext(os.path.basename(wav_file))[0]
+            segments[utt_id] = (utt_id, None, None)#? None= filename None=begin/end
         return segments
+#G0007S1001 G0007S1001.wav X Y
 
 #utt2spk.txt: list containing the speaker associated to each utterance
     def make_speaker(self):
         utt2spk = dict()
-        for wav in self._wavs:
-            bname = os.path.basename(wav)
-            utt_id = bname.replace('.wav', '')
-            speaker_id = bname.split("S")[0]#séparer par S(G10208S5450)
+        for wav_file in self.wav_files:
+            
+            utt_id = os.path.splitext(os.path.basename(wav_file))[0]
+           
+            speaker_id = bname.split("S")[0]#séparer par S(G)
+            
             utt2spk[utt_id] = speaker_id
         return utt2spk
-
+#G0007S1001-S1001 G00007
 
 #text.txt: transcription of each utterance in word units  
     def make_transcription(self):
         text = dict()
-        wav_list = [os.path.basename(w).replace('.wav', '')
-                    for w in self._wavs]
-
-        corrupted_wavs = []
-        for trs in utils.list_files_with_extension(
-                self.input_dir, '.trans.txt'):
-            for line in open(trs, 'r'):
-                matched = re.match(r'([0-9\-]+)\s([A-Z].*)', line)
-                if matched:
-                    utt = matched.group(2)
-
-                    lid = len(matched.group(1).split("-")[0])
-                    prefix = '00' if lid == 2 else '0' if lid == 3 else ''
-                    utt_id = prefix + matched.group(1)
-
-                    if utt_id in wav_list:
-                        text[utt_id] = utt
-                    else:
-                        corrupted_wavs.append(utt_id)
-        if corrupted_wavs != []:
-            self.log.debug('some utterances have no associated wav: {}'
-                           .format(corrupted_wavs))
+        for line in open(os.path.join(self.input_dir, "text"), 'r'):
+            k, v = cd.strip().split('  ', 1)
+            text[k] = v
         return text
-
+#G0007S1001-S1001 <G0007S1001.txt>
+'''
 #lexicon.txt: phonetic dictionary using that inventory
     def make_lexicon(self):
-        # To generate the lexicon, we will use the cmu dict and the
-        # dict of OOVs generated by LibriSpeech)
-        cmu_combined = dict()
-
-        with open(self.librispeech_dict, 'r') as infile:
-            for line in infile:
-                if not re.match(";;; ", line):
-                    dictionary = re.match("(.*)\t(.*)", line)
-                    if dictionary:
-                        entry = dictionary.group(1)
-                        phn = dictionary.group(2)
-                        # remove pronunciation variants
-                        phn = phn.replace("0", "")
-                        phn = phn.replace("1", "")
-                        phn = phn.replace("2", "")
-                        # create the combined dictionary
-                        cmu_combined[entry] = phn
-
-        with open(self.cmu_dict, 'r') as infile:
-            for line in infile:
-                if not re.match(";;; ", line):
-                    dictionary = re.match(r"(.*)\s\s(.*)", line)
-                    if dictionary:
-                        entry = dictionary.group(1)
-                        phn = dictionary.group(2)
-                        # remove pronunciation variants
-                        phn = phn.replace("0", "")
-                        phn = phn.replace("1", "")
-                        phn = phn.replace("2", "")
-                        # create the combined dictionary
-                        cmu_combined[entry] = phn.strip()
-
-        return cmu_combined
-
+        lexicon = dict()
+        infile = open(os.path.join(self.input_dir, "lexicon.txt"), 'r')
+        for line in infile:
+            try:
+                k, v = line.strip().split('\t', 1)
+            except ValueError:
+                l = line.split(' ')
+                k = l[0]
+                v = l[1:]
+            lexicon[k] = v
+        return lexicon
 #phones.txt: phone inventory mapped to IPA
-    def make_phones(self):
-        print("")
+    def _make_phones(self):
+        phones = set()
+        for line in open(os.path.join(self.input_dir, "lexicon.txt"), 'r'):
+            m = re.match("(.*)\t(.*)", line)
+            if m:
+                phn = m.group(2)
+                for p in phn.split(' '):
+                    phones.add(p)
+
+        return {v: v for v in phones}
 #silences.txt: list of silence symbols
-
 def validate_phone_alignment(corpus, alignment, log=utils.logger.get_log()):
-    """Return True if the phone alignment is coherent with the corpus
-
-    Return False on any other case, send a log message for all
-    suspicious alignments.
-
-    """
-    error_utts = set()
-    # check all utterances one by one
-    for utt in corpus.utts():
-        # corpus side
-        _, utt_tstart, utt_tstop = corpus.segments[utt]
-
-        # alignment side
-        ali_tstart = alignment[utt][0][0]
-        ali_tstop = alignment[utt][-1][1]
-
-        # validation
-        if utt_tstart != ali_tstart:
-            error_utts.add(utt)
-            log.warn(
-                '%s tstart error in corpus and alignment (%s != %s)',
-                utt, utt_tstart, ali_tstart)
-
-        if utt_tstop != ali_tstop:
-            error_utts.add(utt)
-            log.warn(
-                '%s : tstop error in corpus and alignment: %s != %s',
-                utt, utt_tstop, ali_tstop)
-
-    if error_utts:
-        log.error(
-            'timestamps are not valid for %s/%s utterances',
-            len(error_utts), len(corpus.utts()))
-        return False
-
-    log.info('alignment is valid for all utterances')
+   
     return True
+'''
+
+def main():
+    print("list audio files")
+    obj = AESRCPreparator(input_dir)
+    obj.make_wavs()
+if __name__ == "__main__":
+    main()
