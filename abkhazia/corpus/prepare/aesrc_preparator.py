@@ -114,11 +114,8 @@ class AESRCPreparator(AbstractPreparatorWithCMU):
     def make_speaker(self):
         utt2spk = dict()
         for wav_file in self.wav_files:
-            
             utt_id = os.path.splitext(os.path.basename(wav_file))[0]
-           
-            speaker_id = bname.split("S")[0]#séparer par S(G)
-            
+            speaker_id = bname.split("S")[0]#séparer par S(G) 
             utt2spk[utt_id] = speaker_id
         return utt2spk
 #G0007S1001-S1001 G00007
