@@ -122,7 +122,7 @@ class AESRCPreparator(AbstractPreparatorWithCMU):
 
 #text.txt: transcription of each utterance in word units  
     def make_transcription(self):
-        text = dict()
+        transcription = dict()
         for wav_file in self.wav_files:
             utt_id = os.path.splitext(os.path.basename(wav_file))[0]
             sentence = utt_id.append[6:10]
@@ -130,8 +130,8 @@ class AESRCPreparator(AbstractPreparatorWithCMU):
         for line in open(os.path.join(self.input_dir, "text"), 'r'):
 
             k, v = cd.strip().split('  ', 1)
-            text[k] = v
-        return text
+            transcription[k] = v
+        return transcription
 #G0007S1001-S1001 <G0007S1001.txt>
 
 #lexicon.txt: phonetic dictionary using that inventory
@@ -147,7 +147,159 @@ class AESRCPreparator(AbstractPreparatorWithCMU):
                 v = l[1:]
             lexicon[k] = v
         return lexicon
+'''
 
+
+ def make_lexicon(self):
+        return self.lexicon
+
+    def _make_lexicon(self):
+        words = set()
+        for utt in self.transcription.values():
+            for word in utt.split(' '):
+                words.add(word)
+
+        lexicon = {}
+        for word in words:
+            romanized = re.match("[a-zA-Z0-9]+", word)
+            if romanized:
+                map = string.maketrans('WEY', 'wey')
+                lexicon[word] = ' '.join(re.findall('..?', word)).encode(
+                    'utf-8').translate(map)
+            else:
+                # replace non-speech labels by SPN or NSN
+                if re.match('<NOISE.*|<LAUGH>', word):
+                    phones = 'NSN'
+                elif re.match('<IVER|<VOCNOISE.*|<LAUGH.+|'
+                              '<UNKNOWN.*|<PRIVATE.*', word):
+                    phones = 'SPN'
+                elif word == '<SIL>':
+                    phones = 'SIL'
+                else:
+                    phones = word
+
+                lexicon[word] = phones
+
+        return lexicon
+
+        def make_lexicon(self):
+        lexicon = dict()
+        for line in utils.open_utf8(self.cmu_dict, 'r').readlines():
+            # remove newline and trailing spaces
+            line = line.strip()
+
+            # skip comments
+            if not (len(line) >= 3 and line[:3] == u';;;'):
+                # parse line
+                word, phones = line.split(u'  ')
+
+                # skip alternative pronunciations, the first one
+                # (with no parenthesized number at the end) is
+                # supposed to be the most common and is retained
+                if not re.match(r'(.*)\([0-9]+\)$', word):
+                    # ignore stress variants of phones
+                    lexicon[word] = re.sub(u'[0-9]+', u'', phones).strip()
+
+        # add special word: <noise> NSN. special word <unk> SPN
+        # will be added automatically during corpus validation
+        lexicon['<noise>'] = 'NSN'
+        return lexicon
+
+
+
+def make_lexicon(self):
+        lex, oov = self._temp_cmu_lexicon()
+        return self._make_lexicon_aux(lex, oov)
+def make_lexicon(self):
+        lex, oov = self._temp_cmu_lexicon()
+        return self._make_lexicon_aux(lex, oov)
+
+    def _load_cmu(self):
+        """Return a dict loaded from the CMU dictionay"""
+        cmu = {}
+        for line in open(self.cmu_dict, "r"):
+            match = re.match(r"(.*)\s\s(.*)", line)
+            if match:
+                entry = match.group(1)
+                phn = match.group(2)
+                # remove pronunciation variants
+                for var in ('0', '1', '2'):
+                    phn = phn.replace(var, '')
+                # create the combined dictionary
+                cmu[entry] = phn
+        return cmu
+
+    def _temp_cmu_lexicon(self):
+        """Create temp lexicon file and temp OOVs.
+
+        No transcription for the words, we will use the CMU but will
+        need to convert to the symbols used in the AIC
+
+        """
+        # count word frequencies in text TODO optimize, use
+        # collections.Counter
+        dict_word = {}
+        for k, v in self.text.items():
+            matched = re.match(r"([fm0-9]+)_([ps])_(.*?)", k)
+            if matched:
+                for word in v.upper().split():
+                    try:
+                        dict_word[word] += 1
+                    except KeyError:
+                        dict_word[word] = 1
+
+        # create the lexicon by looking up in the CMU dictionary. OOVs
+        # should be the sounds and will be written in oov
+        lex = dict()
+        oov = dict()
+        cmu = self._load_cmu()
+        for word, freq in dict_word.items():
+            try:
+                lex[word] = cmu[word]
+            except KeyError:
+                oov[word] = freq
+        return lex, oov
+
+    def _make_lexicon_aux(self, lex, oov):
+        """Create the lexicon file, convert from CMU to AC symbols"""
+        lexicon = dict()
+
+        for k, v in lex.items():
+            word = k.lower()
+            phn_trs = self._cmu2aic(v)
+            lexicon[word] = phn_trs
+
+        # for the sounds
+        for k, v in oov.items():
+            # discard the OOV with freq 1 because they are the
+            # typos. They will remain OOVs
+            if v > 1:
+                sound = k.lower()
+                # need to split the sound into phones to have the
+                # phonetic transcription
+                lexicon[sound] = ' '.join(sound.split(":"))
+
+        return lexicon
+ def make_lexicon(self):
+        """Build the buckeye lexicon from the text.
+            As for the CSJ recipe, different phonetic realizations
+            of a same word (as described by the manual annotations)
+            are considered as different words.
+            For example: okay pronounced as "o k ay" vs "k ay".
+        """
+        lexicon = {}
+        for utt_id in self.text:
+            words = self.text[utt_id].split(" ")
+            for word in words:
+                if not(word in lexicon):
+                    lexicon[word] = word.replace("-", " ").upper()
+        return lexicon
+
+
+
+
+
+'''
 #phones.txt: phone inventory mapped to IPA(phone in AESRC )
     def _make_phones(self):
         phones = set()
@@ -159,15 +311,3 @@ class AESRCPreparator(AbstractPreparatorWithCMU):
                     phones.add(p)
 
         return {v: v for v in phones}
-#silences.txt: list of silence symbols
-def validate_phone_alignment(corpus, alignment, log=utils.logger.get_log()):
-   
-    return True
-'''
-
-def main():
-    print("list audio files")
-    obj = AESRCPreparator(input_dir)
-    obj.make_wavs()
-if __name__ == "__main__":
-    main()
