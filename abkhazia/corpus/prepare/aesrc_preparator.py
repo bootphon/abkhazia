@@ -123,12 +123,17 @@ class AESRCPreparator(AbstractPreparatorWithCMU):
 #text.txt: transcription of each utterance in word units  
     def make_transcription(self):
         text = dict()
+        for wav_file in self.wav_files:
+            utt_id = os.path.splitext(os.path.basename(wav_file))[0]
+            sentence = utt_id.append[6:10]
+            k = utt_id +'-' +sentence
         for line in open(os.path.join(self.input_dir, "text"), 'r'):
+
             k, v = cd.strip().split('  ', 1)
             text[k] = v
         return text
 #G0007S1001-S1001 <G0007S1001.txt>
-'''
+
 #lexicon.txt: phonetic dictionary using that inventory
     def make_lexicon(self):
         lexicon = dict()
