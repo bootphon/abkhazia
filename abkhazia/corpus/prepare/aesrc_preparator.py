@@ -26,7 +26,7 @@ import os
 import re
 
 import abkhazia.utils as utils
-from abkhazia.corpus.prepare import AbstractPreparator
+from abkhazia.corpus.prepare import AbstractPreparatorWithCMU #CMU 
 
 import os
 import scipy.io.wavfile
@@ -35,7 +35,7 @@ data = []
 rate = []
 input_dir ='/home/mkhentout/Bureau/Dataset/Datatang-English/data/American English Speech Data'
 
-class AESRCPreparator(AbstractPreparator):
+class AESRCPreparator(AbstractPreparatorWithCMU):
     """Convert the AESRC corpus to the abkhazia format"""
     name = 'AESRC'
     description = 'AESRC Corpus'
@@ -62,52 +62,10 @@ class AESRCPreparator(AbstractPreparator):
                 
     '''
 
-    url = ''
+    url = ''#?
     audio_format = 'wav'
 
-    phones = {
-        'IY': u'iː',
-        'IH': u'ɪ',
-        'EH': u'ɛ',
-        'EY': u'eɪ',
-        'AE': u'æ',
-        'AA': u'ɑː',
-        'AW': u'aʊ',
-        'AY': u'aɪ',
-        'AH': u'ʌ',
-        'AO': u'ɔː',
-        'OY': u'ɔɪ',
-        'OW': u'oʊ',
-        'UH': u'ʊ',
-        'UW': u'uː',
-        'ER': u'ɝ',
-        'JH': u'ʤ',
-        'CH': u'ʧ',
-        'B': u'b',
-        'D': u'd',
-        'G': u'g',
-        'P': u'p',
-        'T': u't',
-        'K': u'k',
-        'S': u's',
-        'SH': u'ʃ',
-        'Z': u'z',
-        'ZH': u'ʒ',
-        'F': u'f',
-        'TH': u'θ',
-        'V': u'v',
-        'DH': u'ð',
-        'M': u'm',
-        'N': u'n',
-        'NG': u'ŋ',
-        'L': u'l',
-        'R': u'r',
-        'W': u'w',
-        'Y': u'j',
-        'HH': u'h',
-    }
-
-    silences = [u"NSN"]  # ? SPN and SIL will be added automatically
+    silences = []  # SPN and SIL will be added automatically
 
     variants = []  # could use lexical stress variants...
 
@@ -115,31 +73,42 @@ class AESRCPreparator(AbstractPreparator):
                  ):
         super(AESRCPreparator, self).__init__(input_dir, log=log)
         self.copy_wavs = copy_wavs
-
-        print("1")
+       
         # list all the wav file in the corpus
         self.wav_files = []
         for dirpath, dirs, files in os.walk(self.input_dir):
             for f in files:
                 m_file = re.match("^(.*)\.wav$", f)
-                if m_file:
-                    self.wav_files.append(os.path.join(dirpath, f))
+                filename =  os.path.splitext(os.path.basename(f))[0] #get the filename
+
+                if m_file: #not in wav_files:#unique filename
+                    if filename in wav_files: #check if the filename already exist
+                        prefix = 'X'
+                        filename.append(prefix + filename + '.wav') #update the filename
+                        self.wav_files.append(os.path.join(dirpath, f))
+                
+                    else:
+                        self.wav_files.append(os.path.join(dirpath, f))
 
        
 #wavs:subfolder containing the speech recordings in wav, either as files or symbolic links
 
-    def make_wavs(self):
-        print("2")
+    def list_audio_files(self): 
         return self.wav_files
 
 #segments.txt:list of utterances with a description of their location in the wavefiles
     def make_segment(self):
         segments = dict()
-        for wav_file in self.wav_files:#wavs path
+        for wav_file in self.wav_files:
             utt_id = os.path.splitext(os.path.basename(wav_file))[0]
-            segments[utt_id] = (utt_id, None, None)#? None= filename None=begin/end
+            start = 0
+            #get the duration of the wave file
+            (source_rate, source_sig) = wav.read(wav_file)
+            duration_seconds = len(source_sig) / float(source_rate)
+
+            segments[utt_id] = (utt_id, float(start), float(duration_seconds))
         return segments
-#G0007S1001 G0007S1001.wav X Y
+#G0007S1001 G0007S1001.wav 0 wavefile_duration
 
 #utt2spk.txt: list containing the speaker associated to each utterance
     def make_speaker(self):
@@ -176,7 +145,8 @@ class AESRCPreparator(AbstractPreparator):
                 v = l[1:]
             lexicon[k] = v
         return lexicon
-#phones.txt: phone inventory mapped to IPA
+
+#phones.txt: phone inventory mapped to IPA(phone in AESRC )
     def _make_phones(self):
         phones = set()
         for line in open(os.path.join(self.input_dir, "lexicon.txt"), 'r'):
