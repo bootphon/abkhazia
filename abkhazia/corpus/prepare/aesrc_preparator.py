@@ -22,7 +22,7 @@ The AESRC dictionary is available for download at
 
 """
 
-import os
+import os, glob, wave
 import re
 
 import abkhazia.utils as utils
@@ -31,9 +31,8 @@ from abkhazia.corpus.prepare import AbstractPreparatorWithCMU #CMU
 import os
 import scipy.io.wavfile
 
-data = []
-rate = []
-input_dir ='/home/mkhentout/Bureau/Dataset/Datatang-English/data/American English Speech Data'
+
+input_dir ='/home/mkhentout/Bureau/Dataset/abkhazia'
 
 class AESRCPreparator(AbstractPreparatorWithCMU):
     """Convert the AESRC corpus to the abkhazia format"""
@@ -75,68 +74,68 @@ class AESRCPreparator(AbstractPreparatorWithCMU):
         self.copy_wavs = copy_wavs
        
         # list all the wav file in the corpus
-        self.wav_files = []
-        for dirpath, dirs, files in os.walk(self.input_dir):
-            for f in files:
-                m_file = re.match("^(.*)\.wav$", f)
-                filename =  os.path.splitext(os.path.basename(f))[0] #get the filename
+        self.wav_files = dict()
 
-                if m_file: #not in wav_files:#unique filename
-                    if filename in wav_files: #check if the filename already exist
-                        prefix = 'X'
-                        filename.append(prefix + filename + '.wav') #update the filename
-                        self.wav_files.append(os.path.join(dirpath, f))
-                
-                    else:
-                        self.wav_files.append(os.path.join(dirpath, f))
+        #for dirpath, dirs, files in os.walk(self.input_dir):
+        files = glob.glob(os.path.join(input_dir,'*.wav'))
+        for f in files:
+          
+            utt_id = os.path.splitext(os.path.basename(f))[0]
 
-       
+            
+            print('file_name= ',utt_id)
+            self.wav_files[utt_id] = os.path.join(input_dir,f)
+        
+        self.phones = dict()
+        self.lexicon = dict()
+        self.words = set()
+
 #wavs:subfolder containing the speech recordings in wav, either as files or symbolic links
 
     def list_audio_files(self): 
-        return self.wav_files
+        return self.wav_files.values()
 
 #segments.txt:list of utterances with a description of their location in the wavefiles
     def make_segment(self):
         segments = dict()
-        for wav_file in self.wav_files:
-            utt_id = os.path.splitext(os.path.basename(wav_file))[0]
+        for utt_id,wav_file in self.wav_files.items():
             start = 0
             #get the duration of the wave file
-            (source_rate, source_sig) = wav.read(wav_file)
-            duration_seconds = len(source_sig) / float(source_rate)
-
-            segments[utt_id] = (utt_id, float(start), float(duration_seconds))
+            with wave.open(wav_file, 'r') as wav:
+                duration = wav.getnframes() / wav.getframerate()
+            segments[utt_id] = (utt_id, float(start), float(duration))
         return segments
 #G0007S1001 G0007S1001.wav 0 wavefile_duration
 
 #utt2spk.txt: list containing the speaker associated to each utterance
     def make_speaker(self):
         utt2spk = dict()
-        for wav_file in self.wav_files:
-            utt_id = os.path.splitext(os.path.basename(wav_file))[0]
-            speaker_id = bname.split("S")[0]#séparer par S(G) 
+        for utt_id,wav_file in self.wav_files.items():
+            
+            speaker_id = utt_id.split("S")[0] #séparer par S(G) 
             utt2spk[utt_id] = speaker_id
         return utt2spk
 #G0007S1001-S1001 G00007
 
 #text.txt: transcription of each utterance in word units  
     def make_transcription(self):
-        transcription = dict()
-        for wav_file in self.wav_files:
-            utt_id = os.path.splitext(os.path.basename(wav_file))[0]
-            sentence = utt_id.append[6:10]
-            k = utt_id +'-' +sentence
-        for line in open(os.path.join(self.input_dir, "text"), 'r'):
+        text = dict()
+      
+        for utt_id,wav_file in self.wav_files.items():
+            text_file = wav_file.replace('.wav','.txt')
+            text[utt_id] = open(text_file,'r').read().strip()
+            print('utt_id=', utt_id)
+            for word in text[utt_id].split(' '):
+                self.words.add(word)
+            #delete after all the pt
 
-            k, v = cd.strip().split('  ', 1)
-            transcription[k] = v
-        return transcription
+
+        return text
 #G0007S1001-S1001 <G0007S1001.txt>
 
 #lexicon.txt: phonetic dictionary using that inventory
     def make_lexicon(self):
-        lexicon = dict()
+        cmu = dict()
         for line in utils.open_utf8(self.cmu_dict, 'r').readlines():
             # remove newline and trailing spaces
             line = line.strip()
@@ -151,44 +150,26 @@ class AESRCPreparator(AbstractPreparatorWithCMU):
                 # supposed to be the most common and is retained
                 if not re.match(r'(.*)\([0-9]+\)$', word):
                     # ignore stress variants of phones
-                    lexicon[word] = re.sub(u'[0-9]+', u'', phones).strip()
-
-        # add special word: <noise> NSN. special word <unk> SPN
-        # will be added automatically during corpus validation
-            lexicon['<noise>'] = 'NSN'
-        return self.lexicon
-
-
-    def _make_lexicon(self):
-        words = set()
-        for utt in self.transcription.values():
-            for word in utt.split(' '):
-                words.add(word)
+                    cmu[word] = re.sub(u'[0-9]+', u'', phones).strip()
+        
+        print("")
+        lexicon = dict()
+        
+        for word in self.words:
+            try:
+                lexicon[word] = cmu[word] # if pb try...excpt
+            except ValueError:
+                print(" Problem on lexicon!!")
+                
+            for phones in self.lexicon[word]:
+                phones = phones.split(' ')
+                for phone in phones:
+                     
+                    self.phones[phone] = phone
+        
         return lexicon
 
-    def _load_cmu(self):
-        """Return a dict loaded from the CMU dictionay"""
-        cmu = {}
-        for line in open(self.cmu_dict, "r"):
-            match = re.match(r"(.*)\s\s(.*)", line)
-            if match:
-                entry = match.group(1)
-                phn = match.group(2)
-                # remove pronunciation variants
-                for var in ('0', '1', '2'):
-                    phn = phn.replace(var, '')
-                # create the combined dictionary
-                cmu[entry] = phn
-        return cmu
 
-#phones.txt: phone inventory mapped to IPA(IPA=phone in AESRC )
-    def make_phones(self):
-        phones = set()
-        for line in open(os.path.join(self.input_dir, "lexicon.txt"), 'r'):
-            m = re.match("(.*)\t(.*)", line)
-            if m:
-                phn = m.group(2)
-                for p in phn.split(' '):
-                    phones.add(p)
+  
 
-        return {v: v for v in phones}
+        
