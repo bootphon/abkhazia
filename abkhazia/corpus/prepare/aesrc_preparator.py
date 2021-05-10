@@ -184,8 +184,8 @@ def _load_cmu(self):
 
 
 
-#phones.txt: phone inventory mapped to IPA(phone in AESRC )
-    def _make_phones(self):
+#phones.txt: phone inventory mapped to IPA(IPA=phone in AESRC )
+    def make_phones(self):
         phones = set()
         for line in open(os.path.join(self.input_dir, "lexicon.txt"), 'r'):
             m = re.match("(.*)\t(.*)", line)
