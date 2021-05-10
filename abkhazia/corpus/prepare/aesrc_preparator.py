@@ -159,13 +159,14 @@ class AESRCPreparator(AbstractPreparatorWithCMU):
         return self.lexicon
 
 
- def _make_lexicon(self):
+    def _make_lexicon(self):
         words = set()
         for utt in self.transcription.values():
             for word in utt.split(' '):
                 words.add(word)
-return lexicon
-def _load_cmu(self):
+        return lexicon
+
+    def _load_cmu(self):
         """Return a dict loaded from the CMU dictionay"""
         cmu = {}
         for line in open(self.cmu_dict, "r"):
@@ -179,10 +180,6 @@ def _load_cmu(self):
                 # create the combined dictionary
                 cmu[entry] = phn
         return cmu
-
-
-
-
 
 #phones.txt: phone inventory mapped to IPA(IPA=phone in AESRC )
     def make_phones(self):
