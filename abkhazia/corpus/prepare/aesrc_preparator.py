@@ -30,9 +30,11 @@ from abkhazia.corpus.prepare import AbstractPreparatorWithCMU #CMU
 
 import os
 import scipy.io.wavfile
+import string
 
 
 input_dir ='/home/mkhentout/Bureau/Dataset/abkhazia'
+ponctuation = ['!','?','.']
 
 class AESRCPreparator(AbstractPreparatorWithCMU):
     """Convert the AESRC corpus to the abkhazia format"""
@@ -79,16 +81,14 @@ class AESRCPreparator(AbstractPreparatorWithCMU):
         #for dirpath, dirs, files in os.walk(self.input_dir):
         files = glob.glob(os.path.join(input_dir,'*.wav'))
         for f in files:
-          
             utt_id = os.path.splitext(os.path.basename(f))[0]
-
-            
             print('file_name= ',utt_id)
             self.wav_files[utt_id] = os.path.join(input_dir,f)
         
         self.phones = dict()
         self.lexicon = dict()
         self.words = set()
+       
 
 #wavs:subfolder containing the speech recordings in wav, either as files or symbolic links
 
@@ -111,7 +111,6 @@ class AESRCPreparator(AbstractPreparatorWithCMU):
     def make_speaker(self):
         utt2spk = dict()
         for utt_id,wav_file in self.wav_files.items():
-            
             speaker_id = utt_id.split("S")[0] #séparer par S(G) 
             utt2spk[utt_id] = speaker_id
         return utt2spk
@@ -120,16 +119,26 @@ class AESRCPreparator(AbstractPreparatorWithCMU):
 #text.txt: transcription of each utterance in word units  
     def make_transcription(self):
         text = dict()
-      
+
         for utt_id,wav_file in self.wav_files.items():
             text_file = wav_file.replace('.wav','.txt')
             text[utt_id] = open(text_file,'r').read().strip()
             print('utt_id=', utt_id)
             for word in text[utt_id].split(' '):
+                print("WORD = ",word)
                 self.words.add(word)
-            #delete after all the pt
-
-
+                print("gggg",len(self.words))
+                '''
+                for p in ponctuation:
+                    if word.endswith(p):
+                        print("ponct before = ",word)
+                        print("p = ",p)
+                        word = word.replace(p,' ')
+                        print("ponctuation after = ",word)
+                    else:
+                        print("word not ponct= ",word)
+                        self.words.add(word)
+                '''
         return text
 #G0007S1001-S1001 <G0007S1001.txt>
 
@@ -143,28 +152,33 @@ class AESRCPreparator(AbstractPreparatorWithCMU):
             # skip comments
             if not (len(line) >= 3 and line[:3] == u';;;'):
                 # parse line
-                word, phones = line.split(u'  ')
-
+                word_cmu, phones = line.split(u'  ')
+                 
+                #print("word_cmu = ",word_cmu)
+                #print("phones = ",phones)
                 # skip alternative pronunciations, the first one
                 # (with no parenthesized number at the end) is
                 # supposed to be the most common and is retained
-                if not re.match(r'(.*)\([0-9]+\)$', word):
+                if not re.match(r'(.*)\([0-9]+\)$', word_cmu):
                     # ignore stress variants of phones
-                    cmu[word] = re.sub(u'[0-9]+', u'', phones).strip()
+                    cmu[word_cmu] = re.sub(u'[0-9]+', u'', phones).strip()
         
-        print("")
+        print(" end charging cmu")
         lexicon = dict()
-        
+        print("hhhh",len(self.words))
         for word in self.words:
+            print("?????????")#self.words is empty here
+            print("!!!!!!!!!!!!word= ",world)
+
             try:
-                lexicon[word] = cmu[word] # if pb try...excpt
+                lexicon[word] = cmu[word] 
             except ValueError:
                 print(" Problem on lexicon!!")
-                
+
             for phones in self.lexicon[word]:
                 phones = phones.split(' ')
                 for phone in phones:
-                     
+                    print("phone= ",phone)   
                     self.phones[phone] = phone
         
         return lexicon
