@@ -88,11 +88,14 @@ class AESRCPreparator(AbstractPreparatorWithCMU):
         self.phones = dict()
         self.lexicon = dict()
         self.words = set()
-       
+        self.text = dict()
+
+        
 
 #wavs:subfolder containing the speech recordings in wav, either as files or symbolic links
 
-    def list_audio_files(self): 
+    def list_audio_files(self):
+        
         return self.wav_files.values()
 
 #segments.txt:list of utterances with a description of their location in the wavefiles
@@ -118,16 +121,16 @@ class AESRCPreparator(AbstractPreparatorWithCMU):
 
 #text.txt: transcription of each utterance in word units  
     def make_transcription(self):
-        text = dict()
+        #text = dict()
 
         for utt_id,wav_file in self.wav_files.items():
             text_file = wav_file.replace('.wav','.txt')
             text[utt_id] = open(text_file,'r').read().strip()
             print('utt_id=', utt_id)
             for word in text[utt_id].split(' '):
-                print("WORD = ",word)
                 self.words.add(word)
-                print("gggg",len(self.words))
+            
+                #words at the end of the sentence
                 '''
                 for p in ponctuation:
                     if word.endswith(p):
@@ -145,15 +148,24 @@ class AESRCPreparator(AbstractPreparatorWithCMU):
 #lexicon.txt: phonetic dictionary using that inventory
     def make_lexicon(self):
         cmu = dict()
+        text = dict()
+
+        for utt_id,wav_file in self.wav_files.items():
+            text_file = wav_file.replace('.wav','.txt')
+            text[utt_id] = open(text_file,'r').read().strip()
+            print('utt_id=', utt_id)
+            for word in text[utt_id].split(' '):
+                print("WORD = ",word)
+                self.words.add(word)
+                
+
         for line in utils.open_utf8(self.cmu_dict, 'r').readlines():
             # remove newline and trailing spaces
             line = line.strip()
-
             # skip comments
             if not (len(line) >= 3 and line[:3] == u';;;'):
                 # parse line
                 word_cmu, phones = line.split(u'  ')
-                 
                 #print("word_cmu = ",word_cmu)
                 #print("phones = ",phones)
                 # skip alternative pronunciations, the first one
@@ -164,18 +176,19 @@ class AESRCPreparator(AbstractPreparatorWithCMU):
                     cmu[word_cmu] = re.sub(u'[0-9]+', u'', phones).strip()
         
         print(" end charging cmu")
-        lexicon = dict()
-        print("hhhh",len(self.words))
+        #lexicon = dict()
         for word in self.words:
-            print("?????????")#self.words is empty here
-            print("!!!!!!!!!!!!word= ",world)
-
+            print("Word = ",word)
+            
+            
             try:
-                lexicon[word] = cmu[word] 
+                self.lexicon[word] = cmu[word] 
+                print("lexicon_word",self.lexicon[word])
             except ValueError:
                 print(" Problem on lexicon!!")
 
             for phones in self.lexicon[word]:
+                print("phone_lexicon",self.lexicon[word])
                 phones = phones.split(' ')
                 for phone in phones:
                     print("phone= ",phone)   
