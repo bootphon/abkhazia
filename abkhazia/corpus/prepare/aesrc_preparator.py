@@ -121,7 +121,7 @@ class AESRCPreparator(AbstractPreparatorWithCMU):
 
 #text.txt: transcription of each utterance in word units  
     def make_transcription(self):
-        #text = dict()
+        text = dict()
 
         for utt_id,wav_file in self.wav_files.items():
             text_file = wav_file.replace('.wav','.txt')
@@ -149,6 +149,7 @@ class AESRCPreparator(AbstractPreparatorWithCMU):
     def make_lexicon(self):
         cmu = dict()
         text = dict()
+        ponctuation = ['!','?','.']
 
         for utt_id,wav_file in self.wav_files.items():
             text_file = wav_file.replace('.wav','.txt')
@@ -176,24 +177,32 @@ class AESRCPreparator(AbstractPreparatorWithCMU):
                     cmu[word_cmu] = re.sub(u'[0-9]+', u'', phones).strip()
         
         print(" end charging cmu")
-        #lexicon = dict()
+        lexicon = dict()
         for word in self.words:
-            print("Word = ",word)
-            
-            
-            try:
-                self.lexicon[word] = cmu[word] 
-                print("lexicon_word",self.lexicon[word])
-            except ValueError:
-                print(" Problem on lexicon!!")
+            print("Word = ",word.upper())
+            for i in ponctuation:
 
-            for phones in self.lexicon[word]:
-                print("phone_lexicon",self.lexicon[word])
-                phones = phones.split(' ')
-                for phone in phones:
-                    print("phone= ",phone)   
-                    self.phones[phone] = phone
-        
+                if word.endswith(i):
+                    print("word before",word)
+                    print("i=",i)
+                    #word.replace(i," ")
+                    word2 = word.replace(i,"")
+                    print("word2 = ",word2)
+                
+            
+            
+                    try:
+                        self.lexicon[word2] = cmu[word2.upper()]
+                        print("lexicon_word",self.lexicon[word2])
+                    except ValueError:
+                        print(" Problem on lexicon!!")
+
+                    for phones in self.lexicon[word2]:
+                        #print("phone_lexicon",self.lexicon[word])
+                        phones = phones.split(' ')
+                        for phone in phones:
+                            print("phone= ",phone)   
+                            self.phones[phone] = phone
         return lexicon
 
 
