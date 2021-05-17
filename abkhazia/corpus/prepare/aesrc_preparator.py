@@ -181,19 +181,15 @@ class AESRCPreparator(AbstractPreparatorWithCMU):
             print("Word = ",word.upper())
             last_char=word[-1]
             if last_char in ponctuation:
-                print("word before",word)
-                print("last=",last_char)
+                
                 #word.replace(i," ")
                 word2 = word.replace(last_char,"")
-                print("word2 = ",word2)
             else:
                     
                 word2 = word
-                print("hhhhhhh",word2)
             
             
             try: 
-                print("mdr",word2)
                 self.lexicon[word2] = cmu[word2.upper()]
                 print("lexicon_word",self.lexicon[word2])
             except ValueError:
@@ -203,7 +199,6 @@ class AESRCPreparator(AbstractPreparatorWithCMU):
             for phones in self.lexicon[word2]:
                 print("phone_lexicon",self.lexicon[word2])
                 phones = self.lexicon[word2].split(' ')
-                print("hiiiii",self.lexicon[word2].split(' '))
                 
                 for phone in phones:
                     print("phone= ",phone)   
