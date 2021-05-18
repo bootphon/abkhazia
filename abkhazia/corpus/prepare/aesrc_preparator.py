@@ -69,53 +69,89 @@ class AESRCPreparator(AbstractPreparatorWithCMU):
     silences = []  # SPN and SIL will be added automatically
 
     variants = []  # could use lexical stress variants...
-
+#ATTENTION sub_dir
     def __init__(self, input_dir,log=utils.logger.null_logger(), copy_wavs=False
                  ):
         super(AESRCPreparator, self).__init__(input_dir, log=log)
         self.copy_wavs = copy_wavs
-       
+        
         # list all the wav file in the corpus
         self.wav_files = dict()
 
-        #for dirpath, dirs, files in os.walk(self.input_dir):
-        files = glob.glob(os.path.join(input_dir,'*.wav'))
-        for f in files:
-            utt_id = os.path.splitext(os.path.basename(f))[0]
-            print('file_name= ',utt_id)
-            self.wav_files[utt_id] = os.path.join(input_dir,f)
+
+        ''' 
+            files = glob.glob(os.path.join(input_dir,'*.wav'))
+            for f in files:
+        '''
         
+        print("input_dir = ",input_dir)
+        
+        for dirs, sub_dirs, f in os.walk(input_dir,'*.wav'):
+            print("**************************************\n")
+            print("----- =>",f)
+            print("sub_dir_before = ",dirs)
+            print("input_dir = ",input_dir)
+
+            sub_dir_path = os.path.join(str(input_dir),str(dirs))
+            print("sub_dir_after= ",sub_dir_path)
+            print("\n len_dirs = ",len(dirs))
+            if len(dirs) == 0:
+                print("this folder is empty:",dirs)
+
+            else:
+                print("hello=",dirs)
+                if dirs.endswith('Data'):
+                    print("Hiii=",dirs)
+                    for name in f:
+                        if name.endswith('.wav'):
+                            #print("files = ",f)
+                            print("file_name = ",name)
+                            #utt_id = os.path.splitext(os.path.basename(f))[0]
+                            utt_id = os.path.splitext(os.path.basename(name))[0]
+                            print("basename = ",utt_id)
+                            print("\n wave_path = ",os.path.join(sub_dir_path,name))
+                            self.wav_files[utt_id] = os.path.join(sub_dir_path,name)
+        print("looooooooool\n")
+
         self.phones = dict()
         self.lexicon = dict()
         self.words = set()
         self.text = dict()
-
+        
         
 
 #wavs:subfolder containing the speech recordings in wav, either as files or symbolic links
 
     def list_audio_files(self):
-        
+        print("waves_list = ",self.wav_files.values())
+        print("End1\n")
+        print("\n****************************\n")
         return self.wav_files.values()
 
 #segments.txt:list of utterances with a description of their location in the wavefiles
     def make_segment(self):
         segments = dict()
+        print("22222222")
         for utt_id,wav_file in self.wav_files.items():
             start = 0
             #get the duration of the wave file
             with wave.open(wav_file, 'r') as wav:
                 duration = wav.getnframes() / wav.getframerate()
             segments[utt_id] = (utt_id, float(start), float(duration))
+        print("End2\n")
+        print("\n****************************\n")
         return segments
 #G0007S1001 G0007S1001.wav 0 wavefile_duration
 
 #utt2spk.txt: list containing the speaker associated to each utterance
     def make_speaker(self):
+        print("33333333")
         utt2spk = dict()
         for utt_id,wav_file in self.wav_files.items():
             speaker_id = utt_id.split("S")[0] #séparer par S(G) 
             utt2spk[utt_id] = speaker_id
+        print("End3\n")
+        print("\n****************************\n")
         return utt2spk
 #G0007S1001-S1001 G00007
 
@@ -176,7 +212,7 @@ class AESRCPreparator(AbstractPreparatorWithCMU):
                     # ignore stress variants of phones
                     cmu[word_cmu] = re.sub(u'[0-9]+', u'', phones).strip()
         
-        print(" end charging cmu")
+        print("end charging cmu")
         for word in self.words:
             print("Word = ",word.upper())
             last_char=word[-1]
@@ -193,7 +229,7 @@ class AESRCPreparator(AbstractPreparatorWithCMU):
                 self.lexicon[word2] = cmu[word2.upper()]
                 print("lexicon_word",self.lexicon[word2])
             except ValueError:
-                print(" Problem on lexicon!!")
+                print("Problem on lexicon!!")
                 #put it on file
 
             for phones in self.lexicon[word2]:
