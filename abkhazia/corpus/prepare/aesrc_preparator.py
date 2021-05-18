@@ -34,6 +34,7 @@ import string
 
 
 input_dir ='/home/mkhentout/Bureau/Dataset/abkhazia'
+#input_dir ='/home/mkhentout/Bureau/Dataset/Datatang-English/data/American English Speech Data'
 ponctuation = ['!','?','.']
 
 class AESRCPreparator(AbstractPreparatorWithCMU):
@@ -100,7 +101,9 @@ class AESRCPreparator(AbstractPreparatorWithCMU):
 
             else:
                 print("hello=",dirs)
-                if dirs.endswith('Data'):
+                print("/////////////// =>", dirs[-6:-5])
+                #if dirs.startswith('G'):
+                if dirs[-6:-5] == 'G':
                     print("Hiii=",dirs)
                     for name in f:
                         if name.endswith('.wav'):
@@ -185,7 +188,8 @@ class AESRCPreparator(AbstractPreparatorWithCMU):
     def make_lexicon(self):
         cmu = dict()
         text = dict()
-        ponctuation = ['!','?','.',',',';',':']
+        ponctuation = ['!','?','.',',',';',':','-']
+        special_char = "!@#$%^&*()-+?_=,<>/"
 
         for utt_id,wav_file in self.wav_files.items():
             text_file = wav_file.replace('.wav','.txt')
@@ -216,6 +220,8 @@ class AESRCPreparator(AbstractPreparatorWithCMU):
         for word in self.words:
             print("Word = ",word.upper())
             last_char=word[-1]
+
+            #ponctuation
             if last_char in ponctuation:
                 
                 #word.replace(i," ")
@@ -224,17 +230,26 @@ class AESRCPreparator(AbstractPreparatorWithCMU):
                     
                 word2 = word
             
-            
+            #special char
+            for c in word2:
+                if c in special_char:
+                    print("special_word= ")
+                    word3 = word2.replace(c,"")
+                else:
+                    print("no special_word")
+                    word3 = word2
             try: 
-                self.lexicon[word2] = cmu[word2.upper()]
-                print("lexicon_word",self.lexicon[word2])
+                print("cmu[word3.upper()]= ",cmu[word3.upper()])
+                self.lexicon[word3] = cmu[word3.upper()]
+                print("lexicon_word",self.lexicon[word3])
             except ValueError:
                 print("Problem on lexicon!!")
                 #put it on file
 
-            for phones in self.lexicon[word2]:
-                print("phone_lexicon",self.lexicon[word2])
-                phones = self.lexicon[word2].split(' ')
+            for phones in self.lexicon[word3]:
+                print("word2 =>",word3)
+                print("phone_lexicon",self.lexicon[word3])
+                phones = self.lexicon[word3].split(' ')
                 
                 for phone in phones:
                     print("phone= ",phone)   
