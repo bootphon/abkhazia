@@ -273,18 +273,17 @@ class AESRCPreparator(AbstractPreparatorWithCMU):
                         
                     self.lexicon[word_c] = cmu[word_c.upper()]
                     print("lexicon_word",self.lexicon[word_c])
-                except ValueError:
-                    print("Problem on lexicon!!")
-                    #put it on file
+               
 
-                for phones in self.lexicon[word_c]:
-                    print("word2 =>",word_c)
-                    print("phone_lexicon",self.lexicon[word_c])
-                    phones = self.lexicon[word_c].split(' ')
-                        
-                    for phone in phones:
-                        print("phone= ",phone)   
-                        self.phones[phone] = phone
+                    for phones in self.lexicon[word_c]:
+                        print("word2 =>",word_c)
+                        print("phone_lexicon",self.lexicon[word_c])
+                        phones = self.lexicon[word_c].split(' ')
+                            
+                        for phone in phones:
+                            print("phone= ",phone)   
+                            self.phones[phone] = phone
+                except Exception as e: print("55555555",e)
         return self.lexicon
 
 
