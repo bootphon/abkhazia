@@ -188,15 +188,17 @@ class AESRCPreparator(AbstractPreparatorWithCMU):
     def make_lexicon(self):
         cmu = dict()
         text = dict()
+
         ponctuation = ['!','?','.',',',';',':','-']
         special_char = "!@#$%^&*()-+?_=,<>/"
+        invalid_char = set(string.punctuation)
 
         for utt_id,wav_file in self.wav_files.items():
             text_file = wav_file.replace('.wav','.txt')
             text[utt_id] = open(text_file,'r').read().strip()
-            print('utt_id=', utt_id)
+            #print('utt_id=', utt_id)
             for word in text[utt_id].split(' '):
-                print("WORD = ",word)
+                #print("WORD = ",word)
                 self.words.add(word)
                 
 
@@ -207,8 +209,7 @@ class AESRCPreparator(AbstractPreparatorWithCMU):
             if not (len(line) >= 3 and line[:3] == u';;;'):
                 # parse line
                 word_cmu, phones = line.split(u'  ')
-                #print("word_cmu = ",word_cmu)
-                #print("phones = ",phones)
+              
                 # skip alternative pronunciations, the first one
                 # (with no parenthesized number at the end) is
                 # supposed to be the most common and is retained
@@ -217,43 +218,73 @@ class AESRCPreparator(AbstractPreparatorWithCMU):
                     cmu[word_cmu] = re.sub(u'[0-9]+', u'', phones).strip()
         
         print("end charging cmu")
-        for word in self.words:
-            print("Word = ",word.upper())
-            last_char=word[-1]
 
-            #ponctuation
-            if last_char in ponctuation:
+        for word in self.words:
+            print("Start=> word_UPPER = ",word.upper())
+            
+            last_char=word[-1]
+            print("\nDelete last char \n")
+            #delete the ponctuation char
+            if last_char in invalid_char:
                 
-                #word.replace(i," ")
                 word2 = word.replace(last_char,"")
+                print("word2_after_deleting_last=",word2)
             else:
                     
                 word2 = word
-            
-            #special char
-            for c in word2:
-                if c in special_char:
-                    print("special_word= ")
-                    word3 = word2.replace(c,"")
-                else:
-                    print("no special_word")
-                    word3 = word2
-            try: 
-                print("cmu[word3.upper()]= ",cmu[word3.upper()])
-                self.lexicon[word3] = cmu[word3.upper()]
-                print("lexicon_word",self.lexicon[word3])
-            except ValueError:
-                print("Problem on lexicon!!")
-                #put it on file
+                print("word2_without_last =",word2)
 
-            for phones in self.lexicon[word3]:
-                print("word2 =>",word3)
-                print("phone_lexicon",self.lexicon[word3])
-                phones = self.lexicon[word3].split(' ')
+            print("\nSpecial char\n",word2)
+            #special char
+            c = '-'
+            word_list = []
+            
+            '''   
+            for c in word2:
+            if c in special_char:
+            
+            re.findall(r"[A-Za-z@#]+|\S", word2)
+            '''
+               
+            if c in word2: #invalid_char:
+                print("word2 =",word2)
+                    
+                print("special_char = ",str(c))
+                word2 = word2.replace(c," ")
+                print("word_after_special_chr = ",word2)
                 
-                for phone in phones:
-                    print("phone= ",phone)   
-                    self.phones[phone] = phone
+                   
+                a,b = word2.split(' ',1)
+                print("First_part = ",a)
+                print("second_part = ",b)
+                word_list.append(a)
+                word_list.append(b)
+                print("list_word_with_c=",word_list)
+                
+            else:
+                print("word22= ",word2)
+                
+                word_list.append(word2)
+                print("list_word_no_c=",word_list)
+
+            for word_c in word_list:
+                print("33333 ",word_c)
+                try: 
+                        
+                    self.lexicon[word_c] = cmu[word_c.upper()]
+                    print("lexicon_word",self.lexicon[word_c])
+                except ValueError:
+                    print("Problem on lexicon!!")
+                    #put it on file
+
+                for phones in self.lexicon[word_c]:
+                    print("word2 =>",word_c)
+                    print("phone_lexicon",self.lexicon[word_c])
+                    phones = self.lexicon[word_c].split(' ')
+                        
+                    for phone in phones:
+                        print("phone= ",phone)   
+                        self.phones[phone] = phone
         return self.lexicon
 
 
