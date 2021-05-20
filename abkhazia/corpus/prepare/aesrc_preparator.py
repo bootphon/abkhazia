@@ -35,7 +35,6 @@ import string
 
 input_dir ='/home/mkhentout/Bureau/Dataset/abkhazia'
 #input_dir ='/home/mkhentout/Bureau/Dataset/Datatang-English/data/American English Speech Data'
-ponctuation = ['!','?','.']
 
 class AESRCPreparator(AbstractPreparatorWithCMU):
     """Convert the AESRC corpus to the abkhazia format"""
@@ -70,7 +69,7 @@ class AESRCPreparator(AbstractPreparatorWithCMU):
     silences = []  # SPN and SIL will be added automatically
 
     variants = []  # could use lexical stress variants...
-#ATTENTION sub_dir
+
     def __init__(self, input_dir,log=utils.logger.null_logger(), copy_wavs=False
                  ):
         super(AESRCPreparator, self).__init__(input_dir, log=log)
@@ -78,44 +77,25 @@ class AESRCPreparator(AbstractPreparatorWithCMU):
         
         # list all the wav file in the corpus
         self.wav_files = dict()
-
-
-        ''' 
-            files = glob.glob(os.path.join(input_dir,'*.wav'))
-            for f in files:
-        '''
-        
-        print("input_dir = ",input_dir)
         
         for dirs, sub_dirs, f in os.walk(input_dir,'*.wav'):
-            print("**************************************\n")
-            print("----- =>",f)
-            print("sub_dir_before = ",dirs)
-            print("input_dir = ",input_dir)
 
             sub_dir_path = os.path.join(str(input_dir),str(dirs))
-            print("sub_dir_after= ",sub_dir_path)
-            print("\n len_dirs = ",len(dirs))
+          
             if len(dirs) == 0:
                 print("this folder is empty:",dirs)
 
             else:
-                print("hello=",dirs)
-                print("/////////////// =>", dirs[-6:-5])
                 #if dirs.startswith('G'):
                 if dirs[-6:-5] == 'G':
-                    print("Hiii=",dirs)
+
                     for name in f:
                         if name.endswith('.wav'):
-                            #print("files = ",f)
                             print("file_name = ",name)
-                            #utt_id = os.path.splitext(os.path.basename(f))[0]
                             utt_id = os.path.splitext(os.path.basename(name))[0]
-                            print("basename = ",utt_id)
                             print("\n wave_path = ",os.path.join(sub_dir_path,name))
                             self.wav_files[utt_id] = os.path.join(sub_dir_path,name)
-        print("looooooooool\n")
-
+       
         self.phones = dict()
         self.lexicon = dict()
         self.words = set()
@@ -126,9 +106,7 @@ class AESRCPreparator(AbstractPreparatorWithCMU):
 #wavs:subfolder containing the speech recordings in wav, either as files or symbolic links
 
     def list_audio_files(self):
-        print("waves_list = ",self.wav_files.values())
-        print("End1\n")
-        print("\n****************************\n")
+       
         return self.wav_files.values()
 
 #segments.txt:list of utterances with a description of their location in the wavefiles
