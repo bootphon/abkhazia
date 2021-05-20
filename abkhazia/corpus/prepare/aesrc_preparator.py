@@ -124,13 +124,11 @@ class AESRCPreparator(AbstractPreparatorWithCMU):
 
 #utt2spk.txt: list containing the speaker associated to each utterance
     def make_speaker(self):
-        print("33333333")
         utt2spk = dict()
         for utt_id,wav_file in self.wav_files.items():
             speaker_id = utt_id.split("S")[0] #séparer par S(G) 
             utt2spk[utt_id] = speaker_id
-        print("End3\n")
-        print("\n****************************\n")
+            
         return utt2spk
 #G0007S1001-S1001 G00007
 
