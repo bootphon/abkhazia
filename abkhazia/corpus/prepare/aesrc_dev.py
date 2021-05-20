@@ -17,6 +17,6 @@ preparator = AESRCPreparator(
 # store symlinks to the wavs)
 with tempfile.TemporaryDirectory() as tmpdir:
     corpus = preparator.prepare(tmpdir)
-    corpus.save('/home/mkhentout/Bureau/Dataset/tmp')
+    corpus.save('/home/mkhentout/Bureau/Dataset/tmp_accent')
 # load the prepared corpus and validate the format is correct
     corpus.validate()
