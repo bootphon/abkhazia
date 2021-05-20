@@ -33,6 +33,8 @@ from .sps_csj_preparator import SPSCSJPreparator
 from .buckeye_manual_preparator import BuckeyeManualPreparator
 from .kcss_preparator import KCSSPreparator
 
+from .aesrc_preparator import AESRCPreparator
+
 from .globalphone_abstract_preparator import (
     AbstractGlobalPhonePreparator)
 from .globalphone_mandarin_preparator import (
