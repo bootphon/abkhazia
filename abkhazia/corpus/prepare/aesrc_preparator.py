@@ -112,15 +112,13 @@ class AESRCPreparator(AbstractPreparatorWithCMU):
 #segments.txt:list of utterances with a description of their location in the wavefiles
     def make_segment(self):
         segments = dict()
-        print("22222222")
         for utt_id,wav_file in self.wav_files.items():
             start = 0
             #get the duration of the wave file
             with wave.open(wav_file, 'r') as wav:
                 duration = wav.getnframes() / wav.getframerate()
             segments[utt_id] = (utt_id, float(start), float(duration))
-        print("End2\n")
-        print("\n****************************\n")
+       
         return segments
 #G0007S1001 G0007S1001.wav 0 wavefile_duration
 
