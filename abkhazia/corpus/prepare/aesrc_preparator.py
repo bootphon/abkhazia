@@ -37,7 +37,7 @@ import phonemizer
 from phonemizer.punctuation import Punctuation
 from phonemizer.separator import default_separator
 
-input_dir ='/home/mkhentout/Bureau/Dataset/abkhazia/American English Speech Data'
+input_dir ='/home/mkhentout/Bureau/abkhaziaAmerican English Speech Data'
 #input_dir ='/home/mkhentout/Bureau/Dataset/abkhazia/Indian English Speech Data'
 #input_dir ='/home/mkhentout/Bureau/Dataset/Datatang-English/data/American English Speech Data'
 out_put_error = '/home/mkhentout/Bureau/Dataset/tmp_sentence/'
@@ -284,7 +284,7 @@ class AESRCPreparator(AbstractPreparatorWithCMU):
                 f.write(word+"\n")
                 f.close()
         return self.lexicon
-    '''
+  
 
     #phonimaze full sentence
     def make_lexicon(self):
@@ -307,7 +307,7 @@ class AESRCPreparator(AbstractPreparatorWithCMU):
             sentence_phonemize = phonemize(text[utt_id],separator=separator,backend='espeak', language='en-us')#preserve_punctuation=False)
             print("sentence_phonemize= ", sentence_phonemize)
 
-            '''      
+               
             for word in sentence.split(' '):#text[utt_id]
                 if len(word) != 0:
                     print("Word = ",word)
@@ -320,7 +320,7 @@ class AESRCPreparator(AbstractPreparatorWithCMU):
                     self.words_phoneme.add(word_phonemize)
             sent2 = sentence_phonemize
             print("\nsent2 = ",sent2)
-            '''
+            
             sent1= sentence.split(' ')#text.split()
             print("\n sent1 = ",sent1)
             #add words
@@ -346,7 +346,7 @@ class AESRCPreparator(AbstractPreparatorWithCMU):
                 print("words[i] = ",words[i] )
                 #i += 1
             
-                '''
+                
                 try:   
                     for phones in self.lexicon[sent1[i]]:
                     
@@ -370,10 +370,124 @@ class AESRCPreparator(AbstractPreparatorWithCMU):
                     f = open(out_put_error+"error.txt","a")
                     f.write(words[i]+"\n")
                     f.close()
-                '''
+                
                 i += 1     
                 
 
         print("*** =",self.lexicon)
         return self.lexicon
+    '''
+#phonimaze full sentence
+    def make_lexicon(self):
+
+        text = dict()
+        invalid_char = ['-','--','',"`","'"]
+        ponctuation = set(string.punctuation)
+
+        for utt_id,wav_file in self.wav_files.items():
+            text_file = wav_file.replace('.wav','.txt')
+            text[utt_id] = open(text_file,'r').read().strip()
+            
+            #phonimazer sentence
+            sentence = text[utt_id]
+            print("Sentence = ",sentence)
+
+            punctuation_marks=Punctuation.default_marks()
+            separator = phonemizer.separator.Separator(phone=' ',word=';eword ')
+            sentence_phonemize = phonemize(text[utt_id],separator=separator,language='en-us')#backend='espeak',
+            print("Sentence_phonemize= ", sentence_phonemize)
+
+            sent1= sentence.split(' ')#text.split()
+            print("\nsent1 = ",sent1)
+            words = [w.strip() for w in sentence_phonemize.split(';eword') if w.strip()] 
+            print("words_eword = ",words)
+            i = 0
+            # delete the space ' ' on the phonemize sentece
+            sent1 = ' '.join(sent1).split()
+            size_1 = len(sent1) 
+            size_2 = len(sentence_phonemize)
+            size_3 = len(words)
+
+            print("Size_1 = ",len(sent1))
+            print("Size_3 = ",size_3)
+
+            if size_1 == size_3:#2
+
+                while i < len(sent1):
+                    print('\n ************* \n')
                 
+                    self.lexicon[sent1[i]]=words[i] 
+                    print("sent1[i] =",sent1[i])
+                    print("words[i] = ",words[i] )
+                    #i += 1
+
+                    
+                    #print("8888888888 = ",self.lexicon[sent1[i]])
+                     
+                    for phones in self.lexicon[sent1[i]]:#!! sent1
+                        print("phone1 =",phones)
+                        phones = self.lexicon[sent1[i]].split(' ')
+                    try:                       
+                            print("\n here in phone2 = ",phones)
+                    
+                            for phone in phones:
+                                print("\_phone=",phone)   
+                                if len(phone) != 0:
+                                    self.phones[phone] = phone
+                                else:
+                                    print("\nhhhhhhhhhhhhhhhhhhhhhhhhhhh = ",phone)
+                     
+                    except Exception as e:
+                        print("\nLexicon error")                        
+                        f = open(out_put_error+"error.txt","a")
+                        #f.write(words+"\n")
+                        f.close()
+                    
+                    i += 1     
+                    
+            else:
+                print('\n++++++++++++++++++++++++++++\n')
+                print("size_1 != size_2")
+                print("\n text =",text[utt_id])
+                separator = phonemizer.separator.Separator(phone=' ', word='')
+                punctuation_marks=Punctuation.default_marks()
+                for word in text[utt_id].split(' '):
+                    print('1111word = ',word)
+                    self.words.add(word)
+
+                for word in self.words:  
+                    print("self_words = ",self.words)
+                    
+                    if word not in invalid_char :
+                        print('2222word = ',word)
+                        try:    
+                            print('\n')
+                            self.lexicon[word] = phonemize(word,separator=separator,punctuation_marks=punctuation_marks,preserve_punctuation=True)
+                            print("8nhhhh =",self.lexicon)
+
+                            for phones in self.lexicon[word]:
+                                print("11 =",phones)
+                                phones = self.lexicon[word].split(' ')
+                            
+                                for phone in phones:
+                                    print("22 = ",phone)
+                                    if len(phone) != 0:
+                                        self.phones[phone] = phone
+                           
+                        except Exception as e:
+                            print("Lexicon error")
+                            f = open(out_put_error+"error.txt","a")
+                            f.write(word+"\n")
+                            f.close()
+                    else:
+                    
+                        print("\n")
+                    
+                        print("\n This word don't exist on lexicon",word)
+                        f = open(out_put_error+"error2.txt","a")
+                        f.write(word+"\n")
+                        f.close()
+                    
+
+        print("*** =",self.lexicon)
+        return self.lexicon
