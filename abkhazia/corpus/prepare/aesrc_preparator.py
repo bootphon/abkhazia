@@ -37,10 +37,10 @@ import phonemizer
 from phonemizer.punctuation import Punctuation
 from phonemizer.separator import default_separator
 
-input_dir ='/home/mkhentout/Bureau/abkhaziaAmerican English Speech Data'
-#input_dir ='/home/mkhentout/Bureau/Dataset/abkhazia/Indian English Speech Data'
-#input_dir ='/home/mkhentout/Bureau/Dataset/Datatang-English/data/American English Speech Data'
-out_put_error = '/home/mkhentout/Bureau/Dataset/tmp_sentence/'
+
+input_dir ='/home/mkhentout/Bureau/Dataset/Datatang-English/data/American English Speech'
+out_put_error = '/home/mkhentout/Bureau/Dataset/tmp_American English Speech/'
+
 class AESRCPreparator(AbstractPreparatorWithCMU):
     """Convert the AESRC corpus to the abkhazia format"""
     name = 'AESRC'
@@ -96,7 +96,7 @@ class AESRCPreparator(AbstractPreparatorWithCMU):
 
                     for name in f:
                         if name.endswith('.wav'):
-                            #print("file_name = ",name)
+                            
                             utt_id = os.path.splitext(os.path.basename(name))[0]
                             #print("\n wave_path = ",os.path.join(sub_dir_path,name))
                             self.wav_files[utt_id] = os.path.join(sub_dir_path,name)
@@ -110,13 +110,13 @@ class AESRCPreparator(AbstractPreparatorWithCMU):
         self.lexicon1 =dict()
         
 
-#wavs:subfolder containing the speech recordings in wav, either as files or symbolic links
+#wavs: subfolder containing the speech recordings in wav, either as files or symbolic links
 
     def list_audio_files(self):
        
         return self.wav_files.values()
 
-#segments.txt:list of utterances with a description of their location in the wavefiles
+#segments.txt: list of utterances with a description of their location in the wavefiles
     def make_segment(self):
         segments = dict()
         for utt_id,wav_file in self.wav_files.items():
@@ -127,7 +127,7 @@ class AESRCPreparator(AbstractPreparatorWithCMU):
             segments[utt_id] = (utt_id, float(start), float(duration))
        
         return segments
-#G0007S1001 G0007S1001.wav 0 wavefile_duration
+#EX: G0007S1001 G0007S1001.wav 0 wavefile_duration
 
 #utt2spk.txt: list containing the speaker associated to each utterance
     def make_speaker(self):
@@ -137,7 +137,7 @@ class AESRCPreparator(AbstractPreparatorWithCMU):
             utt2spk[utt_id] = speaker_id
 
         return utt2spk
-#G0007S1001-S1001 G00007
+#EX: G0007S1001-S1001 G00007
 
 #text.txt: transcription of each utterance in word units  
     def make_transcription(self):
@@ -151,100 +151,16 @@ class AESRCPreparator(AbstractPreparatorWithCMU):
                 self.words.add(word)
             
         return text
-#G0007S1001-S1001 <G0007S1001.txt>
+#EX: G0007S1001-S1001 <G0007S1001.txt>
 
 #lexicon.txt: phonetic dictionary using that inventory
     '''
-    def make_lexicon(self):
-        cmu = dict()
-        text = dict()
-
-        invalid_char = set(string.punctuation)
-
-        for utt_id,wav_file in self.wav_files.items():
-            text_file = wav_file.replace('.wav','.txt')
-            text[utt_id] = open(text_file,'r').read().strip()
-            
-            for word in text[utt_id].split(' '):
-                self.words.add(word)
-                
-        #charging cmu dict
-        for line in utils.open_utf8(self.cmu_dict, 'r').readlines():
-            # remove newline and trailing spaces
-            line = line.strip()
-            # skip comments
-            if not (len(line) >= 3 and line[:3] == u';;;'):
-                # parse line
-                word_cmu, phones = line.split(u'  ')
-              
-                # skip alternative pronunciations, the first one
-                # (with no parenthesized number at the end) is
-                # supposed to be the most common and is retained
-                if not re.match(r'(.*)\([0-9]+\)$', word_cmu):
-                    # ignore stress variants of phones
-                    cmu[word_cmu] = re.sub(u'[0-9]+', u'', phones).strip()      
-        print("end charging cmu")
-
-
-        for word in self.words:  
-            last_char=word[-1]
-            
-            #delete the ponctuation char
-            if last_char in invalid_char:  
-                word2 = word.replace(last_char,"")
-                #print("word2_after_deleting_last=",word2)
-            else:       
-                word2 = word
-                #print("word2_without_last =",word2)
-
-            
-            #special char on some accent like(-): eight-eight
-            
-            c = '-'
-            word_list = []
-               
-            if c in word2: #check if (-) exist
-                
-                word2 = word2.replace(c," ")
-                #print("word_after_special_chr = ",word2)
-                  
-                part1,part2 = word2.split(' ',1)
-                #print("First_part = ",part1)
-                #print("second_part = ",part2)
-                word_list.append(part1)
-                word_list.append(part2)
-                #print("list_word_with_c=",word_list)
-                
-            else:                
-                word_list.append(word2)
-                #print("list_word_no_c=",word_list)
-
-            for word_c in word_list:
-                try: 
-                        
-                    self.lexicon[word_c] = cmu[word_c.upper()]
-                    #print("lexicon_word",self.lexicon[word_c])
-                    for phones in self.lexicon[word_c]:
-                        phones = self.lexicon[word_c].split(' ')
-                            
-                        for phone in phones:
-                            #print("phone= ",phone)   
-                            self.phones[phone] = phone
-
-                except Exception as e: 
-                    print("Lexicon Error : ",e)
-                    f = open(out_put_error+"error.txt","w")
-                    f.write(word_c+"\n")
-                    #f.write(phone)+"\n"
-                    f.close()
-        return self.lexicon
-
-    '''
-    '''
+    #phonimaze word by wor
+   
     def make_lexicon(self):
         print("make_lexicon")
         text = dict()
-        invalid_char = ['-','--','',"`","'"]
+        invalid_char = ['-','--','',"`","'",","]#?delete ,
         for utt_id,wav_file in self.wav_files.items():
             text_file = wav_file.replace('.wav','.txt')
             text[utt_id] = open(text_file,'r').read().strip()
@@ -285,7 +201,8 @@ class AESRCPreparator(AbstractPreparatorWithCMU):
                 f.close()
         return self.lexicon
   
-
+    '''
+    '''
     #phonimaze full sentence
     def make_lexicon(self):
 
@@ -390,17 +307,16 @@ class AESRCPreparator(AbstractPreparatorWithCMU):
             
             #phonimazer sentence
             sentence = text[utt_id]
-            print("Sentence = ",sentence)
-
+            
             punctuation_marks=Punctuation.default_marks()
             separator = phonemizer.separator.Separator(phone=' ',word=';eword ')
             sentence_phonemize = phonemize(text[utt_id],separator=separator,language='en-us')#backend='espeak',
             print("Sentence_phonemize= ", sentence_phonemize)
 
             sent1= sentence.split(' ')#text.split()
-            print("\nsent1 = ",sent1)
+           
             words = [w.strip() for w in sentence_phonemize.split(';eword') if w.strip()] 
-            print("words_eword = ",words)
+            
             i = 0
             # delete the space ' ' on the phonemize sentece
             sent1 = ' '.join(sent1).split()
@@ -408,34 +324,22 @@ class AESRCPreparator(AbstractPreparatorWithCMU):
             size_2 = len(sentence_phonemize)
             size_3 = len(words)
 
-            print("Size_1 = ",len(sent1))
-            print("Size_3 = ",size_3)
-
-            if size_1 == size_3:#2
-
-                while i < len(sent1):
-                    print('\n ************* \n')
-                
+            if size_1 == size_3:
+                while i < len(sent1):       
                     self.lexicon[sent1[i]]=words[i] 
-                    print("sent1[i] =",sent1[i])
-                    print("words[i] = ",words[i] )
+                   
                     #i += 1
 
-                    
-                    #print("8888888888 = ",self.lexicon[sent1[i]])
-                     
-                    for phones in self.lexicon[sent1[i]]:#!! sent1
-                        print("phone1 =",phones)
+                    for phones in self.lexicon[sent1[i]]:                  
                         phones = self.lexicon[sent1[i]].split(' ')
-                    try:                       
-                            print("\n here in phone2 = ",phones)
-                    
+                    try:                                
                             for phone in phones:
-                                print("\_phone=",phone)   
+                               
                                 if len(phone) != 0:
                                     self.phones[phone] = phone
                                 else:
-                                    print("\nhhhhhhhhhhhhhhhhhhhhhhhhhhh = ",phone)
+                                    print(" ")
+                                    
                      
                     except Exception as e:
                         print("\nLexicon error")                        
@@ -446,31 +350,23 @@ class AESRCPreparator(AbstractPreparatorWithCMU):
                     i += 1     
                     
             else:
-                print('\n++++++++++++++++++++++++++++\n')
-                print("size_1 != size_2")
-                print("\n text =",text[utt_id])
+                
                 separator = phonemizer.separator.Separator(phone=' ', word='')
                 punctuation_marks=Punctuation.default_marks()
                 for word in text[utt_id].split(' '):
-                    print('1111word = ',word)
                     self.words.add(word)
 
                 for word in self.words:  
-                    print("self_words = ",self.words)
                     
                     if word not in invalid_char :
-                        print('2222word = ',word)
                         try:    
                             print('\n')
                             self.lexicon[word] = phonemize(word,separator=separator,punctuation_marks=punctuation_marks,preserve_punctuation=True)
-                            print("8nhhhh =",self.lexicon)
 
                             for phones in self.lexicon[word]:
-                                print("11 =",phones)
                                 phones = self.lexicon[word].split(' ')
                             
                                 for phone in phones:
-                                    print("22 = ",phone)
                                     if len(phone) != 0:
                                         self.phones[phone] = phone
                            
@@ -489,5 +385,4 @@ class AESRCPreparator(AbstractPreparatorWithCMU):
                         f.close()
                     
 
-        print("*** =",self.lexicon)
         return self.lexicon
