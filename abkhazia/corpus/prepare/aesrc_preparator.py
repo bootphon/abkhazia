@@ -37,7 +37,12 @@ import phonemizer
 from phonemizer.punctuation import Punctuation
 from phonemizer.separator import default_separator
 
+'''
+#Oberon
+input_dir = '/scratch1/data/raw_data/AESRC/Datatang-English/data'
+out_put_error = '/home/mkhentout/abkhazia/result'
 
+'''
 input_dir ='/home/mkhentout/Bureau/Dataset/Datatang-English/data/American English Speech'
 out_put_error = '/home/mkhentout/Bureau/Dataset/tmp_American English Speech/'
 
@@ -71,7 +76,7 @@ class AESRCPreparator(AbstractPreparatorWithCMU):
     url = ''#?
     audio_format = 'wav'
 
-    silences = []  # SPN and SIL will be added automatically
+    silences = ['SPN','SIL']  # SPN and SIL will be added automatically
 
     variants = []  # could use lexical stress variants...
 
@@ -142,12 +147,15 @@ class AESRCPreparator(AbstractPreparatorWithCMU):
 #text.txt: transcription of each utterance in word units  
     def make_transcription(self):
         text = dict()
+         
+        ponctuation = set(string.punctuation)
 
         for utt_id,wav_file in self.wav_files.items():
             text_file = wav_file.replace('.wav','.txt')
             text[utt_id] = open(text_file,'r').read().strip()
             #print('utt_id=', utt_id)
             for word in text[utt_id].split(' '):
+                
                 self.words.add(word)
             
         return text
