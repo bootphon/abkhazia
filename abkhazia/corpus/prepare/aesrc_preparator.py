@@ -145,19 +145,26 @@ class AESRCPreparator(AbstractPreparatorWithCMU):
 #EX: G0007S1001-S1001 G00007
 
 #text.txt: transcription of each utterance in word units  
+  
     def make_transcription(self):
         text = dict()
          
-        ponctuation = set(string.punctuation)
+        punctuations = '''!()-[]{};:'"\,<>./?@#$%^&*_~'''
 
         for utt_id,wav_file in self.wav_files.items():
             text_file = wav_file.replace('.wav','.txt')
             text[utt_id] = open(text_file,'r').read().strip()
             #print('utt_id=', utt_id)
-            for word in text[utt_id].split(' '):
-                
-                self.words.add(word)
-            
+            no_punct = ""
+            for word in text[utt_id]:
+               
+                    
+                if word not in punctuations:
+                    no_punct = no_punct + word
+                            
+            text[utt_id]= no_punct #"hellooooo"
+        self.words.add(no_punct)
+
         return text
 #EX: G0007S1001-S1001 <G0007S1001.txt>
 
