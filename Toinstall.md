@@ -17,13 +17,17 @@ Reading https://pypi.python.org/simple/
 No local packages or download links found for matplotlib
 error: Could not find suitable distribution for Requirement.parse('matplotlib')
 
-sudo pip3 install -U setuptools
+sudo pip3 install -U setuptools or pip install -U pip setuptools 
 sudo pip3 install -U jinja2
 sudo pip3 install phonemizer
 pip3 install matplotlib
 sudo pip3 install progressbar2
-sudo pip3 install h5features
+ 
 sudo pip3 install argcomplete
 
 python 3.8
 h5py==2.10.0
+
+/scratch1/data/raw_data/AESRC/Datatang-English/data
+
+/scratch2/mkhentout/results/English
