@@ -167,52 +167,59 @@ class AESRCPreparator(AbstractPreparatorWithCMU):
 
 #lexicon.txt: phonetic dictionary using that inventory
    
-#phonimaze full sentence
+
     def make_lexicon(self):
-        separator = phonemizer.separator.Separator(phone=' ',word=';eword ')
+        separator = phonemizer.separator.Separator(phone=' ', word=None)
+        espeak = phonemizer.backend.EspeakBackend('en-us')
+        words = {w for w in utt.split(' ') for utt in self._text.values()}
+        self.lexicon = {w: espeak.phonemize([w], separator, strip=True)[0] for w in words}
+        self.lexicon['<unk>'] = "SPN"
+        return lexicon
 
-        # call text_prepare()
-        text = self._text
-        #text_phonemize = phonemize(text,separator=separator,language='en-us')#backend='espeak',     
-        text_phonemize = phonemize(text.values(),separator=separator,language='en-us')
 
-        words = [w.strip() for w in text_phonemize.split(';eword') if w.strip()] 
+    '''
+    #phonimaze full sentence
+        def make_lexicon(self):
+            separator = phonemizer.separator.Separator(phone=' ',word=';eword ')
 
-             
-        for word in text:
-            #for word_phoneme in words
-            self.lexicon[word]=words 
+            # call text_prepare()
+            text = self._text
+            print("_text= ",text)
+            #text_phonemize = phonemize(text,separator=separator,language='en-us')#backend='espeak',     
+            text_phonemize = phonemize(text.values(),separator=separator,language='en-us')ou
+            words = [w.strip() for w in text_phonemize.split(';eword') if w.strip()]    
 
-        while i < len(words):
-            for phones in self.lexicon[word[i]]:                  
-                phones = self.lexicon[word[i]].split(' ')
-                try:                                
-                    for phone in phones:
-                                
-                        if len(phone) != 0:
-                            self.phones[phone] = phone
-                        else:
-                            print(" ")
-                                                                
-                except Exception as e:
-                    print("\nLexicon error")                        
-                    f = open(out_put_error+"error.txt","a")
-                    f.close()
+            self.lexicon[text.values()]=words 
+
+            while i < len(words):
+                for phones in self.lexicon[word[i]]:                  
+                    phones = self.lexicon[word[i]].split(' ')
+                    try:                                
+                        for phone in phones:
+                                    
+                            if len(phone) != 0:
+                                self.phones[phone] = phone
+                            else:
+                                print(" ")
+                                                                    
+                    except Exception as e:
+                        print("\n lexicon_error")                        
+                        f = open(out_put_error+"error.txt","a")
+                        f.close()
+                            
                         
-                      
-        self.lexicon['<unk>'] = 'SPN'     
-                 
-        return self.lexicon
-
+            self.lexicon['<unk>'] = 'SPN'     
+                    
+            return self.lexicon
+    '''
     def text_prepare(self):
         clean_text = {}
         for utt_id,wav_file in self.wav_files.items():
             text_file = wav_file.replace('.wav','.txt')
             text_pre = open(text_file,'r').read().strip()
-                
+
             #remove punctuation
             clean_text[utt_id] = re.sub(_PUNCTUATIONS, ' ', text_pre).strip() 
 
-        #self.words.add(text_pre)
-        
+        #self.words.add(text_pre)  
         return clean_text
