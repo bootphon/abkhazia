@@ -173,7 +173,9 @@ class AESRCPreparator(AbstractPreparatorWithCMU):
 
         # call text_prepare()
         text = self._text
-        text_phonemize = phonemize(text,separator=separator,language='en-us')#backend='espeak',     
+        #text_phonemize = phonemize(text,separator=separator,language='en-us')#backend='espeak',     
+        text_phonemize = phonemize(text.values(),separator=separator,language='en-us')
+
         words = [w.strip() for w in text_phonemize.split(';eword') if w.strip()] 
 
              
@@ -203,15 +205,14 @@ class AESRCPreparator(AbstractPreparatorWithCMU):
         return self.lexicon
 
     def text_prepare(self):
-        
-            
+        clean_text = {}
         for utt_id,wav_file in self.wav_files.items():
             text_file = wav_file.replace('.wav','.txt')
-            self.text_pre[utt_id] = open(text_file,'r').read().strip()
+            text_pre = open(text_file,'r').read().strip()
                 
-            #remove punctuation'
-            text_pre= re.sub(_PUNCTUATIONS, ' ', self.text_pre).strip()              
-            text_pre[utt_id]= text_pre 
-        self.words.add(text_pre)
+            #remove punctuation
+            clean_text[utt_id] = re.sub(_PUNCTUATIONS, ' ', text_pre).strip() 
+
+        #self.words.add(text_pre)
         
-        return text_pre
+        return clean_text
