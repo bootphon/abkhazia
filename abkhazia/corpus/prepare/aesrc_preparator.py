@@ -14,11 +14,11 @@
 # You should have received a copy of the GNU General Public License
 # along with abkhazia. If not, see <http://www.gnu.org/licenses/>.
 
-"""Data preparation for the LibriSpeech corpus
+"""Data preparation for the AESRC corpus
 
 The raw distribution of AESRC
 
-The AESRC dictionary is available for download at
+The AESRC dictionary is available for download at ?
 
 """
 
@@ -41,11 +41,9 @@ from phonemizer.separator import default_separator
 _PUNCTUATIONS = re.compile('!-;:"\,<>./?@#$%^&*_~«»¡¿—…')#not (',{}()[])
        
        
-
 #Oberon
 input_dir = '/home/mkhentout/Bureau/Dataset/abkhazia/American English Speech Data'
 out_put_error = '/home/mkhentout/Bureau/Dataset/abkhazia/tmp_American English Speech'
-
 
 '''
 input_dir ='/home/mkhentout/Bureau/Dataset/Datatang-English/data/American English Speech'
@@ -81,9 +79,7 @@ class AESRCPreparator(AbstractPreparatorWithCMU):
 
     url = ''#?
     audio_format = 'wav'
-
     silences = ['SPN','SIL']  # SPN and SIL will be added automatically
-
     variants = []  # could use lexical stress variants...
 
     def __init__(self, input_dir,log=utils.logger.null_logger(), copy_wavs=False
@@ -95,36 +91,29 @@ class AESRCPreparator(AbstractPreparatorWithCMU):
         self.wav_files = dict()
         
         for dirs, sub_dirs, f in os.walk(input_dir,'*.wav'):
-
-            sub_dir_path = os.path.join(str(input_dir),str(dirs))
-          
+            sub_dir_path = os.path.join(str(input_dir),str(dirs))         
             if len(dirs) == 0:
                 print("this folder is empty:",dirs)
-
             else:
                 #if dirs.startswith('G'):
                 if dirs[-6:-5] == 'G':
-
                     for name in f:
-                        if name.endswith('.wav'):
-                            
-                            utt_id = os.path.splitext(os.path.basename(name))[0]
-                            #print("\n wave_path = ",os.path.join(sub_dir_path,name))
+                        if name.endswith('.wav'):                            
+                            utt_id = os.path.splitext(os.path.basename(name))[0]                            
                             self.wav_files[utt_id] = os.path.join(sub_dir_path,name)
         
-        #open silence.txt
-        f = open('silence.txt','a')
-        f.write("SIL \n")
-        f.write("Noise")
-        f.close()
-
+        
+        self.silence = self.make_silence()
         self.phones = dict()
         self.lexicon = dict()
-        self.words = set()
+        #self.words = set()
 
         self._text = self.text_prepare()
         self.text_pre = dict()
        
+        #?
+        self.clean_text = dict()
+        
         
         
 
@@ -160,22 +149,61 @@ class AESRCPreparator(AbstractPreparatorWithCMU):
 #text.txt: transcription of each utterance in word units  
   
     def make_transcription(self):
-        # call prepare 
-
+        
         return self._text
 #EX: G0007S1001-S1001 <G0007S1001.txt>
 
 #lexicon.txt: phonetic dictionary using that inventory
    
-
     def make_lexicon(self):
         separator = phonemizer.separator.Separator(phone=' ', word=None)
         espeak = phonemizer.backend.EspeakBackend('en-us')
-        words = {w for w in utt.split(' ') for utt in self._text.values()}
-        self.lexicon = {w: espeak.phonemize([w], separator, strip=True)[0] for w in words}
-        self.lexicon['<unk>'] = "SPN"
-        return lexicon
 
+        #words = {w for w in utt.split(' ') for utt in self._text.values()}      
+        words = []
+        for utt in self._text.values():
+            for w in utt.split(' '):
+                words.append(w)    
+       
+        #self.lexicon = {w: espeak.phonemize([w], separator, strip=True)[0] for w in words}
+        #self.lexicon[w for w in words]
+        self.lexicon = {w: espeak.phonemize([w], separator, strip=True)[0] for w in words}
+          
+        #self.lexicon[(for w in words).values()]
+        for w in words:
+            phones = self.lexicon[w].split(' ')
+            try:                                
+                for phone in phones:
+                                        
+                    if len(phone) != 0:
+                        self.phones[phone] = phone
+                    else:
+                        print(" ")
+                                                                        
+            except Exception as e:
+                    print("\n lexicon_error")                        
+                    f = open(out_put_error+"error_phone.txt","a")
+                       
+                    f.close()
+
+        dict_keys = self.lexicon.keys()
+        print("\n mmmm =",self.lexicon.keys())
+        len_keys = len(dict_keys)
+        print("\n len_keys = ",len_keys)
+        
+        
+    
+              
+        return self.lexicon
+    
+
+#silence
+    def make_silence(self):
+        f = open('silence.txt','a')
+        f.write("SIL \n")
+        f.write("Noise")
+        f.close()
+  
 
     '''
     #phonimaze full sentence
@@ -214,12 +242,21 @@ class AESRCPreparator(AbstractPreparatorWithCMU):
     '''
     def text_prepare(self):
         clean_text = {}
+        #_PUNCTUATIONS = re.compile('!-;:"\,<>./?@#$%^&*_~«»¡¿—…')#not (',{}()[])
+        my_punct = ['!', '"', '#', '$', '%', '&', "'", '(', ')', '*', '+', ',', '.',
+           '/', ':', ';', '<', '=', '>', '?', '@', '[', '\\', ']', '^', '_', 
+           '`', '{', '|', '}', '~', '»', '«', '“', '-' , '--' , '”']
+        
+        punct_pattern = re.compile("[" + re.escape("".join(my_punct)) + "]")
+
         for utt_id,wav_file in self.wav_files.items():
             text_file = wav_file.replace('.wav','.txt')
             text_pre = open(text_file,'r').read().strip()
 
             #remove punctuation
-            clean_text[utt_id] = re.sub(_PUNCTUATIONS, ' ', text_pre).strip() 
-
+            #clean_text[utt_id] = re.sub(_PUNCTUATIONS, '', text_pre) #.strip() 
+           
+            clean_text[utt_id] = re.sub(punct_pattern, "", text_pre.strip())
+           
         #self.words.add(text_pre)  
         return clean_text
