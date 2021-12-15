@@ -159,41 +159,34 @@ class AESRCPreparator(AbstractPreparatorWithCMU):
         separator = phonemizer.separator.Separator(phone=' ', word=None)
         espeak = phonemizer.backend.EspeakBackend('en-us')
 
-        #words = {w for w in utt.split(' ') for utt in self._text.values()}      
         words = []
         for utt in self._text.values():
             for w in utt.split(' '):
-                words.append(w)    
-       
-        #self.lexicon = {w: espeak.phonemize([w], separator, strip=True)[0] for w in words}
-        #self.lexicon[w for w in words]
+                if(not w):
+                    print('\n empty word')
+                else:
+                    words.append(w)
+
         self.lexicon = {w: espeak.phonemize([w], separator, strip=True)[0] for w in words}
-          
-        #self.lexicon[(for w in words).values()]
+
         for w in words:
             phones = self.lexicon[w].split(' ')
-            try:                                
+            try:
                 for phone in phones:
-                                        
+
                     if len(phone) != 0:
                         self.phones[phone] = phone
                     else:
                         print(" ")
-                                                                        
+
             except Exception as e:
-                    print("\n lexicon_error")                        
+                    print("\n lexicon_error")
                     f = open(out_put_error+"error_phone.txt","a")
-                       
                     f.close()
 
-        dict_keys = self.lexicon.keys()
-        print("\n mmmm =",self.lexicon.keys())
-        len_keys = len(dict_keys)
-        print("\n len_keys = ",len_keys)
-        
-        
-    
-              
+
+        self.lexicon['<unk>'] = 'SPN'
+
         return self.lexicon
     
 
