@@ -1,4 +1,4 @@
-# Abkhazia
+# Abkhazia AESRC
 
 ### See Online documentation https://docs.cognitive-ml.fr/abkhazia
 
