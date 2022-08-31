@@ -1,8 +1,6 @@
 #!/bin/bash
 #SBATCH --job-name=aesrc             # Job name
 #SBATCH --partition=all              # Take a node from the 'cpu' partition
-
-
 #SBATCH --output=%x-%j.log            # Standard output and error log
 
 echo "Running job on $hostname"#?
