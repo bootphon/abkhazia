@@ -15,11 +15,8 @@
 # along with abkhazia. If not, see <http://www.gnu.org/licenses/>.
 
 """Data preparation for the AESRC corpus
-
 The raw distribution of AESRC
-
 The AESRC dictionary is available for download at ?
-
 """
 
 import os, glob, wave
@@ -45,11 +42,6 @@ _PUNCTUATIONS = re.compile('!-;:"\,<>./?@#$%^&*_~«»¡¿—…')#not (',{}()[])
 input_dir = '/home/mkhentout/Bureau/Dataset/abkhazia/American English Speech Data'
 out_put_error = '/home/mkhentout/Bureau/Dataset/abkhazia/tmp_American English Speech'
 
-'''
-input_dir ='/home/mkhentout/Bureau/Dataset/Datatang-English/data/American English Speech'
-out_put_error = '/home/mkhentout/Bureau/Dataset/tmp_American English Speech/'
-
-'''
 class AESRCPreparator(AbstractPreparatorWithCMU):
     """Convert the AESRC corpus to the abkhazia format"""
     name = 'AESRC'
@@ -106,21 +98,14 @@ class AESRCPreparator(AbstractPreparatorWithCMU):
         self.silence = self.make_silence()
         self.phones = dict()
         self.lexicon = dict()
-        #self.words = set()
-
         self._text = self.text_prepare()
         self.text_pre = dict()
-       
-        #?
         self.clean_text = dict()
         
         
-        
-
 #wavs: subfolder containing the speech recordings in wav, either as files or symbolic links
 
     def list_audio_files(self):
-       
         return self.wav_files.values()
 
 #segments.txt: list of utterances with a description of their location in the wavefiles
@@ -132,8 +117,8 @@ class AESRCPreparator(AbstractPreparatorWithCMU):
             with wave.open(wav_file, 'r') as wav:
                 duration = wav.getnframes() / wav.getframerate()
             segments[utt_id] = (utt_id, float(start), float(duration))
-       
         return segments
+       
 #EX: G0007S1001 G0007S1001.wav 0 wavefile_duration
 
 #utt2spk.txt: list containing the speaker associated to each utterance
@@ -142,19 +127,16 @@ class AESRCPreparator(AbstractPreparatorWithCMU):
         for utt_id,wav_file in self.wav_files.items():
             speaker_id = utt_id.split("S")[0] #séparer par S(G) 
             utt2spk[utt_id] = speaker_id
-
         return utt2spk
 #EX: G0007S1001-S1001 G00007
 
 #text.txt: transcription of each utterance in word units  
   
-    def make_transcription(self):
-        
+    def make_transcription(self):      
         return self._text
 #EX: G0007S1001-S1001 <G0007S1001.txt>
 
-#lexicon.txt: phonetic dictionary using that inventory
-   
+#lexicon.txt: phonetic dictionary using that inventory   
     def make_lexicon(self):
         separator = phonemizer.separator.Separator(phone=' ', word=None)
         espeak = phonemizer.backend.EspeakBackend('en-us')
@@ -166,30 +148,22 @@ class AESRCPreparator(AbstractPreparatorWithCMU):
                     print('\n empty word')
                 else:
                     words.append(w)
-
         self.lexicon = {w: espeak.phonemize([w], separator, strip=True)[0] for w in words}
-
         for w in words:
             phones = self.lexicon[w].split(' ')
             try:
                 for phone in phones:
-
                     if len(phone) != 0:
                         self.phones[phone] = phone
                     else:
                         print(" ")
-
             except Exception as e:
                     print("\n lexicon_error")
                     f = open(out_put_error+"error_phone.txt","a")
                     f.close()
-
-
         self.lexicon['<unk>'] = 'SPN'
-
         return self.lexicon
     
-
 #silence
     def make_silence(self):
         f = open('silence.txt','a')
@@ -197,42 +171,6 @@ class AESRCPreparator(AbstractPreparatorWithCMU):
         f.write("Noise")
         f.close()
   
-
-    '''
-    #phonimaze full sentence
-        def make_lexicon(self):
-            separator = phonemizer.separator.Separator(phone=' ',word=';eword ')
-
-            # call text_prepare()
-            text = self._text
-            print("_text= ",text)
-            #text_phonemize = phonemize(text,separator=separator,language='en-us')#backend='espeak',     
-            text_phonemize = phonemize(text.values(),separator=separator,language='en-us')ou
-            words = [w.strip() for w in text_phonemize.split(';eword') if w.strip()]    
-
-            self.lexicon[text.values()]=words 
-
-            while i < len(words):
-                for phones in self.lexicon[word[i]]:                  
-                    phones = self.lexicon[word[i]].split(' ')
-                    try:                                
-                        for phone in phones:
-                                    
-                            if len(phone) != 0:
-                                self.phones[phone] = phone
-                            else:
-                                print(" ")
-                                                                    
-                    except Exception as e:
-                        print("\n lexicon_error")                        
-                        f = open(out_put_error+"error.txt","a")
-                        f.close()
-                            
-                        
-            self.lexicon['<unk>'] = 'SPN'     
-                    
-            return self.lexicon
-    '''
     def text_prepare(self):
         clean_text = {}
         #_PUNCTUATIONS = re.compile('!-;:"\,<>./?@#$%^&*_~«»¡¿—…')#not (',{}()[])
@@ -247,8 +185,6 @@ class AESRCPreparator(AbstractPreparatorWithCMU):
             text_pre = open(text_file,'r').read().strip()
 
             #remove punctuation
-            #clean_text[utt_id] = re.sub(_PUNCTUATIONS, '', text_pre) #.strip() 
-           
             clean_text[utt_id] = re.sub(punct_pattern, "", text_pre.strip())
            
         #self.words.add(text_pre)  
