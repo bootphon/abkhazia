@@ -14,7 +14,7 @@ python2 is
 
 ## Licence
 
-**Copyright 2015-2019 CoML team (Inria, ENS, CNRS, EHESS)**
+**Copyright 2015-2022 CoML team (Inria, ENS, CNRS, EHESS)**
 
 This program is free software: you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by
