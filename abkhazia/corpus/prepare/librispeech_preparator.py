@@ -128,7 +128,7 @@ class LibriSpeechPreparator(AbstractPreparatorWithCMU):
             wavs.append(prefix + utt_id + '.wav')
 
         self._wavs = wavs
-        return zip(flacs, wavs)
+        return list(zip(flacs, wavs))
 
     def make_segment(self):
         segments = dict()

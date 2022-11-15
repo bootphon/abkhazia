@@ -55,8 +55,8 @@ class CorpusFilter(object):
         self.corpus = corpus
 
         # read utt2spk from the input corpus
-        utt_ids, utt_speakers = zip(*self.corpus.utt2spk.items())
-        self.utts = zip(utt_ids, utt_speakers)
+        utt_ids, utt_speakers = list(zip(*self.corpus.utt2spk.items()))
+        self.utts = list(zip(utt_ids, utt_speakers))
         self.size = len(utt_ids)
         self.speakers = set(utt_speakers)
         self.limits = dict()
@@ -180,9 +180,9 @@ class CorpusFilter(object):
         # create lists of utterances we want to keep,
         # utterances we don't want to keep
         for speaker in names:
-            utt_and_dur = zip(spk2utts[speaker],
+            utt_and_dur = list(zip(spk2utts[speaker],
                               [utt2dur[utt] for utt
-                              in spk2utts[speaker]])
+                              in spk2utts[speaker]]))
             decreasing_utts = sorted(utt_and_dur,
                                      key=lambda utt_and_dur: utt_and_dur[1],
                                      reverse=True)
