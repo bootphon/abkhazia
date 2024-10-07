@@ -9,8 +9,7 @@ of speech recordings typically used in speech engineering, linguistics
 or cognitive science research.
 
 **Abkhazia requires python>=3.6 instead. The last version compatible with
-python2 is
-[abkhazia-0.3.1](https://github.com/bootphon/abkhazia/releases/tag/v0.3.1)**
+python2 is [abkhazia-0.3.1](https://github.com/bootphon/abkhazia/releases/tag/v0.3.1)**
 
 ## Licence
 
