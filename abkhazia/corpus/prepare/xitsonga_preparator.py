@@ -131,7 +131,7 @@ class XitsongaPreparator(AbstractPreparator):
         self._wavs = [os.path.basename(wav).replace('nchlt_tso_', '')
                       for wav in inputs]
 
-        return zip(inputs, self._wavs)
+        return list(zip(inputs, self._wavs))
 
     def make_segment(self):
         segments = dict()

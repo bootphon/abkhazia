@@ -125,7 +125,7 @@ class AbstractGlobalPhonePreparator(AbstractPreparator):
         wavs = [
             os.path.basename(shn).replace('.adc.shn', '.wav') for shn in shns]
 
-        return zip(shns, wavs)
+        return list(zip(shns, wavs))
 
     def make_segment(self):
         segments = dict()

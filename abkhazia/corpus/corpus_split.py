@@ -59,7 +59,7 @@ class CorpusSplit(object):
         random.seed(random_seed)
 
         # read utt2spk from the input corpus
-        utt_ids, utt_speakers = zip(*self.corpus.utt2spk.items())
+        utt_ids, utt_speakers = list(zip(*self.corpus.utt2spk.items()))
         self.utts = list(zip(utt_ids, utt_speakers))
         self.size = len(utt_ids)
         self.speakers = set(utt_speakers)

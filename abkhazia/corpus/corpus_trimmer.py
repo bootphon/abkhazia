@@ -44,8 +44,8 @@ class CorpusTrimmer(object):
         self.log = log
         self.corpus = corpus
 
-        utt_ids, utt_speakers = zip(*self.corpus.utt2spk.items())
-        self.utts = zip(utt_ids, utt_speakers)
+        utt_ids, utt_speakers = list(zip(*self.corpus.utt2spk.items()))
+        self.utts = list(zip(utt_ids, utt_speakers))
         self.speakers = set(utt_speakers)
 
     def trim(self, corpus_dir, output_dir, function, not_kept_utts):
